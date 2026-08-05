@@ -8,11 +8,14 @@ import {
   ArrowRight,
   Check,
   Cpu,
+  FolderOpen,
   Lock,
   Rotate,
+  Save,
   Terminal,
   Wand,
 } from "@/components/icons";
+import { SaveLoadDialog } from "@/components/setup/SaveLoadDialog";
 import { ScriptPreview } from "@/components/setup/ScriptPreview";
 import {
   AddressSection,
@@ -30,7 +33,7 @@ import {
   WanSection,
   type SectionProps,
 } from "@/components/setup/sections";
-import { Button } from "@/components/ui";
+import { Button, Modal } from "@/components/ui";
 import {
   createDefaultConfig,
   newAddress,
@@ -121,6 +124,8 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
 export function SetupBuilder() {
   const [config, setConfig] = useState<SetupConfig>(createDefaultConfig);
   const [step, setStep] = useState(0);
+  const [storeOpen, setStoreOpen] = useState(false);
+  const [loadedName, setLoadedName] = useState<string | null>(null);
   const railRef = useRef<HTMLUListElement>(null);
   const firstRender = useRef(true);
 
@@ -188,13 +193,24 @@ export function SetupBuilder() {
             <div className="flex min-w-0 items-center gap-2">
               <Cpu className="h-4 w-4 text-brand" />
               <h1 className="truncate text-sm font-semibold text-ink">Setup Mikrotik Baru</h1>
+              {loadedName && (
+                <span className="hidden max-w-[200px] items-center gap-1.5 truncate rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[11px] text-brand md:inline-flex">
+                  <FolderOpen className="h-3 w-3" />
+                  {loadedName}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => setStoreOpen(true)} title="Simpan atau muat konfigurasi">
+              <Save className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Simpan / Muat</span>
+            </Button>
             <Button
               size="sm"
               onClick={() => {
                 setConfig(exampleConfig());
+                setLoadedName(null);
                 setStep(0);
               }}
               title="Isi dengan contoh konfigurasi"
@@ -209,6 +225,7 @@ export function SetupBuilder() {
               onClick={() => {
                 if (confirm("Kosongkan semua isian?")) {
                   setConfig(createDefaultConfig());
+                  setLoadedName(null);
                   setStep(0);
                 }
               }}
@@ -365,6 +382,23 @@ export function SetupBuilder() {
           <ScriptPreview script={script} config={config} issues={issues} onJump={jumpToSection} />
         </div>
       </div>
+
+      <Modal
+        open={storeOpen}
+        onClose={() => setStoreOpen(false)}
+        title="Simpan / Muat Konfigurasi"
+        description="Simpan isian saat ini agar bisa dipakai lagi, atau muat konfigurasi yang pernah dibuat."
+      >
+        <SaveLoadDialog
+          config={config}
+          onClose={() => setStoreOpen(false)}
+          onLoad={(loaded, name) => {
+            setConfig(loaded);
+            setLoadedName(name);
+            setStep(0);
+          }}
+        />
+      </Modal>
     </main>
   );
 }

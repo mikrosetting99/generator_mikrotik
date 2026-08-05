@@ -42,6 +42,23 @@ Builder modular mengikuti urutan section pada PRD:
 Perbedaan sintaks v6/v7 ditangani generator (mis. NTP client, parameter `hw-offload` pada
 rule FastTrack).
 
+Section ditampilkan satu per satu sebagai wizard dengan navigasi Kembali/Lanjut; rail kiri
+berfungsi sebagai stepper sekaligus tombol lompat.
+
+### Simpan & muat konfigurasi
+
+Tombol **Simpan / Muat** di header membuka dialog dengan dua jalur:
+
+- **Slot di browser** (`localStorage`) — beri nama, muat kembali kapan saja, hapus bila tidak
+  dipakai. Nama yang sama menimpa entri sebelumnya.
+- **File `.json`** — unduh untuk dipindah ke perangkat/teknisi lain, lalu muat lewat "Muat dari
+  file".
+
+Password admin dan PPPoE **tidak ikut tersimpan** kecuali toggle "Sertakan password" dinyalakan.
+Saat memuat, konfigurasi dinormalisasi terhadap nilai default: field yang hilang diisi, field
+asing dibuang, model/RouterOS yang tidak cocok direset, dan id tiap baris dibuat ulang — jadi
+file lama tetap bisa dipakai meski bentuk konfigurasi berubah.
+
 ## Menjalankan
 
 ```bash
@@ -60,9 +77,10 @@ app/
 components/
   ui.tsx              # primitif form (Field, Select, Toggle, Panel, ...)
   setup/
-    SetupBuilder.tsx  # state builder + layout + navigasi section
-    sections.tsx      # seluruh section form menu 1
-    ScriptPreview.tsx # preview, copy, download .rsc & paket hotspot
+    SetupBuilder.tsx   # state builder + layout + navigasi wizard
+    sections.tsx       # seluruh section form menu 1
+    ScriptPreview.tsx  # preview, copy, download .rsc & paket hotspot
+    SaveLoadDialog.tsx # simpan/muat konfigurasi (browser & file .json)
 lib/
   models.ts           # database model Mikrotik + kompatibilitas RouterOS
   types.ts            # bentuk konfigurasi builder
@@ -70,6 +88,7 @@ lib/
   interfaces.ts       # turunan daftar interface (fisik, bridge, VLAN)
   net.ts              # helper IP/CIDR
   validate.ts         # validasi per section
+  storage.ts          # simpan/muat + normalisasi konfigurasi
   hotspot-page.ts     # berkas halaman login hotspot
   zip.ts              # penulis ZIP tanpa dependensi
   generator/

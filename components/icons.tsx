@@ -45,6 +45,36 @@ export const ChevronDown = (p: IconProps) => (
   </Icon>
 );
 
+export const X = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </Icon>
+);
+
+export const Save = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+    <path d="M17 21v-8H7v8" />
+    <path d="M7 3v5h8" />
+  </Icon>
+);
+
+export const FolderOpen = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 8V6a1 1 0 0 1 1-1h5l2 2h7a1 1 0 0 1 1 1v2" />
+    <path d="m3 8 2.2 10.2a1 1 0 0 0 1 .8h11.6a1 1 0 0 0 1-.8L21 8Z" />
+  </Icon>
+);
+
+export const Upload = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="m7 8 5-5 5 5" />
+    <path d="M12 3v12" />
+  </Icon>
+);
+
 export const Plus = (p: IconProps) => (
   <Icon {...p}>
     <path d="M12 5v14" />

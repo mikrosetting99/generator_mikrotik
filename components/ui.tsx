@@ -229,7 +229,7 @@ export function Button({
 }: {
   onClick?: () => void;
   children: ReactNode;
-  variant?: "default" | "primary" | "ghost" | "danger";
+  variant?: "default" | "primary" | "brand" | "ghost" | "danger";
   size?: "sm" | "md";
   disabled?: boolean;
   className?: string;
@@ -241,6 +241,8 @@ export function Button({
       "border border-line bg-raised text-ink hover:border-brand/50 hover:bg-raised/70 hover:text-brand active:scale-[0.98]",
     primary:
       "border border-accent/40 bg-accent text-[color:var(--color-accent-ink)] font-semibold shadow-[0_10px_30px_-14px_rgba(34,197,94,0.9)] hover:brightness-110 active:scale-[0.98]",
+    brand:
+      "border border-brand/40 bg-brand text-[#04121b] font-semibold shadow-[0_10px_30px_-14px_rgba(56,189,248,0.9)] hover:brightness-110 active:scale-[0.98]",
     ghost: "border border-transparent text-muted hover:bg-raised hover:text-ink",
     danger: "border border-transparent text-faint hover:bg-bad/10 hover:text-bad",
   };

@@ -1,8 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Cpu, Lock, Rotate, Wand } from "@/components/icons";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Cpu,
+  Lock,
+  Rotate,
+  Terminal,
+  Wand,
+} from "@/components/icons";
 import { ScriptPreview } from "@/components/setup/ScriptPreview";
 import {
   AddressSection,
@@ -75,6 +85,9 @@ const SECTION_COMPONENTS: Record<SectionId, (props: SectionProps) => React.React
   firewall: FirewallSection,
 };
 
+/** Section yang boleh dilewati tanpa mengisi apa pun. */
+const OPTIONAL_SECTIONS = new Set<SectionId>(["bridge", "vlan", "hotspot", "pppoe"]);
+
 /** Apakah sebuah section sudah diisi sesuatu oleh pengguna. */
 function isFilled(config: SetupConfig, id: SectionId): boolean {
   switch (id) {
@@ -107,7 +120,9 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
 
 export function SetupBuilder() {
   const [config, setConfig] = useState<SetupConfig>(createDefaultConfig);
-  const [active, setActive] = useState<SectionId>("device");
+  const [step, setStep] = useState(0);
+  const railRef = useRef<HTMLUListElement>(null);
+  const firstRender = useRef(true);
 
   const patch = useCallback((partial: Partial<SetupConfig>) => {
     setConfig((prev) => ({ ...prev, ...partial }));
@@ -116,32 +131,46 @@ export function SetupBuilder() {
   const issues = useMemo(() => validateConfig(config), [config]);
   const script = useMemo(() => generateSetupScript(config), [config]);
   const locked = !config.modelId || !config.ros;
-  const filledCount = SECTION_META.filter((m) => isFilled(config, m.id)).length;
+  const total = SECTION_META.length;
+  const current = SECTION_META[step];
+  const Section = SECTION_COMPONENTS[current.id];
+  const isLast = step === total - 1;
 
-  const jump = useCallback((id: SectionId) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
+  const goTo = useCallback(
+    (index: number) => {
+      setStep(Math.min(Math.max(index, 0), total - 1));
+    },
+    [total],
+  );
 
-  // Sorot section yang sedang terlihat di layar pada rail navigasi.
+  const jumpToSection = useCallback(
+    (id: SectionId) => {
+      const index = SECTION_META.findIndex((meta) => meta.id === id);
+      if (index >= 0) goTo(index);
+    },
+    [goTo],
+  );
+
+  // Perangkat & RouterOS wajib dipilih — kunci langkah lain sampai terisi.
   useEffect(() => {
-    const elements = SECTION_META.map((meta) => document.getElementById(meta.id)).filter(
-      (el): el is HTMLElement => el !== null,
-    );
-    if (elements.length === 0) return;
+    if (locked && step !== 0) setStep(0);
+  }, [locked, step]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (visible) setActive(visible.target.id as SectionId);
-      },
-      { rootMargin: "-80px 0px -60% 0px", threshold: 0 },
-    );
+  // Pindah langkah: kembali ke atas dan tarik chip aktif ke tengah rail.
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    railRef.current
+      ?.querySelector('[aria-current="step"]')
+      ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [step]);
 
-    elements.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [locked]);
+  const currentIssues = issues.filter((i) => i.section === current.id);
+  const currentErrors = currentIssues.filter((i) => i.level === "error");
+  const canAdvance = !(step === 0 && locked);
 
   return (
     <main className="min-h-screen">
@@ -162,7 +191,14 @@ export function SetupBuilder() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setConfig(exampleConfig())} title="Isi dengan contoh konfigurasi">
+            <Button
+              size="sm"
+              onClick={() => {
+                setConfig(exampleConfig());
+                setStep(0);
+              }}
+              title="Isi dengan contoh konfigurasi"
+            >
               <Wand className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Isi contoh</span>
             </Button>
@@ -171,7 +207,10 @@ export function SetupBuilder() {
               variant="ghost"
               title="Kosongkan semua isian"
               onClick={() => {
-                if (confirm("Kosongkan semua isian?")) setConfig(createDefaultConfig());
+                if (confirm("Kosongkan semua isian?")) {
+                  setConfig(createDefaultConfig());
+                  setStep(0);
+                }
               }}
             >
               <Rotate className="h-3.5 w-3.5" />
@@ -179,49 +218,70 @@ export function SetupBuilder() {
             </Button>
           </div>
         </div>
+        {/* Bar progres wizard */}
+        <div className="h-0.5 w-full bg-line-soft">
+          <div
+            className="h-full bg-gradient-to-r from-brand to-accent transition-[width] duration-500 ease-out"
+            style={{ width: `${((step + 1) / total) * 100}%` }}
+          />
+        </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1600px] gap-6 px-5 py-6 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)_420px]">
-        {/* Rail navigasi section */}
-        <nav aria-label="Daftar section" className="lg:sticky lg:top-[76px] lg:self-start">
+      <div className="mx-auto grid w-full max-w-[1600px] gap-6 px-5 py-6 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_420px]">
+        {/* Stepper */}
+        <nav aria-label="Langkah konfigurasi" className="lg:sticky lg:top-[88px] lg:self-start">
           <div className="mb-3 hidden items-center justify-between px-2.5 lg:flex">
             <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">
-              Section
+              Langkah
             </span>
             <span className="font-mono text-[10px] text-faint">
-              {filledCount}/{SECTION_META.length}
+              {step + 1}/{total}
             </span>
           </div>
-          <ul className="flex gap-1.5 overflow-x-auto pb-2 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0">
-            {SECTION_META.map((meta) => {
+          <ul
+            ref={railRef}
+            className="flex gap-1.5 overflow-x-auto pb-2 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0"
+          >
+            {SECTION_META.map((meta, index) => {
               const sectionIssues = issues.filter((i) => i.section === meta.id);
               const hasError = sectionIssues.some((i) => i.level === "error");
-              const hasWarn = sectionIssues.some((i) => i.level === "warn");
               const filled = isFilled(config, meta.id);
-              const disabled = locked && meta.id !== "device";
-              const isActive = active === meta.id && !disabled;
-              const dot = hasError
-                ? "bg-bad"
-                : hasWarn
-                  ? "bg-warn"
-                  : filled
-                    ? "bg-accent"
-                    : "bg-line";
+              const disabled = locked && index !== 0;
+              const isActive = index === step;
+              const done = index < step;
+
               return (
                 <li key={meta.id} className="shrink-0">
                   <button
                     type="button"
-                    onClick={() => jump(meta.id)}
+                    onClick={() => goTo(index)}
                     disabled={disabled}
-                    aria-current={isActive ? "true" : undefined}
-                    className={`flex min-h-9 w-full items-center gap-2 rounded-lg border-l-2 px-2.5 text-left text-xs transition-all duration-200 disabled:opacity-30 ${
+                    aria-current={isActive ? "step" : undefined}
+                    className={`flex min-h-10 w-full items-center gap-2.5 rounded-lg border-l-2 px-2.5 text-left text-xs transition-all duration-200 disabled:opacity-30 ${
                       isActive
-                        ? "border-brand bg-brand/[0.08] text-ink"
+                        ? "border-brand bg-brand/[0.09] text-ink"
                         : "border-transparent text-muted hover:bg-raised hover:text-ink"
                     }`}
                   >
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
-                    <span className="font-mono text-[10px] text-faint">{meta.step}</span>
+                    <span
+                      className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border font-mono text-[10px] transition-colors ${
+                        hasError
+                          ? "border-bad/50 bg-bad/10 text-bad"
+                          : isActive
+                            ? "border-brand/50 bg-brand/15 text-brand"
+                            : done || filled
+                              ? "border-accent/40 bg-accent/10 text-accent"
+                              : "border-line bg-canvas text-faint"
+                      }`}
+                    >
+                      {hasError ? (
+                        <AlertCircle className="h-3 w-3" />
+                      ) : done && filled ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        index + 1
+                      )}
+                    </span>
                     <span className="truncate">{meta.title}</span>
                   </button>
                 </li>
@@ -230,46 +290,79 @@ export function SetupBuilder() {
           </ul>
         </nav>
 
-        {/* Form builder */}
-        <div className="min-w-0 space-y-5">
-          <DeviceSection
-            config={config}
-            patch={patch}
-            issues={issues.filter((i) => i.section === "device")}
-          />
+        {/* Satu section per layar */}
+        <div className="min-w-0">
+          <div key={current.id} className="animate-rise space-y-5">
+            {locked && step !== 0 ? (
+              <div className="rounded-2xl border border-dashed border-line bg-surface/40 px-6 py-14 text-center">
+                <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl border border-line bg-raised">
+                  <Lock className="h-5 w-5 text-faint" />
+                </span>
+                <p className="mt-4 text-sm text-muted">
+                  Pilih Type Mikrotik dan versi RouterOS terlebih dahulu.
+                </p>
+              </div>
+            ) : (
+              <Section config={config} patch={patch} issues={currentIssues} />
+            )}
 
-          {locked ? (
-            <div className="animate-rise rounded-2xl border border-dashed border-line bg-surface/40 px-6 py-14 text-center">
-              <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl border border-line bg-raised">
-                <Lock className="h-5 w-5 text-faint" />
-              </span>
-              <p className="mt-4 text-sm text-muted">
-                Pilih <span className="text-ink">Type Mikrotik</span> dan{" "}
-                <span className="text-ink">versi RouterOS</span> terlebih dahulu.
-              </p>
-              <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-faint">
-                Kedua pilihan itu menentukan daftar interface yang tersedia dan sintaks perintah yang
-                dipakai di seluruh script.
-              </p>
+            {/* Navigasi wizard */}
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+              <Button onClick={() => goTo(step - 1)} disabled={step === 0} title="Langkah sebelumnya">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Kembali</span>
+              </Button>
+
+              <div className="min-w-0 text-center">
+                <p className="font-mono text-[11px] text-faint">
+                  Langkah {step + 1} dari {total}
+                </p>
+                <p className="truncate text-xs text-muted">
+                  {isLast ? "Section terakhir" : `Berikutnya: ${SECTION_META[step + 1].title}`}
+                </p>
+              </div>
+
+              {isLast ? (
+                <Button
+                  variant="primary"
+                  title="Lihat script hasil generate"
+                  onClick={() =>
+                    document
+                      .getElementById("preview")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                >
+                  <Terminal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Lihat script</span>
+                </Button>
+              ) : (
+                <Button
+                  variant="brand"
+                  onClick={() => goTo(step + 1)}
+                  disabled={!canAdvance}
+                  title={
+                    canAdvance
+                      ? "Langkah berikutnya"
+                      : "Pilih Type Mikrotik dan RouterOS terlebih dahulu"
+                  }
+                >
+                  <span className="hidden sm:inline">Lanjut</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              )}
             </div>
-          ) : (
-            SECTION_META.filter((meta) => meta.id !== "device").map((meta) => {
-              const Section = SECTION_COMPONENTS[meta.id];
-              return (
-                <Section
-                  key={meta.id}
-                  config={config}
-                  patch={patch}
-                  issues={issues.filter((i) => i.section === meta.id)}
-                />
-              );
-            })
-          )}
+
+            {currentErrors.length > 0 && !OPTIONAL_SECTIONS.has(current.id) && (
+              <p className="px-1 text-xs text-faint">
+                Anda tetap bisa lanjut — error di atas hanya menahan tombol salin script.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Preview script */}
-        <div className="min-w-0">
-          <ScriptPreview script={script} config={config} issues={issues} onJump={jump} />
+        <div id="preview" className="min-w-0 scroll-mt-24">
+          <ScriptPreview script={script} config={config} issues={issues} onJump={jumpToSection} />
         </div>
       </div>
     </main>

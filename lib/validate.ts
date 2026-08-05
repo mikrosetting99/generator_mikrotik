@@ -234,7 +234,6 @@ export function validateConfig(config: SetupConfig): Issue[] {
     if (!isIpv4(addressPart(p.localAddress))) err("pppoe", "Local address harus alamat IPv4, misal 10.10.10.1.");
     if (!p.pool) err("pppoe", "IP Pool untuk remote address belum dipilih.");
     else if (!poolNames.includes(p.pool)) err("pppoe", `Pool "${p.pool}" tidak ada di section IP Pool.`);
-    if (p.auth.length === 0) err("pppoe", "Minimal 1 metode autentikasi harus dipilih.");
     if (p.rateLimit && !/^\d+[kMG]?\/\d+[kMG]?$/.test(p.rateLimit.trim())) {
       err("pppoe", 'Rate limit harus format "upload/download", misal 5M/10M.');
     }
@@ -247,9 +246,6 @@ export function validateConfig(config: SetupConfig): Issue[] {
         warn("pppoe", `User #${i + 1}: password kurang dari 6 karakter.`);
       }
     });
-    if (p.auth.includes("pap") && p.auth.length > 1) {
-      warn("pppoe", "PAP mengirim password tanpa enkripsi — matikan jika semua klien mendukung CHAP/MS-CHAP.");
-    }
   }
 
   // --- Firewall ---------------------------------------------------------

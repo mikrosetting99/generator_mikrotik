@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode, SelectHTMLAttributes } from "react";
+import { AlertCircle, AlertTriangle, ChevronDown, Trash } from "@/components/icons";
 
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -26,14 +27,21 @@ export function Field({
   return (
     <label className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+        <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
           {label}
-          {required && <span className="ml-1 text-bad">*</span>}
+          {required && (
+            <span className="ml-1 text-bad" aria-label="wajib diisi">
+              *
+            </span>
+          )}
         </span>
       )}
       {children}
       {error ? (
-        <span className="text-xs text-bad">{error}</span>
+        <span className="flex items-start gap-1.5 text-xs text-bad">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5" />
+          {error}
+        </span>
       ) : hint ? (
         <span className="text-xs leading-relaxed text-faint">{hint}</span>
       ) : null}
@@ -44,8 +52,11 @@ export function Field({
 /* ----------------------------------------------------------------- inputs */
 
 const controlBase =
-  "w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink outline-none transition " +
-  "placeholder:text-faint focus:border-brand/70 focus:ring-2 focus:ring-brand/20 disabled:opacity-50";
+  "w-full rounded-lg border border-line bg-canvas px-3 text-sm text-ink outline-none " +
+  "transition-[border-color,box-shadow,background-color] duration-200 " +
+  "placeholder:text-faint/70 hover:border-line/80 " +
+  "focus:border-brand focus:shadow-[0_0_0_3px_rgba(56,189,248,0.14)] focus-visible:outline-none " +
+  "disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted";
 
 export function TextInput({
   value,
@@ -75,8 +86,9 @@ export function TextInput({
       onChange={(e) => onChange(e.target.value)}
       className={cn(
         controlBase,
-        mono && "font-mono tracking-tight",
-        invalid && "border-bad/70 focus:border-bad focus:ring-bad/20",
+        "h-11 sm:h-10",
+        mono && "font-mono text-[13px] tracking-tight",
+        invalid && "border-bad focus:border-bad focus:shadow-[0_0_0_3px_rgba(248,113,113,0.16)]",
         className,
       )}
     />
@@ -110,8 +122,8 @@ export function Select({
         onChange={(e) => onChange(e.target.value)}
         className={cn(
           controlBase,
-          "appearance-none pr-9",
-          invalid && "border-bad/70",
+          "h-11 appearance-none pr-10 sm:h-10",
+          invalid && "border-bad",
           className,
         )}
       >
@@ -122,12 +134,7 @@ export function Select({
           </option>
         ))}
       </select>
-      <span
-        aria-hidden
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted"
-      >
-        ▾
-      </span>
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
     </span>
   );
 }
@@ -146,24 +153,31 @@ export function Toggle({
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="group flex w-full items-start gap-3 rounded-lg border border-line-soft bg-canvas/60 px-3 py-2.5 text-left transition hover:border-line"
+      className={cn(
+        "group flex w-full items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors duration-200",
+        checked
+          ? "border-brand/35 bg-brand/[0.07] hover:border-brand/55"
+          : "border-line-soft bg-canvas/50 hover:border-line",
+      )}
     >
       <span
         className={cn(
-          "mt-0.5 flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition",
+          "mt-0.5 flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200",
           checked ? "bg-brand" : "bg-line",
         )}
       >
         <span
           className={cn(
-            "h-4 w-4 rounded-full bg-canvas transition",
+            "h-4 w-4 rounded-full bg-canvas shadow transition-transform duration-200",
             checked ? "translate-x-4" : "translate-x-0",
           )}
         />
       </span>
       <span className="min-w-0">
-        <span className="block text-sm text-ink">{label}</span>
+        <span className={cn("block text-sm", checked ? "text-ink" : "text-muted")}>{label}</span>
         {hint && <span className="mt-0.5 block text-xs leading-relaxed text-faint">{hint}</span>}
       </span>
     </button>
@@ -173,23 +187,29 @@ export function Toggle({
 export function CheckPill({
   active,
   onClick,
+  disabled,
   children,
 }: {
   active: boolean;
   onClick: () => void;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
+      aria-pressed={active}
+      disabled={disabled}
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+        "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 font-mono text-xs transition-all duration-200",
         active
           ? "border-brand/60 bg-brand/15 text-brand"
-          : "border-line bg-canvas text-muted hover:border-line hover:text-ink",
+          : "border-line bg-canvas text-muted hover:border-brand/40 hover:text-ink",
+        disabled && "cursor-not-allowed opacity-40 hover:border-line hover:text-muted",
       )}
     >
+      {active && <span className="h-1.5 w-1.5 rounded-full bg-brand" />}
       {children}
     </button>
   );
@@ -205,6 +225,7 @@ export function Button({
   disabled,
   className,
   title,
+  ariaLabel,
 }: {
   onClick?: () => void;
   children: ReactNode;
@@ -213,10 +234,13 @@ export function Button({
   disabled?: boolean;
   className?: string;
   title?: string;
+  ariaLabel?: string;
 }) {
   const variants = {
-    default: "border border-line bg-raised text-ink hover:border-brand/50 hover:text-brand",
-    primary: "border border-brand/60 bg-brand/15 text-brand hover:bg-brand/25",
+    default:
+      "border border-line bg-raised text-ink hover:border-brand/50 hover:bg-raised/70 hover:text-brand active:scale-[0.98]",
+    primary:
+      "border border-accent/40 bg-accent text-[color:var(--color-accent-ink)] font-semibold shadow-[0_10px_30px_-14px_rgba(34,197,94,0.9)] hover:brightness-110 active:scale-[0.98]",
     ghost: "border border-transparent text-muted hover:bg-raised hover:text-ink",
     danger: "border border-transparent text-faint hover:bg-bad/10 hover:text-bad",
   };
@@ -224,11 +248,13 @@ export function Button({
     <button
       type="button"
       title={title}
+      aria-label={ariaLabel}
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition disabled:cursor-not-allowed disabled:opacity-40",
-        size === "sm" ? "px-2.5 py-1.5 text-xs" : "px-3.5 py-2 text-sm",
+        "inline-flex select-none items-center justify-center gap-1.5 rounded-lg font-medium",
+        "transition-all duration-200 disabled:pointer-events-none disabled:opacity-40",
+        size === "sm" ? "min-h-9 px-3 text-xs" : "min-h-11 px-4 text-sm sm:min-h-10",
         variants[variant],
         className,
       )}
@@ -258,29 +284,36 @@ export function Panel({
   id?: string;
 }) {
   return (
-    <section id={id} className="scroll-mt-24 rounded-2xl border border-line bg-surface">
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line-soft px-5 py-4">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            {step && (
-              <span className="rounded-md bg-brand/10 px-1.5 py-0.5 font-mono text-[11px] text-brand">
-                {step}
-              </span>
-            )}
-            <h2 className="text-base font-semibold text-ink">{title}</h2>
-            {optional && (
-              <span className="rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-wide text-faint">
-                opsional
-              </span>
+    <section
+      id={id}
+      className="edge-light scroll-mt-24 overflow-hidden rounded-2xl border border-line bg-surface transition-colors duration-300 hover:border-line/80"
+    >
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line-soft bg-gradient-to-b from-white/[0.025] to-transparent px-5 py-4">
+        <div className="flex min-w-0 gap-3">
+          {step && (
+            <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-brand/25 bg-brand/10 font-mono text-[11px] font-medium text-brand">
+              {step}
+            </span>
+          )}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-[15px] font-semibold tracking-tight text-ink">{title}</h2>
+              {optional && (
+                <span className="rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-wide text-faint">
+                  opsional
+                </span>
+              )}
+            </div>
+            {description && (
+              <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-muted">
+                {description}
+              </p>
             )}
           </div>
-          {description && (
-            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>
-          )}
         </div>
         {right}
       </header>
-      <div className="px-5 py-4">{children}</div>
+      <div className="px-5 py-5">{children}</div>
     </section>
   );
 }
@@ -296,12 +329,21 @@ export function Row({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-line-soft bg-raised/60 p-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="font-mono text-xs uppercase tracking-wide text-brand/80">{label}</span>
+    <div className="rounded-xl border border-line-soft bg-raised/50 p-4 transition-colors duration-200 hover:border-line">
+      <div className="mb-3.5 flex items-center justify-between gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">
+          {label}
+        </span>
         {onRemove && (
-          <Button variant="danger" size="sm" onClick={onRemove} title="Hapus baris">
-            Hapus
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={onRemove}
+            title={`Hapus ${label}`}
+            ariaLabel={`Hapus ${label}`}
+            className="px-2"
+          >
+            <Trash className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
@@ -312,7 +354,7 @@ export function Row({
 
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-faint">
+    <p className="rounded-xl border border-dashed border-line/70 px-4 py-7 text-center text-[13px] text-faint">
       {children}
     </p>
   );
@@ -326,13 +368,15 @@ export function Note({
   children: ReactNode;
 }) {
   const tones = {
-    info: "border-brand/25 bg-brand/5 text-muted",
-    warn: "border-warn/30 bg-warn/5 text-warn/90",
-    bad: "border-bad/30 bg-bad/5 text-bad/90",
+    info: "border-brand/20 bg-brand/[0.06] text-muted",
+    warn: "border-warn/25 bg-warn/[0.07] text-warn",
+    bad: "border-bad/25 bg-bad/[0.07] text-bad",
   };
+  const Glyph = tone === "info" ? AlertCircle : AlertTriangle;
   return (
-    <div className={cn("rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed", tones[tone])}>
-      {children}
+    <div className={cn("flex gap-2.5 rounded-xl border px-3.5 py-3", tones[tone])}>
+      <Glyph className="mt-0.5 h-4 w-4" />
+      <div className="text-xs leading-relaxed">{children}</div>
     </div>
   );
 }

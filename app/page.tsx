@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { ArrowRight, Cpu, Lock, Route, Shield, Split, Terminal } from "@/components/icons";
 
 const MENUS = [
   {
     href: "/setup",
     step: "01",
+    icon: Cpu,
     title: "Setup Mikrotik Baru",
     description:
       "Dari router kondisi default sampai siap dipakai: WAN, DNS, NAT, bridge, VLAN, IP address, pool, DHCP server, hotspot, PPPoE, dan firewall dasar.",
@@ -17,6 +19,7 @@ const MENUS = [
   {
     href: "#",
     step: "02",
+    icon: Split,
     title: "Load Balance PCC",
     description:
       "Gabungkan 2 ISP atau lebih agar beban trafik terbagi otomatis dengan metode Per Connection Classifier.",
@@ -30,6 +33,7 @@ const MENUS = [
   {
     href: "#",
     step: "03",
+    icon: Route,
     title: "Fail Over",
     description:
       "Pindah otomatis ke ISP cadangan saat jalur utama terputus, lewat Recursive Gateway maupun Netwatch.",
@@ -42,62 +46,162 @@ const MENUS = [
   },
 ];
 
+const SAMPLE = [
+  { text: "# NAT untuk semua WAN", kind: "comment" },
+  { text: "/ip firewall nat", kind: "path" },
+  { text: "add chain=srcnat action=masquerade \\", kind: "cmd" },
+  { text: "    out-interface-list=WAN", kind: "cmd" },
+  { text: "", kind: "blank" },
+  { text: "# Tolak akses dari internet ke router", kind: "comment" },
+  { text: "/ip firewall filter", kind: "path" },
+  { text: "add chain=input action=drop \\", kind: "cmd" },
+  { text: "    in-interface-list=WAN", kind: "cmd" },
+];
+
 export default function Home() {
   return (
-    <main className="bg-grid min-h-screen">
-      <div className="mx-auto w-full max-w-6xl px-5 py-14 sm:py-20">
-        <header className="max-w-3xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 font-mono text-xs text-brand">
-            <span className="h-1.5 w-1.5 rounded-full bg-good" />
-            RouterOS v6 &amp; v7
-          </span>
-          <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
-            Generator Script Mikrotik
-          </h1>
-          <p className="mt-4 text-base leading-relaxed text-muted sm:text-lg">
-            Isi form, salin script, tempel ke <span className="text-ink">New Terminal</span>{" "}
-            Mikrotik. Tidak perlu menghafal sintaks CLI. Seluruh proses berjalan di browser
-            Anda — IP dan password tidak pernah dikirim ke server.
-          </p>
-        </header>
+    <main className="relative min-h-screen overflow-hidden">
+      {/* Cahaya ambien di belakang hero */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -top-40 h-[520px] opacity-70"
+        style={{
+          background:
+            "radial-gradient(60% 60% at 20% 0%, rgba(56,189,248,0.16), transparent 70%), radial-gradient(45% 55% at 78% 8%, rgba(34,197,94,0.12), transparent 70%)",
+        }}
+      />
+      <div aria-hidden className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-[560px]" />
 
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
+      <div className="relative mx-auto w-full max-w-6xl px-5 py-14 sm:py-20">
+        {/* ---------------------------------------------------------- hero */}
+        <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
+          <header className="animate-rise">
+            <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1.5 font-mono text-xs text-brand backdrop-blur">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+              </span>
+              RouterOS v6 &amp; v7
+            </span>
+
+            <h1 className="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-[3.25rem]">
+              Generator Script
+              <span className="block bg-gradient-to-r from-brand via-brand to-accent bg-clip-text text-transparent">
+                Mikrotik
+              </span>
+            </h1>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+              Isi form, salin script, tempel ke <span className="text-ink">New Terminal</span>{" "}
+              Mikrotik. Tidak perlu menghafal sintaks CLI.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href="/setup"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-5 text-sm font-semibold text-[color:var(--color-accent-ink)] shadow-[0_14px_40px_-16px_rgba(34,197,94,0.85)] transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
+              >
+                Mulai Setup Mikrotik Baru
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <span className="inline-flex items-center gap-2 text-xs text-faint">
+                <Lock className="h-3.5 w-3.5" />
+                Diproses di browser, tanpa kirim data
+              </span>
+            </div>
+          </header>
+
+          {/* Cuplikan hasil */}
+          <div className="animate-rise edge-light overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_30px_80px_-50px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-3 border-b border-line-soft bg-canvas/60 px-4 py-2.5">
+              <span className="flex gap-1.5" aria-hidden>
+                <span className="h-2.5 w-2.5 rounded-full bg-bad/60" />
+                <span className="h-2.5 w-2.5 rounded-full bg-warn/60" />
+                <span className="h-2.5 w-2.5 rounded-full bg-accent/60" />
+              </span>
+              <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted">
+                <Terminal className="h-3.5 w-3.5 text-faint" />
+                setup-mikrotik-kantor.rsc
+              </span>
+            </div>
+            <pre className="overflow-x-auto bg-[#060a11] px-4 py-4 font-mono text-[11.5px] leading-[1.75]">
+              {SAMPLE.map((line, i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="w-4 shrink-0 select-none text-right text-faint/40">{i + 1}</span>
+                  <span
+                    className={
+                      line.kind === "comment"
+                        ? "text-faint/80"
+                        : line.kind === "path"
+                          ? "text-brand"
+                          : "text-muted"
+                    }
+                  >
+                    {line.text || " "}
+                  </span>
+                </div>
+              ))}
+            </pre>
+          </div>
+        </div>
+
+        {/* --------------------------------------------------------- menu */}
+        <h2 className="mt-20 text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
+          Pilih menu
+        </h2>
+        <div className="mt-5 grid gap-5 md:grid-cols-3">
           {MENUS.map((menu) => {
+            const Glyph = menu.icon;
             const card = (
               <div
-                className={
-                  "group flex h-full flex-col rounded-2xl border border-line bg-surface p-6 transition " +
-                  (menu.ready ? "hover:border-brand/60 hover:bg-raised" : "opacity-60")
-                }
+                className={`edge-light group flex h-full flex-col rounded-2xl border border-line bg-surface p-6 transition-all duration-300 ${
+                  menu.ready
+                    ? "hover:-translate-y-1 hover:border-brand/50 hover:shadow-[0_24px_60px_-36px_rgba(56,189,248,0.6)]"
+                    : "opacity-55"
+                }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-faint">{menu.step}</span>
+                  <span
+                    className={`grid h-10 w-10 place-items-center rounded-xl border transition-colors duration-300 ${
+                      menu.ready
+                        ? "border-brand/25 bg-brand/10 text-brand group-hover:border-brand/50"
+                        : "border-line bg-raised text-faint"
+                    }`}
+                  >
+                    <Glyph className="h-5 w-5" />
+                  </span>
                   {menu.ready ? (
-                    <span className="rounded-full border border-good/40 bg-good/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-good">
+                    <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
                       siap
                     </span>
                   ) : (
-                    <span className="rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-wide text-faint">
+                    <span className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-faint">
                       segera
                     </span>
                   )}
                 </div>
-                <h2 className="mt-4 text-xl font-semibold text-ink">{menu.title}</h2>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
+
+                <div className="mt-5 flex items-baseline gap-2">
+                  <span className="font-mono text-[11px] text-faint">{menu.step}</span>
+                  <h3 className="text-lg font-semibold tracking-tight text-ink">{menu.title}</h3>
+                </div>
+                <p className="mt-2 flex-1 text-[13px] leading-relaxed text-muted">
                   {menu.description}
                 </p>
-                <ul className="mt-5 space-y-1.5 border-t border-line-soft pt-4">
+
+                <ul className="mt-5 space-y-2 border-t border-line-soft pt-4">
                   {menu.points.map((point) => (
-                    <li key={point} className="flex gap-2 text-xs text-faint">
-                      <span className="text-brand">›</span>
+                    <li key={point} className="flex items-start gap-2 text-xs text-faint">
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand/60" />
                       {point}
                     </li>
                   ))}
                 </ul>
+
                 {menu.ready && (
                   <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand">
                     Mulai konfigurasi
-                    <span className="transition group-hover:translate-x-0.5">→</span>
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
                   </span>
                 )}
               </div>
@@ -113,27 +217,39 @@ export default function Home() {
           })}
         </div>
 
-        <section className="mt-14 grid gap-4 rounded-2xl border border-line bg-surface p-6 sm:grid-cols-3">
+        {/* ------------------------------------------------------ jaminan */}
+        <section className="mt-16 grid gap-6 rounded-2xl border border-line bg-surface p-6 sm:grid-cols-3 sm:p-8">
           {[
             {
+              icon: Shield,
               title: "Validasi otomatis",
               body: "Format IP/CIDR, VLAN ID 1–4094, pool yang dirujuk, dan bentrok interface diperiksa sebelum script dibuat.",
             },
             {
+              icon: Terminal,
               title: "Script berkomentar",
               body: "Setiap blok perintah diberi penjelasan bahasa Indonesia, plus daftar perintah untuk memverifikasi hasil.",
             },
             {
-              title: "Copy atau unduh .rsc",
-              body: "Salin langsung ke New Terminal, atau unduh sebagai file .rsc untuk diimpor lewat Winbox/FTP.",
+              icon: Lock,
+              title: "Data tidak dikirim",
+              body: "Seluruh proses generate berjalan di browser. IP, password, dan konfigurasi tidak pernah meninggalkan perangkat Anda.",
             },
-          ].map((item) => (
-            <div key={item.title}>
-              <h3 className="text-sm font-semibold text-ink">{item.title}</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted">{item.body}</p>
-            </div>
-          ))}
+          ].map((item) => {
+            const Glyph = item.icon;
+            return (
+              <div key={item.title}>
+                <Glyph className="h-5 w-5 text-brand" />
+                <h3 className="mt-3 text-sm font-semibold text-ink">{item.title}</h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted">{item.body}</p>
+              </div>
+            );
+          })}
         </section>
+
+        <footer className="mt-14 border-t border-line-soft pt-6 text-xs text-faint">
+          Generator Script Mikrotik · Backup router sebelum menjalankan script apa pun.
+        </footer>
       </div>
     </main>
   );

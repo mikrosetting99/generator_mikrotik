@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertCircle, AlertTriangle, Plus, Trash } from "@/components/icons";
 import {
   Button,
   CheckPill,
@@ -29,7 +30,6 @@ import { addressPart, networkOf, suggestPoolRange } from "@/lib/net";
 import type {
   HotspotAuth,
   Issue,
-  PppoeAuth,
   RosVersion,
   SectionId,
   SetupConfig,
@@ -62,18 +62,20 @@ export const SECTION_META: Array<{ id: SectionId; step: string; title: string }>
 function IssueList({ issues }: { issues: Issue[] }) {
   if (issues.length === 0) return null;
   return (
-    <ul className="mt-4 space-y-1.5">
-      {issues.map((issue, i) => (
-        <li
-          key={`${issue.message}-${i}`}
-          className={`flex gap-2 text-xs leading-relaxed ${
-            issue.level === "error" ? "text-bad" : "text-warn"
-          }`}
-        >
-          <span aria-hidden>{issue.level === "error" ? "✕" : "!"}</span>
-          <span>{issue.message}</span>
-        </li>
-      ))}
+    <ul className="mt-5 space-y-2 border-t border-line-soft pt-4">
+      {issues.map((issue, i) => {
+        const isError = issue.level === "error";
+        const Glyph = isError ? AlertCircle : AlertTriangle;
+        return (
+          <li
+            key={`${issue.message}-${i}`}
+            className={`flex gap-2 text-xs leading-relaxed ${isError ? "text-bad" : "text-warn"}`}
+          >
+            <Glyph className="mt-0.5 h-3.5 w-3.5" />
+            <span>{issue.message}</span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -111,7 +113,7 @@ const grid3 = "grid gap-4 sm:grid-cols-3";
 export function DeviceSection({ config, patch, issues }: SectionProps) {
   const model = getModel(config.modelId);
   const password = checkPassword(config.system.adminPassword);
-  const strengthColor = ["bg-bad", "bg-bad", "bg-warn", "bg-good", "bg-good"][password.score];
+  const strengthColor = ["bg-bad", "bg-bad", "bg-warn", "bg-accent", "bg-accent"][password.score];
 
   return (
     <Panel
@@ -269,8 +271,8 @@ export function WanSection({ config, patch, issues }: SectionProps) {
       title="Tambah WAN"
       description="Interface yang tersambung ke ISP. Bisa lebih dari satu — bedakan prioritasnya lewat distance."
       right={
-        <Button variant="primary" size="sm" onClick={() => patch({ wans: [...config.wans, newWan()] })}>
-          + Tambah WAN
+        <Button size="sm" onClick={() => patch({ wans: [...config.wans, newWan()] })}>
+          <Plus className="h-3.5 w-3.5" /> Tambah WAN
         </Button>
       }
     >
@@ -399,7 +401,7 @@ export function DnsSection({ config, patch, issues }: SectionProps) {
       description="DNS server yang dipakai router. Aktifkan allow-remote-requests bila klien LAN memakai router sebagai DNS."
       right={
         <Button size="sm" onClick={() => setServers([...servers, ""])}>
-          + Tambah DNS
+          <Plus className="h-3.5 w-3.5" /> Tambah DNS
         </Button>
       }
     >
@@ -418,9 +420,11 @@ export function DnsSection({ config, patch, issues }: SectionProps) {
             <Button
               variant="danger"
               onClick={() => setServers(servers.filter((_, i) => i !== index))}
-              className="mb-0.5"
+              title={`Hapus DNS ${index + 1}`}
+              ariaLabel={`Hapus DNS ${index + 1}`}
+              className="px-3"
             >
-              Hapus
+              <Trash className="h-4 w-4" />
             </Button>
           </div>
         ))}
@@ -544,7 +548,7 @@ export function BridgeSection({ config, patch, issues }: SectionProps) {
             })
           }
         >
-          + Tambah Bridge
+          <Plus className="h-3.5 w-3.5" /> Tambah Bridge
         </Button>
       }
     >
@@ -625,7 +629,7 @@ export function VlanSection({ config, patch, issues }: SectionProps) {
       description="Memisahkan jaringan secara logis di atas satu interface fisik atau bridge."
       right={
         <Button size="sm" onClick={() => patch({ vlans: [...config.vlans, newVlan()] })}>
-          + Tambah VLAN
+          <Plus className="h-3.5 w-3.5" /> Tambah VLAN
         </Button>
       }
     >
@@ -685,7 +689,7 @@ export function AddressSection({ config, patch, issues }: SectionProps) {
       description="Alamat IP router di tiap segmen. WAN mode static tidak perlu diisi di sini — sudah dibuat otomatis dari section WAN."
       right={
         <Button size="sm" onClick={() => patch({ addresses: [...config.addresses, newAddress()] })}>
-          + Tambah IP
+          <Plus className="h-3.5 w-3.5" /> Tambah IP
         </Button>
       }
     >
@@ -751,7 +755,7 @@ export function PoolSection({ config, patch, issues }: SectionProps) {
       description="Kumpulan IP yang nanti dibagikan oleh DHCP Server, Hotspot, atau PPPoE."
       right={
         <Button size="sm" onClick={() => patch({ pools: [...config.pools, newPool()] })}>
-          + Tambah Pool
+          <Plus className="h-3.5 w-3.5" /> Tambah Pool
         </Button>
       }
     >
@@ -835,7 +839,7 @@ export function DhcpSection({ config, patch, issues }: SectionProps) {
           title={pools.length === 0 ? "Buat IP Pool terlebih dahulu" : undefined}
           onClick={() => patch({ dhcpServers: [...config.dhcpServers, newDhcpServer()] })}
         >
-          + Tambah DHCP Server
+          <Plus className="h-3.5 w-3.5" /> Tambah DHCP Server
         </Button>
       }
     >
@@ -957,7 +961,7 @@ export function HotspotSection({ config, patch, issues }: SectionProps) {
       description="Portal login untuk pengguna. Halaman login berupa file HTML sehingga diunduh terpisah dan di-upload ke folder hotspot pada File List router."
       right={
         <Button size="sm" onClick={() => patch({ hotspots: [...config.hotspots, newHotspot()] })}>
-          + Tambah Hotspot
+          <Plus className="h-3.5 w-3.5" /> Tambah Hotspot
         </Button>
       }
     >
@@ -1060,8 +1064,6 @@ export function HotspotSection({ config, patch, issues }: SectionProps) {
 
 /* ------------------------------------------------------ l: PPPoE Server */
 
-const PPPOE_AUTH: PppoeAuth[] = ["pap", "chap", "mschap1", "mschap2"];
-
 export function PppoeSection({ config, patch, issues }: SectionProps) {
   const p = config.pppoe;
   const options = ifaceOptions(config, { skipEnslaved: true, skipWan: true });
@@ -1128,29 +1130,6 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
             </Field>
           </div>
 
-          <div>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-              Metode autentikasi <span className="text-bad">*</span>
-            </span>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {PPPOE_AUTH.map((auth) => (
-                <CheckPill
-                  key={auth}
-                  active={p.auth.includes(auth)}
-                  onClick={() =>
-                    setPppoe({
-                      auth: p.auth.includes(auth)
-                        ? p.auth.filter((a) => a !== auth)
-                        : [...p.auth, auth],
-                    })
-                  }
-                >
-                  {auth}
-                </CheckPill>
-              ))}
-            </div>
-          </div>
-
           <Toggle
             checked={p.oneSessionPerHost}
             onChange={(oneSessionPerHost) => setPppoe({ oneSessionPerHost })}
@@ -1164,7 +1143,7 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
                 Akun pelanggan (PPP secret)
               </span>
               <Button size="sm" onClick={() => setPppoe({ secrets: [...p.secrets, newSecret()] })}>
-                + Tambah user
+                <Plus className="h-3.5 w-3.5" /> Tambah user
               </Button>
             </div>
             {p.secrets.length === 0 ? (
@@ -1201,12 +1180,14 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
                     </Field>
                     <Button
                       variant="danger"
-                      className="mb-0.5"
+                      className="px-3"
+                      title={`Hapus user ${index + 1}`}
+                      ariaLabel={`Hapus user ${index + 1}`}
                       onClick={() =>
                         setPppoe({ secrets: p.secrets.filter((s) => s.id !== secret.id) })
                       }
                     >
-                      Hapus
+                      <Trash className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}

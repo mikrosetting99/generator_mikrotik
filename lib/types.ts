@@ -68,8 +68,6 @@ export interface HotspotEntry {
   addressesPerMac: string;
 }
 
-export type PppoeAuth = "pap" | "chap" | "mschap1" | "mschap2";
-
 export interface PppoeSecret {
   id: string;
   user: string;
@@ -84,7 +82,6 @@ export interface PppoeConfig {
   localAddress: string;
   pool: string;
   rateLimit: string;
-  auth: PppoeAuth[];
   oneSessionPerHost: boolean;
   secrets: PppoeSecret[];
 }

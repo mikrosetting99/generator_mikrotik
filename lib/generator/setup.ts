@@ -369,13 +369,13 @@ export function generateSetupScript(config: SetupConfig): string {
         ["only-one", p.oneSessionPerHost],
       ])}`,
     );
-    s.blank().line("/interface pppoe-server server");
+    s.blank().comment("Metode autentikasi memakai bawaan RouterOS (pap, chap, mschap1, mschap2).");
+    s.line("/interface pppoe-server server");
     s.line(
       `add ${args([
         ["service-name", p.serviceName.trim()],
         ["interface", p.iface],
         ["default-profile", p.profileName.trim()],
-        ["authentication", p.auth.join(",")],
         ["one-session-per-host", p.oneSessionPerHost],
         ["max-mtu", "1480"],
         ["max-mru", "1480"],

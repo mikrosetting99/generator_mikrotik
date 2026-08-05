@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Cpu, Lock, Rotate, Wand } from "@/components/icons";
 import { ScriptPreview } from "@/components/setup/ScriptPreview";
 import {
   AddressSection,
@@ -37,7 +38,12 @@ function exampleConfig(): SetupConfig {
   const base = createDefaultConfig();
   const bridge = { ...newBridge("bridge-lan"), ports: ["ether2", "ether3", "ether4", "ether5"] };
   const address = { ...newAddress("bridge-lan"), address: "192.168.10.1/24", comment: "LAN utama" };
-  const pool = { ...newPool(), name: "pool-lan", rangeStart: "192.168.10.10", rangeEnd: "192.168.10.254" };
+  const pool = {
+    ...newPool(),
+    name: "pool-lan",
+    rangeStart: "192.168.10.10",
+    rangeEnd: "192.168.10.254",
+  };
   const dhcp = { ...newDhcpServer(), name: "dhcp-lan", iface: "bridge-lan", pool: "pool-lan" };
 
   return {
@@ -101,6 +107,7 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
 
 export function SetupBuilder() {
   const [config, setConfig] = useState<SetupConfig>(createDefaultConfig);
+  const [active, setActive] = useState<SectionId>("device");
 
   const patch = useCallback((partial: Partial<SetupConfig>) => {
     setConfig((prev) => ({ ...prev, ...partial }));
@@ -109,62 +116,109 @@ export function SetupBuilder() {
   const issues = useMemo(() => validateConfig(config), [config]);
   const script = useMemo(() => generateSetupScript(config), [config]);
   const locked = !config.modelId || !config.ros;
+  const filledCount = SECTION_META.filter((m) => isFilled(config, m.id)).length;
 
   const jump = useCallback((id: SectionId) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
+  // Sorot section yang sedang terlihat di layar pada rail navigasi.
+  useEffect(() => {
+    const elements = SECTION_META.map((meta) => document.getElementById(meta.id)).filter(
+      (el): el is HTMLElement => el !== null,
+    );
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (visible) setActive(visible.target.id as SectionId);
+      },
+      { rootMargin: "-80px 0px -60% 0px", threshold: 0 },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [locked]);
+
   return (
     <main className="min-h-screen">
-      <header className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3 px-5 py-3">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm text-muted transition hover:text-brand">
-              ← Menu
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-sm text-muted transition-colors hover:bg-raised hover:text-ink"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Menu</span>
             </Link>
-            <span className="hidden h-4 w-px bg-line sm:block" />
-            <h1 className="text-sm font-semibold text-ink">Setup Mikrotik Baru</h1>
+            <span className="h-5 w-px bg-line" />
+            <div className="flex min-w-0 items-center gap-2">
+              <Cpu className="h-4 w-4 text-brand" />
+              <h1 className="truncate text-sm font-semibold text-ink">Setup Mikrotik Baru</h1>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => setConfig(exampleConfig())}>
-              Isi contoh
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => setConfig(exampleConfig())} title="Isi dengan contoh konfigurasi">
+              <Wand className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Isi contoh</span>
             </Button>
             <Button
               size="sm"
               variant="ghost"
+              title="Kosongkan semua isian"
               onClick={() => {
                 if (confirm("Kosongkan semua isian?")) setConfig(createDefaultConfig());
               }}
             >
-              Reset
+              <Rotate className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Reset</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1600px] gap-6 px-5 py-6 lg:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-[190px_minmax(0,1fr)_400px]">
+      <div className="mx-auto grid w-full max-w-[1600px] gap-6 px-5 py-6 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)_420px]">
         {/* Rail navigasi section */}
-        <nav className="lg:sticky lg:top-20 lg:self-start">
-          <ul className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
+        <nav aria-label="Daftar section" className="lg:sticky lg:top-[76px] lg:self-start">
+          <div className="mb-3 hidden items-center justify-between px-2.5 lg:flex">
+            <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">
+              Section
+            </span>
+            <span className="font-mono text-[10px] text-faint">
+              {filledCount}/{SECTION_META.length}
+            </span>
+          </div>
+          <ul className="flex gap-1.5 overflow-x-auto pb-2 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0">
             {SECTION_META.map((meta) => {
               const sectionIssues = issues.filter((i) => i.section === meta.id);
               const hasError = sectionIssues.some((i) => i.level === "error");
               const hasWarn = sectionIssues.some((i) => i.level === "warn");
               const filled = isFilled(config, meta.id);
+              const disabled = locked && meta.id !== "device";
+              const isActive = active === meta.id && !disabled;
               const dot = hasError
                 ? "bg-bad"
                 : hasWarn
                   ? "bg-warn"
                   : filled
-                    ? "bg-good"
+                    ? "bg-accent"
                     : "bg-line";
               return (
                 <li key={meta.id} className="shrink-0">
                   <button
                     type="button"
                     onClick={() => jump(meta.id)}
-                    disabled={locked && meta.id !== "device"}
-                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-muted transition hover:bg-surface hover:text-ink disabled:opacity-35"
+                    disabled={disabled}
+                    aria-current={isActive ? "true" : undefined}
+                    className={`flex min-h-9 w-full items-center gap-2 rounded-lg border-l-2 px-2.5 text-left text-xs transition-all duration-200 disabled:opacity-30 ${
+                      isActive
+                        ? "border-brand bg-brand/[0.08] text-ink"
+                        : "border-transparent text-muted hover:bg-raised hover:text-ink"
+                    }`}
                   >
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
                     <span className="font-mono text-[10px] text-faint">{meta.step}</span>
@@ -185,8 +239,11 @@ export function SetupBuilder() {
           />
 
           {locked ? (
-            <div className="rounded-2xl border border-dashed border-line bg-surface/50 px-6 py-12 text-center">
-              <p className="text-sm text-muted">
+            <div className="animate-rise rounded-2xl border border-dashed border-line bg-surface/40 px-6 py-14 text-center">
+              <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl border border-line bg-raised">
+                <Lock className="h-5 w-5 text-faint" />
+              </span>
+              <p className="mt-4 text-sm text-muted">
                 Pilih <span className="text-ink">Type Mikrotik</span> dan{" "}
                 <span className="text-ink">versi RouterOS</span> terlebih dahulu.
               </p>

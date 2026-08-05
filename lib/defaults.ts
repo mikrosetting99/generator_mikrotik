@@ -106,7 +106,6 @@ export function createDefaultConfig(): SetupConfig {
       localAddress: "",
       pool: "",
       rateLimit: "",
-      auth: ["pap", "chap", "mschap1", "mschap2"],
       oneSessionPerHost: true,
       secrets: [],
     },

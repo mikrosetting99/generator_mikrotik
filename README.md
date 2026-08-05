@@ -34,7 +34,8 @@ Builder modular mengikuti urutan section pada PRD:
 10. **DHCP Server** — network & gateway diisi otomatis dari IP address interface.
 11. **IP Hotspot** — metode autentikasi http-pap/http-chap/mac-cookie/cookie, plus paket
     halaman login yang diunduh terpisah sebagai `.zip`.
-12. **PPPoE Server** — profile, pool, autentikasi, dan daftar PPP secret.
+12. **PPPoE Server** — profile, pool, rate limit, dan daftar PPP secret. Metode autentikasi
+    tidak diekspos di form; script memakai bawaan RouterOS.
 13. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
     Winbox/SSH/WebFig, neighbor discovery, dan MAC server.
 

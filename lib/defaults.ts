@@ -5,6 +5,7 @@ import type {
   HotspotEntry,
   PoolEntry,
   PppoeSecret,
+  RouterUser,
   SetupConfig,
   VlanEntry,
   WanEntry,
@@ -77,6 +78,10 @@ export function newSecret(): PppoeSecret {
   return { id: uid("sec"), user: "", password: "" };
 }
 
+export function newUser(): RouterUser {
+  return { id: uid("user"), name: "", password: "", group: "full", allowedAddress: "", comment: "" };
+}
+
 export function createDefaultConfig(): SetupConfig {
   return {
     modelId: "",
@@ -110,7 +115,8 @@ export function createDefaultConfig(): SetupConfig {
       secrets: [],
     },
     firewall: {
-      enabled: true,
+      // Sengaja mati secara default — pengguna mengaktifkan sendiri bila perlu.
+      enabled: false,
       dropInvalid: true,
       allowIcmp: true,
       protectInput: true,
@@ -121,6 +127,7 @@ export function createDefaultConfig(): SetupConfig {
       limitDiscovery: true,
       limitMacServer: true,
     },
+    users: [],
   };
 }
 

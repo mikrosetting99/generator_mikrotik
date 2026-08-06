@@ -29,6 +29,7 @@ import {
   PoolSection,
   PppoeSection,
   SECTION_META,
+  UserSection,
   VlanSection,
   WanSection,
   type SectionProps,
@@ -86,10 +87,11 @@ const SECTION_COMPONENTS: Record<SectionId, (props: SectionProps) => React.React
   hotspot: HotspotSection,
   pppoe: PppoeSection,
   firewall: FirewallSection,
+  user: UserSection,
 };
 
 /** Section yang boleh dilewati tanpa mengisi apa pun. */
-const OPTIONAL_SECTIONS = new Set<SectionId>(["bridge", "vlan", "hotspot", "pppoe"]);
+const OPTIONAL_SECTIONS = new Set<SectionId>(["bridge", "vlan", "hotspot", "pppoe", "user"]);
 
 /** Apakah sebuah section sudah diisi sesuatu oleh pengguna. */
 function isFilled(config: SetupConfig, id: SectionId): boolean {
@@ -118,6 +120,8 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
       return config.pppoe.enabled;
     case "firewall":
       return config.firewall.enabled;
+    case "user":
+      return Boolean(config.system.adminPassword) || config.users.length > 0;
   }
 }
 

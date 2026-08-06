@@ -37,7 +37,11 @@ Builder modular mengikuti urutan section pada PRD:
 12. **PPPoE Server** — profile, pool, rate limit, dan daftar PPP secret. Metode autentikasi
     tidak diekspos di form; script memakai bawaan RouterOS.
 13. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
-    Winbox/SSH/WebFig, neighbor discovery, dan MAC server.
+    Winbox/SSH/WebFig, neighbor discovery, dan MAC server. **Mati secara default**,
+    diaktifkan sendiri bila diperlukan.
+14. **User Mikrotik** — ganti password admin dan tambah user baru (nama, password, group
+    full/write/read, batas subnet login). Section terakhir, dan blok ini juga diletakkan
+    paling akhir di script agar akses ke router tidak terputus di tengah eksekusi.
 
 Perbedaan sintaks v6/v7 ditangani generator (mis. NTP client, parameter `hw-offload` pada
 rule FastTrack).

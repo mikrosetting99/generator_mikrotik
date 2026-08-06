@@ -105,6 +105,19 @@ export interface SystemConfig {
   ntp: boolean;
 }
 
+/** Group bawaan RouterOS. */
+export type UserGroup = "full" | "write" | "read";
+
+export interface RouterUser {
+  id: string;
+  name: string;
+  password: string;
+  group: UserGroup;
+  /** Batasi login user ini hanya dari subnet tertentu (opsional). */
+  allowedAddress: string;
+  comment: string;
+}
+
 export interface FirewallConfig {
   enabled: boolean;
   dropInvalid: boolean;
@@ -135,6 +148,7 @@ export interface SetupConfig {
   hotspots: HotspotEntry[];
   pppoe: PppoeConfig;
   firewall: FirewallConfig;
+  users: RouterUser[];
 }
 
 export type SectionId =
@@ -149,7 +163,8 @@ export type SectionId =
   | "dhcp"
   | "hotspot"
   | "pppoe"
-  | "firewall";
+  | "firewall"
+  | "user";
 
 export interface Issue {
   section: SectionId;

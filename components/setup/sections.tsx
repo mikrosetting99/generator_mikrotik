@@ -20,6 +20,7 @@ import {
   newHotspot,
   newPool,
   newSecret,
+  newUser,
   newVlan,
   newWan,
   TIMEZONES,
@@ -33,6 +34,7 @@ import type {
   RosVersion,
   SectionId,
   SetupConfig,
+  UserGroup,
 } from "@/lib/types";
 import { checkPassword } from "@/lib/validate";
 
@@ -55,6 +57,7 @@ export const SECTION_META: Array<{ id: SectionId; step: string; title: string }>
   { id: "hotspot", step: "k", title: "IP Hotspot" },
   { id: "pppoe", step: "l", title: "PPPoE Server" },
   { id: "firewall", step: "m", title: "Firewall Dasar" },
+  { id: "user", step: "n", title: "User Mikrotik" },
 ];
 
 /* ------------------------------------------------------------- utilities */
@@ -112,8 +115,6 @@ const grid3 = "grid gap-4 sm:grid-cols-3";
 
 export function DeviceSection({ config, patch, issues }: SectionProps) {
   const model = getModel(config.modelId);
-  const password = checkPassword(config.system.adminPassword);
-  const strengthColor = ["bg-bad", "bg-bad", "bg-warn", "bg-accent", "bg-accent"][password.score];
 
   return (
     <Panel
@@ -193,7 +194,7 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
       )}
 
       <div className="mt-6 border-t border-line-soft pt-5">
-        <h3 className="text-sm font-semibold text-ink">Identitas & akses admin</h3>
+        <h3 className="text-sm font-semibold text-ink">Identitas & waktu</h3>
         <div className={`mt-3 ${grid2}`}>
           <Field label="System identity" hint="Nama router yang tampil di Winbox & neighbor.">
             <TextInput
@@ -210,37 +211,7 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
               options={TIMEZONES.map((tz) => ({ value: tz, label: tz }))}
             />
           </Field>
-          <Field label="User admin">
-            <TextInput
-              value={config.system.adminUser}
-              onChange={(adminUser) => patch({ system: { ...config.system, adminUser } })}
-              placeholder="admin"
-            />
-          </Field>
-          <Field
-            label="Password admin baru"
-            hint={
-              config.system.adminPassword
-                ? `${password.label}${password.problems.length ? ` — perlu ${password.problems.join(", ")}` : ""}`
-                : "Kosongkan jika password diatur manual nanti (tidak disarankan)."
-            }
-          >
-            <TextInput
-              type="password"
-              value={config.system.adminPassword}
-              onChange={(adminPassword) => patch({ system: { ...config.system, adminPassword } })}
-              placeholder="minimal 8 karakter, huruf besar-kecil, angka, simbol"
-            />
-          </Field>
         </div>
-        {config.system.adminPassword && (
-          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-line">
-            <div
-              className={`h-full rounded-full transition-all ${strengthColor}`}
-              style={{ width: `${(password.score / 4) * 100}%` }}
-            />
-          </div>
-        )}
         <div className="mt-4">
           <Toggle
             checked={config.system.ntp}
@@ -249,6 +220,10 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
             hint="Menyamakan jam router lewat internet — penting agar log dan penjadwalan akurat."
           />
         </div>
+        <p className="mt-4 text-xs leading-relaxed text-faint">
+          Password admin dan penambahan user diatur di section terakhir (n) —
+          sengaja dijalankan di akhir script agar akses ke router tidak terputus di tengah jalan.
+        </p>
       </div>
 
       <IssueList issues={issues} />
@@ -1229,6 +1204,16 @@ export function FirewallSection({ config, patch, issues }: SectionProps) {
         label="Sertakan firewall dasar"
       />
 
+      {!fw.enabled && (
+        <div className="mt-4">
+          <Note tone="warn">
+            Firewall tidak disertakan. Router akan bisa diakses dari internet dan paket tidak valid
+            tidak dibuang. Aktifkan bila router ini terhubung langsung ke ISP, atau pastikan
+            proteksi sudah ditangani perangkat lain di depannya.
+          </Note>
+        </div>
+      )}
+
       {fw.enabled && (
         <div className="mt-4 space-y-3">
           <div className={grid2}>
@@ -1309,6 +1294,159 @@ export function FirewallSection({ config, patch, issues }: SectionProps) {
           <Note tone="warn">
             Pastikan Anda masih bisa mengakses router setelah script dijalankan. Jika mengatur subnet
             manajemen, jalankan script dari perangkat di dalam subnet tersebut.
+          </Note>
+        </div>
+      )}
+      <IssueList issues={issues} />
+    </Panel>
+  );
+}
+
+/* ------------------------------------------------------- n: User Mikrotik */
+
+const USER_GROUPS: Array<{ value: UserGroup; label: string }> = [
+  { value: "full", label: "full — akses penuh (setara admin)" },
+  { value: "write", label: "write — boleh ubah konfigurasi, tanpa kelola user" },
+  { value: "read", label: "read — hanya melihat, tidak bisa mengubah" },
+];
+
+export function UserSection({ config, patch, issues }: SectionProps) {
+  const password = checkPassword(config.system.adminPassword);
+  const strengthColor = ["bg-bad", "bg-bad", "bg-warn", "bg-accent", "bg-accent"][password.score];
+
+  const update = (id: string, partial: Partial<(typeof config.users)[number]>) =>
+    patch({ users: config.users.map((u) => (u.id === id ? { ...u, ...partial } : u)) });
+
+  return (
+    <Panel
+      id="user"
+      step="n"
+      title="User Mikrotik"
+      description="Password admin dan penambahan user. Blok ini diletakkan paling akhir di script agar akses ke router tidak terputus bila ada perintah sebelumnya yang gagal."
+      right={
+        <Button size="sm" onClick={() => patch({ users: [...config.users, newUser()] })}>
+          <Plus className="h-3.5 w-3.5" /> Tambah User
+        </Button>
+      }
+    >
+      <div className="rounded-xl border border-line-soft bg-raised/50 p-4">
+        <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">
+          Password admin
+        </span>
+        <div className={`mt-3.5 ${grid2}`}>
+          <Field label="User admin" hint="User bawaan yang password-nya akan diganti.">
+            <TextInput
+              mono
+              value={config.system.adminUser}
+              onChange={(adminUser) => patch({ system: { ...config.system, adminUser } })}
+              placeholder="admin"
+            />
+          </Field>
+          <Field
+            label="Password admin baru"
+            hint={
+              config.system.adminPassword
+                ? `${password.label}${password.problems.length ? ` — perlu ${password.problems.join(", ")}` : ""}`
+                : "Kosongkan jika password diatur manual nanti (tidak disarankan)."
+            }
+          >
+            <TextInput
+              type="password"
+              value={config.system.adminPassword}
+              onChange={(adminPassword) => patch({ system: { ...config.system, adminPassword } })}
+              placeholder="minimal 8 karakter, huruf besar-kecil, angka, simbol"
+            />
+          </Field>
+        </div>
+        {config.system.adminPassword && (
+          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-line">
+            <div
+              className={`h-full rounded-full transition-all ${strengthColor}`}
+              style={{ width: `${(password.score / 4) * 100}%` }}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 space-y-4">
+        {config.users.length === 0 ? (
+          <EmptyState>
+            Belum ada user tambahan. Router tetap bisa dipakai dengan user admin saja.
+          </EmptyState>
+        ) : (
+          config.users.map((user, index) => {
+            const strength = checkPassword(user.password);
+            return (
+              <Row
+                key={user.id}
+                label={`User ${index + 1}`}
+                onRemove={() => patch({ users: config.users.filter((u) => u.id !== user.id) })}
+              >
+                <div className={grid3}>
+                  <Field label="Nama user" required>
+                    <TextInput
+                      mono
+                      value={user.name}
+                      onChange={(name) => update(user.id, { name })}
+                      placeholder="teknisi"
+                    />
+                  </Field>
+                  <Field
+                    label="Password"
+                    required
+                    hint={
+                      user.password
+                        ? `${strength.label}${strength.problems.length ? ` — perlu ${strength.problems.join(", ")}` : ""}`
+                        : undefined
+                    }
+                  >
+                    <TextInput
+                      type="password"
+                      value={user.password}
+                      onChange={(password) => update(user.id, { password })}
+                      placeholder="password kuat"
+                    />
+                  </Field>
+                  <Field label="Group">
+                    <Select
+                      value={user.group}
+                      placeholder=""
+                      onChange={(group) => update(user.id, { group: group as UserGroup })}
+                      options={USER_GROUPS}
+                    />
+                  </Field>
+                </div>
+                <div className={`mt-4 ${grid2}`}>
+                  <Field
+                    label="Batasi login dari subnet"
+                    hint="Opsional. Kosongkan agar user bisa login dari mana saja."
+                  >
+                    <TextInput
+                      mono
+                      value={user.allowedAddress}
+                      onChange={(allowedAddress) => update(user.id, { allowedAddress })}
+                      placeholder="192.168.10.0/24"
+                    />
+                  </Field>
+                  <Field label="Keterangan">
+                    <TextInput
+                      value={user.comment}
+                      onChange={(comment) => update(user.id, { comment })}
+                      placeholder="teknisi lapangan"
+                    />
+                  </Field>
+                </div>
+              </Row>
+            );
+          })
+        )}
+      </div>
+
+      {config.users.length > 0 && (
+        <div className="mt-4">
+          <Note>
+            User baru dibuat lebih dulu, baru password admin diganti — jadi tetap ada jalan masuk
+            bila password admin terlupa.
           </Note>
         </div>
       )}

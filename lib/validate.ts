@@ -44,14 +44,6 @@ export function validateConfig(config: SetupConfig): Issue[] {
     err("device", `${model.name} tidak mendukung RouterOS ${config.ros}.`);
   }
 
-  if (config.system.adminPassword) {
-    const check = checkPassword(config.system.adminPassword);
-    if (check.score < 3) {
-      err("device", `Password admin terlalu lemah — perlu ${check.problems.join(", ")}.`);
-    }
-  } else {
-    warn("device", "Password admin dikosongkan — router akan tetap tanpa password.");
-  }
   if (config.system.identity && !NAME_OK.test(config.system.identity)) {
     err("device", "Identity hanya boleh huruf, angka, titik, strip, dan underscore.");
   }
@@ -260,9 +252,42 @@ export function validateConfig(config: SetupConfig): Issue[] {
     if (config.firewall.fasttrack && config.hotspots.length > 0) {
       warn("firewall", "FastTrack aktif bersama Hotspot — bisa membuat perhitungan trafik/queue hotspot tidak akurat.");
     }
-  } else {
-    warn("firewall", "Firewall dasar dimatikan — router terbuka dari sisi internet.");
   }
+
+  // --- User router -------------------------------------------------------
+  if (config.system.adminPassword) {
+    const check = checkPassword(config.system.adminPassword);
+    if (check.score < 3) {
+      err("user", `Password admin terlalu lemah — perlu ${check.problems.join(", ")}.`);
+    }
+  } else {
+    warn("user", "Password admin dikosongkan — router akan tetap tanpa password.");
+  }
+
+  const userNames = config.users.map((u) => u.name.trim()).filter(Boolean);
+  if (new Set(userNames).size !== userNames.length) {
+    err("user", "Nama user tidak boleh duplikat.");
+  }
+  config.users.forEach((user, i) => {
+    const tag = user.name.trim() || `User #${i + 1}`;
+    if (!user.name.trim()) {
+      err("user", `User #${i + 1}: nama belum diisi.`);
+    } else if (!NAME_OK.test(user.name.trim())) {
+      err("user", `${tag}: nama hanya boleh huruf, angka, titik, strip, dan underscore.`);
+    }
+    if (user.name.trim() === config.system.adminUser.trim()) {
+      err("user", `${tag}: nama sama dengan user admin yang sudah ada — pakai nama lain.`);
+    }
+    if (!user.password) {
+      err("user", `${tag}: password belum diisi.`);
+    } else {
+      const check = checkPassword(user.password);
+      if (check.score < 3) err("user", `${tag}: password terlalu lemah — perlu ${check.problems.join(", ")}.`);
+    }
+    if (user.allowedAddress.trim() && !isCidr(user.allowedAddress)) {
+      err("user", `${tag}: batas alamat harus format CIDR, misal 192.168.10.0/24.`);
+    }
+  });
 
   return issues;
 }

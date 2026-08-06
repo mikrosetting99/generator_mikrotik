@@ -74,8 +74,8 @@ export function generateSetupScript(config: SetupConfig): string {
 
   // -------------------------------------------------------------- identitas
   const sys = config.system;
-  if (sys.identity || sys.adminPassword || sys.timezone || sys.ntp) {
-    s.section("1. IDENTITAS ROUTER, JAM & PASSWORD ADMIN");
+  if (sys.identity || sys.timezone || sys.ntp) {
+    s.section("1. IDENTITAS ROUTER & JAM");
     if (sys.identity) {
       s.line(`/system identity set ${args([["name", sys.identity]])}`);
     }
@@ -90,17 +90,6 @@ export function generateSetupScript(config: SetupConfig): string {
           ? "/system ntp client set enabled=yes servers=id.pool.ntp.org,pool.ntp.org"
           : "/system ntp client set enabled=yes server-dns-names=id.pool.ntp.org,pool.ntp.org",
       );
-    }
-    if (sys.adminPassword) {
-      s.comment("Ganti password user admin. Simpan password ini baik-baik!");
-      s.line(
-        `/user set [find name=${ScriptBuilder.q(sys.adminUser || "admin")}] ${args([
-          ["password", sys.adminPassword],
-        ])}`,
-      );
-    } else {
-      s.comment("PERHATIAN: password admin belum diatur di generator.");
-      s.comment('Atur manual: /user set [find name=admin] password="PasswordKuatAnda"');
     }
   }
 
@@ -547,6 +536,46 @@ export function generateSetupScript(config: SetupConfig): string {
     }
   }
 
+  // ------------------------------------------------------------------- user
+  const newUsers = config.users.filter((u) => u.name.trim());
+  if (sys.adminPassword || newUsers.length > 0) {
+    s.section(
+      "14. USER & PASSWORD ROUTER",
+      "Diletakkan paling akhir agar akses ke router tidak terputus di tengah\njalannya script bila ada perintah sebelumnya yang gagal.",
+    );
+
+    if (newUsers.length > 0) {
+      s.comment("User baru — buat dulu sebelum password admin diganti,");
+      s.comment("supaya tetap ada jalan masuk bila password admin terlupa.");
+      s.line("/user");
+      for (const user of newUsers) {
+        s.line(
+          `add ${args([
+            ["name", user.name.trim()],
+            ["password", user.password],
+            ["group", user.group],
+            ["address", user.allowedAddress.trim()],
+            ["comment", tag(user.comment)],
+          ])}`,
+        );
+      }
+      s.blank();
+    }
+
+    if (sys.adminPassword) {
+      s.comment("Ganti password user admin. Simpan password ini baik-baik!");
+      s.comment("Setelah script selesai, login ulang memakai password baru.");
+      s.line(
+        `/user set [find name=${ScriptBuilder.q(sys.adminUser || "admin")}] ${args([
+          ["password", sys.adminPassword],
+        ])}`,
+      );
+    } else {
+      s.comment("PERHATIAN: password admin belum diatur di generator.");
+      s.comment('Atur manual: /user set [find name=admin] password="PasswordKuatAnda"');
+    }
+  }
+
   // ----------------------------------------------------------------- footer
   s.section("SELESAI — CARA MEMERIKSA HASIL");
   s.comment("Jalankan perintah berikut satu per satu untuk verifikasi:");
@@ -561,6 +590,9 @@ export function generateSetupScript(config: SetupConfig): string {
   }
   if (config.pppoe.enabled) {
     s.comment("  /ppp active print          -> sesi PPPoE yang aktif");
+  }
+  if (config.users.some((u) => u.name.trim())) {
+    s.comment("  /user print                -> daftar user router");
   }
   s.blank().comment(`Seluruh objek hasil script ini diberi comment "${BRAND}".`);
   s.comment(`Menghapus semuanya: /ip firewall filter remove [find comment~"${BRAND}"]`);

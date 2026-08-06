@@ -9,7 +9,9 @@ import type {
   PoolEntry,
   PppoeSecret,
   RosVersion,
+  RouterUser,
   SetupConfig,
+  UserGroup,
   VlanEntry,
   WanEntry,
 } from "./types";
@@ -163,6 +165,19 @@ export function normalizeConfig(raw: unknown): SetupConfig {
     return { id: uid("sec"), user: asString(s.user), password: asString(s.password) };
   });
 
+  const users: RouterUser[] = asArray(input.users).map((item) => {
+    const u = asRecord(item);
+    const group = asString(u.group, "full");
+    return {
+      id: uid("user"),
+      name: asString(u.name),
+      password: asString(u.password),
+      group: (["full", "write", "read"].includes(group) ? group : "full") as UserGroup,
+      allowedAddress: asString(u.allowedAddress),
+      comment: asString(u.comment),
+    };
+  });
+
   return {
     modelId: model ? modelId : "",
     customInterfaces: asString(input.customInterfaces),
@@ -216,6 +231,7 @@ export function normalizeConfig(raw: unknown): SetupConfig {
       limitDiscovery: asBool(firewall.limitDiscovery, base.firewall.limitDiscovery),
       limitMacServer: asBool(firewall.limitMacServer, base.firewall.limitMacServer),
     },
+    users,
   };
 }
 
@@ -228,11 +244,16 @@ export function stripSecrets(config: SetupConfig): SetupConfig {
       ...config.pppoe,
       secrets: config.pppoe.secrets.map((s) => ({ ...s, password: "" })),
     },
+    users: config.users.map((u) => ({ ...u, password: "" })),
   };
 }
 
 export function hasSecrets(config: SetupConfig): boolean {
-  return Boolean(config.system.adminPassword) || config.pppoe.secrets.some((s) => s.password);
+  return (
+    Boolean(config.system.adminPassword) ||
+    config.pppoe.secrets.some((s) => s.password) ||
+    config.users.some((u) => u.password)
+  );
 }
 
 /** Ringkasan satu baris untuk daftar konfigurasi tersimpan. */

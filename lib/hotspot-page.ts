@@ -151,7 +151,8 @@ setTimeout(function () { location.href = '$(link-redirect)'; }, 1200);
 
   const readme = `PAKET HALAMAN LOGIN HOTSPOT MIKROTIK
 ====================================
-Dibuat oleh Generator Script Mikrotik untuk hotspot: ${name}
+Dibuat oleh Generator Script Mikrotik by Mikrosetting.com
+Untuk hotspot: ${name}
 
 Isi paket:
   login.html   - halaman login utama (mendukung http-pap & http-chap)

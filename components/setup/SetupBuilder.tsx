@@ -193,6 +193,7 @@ export function SetupBuilder() {
             <div className="flex min-w-0 items-center gap-2">
               <Cpu className="h-4 w-4 text-brand" />
               <h1 className="truncate text-sm font-semibold text-ink">Setup Mikrotik Baru</h1>
+              <span className="hidden text-xs text-faint lg:inline">by Mikrosetting.com</span>
               {loadedName && (
                 <span className="hidden max-w-[200px] items-center gap-1.5 truncate rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[11px] text-brand md:inline-flex">
                   <FolderOpen className="h-3 w-3" />

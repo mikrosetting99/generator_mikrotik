@@ -7,6 +7,18 @@ import { args, raw, ScriptBuilder } from "./script-builder";
 const WAN_LIST = "WAN";
 const LAN_LIST = "LAN";
 
+/** Penanda pembuat yang ikut di setiap comment agar mudah dikenali di Winbox. */
+const BRAND = "By Mikrosetting";
+
+/**
+ * Menyusun isi comment= milik objek RouterOS.
+ * Teks pengguna tetap di depan, penanda pembuat ditambahkan di belakang.
+ */
+function tag(text?: string): string {
+  const clean = (text ?? "").trim();
+  return clean ? `${clean} - ${BRAND}` : BRAND;
+}
+
 function stamp(): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -35,10 +47,11 @@ export function generateSetupScript(config: SetupConfig): string {
   // ---------------------------------------------------------------- header
   s.banner([
     "SCRIPT SETUP MIKROTIK BARU",
+    "Generator Script Mikrotik by Mikrosetting.com",
     "",
     `Perangkat  : ${model ? model.name : "(belum dipilih)"}${model && model.arch !== "-" ? ` [${model.arch}]` : ""}`,
     `RouterOS   : ${config.ros ? config.ros : "(belum dipilih)"}`,
-    `Dibuat     : ${stamp()} - Generator Script Mikrotik`,
+    `Dibuat     : ${stamp()}`,
     "",
     "PERINGATAN",
     "Script ini menambah konfigurasi baru ke router. Jalankan pada router",
@@ -100,7 +113,7 @@ export function generateSetupScript(config: SetupConfig): string {
     s.line("/interface bridge");
     for (const bridge of config.bridges) {
       if (!bridge.name.trim()) continue;
-      s.line(`add ${args([["name", bridge.name.trim()], ["comment", "dibuat oleh generator"]])}`);
+      s.line(`add ${args([["name", bridge.name.trim()], ["comment", tag()]])}`);
     }
     const hasPorts = config.bridges.some((b) => b.ports.length > 0);
     if (hasPorts) {
@@ -125,6 +138,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["vlan-id", vlan.vlanId],
           ["interface", vlan.parent],
           ["disabled", false],
+          ["comment", tag(`VLAN ${vlan.vlanId} di ${vlan.parent}`)],
         ])}`,
       );
     }
@@ -151,7 +165,7 @@ export function generateSetupScript(config: SetupConfig): string {
             ["use-peer-dns", wan.usePeerDns],
             ["use-peer-ntp", false],
             ["disabled", false],
-            ["comment", wan.comment || `WAN ${wan.iface}`],
+            ["comment", tag(wan.comment || `WAN ${wan.iface}`)],
           ])}`,
         );
       }
@@ -166,7 +180,7 @@ export function generateSetupScript(config: SetupConfig): string {
           `add ${args([
             ["address", wan.address],
             ["interface", wan.iface],
-            ["comment", wan.comment || `WAN ${wan.iface}`],
+            ["comment", tag(wan.comment || `WAN ${wan.iface}`)],
           ])}`,
         );
       }
@@ -178,7 +192,7 @@ export function generateSetupScript(config: SetupConfig): string {
             ["dst-address", "0.0.0.0/0"],
             ["gateway", wan.gateway],
             ["distance", wan.staticDistance],
-            ["comment", wan.comment || `default via ${wan.iface}`],
+            ["comment", tag(wan.comment || `default via ${wan.iface}`)],
           ])}`,
         );
       }
@@ -213,7 +227,7 @@ export function generateSetupScript(config: SetupConfig): string {
         `add ${args([
           ["address", addr.address.trim()],
           ["interface", addr.iface],
-          ["comment", addr.comment || `IP ${addr.iface}`],
+          ["comment", tag(addr.comment || `IP ${addr.iface}`)],
         ])}`,
       );
     }
@@ -246,6 +260,7 @@ export function generateSetupScript(config: SetupConfig): string {
         `add ${args([
           ["name", pool.name.trim()],
           ["ranges", `${pool.rangeStart.trim()}-${pool.rangeEnd.trim()}`],
+          ["comment", tag()],
         ])}`,
       );
     }
@@ -264,6 +279,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["address-pool", dhcp.pool],
           ["lease-time", dhcp.leaseTime || "1d"],
           ["disabled", false],
+          ["comment", tag(`DHCP untuk ${dhcp.iface}`)],
         ])}`,
       );
     }
@@ -281,7 +297,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["address", network],
           ["gateway", gateway],
           ["dns-server", dns],
-          ["comment", `network untuk ${dhcp.name.trim() || dhcp.iface}`],
+          ["comment", tag(`network untuk ${dhcp.name.trim() || dhcp.iface}`)],
         ])}`,
       );
     }
@@ -300,7 +316,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["chain", "srcnat"],
           ["action", "masquerade"],
           ["out-interface-list", WAN_LIST],
-          ["comment", "NAT untuk semua WAN"],
+          ["comment", tag("NAT untuk semua WAN")],
         ])}`,
       );
     } else {
@@ -310,7 +326,7 @@ export function generateSetupScript(config: SetupConfig): string {
             ["chain", "srcnat"],
             ["action", "masquerade"],
             ["out-interface", iface],
-            ["comment", `NAT via ${iface}`],
+            ["comment", tag(`NAT via ${iface}`)],
           ])}`,
         );
       }
@@ -334,6 +350,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["html-directory", "hotspot"],
           ["login-by", hs.auth.join(",")],
           ["use-radius", false],
+          ["comment", tag(`profil hotspot ${hs.name.trim() || hs.iface}`)],
         ])}`,
       );
     }
@@ -347,6 +364,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["profile", `hsprof-${hs.name.trim() || hs.iface}`],
           ["addresses-per-mac", hs.addressesPerMac || "2"],
           ["disabled", false],
+          ["comment", tag(`hotspot di ${hs.iface}`)],
         ])}`,
       );
     }
@@ -367,6 +385,7 @@ export function generateSetupScript(config: SetupConfig): string {
         ["dns-server", dnsServers.join(",") || addressPart(p.localAddress)],
         ["rate-limit", p.rateLimit.trim()],
         ["only-one", p.oneSessionPerHost],
+        ["comment", tag("profil PPPoE")],
       ])}`,
     );
     s.blank().comment("Metode autentikasi memakai bawaan RouterOS (pap, chap, mschap1, mschap2).");
@@ -380,6 +399,7 @@ export function generateSetupScript(config: SetupConfig): string {
         ["max-mtu", "1480"],
         ["max-mru", "1480"],
         ["disabled", false],
+        ["comment", tag(`PPPoE server di ${p.iface}`)],
       ])}`,
     );
     if (p.secrets.length > 0) {
@@ -393,6 +413,7 @@ export function generateSetupScript(config: SetupConfig): string {
             ["password", secret.password],
             ["service", "pppoe"],
             ["profile", p.profileName.trim()],
+            ["comment", tag()],
           ])}`,
         );
       }
@@ -413,7 +434,7 @@ export function generateSetupScript(config: SetupConfig): string {
         ["chain", "input"],
         ["action", "accept"],
         ["connection-state", "established,related,untracked"],
-        ["comment", "terima koneksi yang sudah terbentuk"],
+        ["comment", tag("terima koneksi yang sudah terbentuk")],
       ])}`,
     );
     if (fw.dropInvalid) {
@@ -422,7 +443,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["chain", "input"],
           ["action", "drop"],
           ["connection-state", "invalid"],
-          ["comment", "buang paket invalid"],
+          ["comment", tag("buang paket invalid")],
         ])}`,
       );
     }
@@ -432,7 +453,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["chain", "input"],
           ["action", "accept"],
           ["protocol", "icmp"],
-          ["comment", "izinkan ping ke router"],
+          ["comment", tag("izinkan ping ke router")],
         ])}`,
       );
     }
@@ -442,7 +463,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["chain", "input"],
           ["action", "accept"],
           ["in-interface-list", LAN_LIST],
-          ["comment", "izinkan akses penuh dari LAN"],
+          ["comment", tag("izinkan akses penuh dari LAN")],
         ])}`,
       );
       s.line(
@@ -450,7 +471,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["chain", "input"],
           ["action", "drop"],
           ["in-interface-list", WAN_LIST],
-          ["comment", "tolak semua akses dari internet ke router"],
+          ["comment", tag("tolak semua akses dari internet ke router")],
         ])}`,
       );
     }
@@ -463,7 +484,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["action", "fasttrack-connection"],
           ["connection-state", "established,related"],
           ["hw-offload", v7 ? true : undefined],
-          ["comment", "fasttrack: percepat koneksi yang sudah terbentuk"],
+          ["comment", tag("fasttrack: percepat koneksi yang sudah terbentuk")],
         ])}`,
       );
     }
@@ -472,7 +493,7 @@ export function generateSetupScript(config: SetupConfig): string {
         ["chain", "forward"],
         ["action", "accept"],
         ["connection-state", "established,related,untracked"],
-        ["comment", "terima koneksi yang sudah terbentuk"],
+        ["comment", tag("terima koneksi yang sudah terbentuk")],
       ])}`,
     );
     if (fw.dropInvalid) {
@@ -481,7 +502,7 @@ export function generateSetupScript(config: SetupConfig): string {
           ["chain", "forward"],
           ["action", "drop"],
           ["connection-state", "invalid"],
-          ["comment", "buang paket invalid"],
+          ["comment", tag("buang paket invalid")],
         ])}`,
       );
     }
@@ -492,7 +513,7 @@ export function generateSetupScript(config: SetupConfig): string {
         ["connection-state", "new"],
         ["connection-nat-state", raw("!dstnat")],
         ["in-interface-list", WAN_LIST],
-        ["comment", "tolak koneksi baru dari internet yang bukan port forward"],
+        ["comment", tag("tolak koneksi baru dari internet yang bukan port forward")],
       ])}`,
     );
 
@@ -541,6 +562,9 @@ export function generateSetupScript(config: SetupConfig): string {
   if (config.pppoe.enabled) {
     s.comment("  /ppp active print          -> sesi PPPoE yang aktif");
   }
+  s.blank().comment(`Seluruh objek hasil script ini diberi comment "${BRAND}".`);
+  s.comment(`Menghapus semuanya: /ip firewall filter remove [find comment~"${BRAND}"]`);
+  s.comment("(ulangi untuk menu lain: /ip firewall nat, /ip address, /ip pool, dst)");
 
   return s.toString();
 }

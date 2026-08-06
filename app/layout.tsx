@@ -15,9 +15,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Generator Script Mikrotik",
+  title: "Generator Script Mikrotik — Mikrosetting.com",
   description:
-    "Buat script konfigurasi RouterOS siap copy-paste: Setup Mikrotik Baru, Load Balance PCC, dan Fail Over.",
+    "Buat script konfigurasi RouterOS siap copy-paste: Setup Mikrotik Baru, Load Balance PCC, dan Fail Over. By Mikrosetting.com",
 };
 
 export default function RootLayout({

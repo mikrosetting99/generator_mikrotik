@@ -90,6 +90,17 @@ export default function Home() {
                 Mikrotik
               </span>
             </h1>
+            <p className="mt-2.5 text-sm text-faint">
+              by{" "}
+              <a
+                href="https://mikrosetting.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted underline decoration-line underline-offset-4 transition-colors hover:text-brand hover:decoration-brand/50"
+              >
+                Mikrosetting.com
+              </a>
+            </p>
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
               Isi form, salin script, tempel ke <span className="text-ink">New Terminal</span>{" "}
@@ -247,8 +258,19 @@ export default function Home() {
           })}
         </section>
 
-        <footer className="mt-14 border-t border-line-soft pt-6 text-xs text-faint">
-          Generator Script Mikrotik · Backup router sebelum menjalankan script apa pun.
+        <footer className="mt-14 flex flex-wrap items-center justify-between gap-2 border-t border-line-soft pt-6 text-xs text-faint">
+          <span>Backup router sebelum menjalankan script apa pun.</span>
+          <span>
+            Generator Script Mikrotik by{" "}
+            <a
+              href="https://mikrosetting.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted transition-colors hover:text-brand"
+            >
+              Mikrosetting.com
+            </a>
+          </span>
         </footer>
       </div>
     </main>

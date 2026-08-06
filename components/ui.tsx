@@ -95,10 +95,17 @@ export function TextInput({
   );
 }
 
+export interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
 export function Select({
   value,
   onChange,
   options,
+  groups,
   placeholder = "— pilih —",
   invalid,
   disabled,
@@ -107,12 +114,20 @@ export function Select({
 }: {
   value: string;
   onChange: (value: string) => void;
-  options: Array<{ value: string; label: string; disabled?: boolean }>;
+  options?: SelectOption[];
+  /** Alternatif `options` untuk daftar panjang yang perlu dikelompokkan. */
+  groups?: Array<{ label: string; options: SelectOption[] }>;
   placeholder?: string;
   invalid?: boolean;
   disabled?: boolean;
   className?: string;
 } & Omit<SelectHTMLAttributes<HTMLSelectElement>, "value" | "onChange" | "className">) {
+  const renderOption = (opt: SelectOption) => (
+    <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+      {opt.label}
+    </option>
+  );
+
   return (
     <span className="relative block">
       <select
@@ -128,11 +143,13 @@ export function Select({
         )}
       >
         <option value="">{placeholder}</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value} disabled={opt.disabled}>
-            {opt.label}
-          </option>
-        ))}
+        {groups
+          ? groups.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map(renderOption)}
+              </optgroup>
+            ))
+          : (options ?? []).map(renderOption)}
       </select>
       <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
     </span>

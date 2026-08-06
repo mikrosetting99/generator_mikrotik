@@ -26,7 +26,7 @@ import {
   TIMEZONES,
 } from "@/lib/defaults";
 import { addressOfInterface, allInterfaces, physicalInterfaces } from "@/lib/interfaces";
-import { getModel, MIKROTIK_MODELS, ROS_LABEL } from "@/lib/models";
+import { getModel, modelsBySeries, ROS_LABEL } from "@/lib/models";
 import { addressPart, networkOf, suggestPoolRange } from "@/lib/net";
 import type {
   HotspotAuth,
@@ -138,9 +138,12 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
                     : "";
               patch({ modelId, ros });
             }}
-            options={MIKROTIK_MODELS.map((m) => ({
-              value: m.id,
-              label: `${m.name}${m.supports.length === 1 ? " — v7 only" : ""}`,
+            groups={modelsBySeries().map((group) => ({
+              label: group.series,
+              options: group.models.map((m) => ({
+                value: m.id,
+                label: `${m.name}${m.supports.length === 1 ? " — v7 only" : ""}`,
+              })),
             }))}
           />
         </Field>

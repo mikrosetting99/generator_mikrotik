@@ -1,0 +1,2 @@
+# Script shell harus tetap LF agar bisa dijalankan di server Linux.
+*.sh text eol=lf

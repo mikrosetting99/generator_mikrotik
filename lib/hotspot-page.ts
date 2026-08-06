@@ -1,50 +1,28 @@
-import type { HotspotPageConfig, HotspotPageMode, HotspotTemplateId } from "./types";
+import { derivePalette, isHexColor } from "./color";
+import type { HotspotPageConfig, HotspotTemplateId } from "./types";
 import type { ZipEntry } from "./zip";
 
 /**
  * Paket halaman login hotspot RouterOS.
  *
- * Berkas HTML-nya tersimpan di `public/hotspot-templates/` dan diambil oleh
- * browser saat pengguna mengunduh paket, lalu placeholder `{{...}}` diganti
- * nilai dari form. Menambah desain baru cukup menaruh berkas login.html baru
- * di sana dan mendaftarkannya pada TEMPLATES di bawah.
+ * Strukturnya mengikuti isi folder `hotspot` bawaan RouterOS: seluruh halaman
+ * HTML dipakai bersama oleh semua desain, dan yang membedakan tema hanyalah
+ * `style.css`. Menambah desain baru cukup menaruh satu style.css di
+ * `public/hotspot-templates/<id>/` lalu mendaftarkannya pada TEMPLATES.
  *
- * Variabel bergaya `$(nama)` diproses oleh router saat halaman disajikan,
- * jadi berkas harus di-upload apa adanya ke folder "hotspot" pada File List.
- * Berkas md5.js bawaan router TIDAK diganti — dipakai mode http-chap.
+ * Variabel bergaya `$(nama)` diproses router saat halaman disajikan, jadi
+ * berkas harus di-upload apa adanya ke folder "hotspot" pada File List.
  */
 
-export interface Palette {
-  bg: string;
-  surface: string;
-  text: string;
-  muted: string;
-  border: string;
-}
+export { isHexColor };
 
 export interface HotspotTemplate {
   id: HotspotTemplateId;
   name: string;
   description: string;
   defaultPrimary: string;
-  palettes: Record<HotspotPageMode, Palette>;
+  defaultBg: string;
 }
-
-const DARK: Palette = {
-  bg: "#0b1220",
-  surface: "#111c2e",
-  text: "#e7edf7",
-  muted: "#8ba0bd",
-  border: "#22314a",
-};
-
-const LIGHT: Palette = {
-  bg: "#eef2f7",
-  surface: "#ffffff",
-  text: "#0f172a",
-  muted: "#64748b",
-  border: "#d8e0ea",
-};
 
 export const TEMPLATES: HotspotTemplate[] = [
   {
@@ -52,37 +30,28 @@ export const TEMPLATES: HotspotTemplate[] = [
     name: "Minimal",
     description: "Kartu login sederhana di tengah layar. Cocok untuk hampir semua kebutuhan.",
     defaultPrimary: "#38bdf8",
-    palettes: { gelap: DARK, terang: LIGHT },
+    defaultBg: "#0b1220",
   },
   {
     id: "voucher",
     name: "Voucher",
-    description: "Bergaya tiket dengan garis sobek. Cocok untuk warnet dan RT/RW Net penjual voucher.",
+    description: "Bergaya tiket dengan kepala berwarna. Cocok untuk warnet dan RT/RW Net.",
     defaultPrimary: "#f59e0b",
-    palettes: {
-      gelap: { ...DARK, bg: "#0f1424", surface: "#161f36" },
-      terang: { ...LIGHT, bg: "#fdf4e3" },
-    },
+    defaultBg: "#141a2c",
   },
   {
     id: "korporat",
     name: "Korporat",
-    description: "Dua kolom: identitas usaha di kiri, form login di kanan. Cocok untuk kantor dan hotel.",
-    defaultPrimary: "#22c55e",
-    palettes: {
-      gelap: { ...DARK, bg: "#0a1017", surface: "#101a26" },
-      terang: LIGHT,
-    },
+    description: "Dua kolom di layar lebar: identitas usaha di kiri, form login di kanan.",
+    defaultPrimary: "#2563eb",
+    defaultBg: "#eef2f7",
   },
   {
     id: "gelap",
     name: "Gelap Modern",
-    description: "Latar gelap dengan cahaya ambien mengikuti warna tema. Terlihat premium di ponsel.",
+    description: "Kartu mengambang dengan cahaya ambien mengikuti warna tema.",
     defaultPrimary: "#a78bfa",
-    palettes: {
-      gelap: { bg: "#07070d", surface: "#12121d", text: "#f1f1f8", muted: "#9b9bb4", border: "#26263a" },
-      terang: LIGHT,
-    },
+    defaultBg: "#07070d",
   },
 ];
 
@@ -100,13 +69,9 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-export function isHexColor(value: string): boolean {
-  return /^#[0-9a-fA-F]{6}$/.test(value.trim());
-}
-
 /**
  * Mengisi placeholder pada template.
- * - `{{KEY}}`            → nilai
+ * - `{{KEY}}`             → nilai
  * - `{{#KEY}}...{{/KEY}}` → tampil hanya bila nilainya terisi
  * - `{{^KEY}}...{{/KEY}}` → tampil hanya bila nilainya kosong
  */
@@ -148,19 +113,37 @@ export function templateVars(
   fallbackTitle: string,
 ): Record<string, string> {
   const template = getTemplate(page.template);
-  const palette = template.palettes[page.mode] ?? template.palettes.gelap;
   const primary = isHexColor(page.primaryColor) ? page.primaryColor.trim() : template.defaultPrimary;
-  const link = whatsappLink(page.whatsapp);
+  const palette = derivePalette(
+    isHexColor(page.bgColor) ? page.bgColor.trim() : template.defaultBg,
+    primary,
+  );
+
+  const rows = page.packages
+    .filter((p) => p.name.trim() || p.duration.trim() || p.price.trim())
+    .map(
+      (p) =>
+        `      <tr><td>${escapeHtml(p.name.trim())}</td>` +
+        `<td>${escapeHtml(p.duration.trim())}</td>` +
+        `<td>${escapeHtml(p.price.trim())}</td></tr>`,
+    );
 
   return {
     TITLE: escapeHtml(page.title.trim() || fallbackTitle || "Hotspot"),
     SUBTITLE: escapeHtml(page.subtitle.trim()),
+    MARQUEE: escapeHtml(page.marquee.trim()),
     TERMS: escapeHtml(page.terms.trim()),
     FOOTER: escapeHtml(page.footer.trim()),
     LOGO: page.logoDataUrl ? logoFileName(page.logoDataUrl) : "",
-    WA_LINK: link,
+    WA_LINK: whatsappLink(page.whatsapp),
     WA_LABEL: escapeHtml(page.whatsappLabel.trim() || "Hubungi admin"),
+    START_MODE: page.loginMode === "member" ? "member" : "voucher",
+    MODE_SWITCH: page.showModeSwitch ? "1" : "",
+    TRIAL: page.showTrial ? "1" : "",
+    PACKAGES: rows.length > 0 ? "1" : "",
+    PACKAGE_ROWS: rows.join("\n"),
     PRIMARY: primary,
+    ON_PRIMARY: palette.onPrimary,
     BG: palette.bg,
     SURFACE: palette.surface,
     TEXT: palette.text,
@@ -171,7 +154,21 @@ export function templateVars(
 
 /* --------------------------------------------------------- pengambilan */
 
-const SHARED_FILES = ["alogin.html", "status.html", "logout.html", "error.html"];
+/** Halaman yang dipakai bersama semua desain, ikut diisi placeholder. */
+const SHARED_PAGES = [
+  "login.html",
+  "alogin.html",
+  "status.html",
+  "logout.html",
+  "error.html",
+  "rlogin.html",
+  "redirect.html",
+  "radvert.html",
+];
+
+/** Berkas yang disalin apa adanya tanpa substitusi. */
+const VERBATIM_FILES = ["md5.js", "errors.txt"];
+
 const cache = new Map<string, string>();
 
 async function fetchTemplateFile(path: string): Promise<string> {
@@ -180,7 +177,7 @@ async function fetchTemplateFile(path: string): Promise<string> {
 
   const response = await fetch(`/hotspot-templates/${path}`);
   if (!response.ok) {
-    throw new Error(`Gagal memuat template: ${path} (${response.status})`);
+    throw new Error(`Gagal memuat berkas template: ${path} (${response.status})`);
   }
   const text = await response.text();
   cache.set(path, text);
@@ -188,8 +185,13 @@ async function fetchTemplateFile(path: string): Promise<string> {
 }
 
 /** Isi login.html mentah — dipakai juga oleh pratinjau. */
-export function fetchLoginTemplate(id: HotspotTemplateId): Promise<string> {
-  return fetchTemplateFile(`${id}/login.html`);
+export function fetchLoginTemplate(): Promise<string> {
+  return fetchTemplateFile("_shared/login.html");
+}
+
+/** Isi style.css sebuah desain — dipakai juga oleh pratinjau. */
+export function fetchStyle(id: HotspotTemplateId): Promise<string> {
+  return fetchTemplateFile(`${id}/style.css`);
 }
 
 function readmeText(title: string, page: HotspotPageConfig, logoFile: string): string {
@@ -199,37 +201,45 @@ function readmeText(title: string, page: HotspotPageConfig, logoFile: string): s
   return `PAKET HALAMAN LOGIN HOTSPOT MIKROTIK
 ====================================
 Dibuat oleh Generator Script Mikrotik by Mikrosetting.com
-Untuk hotspot: ${title}
-Desain        : ${template.name} (${page.mode})
+Untuk hotspot : ${title}
+Desain        : ${template.name}
+Mode awal     : ${page.loginMode === "member" ? "Member" : "Voucher"}
 
-Isi paket:
-  login.html   - halaman login utama (mendukung http-pap & http-chap)
-  alogin.html  - halaman setelah login berhasil
-  status.html  - status pemakaian sesi
-  logout.html  - halaman setelah logout
-  error.html   - halaman error${logoFile ? `\n  ${logoFile}     - logo yang Anda unggah` : ""}
+ISI PAKET
+---------
+  login.html     halaman login (mode voucher & member, http-pap + http-chap)
+  alogin.html    halaman setelah login berhasil
+  status.html    status pemakaian: kuota, sisa waktu, MAC, tombol logout
+  logout.html    halaman setelah logout
+  error.html     halaman error
+  rlogin.html    pemicu pengalihan ke halaman login
+  redirect.html  pengalihan setelah login
+  radvert.html   halaman advertisement
+  errors.txt     teks pesan error berbahasa Indonesia
+  style.css      seluruh tampilan & warna — cukup berkas ini yang diubah
+  md5.js         dipakai metode autentikasi http-chap${logoFile ? `\n  ${logoFile}       logo yang Anda unggah` : ""}
 
 CARA UPLOAD
 -----------
 1. Ekstrak file zip ini di komputer Anda.
 2. Buka Winbox > menu "Files".
-3. Buka folder "hotspot" (folder ini otomatis dibuat setelah script hotspot
-   dijalankan di router).
-4. Drag & drop seluruh berkas${logoFile ? " (termasuk berkas logo)" : ""} ke dalam folder "hotspot".
-   Jika muncul konfirmasi menimpa berkas lama, pilih ya.
-5. Buka browser dari perangkat klien, hotspot akan menampilkan halaman baru.
-   Tekan Ctrl+F5 bila masih tampil halaman lama (cache browser).
+3. Buka folder "hotspot" (otomatis dibuat setelah script hotspot dijalankan).
+4. Sebelum menimpa, salin dulu folder "hotspot" sebagai cadangan: drag folder
+   tersebut dari Files ke komputer Anda.
+5. Drag & drop SELURUH berkas di paket ini ke dalam folder "hotspot".
+   Bila muncul konfirmasi menimpa berkas lama, pilih ya.
+6. Buka browser dari perangkat klien. Tekan Ctrl+F5 bila masih tampil halaman
+   lama karena cache browser.
 
-CATATAN PENTING
----------------
-- JANGAN menghapus berkas md5.js bawaan router. Berkas itu dipakai oleh
-  metode autentikasi http-chap dan sudah dirujuk oleh login.html.
-- Berkas bawaan lain (errors.txt, radvert.html, redirect.html, rlogin.html,
-  folder img/ dan xml/) biarkan apa adanya.
-- Sebelum menimpa, sebaiknya salin dulu folder "hotspot" sebagai cadangan:
-  drag folder tersebut dari Files ke komputer Anda.
+CATATAN
+-------
+- Berkas bawaan yang tidak ada di paket ini (lv/, xml/, img/, flogin.html)
+  biarkan apa adanya — tidak mengganggu.
 - Kode $(...) di dalam berkas HTML adalah variabel RouterOS. Jangan diubah
   atau dihapus bila tidak paham fungsinya.
+- Ingin mengubah warna belakangan? Cukup edit bagian :root di style.css.
+- Mode voucher menyembunyikan kolom password dan mengisinya otomatis sama
+  dengan kode voucher, jadi pengguna cukup memasukkan satu kode.
 ${
   link
     ? `- Tombol WhatsApp mengarah ke ${link}. Agar bisa dibuka SEBELUM pengguna
@@ -247,17 +257,16 @@ export async function buildHotspotPackage(
   const vars = templateVars(page, fallbackTitle);
   const title = page.title.trim() || fallbackTitle || "Hotspot";
 
-  const [login, ...shared] = await Promise.all([
-    fetchLoginTemplate(page.template),
-    ...SHARED_FILES.map((file) => fetchTemplateFile(`_shared/${file}`)),
+  const [pages, style, verbatim] = await Promise.all([
+    Promise.all(SHARED_PAGES.map((file) => fetchTemplateFile(`_shared/${file}`))),
+    fetchStyle(page.template),
+    Promise.all(VERBATIM_FILES.map((file) => fetchTemplateFile(`_shared/${file}`))),
   ]);
 
   const entries: ZipEntry[] = [
-    { name: "login.html", content: renderTemplate(login, vars) },
-    ...SHARED_FILES.map((file, i) => ({
-      name: file,
-      content: renderTemplate(shared[i], vars),
-    })),
+    ...SHARED_PAGES.map((file, i) => ({ name: file, content: renderTemplate(pages[i], vars) })),
+    { name: "style.css", content: renderTemplate(style, vars) },
+    ...VERBATIM_FILES.map((file, i) => ({ name: file, content: verbatim[i] })),
   ];
 
   const logoFile = page.logoDataUrl ? logoFileName(page.logoDataUrl) : "";

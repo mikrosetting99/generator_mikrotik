@@ -18,6 +18,10 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // Berkas template hotspot disajikan apa adanya ke router, bukan kode aplikasi.
+      "public/hotspot-templates/**",
+      // Bahan rujukan lokal, tidak ikut ter-commit.
+      "_contoh-hotspot/**",
     ],
   },
 ];

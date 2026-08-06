@@ -33,9 +33,10 @@ Builder modular mengikuti urutan section pada PRD:
 9. **IP Pool** — dengan pengisian otomatis dari subnet interface.
 10. **DHCP Server** — network & gateway diisi otomatis dari IP address interface.
 11. **IP Hotspot** — metode autentikasi http-pap/http-chap/mac-cookie/cookie, plus editor
-    halaman login: 4 desain (Minimal, Voucher, Korporat, Gelap Modern), mode gelap/terang,
-    warna tema, unggah logo, teks sambutan/syarat/footer, dan tombol WhatsApp. Pratinjau
-    langsung, hasilnya diunduh sebagai `.zip`.
+    halaman login: 4 desain (Minimal, Voucher, Korporat, Gelap Modern), warna tema & latar
+    bebas, unggah logo, mode Voucher/Member, teks berjalan, tabel harga paket, tautan trial,
+    dan tombol WhatsApp. Pratinjau langsung, hasilnya satu folder `hotspot` lengkap
+    dalam `.zip`.
 12. **PPPoE Server** — profile, pool, rate limit, dan daftar PPP secret. Metode autentikasi
     tidak diekspos di form; script memakai bawaan RouterOS.
 13. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
@@ -95,6 +96,7 @@ lib/
   net.ts              # helper IP/CIDR
   validate.ts         # validasi per section
   storage.ts          # simpan/muat + normalisasi konfigurasi
+  color.ts            # turunan palet & jaminan kontras halaman login
   hotspot-page.ts     # registry template + renderer + pembangun paket login
   zip.ts              # penulis ZIP tanpa dependensi
   generator/
@@ -104,34 +106,50 @@ lib/
 
 ## Menambah desain halaman login
 
-Berkas template ada di `public/hotspot-templates/`:
+Paket yang diunduh adalah **satu folder `hotspot` lengkap**, siap menimpa isi folder
+bawaan router — bukan tambalan sebagian:
+
+```
+login.html  alogin.html  status.html  logout.html  error.html
+rlogin.html  redirect.html  radvert.html
+errors.txt   md5.js   style.css   logo.png   PETUNJUK-UPLOAD.txt
+```
+
+Seluruh HTML dipakai bersama semua desain; yang membedakan tema **hanya `style.css`**.
+Sumbernya:
 
 ```
 public/hotspot-templates/
-  _shared/     # alogin, status, logout, error — dipakai semua desain
-  minimal/login.html
-  voucher/login.html
-  korporat/login.html
-  gelap/login.html
+  _shared/          # semua halaman + md5.js + errors.txt
+  minimal/style.css
+  voucher/style.css
+  korporat/style.css
+  gelap/style.css
 ```
 
-Untuk menambah desain baru: buat folder berisi `login.html`, lalu daftarkan pada
-`TEMPLATES` di [lib/hotspot-page.ts](lib/hotspot-page.ts) (id, nama, deskripsi, warna
-default, palet gelap & terang). Tidak perlu mengubah kode lain — cukup commit dan
-`bash deploy.sh`.
+Untuk menambah desain baru: buat folder berisi `style.css` (pakai kelas yang sama
+dengan tema lain), lalu daftarkan pada `TEMPLATES` di
+[lib/hotspot-page.ts](lib/hotspot-page.ts) — id, nama, deskripsi, warna tema dan latar
+default. Tidak perlu mengubah kode lain.
 
-Placeholder yang tersedia di template:
+Placeholder yang tersedia:
 
 | Placeholder | Isi |
 |---|---|
-| `{{TITLE}}` `{{SUBTITLE}}` `{{TERMS}}` `{{FOOTER}}` | teks dari form (sudah di-escape) |
+| `{{TITLE}}` `{{SUBTITLE}}` `{{MARQUEE}}` `{{TERMS}}` `{{FOOTER}}` | teks dari form (sudah di-escape) |
 | `{{LOGO}}` | nama berkas logo, mis. `logo.png` |
 | `{{WA_LINK}}` `{{WA_LABEL}}` | tautan wa.me dan teks tombol |
-| `{{PRIMARY}}` `{{BG}}` `{{SURFACE}}` `{{TEXT}}` `{{MUTED}}` `{{BORDER}}` | warna |
+| `{{START_MODE}}` `{{MODE_SWITCH}}` `{{TRIAL}}` | mode awal login & tombol opsional |
+| `{{PACKAGES}}` `{{PACKAGE_ROWS}}` | tabel harga paket |
+| `{{PRIMARY}}` `{{ON_PRIMARY}}` `{{BG}}` `{{SURFACE}}` `{{TEXT}}` `{{MUTED}}` `{{BORDER}}` | warna |
 | `{{#KEY}}…{{/KEY}}` | tampil hanya bila terisi |
 | `{{^KEY}}…{{/KEY}}` | tampil hanya bila kosong |
 
 Variabel bergaya `$(...)` adalah milik RouterOS dan tidak disentuh renderer.
+
+Warna latar boleh apa saja: warna teks, permukaan, dan garis dihitung dari
+kecerahannya di [lib/color.ts](lib/color.ts), dengan jaminan kontras 4.5:1 untuk teks
+utama dan 3:1 untuk teks sekunder.
 
 ## Catatan
 

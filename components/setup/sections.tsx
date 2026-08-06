@@ -19,6 +19,7 @@ import {
   newBridge,
   newDhcpServer,
   newHotspot,
+  newPackage,
   newPool,
   newSecret,
   newUser,
@@ -28,6 +29,7 @@ import {
 } from "@/lib/defaults";
 import {
   fetchLoginTemplate,
+  fetchStyle,
   isHexColor,
   renderTemplate,
   templateVars,
@@ -39,8 +41,8 @@ import { getModel, modelsBySeries, ROS_LABEL } from "@/lib/models";
 import { addressPart, networkOf, suggestPoolRange } from "@/lib/net";
 import type {
   HotspotAuth,
-  HotspotPageMode,
   Issue,
+  LoginMode,
   RosVersion,
   SectionId,
   SetupConfig,
@@ -1043,7 +1045,8 @@ export function HotspotSection({ config, patch, issues }: SectionProps) {
 
 /* --------------------------------------------- k2: halaman login hotspot */
 
-const COLOR_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#a78bfa", "#f472b6", "#ef4444", "#14b8a6"];
+const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
+const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
 const MAX_LOGO_BYTES = 200 * 1024;
 
 function LoginPageEditor({
@@ -1062,25 +1065,28 @@ function LoginPageEditor({
   const [preview, setPreview] = useState("");
   const fallbackTitle = config.system.identity || config.hotspots[0]?.name || "Hotspot";
 
-  // Pratinjau: ambil template, isi placeholder, lalu ganti variabel RouterOS
-  // dengan contoh nilai supaya halaman terbaca wajar di dalam iframe.
+  // Pratinjau: gabungkan login.html + style.css milik desain terpilih, lalu
+  // ganti variabel RouterOS dengan contoh nilai supaya terbaca wajar.
   useEffect(() => {
     let active = true;
-    fetchLoginTemplate(page.template)
-      .then((source) => {
+    Promise.all([fetchLoginTemplate(), fetchStyle(page.template)])
+      .then(([source, style]) => {
         if (!active) return;
-        const html = renderTemplate(source, {
-          ...templateVars(page, fallbackTitle),
-          LOGO: page.logoDataUrl,
-        });
-        setPreview(
-          html
-            .replace(/\$\(if error\)[\s\S]*?\$\(endif\)/g, "")
-            .replace(/\$\(if chap-id\)[\s\S]*?\$\(endif\)/g, "")
-            .replace(/\$\(hostname\)/g, fallbackTitle)
-            .replace(/\$\(ip-address\)/g, "192.168.20.25")
-            .replace(/\$\([^)]*\)/g, ""),
-        );
+        const vars = { ...templateVars(page, fallbackTitle), LOGO: page.logoDataUrl };
+        const html = renderTemplate(source, vars)
+          // Sisipkan CSS langsung, karena iframe tidak bisa memuat style.css.
+          .replace(
+            /<link rel="stylesheet" href="style.css">/,
+            `<style>${renderTemplate(style, vars)}</style>`,
+          )
+          .replace(/\$\(if error\)[\s\S]*?\$\(endif\)/g, "")
+          .replace(/\$\(if chap-id\)[\s\S]*?\$\(endif\)/g, "")
+          .replace(/\$\(if trial == 'yes'\)/g, "")
+          .replace(/\$\(endif\)/g, "")
+          .replace(/\$\(hostname\)/g, fallbackTitle)
+          .replace(/\$\(ip-address\)/g, "192.168.20.25")
+          .replace(/\$\([^)]*\)/g, "");
+        setPreview(html);
       })
       .catch(() => active && setPreview(""));
     return () => {
@@ -1101,20 +1107,56 @@ function LoginPageEditor({
       return;
     }
     const reader = new FileReader();
-    reader.onload = () =>
-      setPage({ logoDataUrl: String(reader.result), logoName: file.name });
+    reader.onload = () => setPage({ logoDataUrl: String(reader.result), logoName: file.name });
     reader.onerror = () => setLogoError("Gagal membaca berkas.");
     reader.readAsDataURL(file);
   };
+
+  const swatches = (
+    presets: string[],
+    value: string,
+    onPick: (color: string) => void,
+    label: string,
+  ) => (
+    <div>
+      <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+        {label}
+      </span>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {presets.map((color) => (
+          <button
+            key={color}
+            type="button"
+            title={color}
+            aria-label={`${label} ${color}`}
+            aria-pressed={value.toLowerCase() === color}
+            onClick={() => onPick(color)}
+            className={`h-8 w-8 rounded-lg border-2 transition-transform hover:scale-110 ${
+              value.toLowerCase() === color ? "border-ink" : "border-line"
+            }`}
+            style={{ background: color }}
+          />
+        ))}
+        <input
+          type="color"
+          aria-label={`${label} khusus`}
+          value={isHexColor(value) ? value : "#38bdf8"}
+          onChange={(e) => onPick(e.target.value)}
+          className="h-8 w-12 cursor-pointer rounded-lg border border-line bg-canvas p-1"
+        />
+      </div>
+    </div>
+  );
 
   return (
     <div className="mt-6 border-t border-line-soft pt-5">
       <h3 className="text-sm font-semibold text-ink">Halaman login</h3>
       <p className="mt-1 text-[13px] leading-relaxed text-muted">
-        Pilih desain lalu sesuaikan. Hasilnya diunduh sebagai paket{" "}
-        <span className="font-mono text-ink">.zip</span> lewat tombol Login page di panel script,
-        untuk di-upload ke folder <span className="font-mono text-ink">hotspot</span> pada menu
-        Files Winbox.
+        Paket berisi satu folder <span className="font-mono text-ink">hotspot</span> lengkap —
+        seluruh halaman, <span className="font-mono text-ink">style.css</span>,{" "}
+        <span className="font-mono text-ink">md5.js</span>, dan{" "}
+        <span className="font-mono text-ink">errors.txt</span> berbahasa Indonesia. Unduh lewat
+        tombol Login page di panel script.
       </p>
 
       {/* Pilihan desain */}
@@ -1126,17 +1168,21 @@ function LoginPageEditor({
               key={template.id}
               type="button"
               aria-pressed={active}
-              onClick={() => setPage({ template: template.id, primaryColor: template.defaultPrimary })}
+              onClick={() =>
+                setPage({
+                  template: template.id,
+                  primaryColor: template.defaultPrimary,
+                  bgColor: template.defaultBg,
+                })
+              }
               className={`rounded-xl border p-3.5 text-left transition-all duration-200 ${
-                active
-                  ? "border-brand bg-brand/[0.08]"
-                  : "border-line-soft bg-canvas/50 hover:border-line"
+                active ? "border-brand bg-brand/[0.08]" : "border-line-soft bg-canvas/50 hover:border-line"
               }`}
             >
               <span className="flex items-center gap-2">
                 <span
-                  className="h-3 w-3 shrink-0 rounded-full"
-                  style={{ background: template.defaultPrimary }}
+                  className="h-3 w-3 shrink-0 rounded-full ring-2"
+                  style={{ background: template.defaultPrimary, color: template.defaultBg }}
                 />
                 <span className={`text-sm font-medium ${active ? "text-ink" : "text-muted"}`}>
                   {template.name}
@@ -1151,7 +1197,7 @@ function LoginPageEditor({
         })}
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="space-y-4">
           <div className={grid2}>
             <Field label="Nama hotspot" hint={`Kosong = memakai "${fallbackTitle}".`}>
@@ -1161,58 +1207,21 @@ function LoginPageEditor({
                 placeholder={fallbackTitle}
               />
             </Field>
-            <Field label="Mode warna">
-              <Select
-                value={page.mode}
-                placeholder=""
-                onChange={(mode) => setPage({ mode: mode as HotspotPageMode })}
-                options={[
-                  { value: "gelap", label: "Gelap" },
-                  { value: "terang", label: "Terang" },
-                ]}
+            <Field label="Teks sambutan" hint="Tampil di bawah nama hotspot.">
+              <TextInput
+                value={page.subtitle}
+                onChange={(subtitle) => setPage({ subtitle })}
+                placeholder="Internet cepat untuk semua"
               />
             </Field>
           </div>
 
-          <Field label="Teks sambutan">
-            <TextInput
-              value={page.subtitle}
-              onChange={(subtitle) => setPage({ subtitle })}
-              placeholder="Masuk dengan akun yang diberikan petugas."
-            />
-          </Field>
-
-          {/* Warna tema */}
-          <div>
-            <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
-              Warna tema
-            </span>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {COLOR_PRESETS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  title={color}
-                  aria-label={`Warna ${color}`}
-                  aria-pressed={page.primaryColor.toLowerCase() === color}
-                  onClick={() => setPage({ primaryColor: color })}
-                  className={`h-8 w-8 rounded-lg border-2 transition-transform hover:scale-110 ${
-                    page.primaryColor.toLowerCase() === color
-                      ? "border-ink"
-                      : "border-transparent"
-                  }`}
-                  style={{ background: color }}
-                />
-              ))}
-              <input
-                type="color"
-                aria-label="Warna khusus"
-                value={isHexColor(page.primaryColor) ? page.primaryColor : "#38bdf8"}
-                onChange={(e) => setPage({ primaryColor: e.target.value })}
-                className="h-8 w-12 cursor-pointer rounded-lg border border-line bg-canvas p-1"
-              />
-            </div>
-          </div>
+          {swatches(PRIMARY_PRESETS, page.primaryColor, (c) => setPage({ primaryColor: c }), "Warna tema")}
+          {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar")}
+          <p className="-mt-1 text-xs leading-relaxed text-faint">
+            Warna teks, permukaan kartu, dan garis dihitung otomatis dari kecerahan latar, jadi
+            halaman tetap terbaca meski Anda memilih latar terang maupun gelap.
+          </p>
 
           {/* Logo */}
           <div>
@@ -1254,13 +1263,126 @@ function LoginPageEditor({
               />
             </div>
             <p className="mt-2 text-xs leading-relaxed text-faint">
-              PNG/JPG/SVG maksimal 200 KB. Berkas ikut masuk ke paket zip dan di-upload ke router —
+              PNG/JPG/SVG maksimal 200 KB. Berkas ikut masuk ke paket dan di-upload ke router —
               logo tidak boleh diambil dari internet karena klien belum punya akses sebelum login.
             </p>
             {logoError && <p className="mt-1.5 text-xs text-bad">{logoError}</p>}
           </div>
 
-          {/* WhatsApp */}
+          {/* Mode login */}
+          <div className="rounded-xl border border-line-soft bg-raised/50 p-4">
+            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">
+              Mode login
+            </span>
+            <div className={`mt-3.5 ${grid2}`}>
+              <Field
+                label="Mode saat halaman dibuka"
+                hint="Mode voucher menyembunyikan kolom password dan mengisinya otomatis dari kode."
+              >
+                <Select
+                  value={page.loginMode}
+                  placeholder=""
+                  onChange={(loginMode) => setPage({ loginMode: loginMode as LoginMode })}
+                  options={[
+                    { value: "voucher", label: "Voucher — satu kolom kode" },
+                    { value: "member", label: "Member — username + password" },
+                  ]}
+                />
+              </Field>
+              <div className="space-y-3">
+                <Toggle
+                  checked={page.showModeSwitch}
+                  onChange={(showModeSwitch) => setPage({ showModeSwitch })}
+                  label="Tampilkan tombol Voucher / Member"
+                  hint="Pengguna bisa berpindah sendiri antara dua mode."
+                />
+                <Toggle
+                  checked={page.showTrial}
+                  onChange={(showTrial) => setPage({ showTrial })}
+                  label="Tampilkan tautan coba gratis"
+                  hint="Hanya muncul bila fitur trial diaktifkan di profil hotspot router."
+                />
+              </div>
+            </div>
+          </div>
+
+          <Field label="Teks berjalan" hint="Muncul sebagai marquee di atas form. Kosongkan bila tidak perlu.">
+            <TextInput
+              value={page.marquee}
+              onChange={(marquee) => setPage({ marquee })}
+              placeholder="Selamat datang di jaringan hotspot kami"
+            />
+          </Field>
+
+          {/* Tabel paket */}
+          <div className="rounded-xl border border-line-soft bg-raised/50 p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">
+                Tabel harga paket
+              </span>
+              <Button size="sm" onClick={() => setPage({ packages: [...page.packages, newPackage()] })}>
+                <Plus className="h-3.5 w-3.5" /> Tambah paket
+              </Button>
+            </div>
+            {page.packages.length === 0 ? (
+              <EmptyState>Belum ada paket. Tabel tidak akan tampil di halaman login.</EmptyState>
+            ) : (
+              <div className="space-y-3">
+                {page.packages.map((pkg, index) => (
+                  <div key={pkg.id} className="flex items-end gap-2">
+                    <Field label={index === 0 ? "Nama paket" : ""} className="flex-1">
+                      <TextInput
+                        value={pkg.name}
+                        onChange={(name) =>
+                          setPage({
+                            packages: page.packages.map((p) => (p.id === pkg.id ? { ...p, name } : p)),
+                          })
+                        }
+                        placeholder="2 Jam"
+                      />
+                    </Field>
+                    <Field label={index === 0 ? "Masa aktif" : ""} className="flex-1">
+                      <TextInput
+                        value={pkg.duration}
+                        onChange={(duration) =>
+                          setPage({
+                            packages: page.packages.map((p) =>
+                              p.id === pkg.id ? { ...p, duration } : p,
+                            ),
+                          })
+                        }
+                        placeholder="2 jam"
+                      />
+                    </Field>
+                    <Field label={index === 0 ? "Harga" : ""} className="flex-1">
+                      <TextInput
+                        value={pkg.price}
+                        onChange={(price) =>
+                          setPage({
+                            packages: page.packages.map((p) => (p.id === pkg.id ? { ...p, price } : p)),
+                          })
+                        }
+                        placeholder="Rp 5.000"
+                      />
+                    </Field>
+                    <Button
+                      variant="danger"
+                      className="px-3"
+                      ariaLabel={`Hapus paket ${index + 1}`}
+                      title={`Hapus paket ${index + 1}`}
+                      onClick={() =>
+                        setPage({ packages: page.packages.filter((p) => p.id !== pkg.id) })
+                      }
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* WhatsApp & teks penutup */}
           <div className={grid2}>
             <Field
               label="Nomor WhatsApp"
@@ -1284,9 +1406,6 @@ function LoginPageEditor({
                 placeholder="Beli voucher via WhatsApp"
               />
             </Field>
-          </div>
-
-          <div className={grid2}>
             <Field label="Catatan / syarat pemakaian">
               <TextInput
                 value={page.terms}
@@ -1312,7 +1431,7 @@ function LoginPageEditor({
         </div>
 
         {/* Pratinjau */}
-        <div>
+        <div className="lg:sticky lg:top-24 lg:self-start">
           <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
             Pratinjau
           </span>
@@ -1326,18 +1445,17 @@ function LoginPageEditor({
               <iframe
                 title="Pratinjau halaman login hotspot"
                 srcDoc={preview}
-                sandbox=""
-                className="block h-[420px] w-full border-0 bg-white"
+                sandbox="allow-scripts"
+                className="block h-[480px] w-full border-0 bg-white"
               />
             ) : (
-              <div className="grid h-[420px] place-items-center text-xs text-faint">
+              <div className="grid h-[480px] place-items-center text-xs text-faint">
                 Memuat pratinjau…
               </div>
             )}
           </div>
           <p className="mt-2 text-xs leading-relaxed text-faint">
-            Tampilan sebenarnya di ponsel akan memenuhi layar. Kolom login tidak berfungsi di
-            pratinjau ini.
+            Tombol Voucher/Member berfungsi di pratinjau ini. Kolom login tidak mengirim apa pun.
           </p>
         </div>
       </div>

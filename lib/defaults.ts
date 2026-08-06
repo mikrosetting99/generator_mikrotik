@@ -8,6 +8,7 @@ import type {
   RouterUser,
   SetupConfig,
   VlanEntry,
+  VoucherPackage,
   WanEntry,
 } from "./types";
 
@@ -78,6 +79,10 @@ export function newSecret(): PppoeSecret {
   return { id: uid("sec"), user: "", password: "" };
 }
 
+export function newPackage(): VoucherPackage {
+  return { id: uid("pkg"), name: "", duration: "", price: "" };
+}
+
 export function newUser(): RouterUser {
   return { id: uid("user"), name: "", password: "", group: "full", allowedAddress: "", comment: "" };
 }
@@ -105,12 +110,17 @@ export function createDefaultConfig(): SetupConfig {
     hotspots: [],
     hotspotPage: {
       template: "minimal",
-      mode: "gelap",
       primaryColor: "#38bdf8",
+      bgColor: "#0b1220",
       title: "",
-      subtitle: "Masuk dengan akun yang diberikan petugas untuk mulai menggunakan internet.",
+      subtitle: "",
       logoDataUrl: "",
       logoName: "",
+      loginMode: "voucher",
+      showModeSwitch: true,
+      marquee: "Selamat datang di jaringan hotspot kami",
+      showTrial: false,
+      packages: [],
       terms: "",
       whatsapp: "",
       whatsappLabel: "Beli voucher via WhatsApp",

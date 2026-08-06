@@ -4,23 +4,23 @@
 <head>
   <title id="title">{{TITLE}}</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta http-equiv="pragma" content="no-cache">
-  <meta http-equiv="expires" content="-1">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css">
+  <meta http-equiv="refresh" content="$(refresh-timeout-secs); url=$(link-redirect)">
 </head>
 
 <body>
   <div class="main">
     <div class="box brandbox">
       {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
-      <h3 class="brand">Terjadi kesalahan</h3>
+      <h3 class="brand">Sedang membuka iklan</h3>
+      <p class="subtitle">
+        Halaman iklan akan terbuka otomatis. Setelah selesai, koneksi internet Anda
+        dilanjutkan kembali.
+      </p>
     </div>
 
-    <div class="notice">$(error)</div>
-
-    <a class="button" href="$(link-login)">Kembali ke halaman login</a>
-    {{#WA_LINK}}<a class="button2" href="{{WA_LINK}}">{{WA_LABEL}}</a>{{/WA_LINK}}
+    <a class="button" href="$(link-redirect)">Lanjutkan</a>
 
     <div class="foot">
       {{#FOOTER}}{{FOOTER}}{{/FOOTER}}
@@ -28,7 +28,7 @@
   </div>
 
   <script type="text/javascript">
-    document.getElementById('title').innerHTML = window.location.hostname + " > error";
+    document.getElementById('title').innerHTML = window.location.hostname + " > advertisement";
   </script>
 </body>
 

@@ -1,0 +1,228 @@
+/* Voucher — bergaya tiket dengan kepala berwarna dan garis sobek. */
+
+:root {
+  --primary: {{PRIMARY}};
+  --on-primary: {{ON_PRIMARY}};
+  --bg: {{BG}};
+  --surface: {{SURFACE}};
+  --text: {{TEXT}};
+  --muted: {{MUTED}};
+  --border: {{BORDER}};
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 18px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main {
+  width: 100%;
+  max-width: 350px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  text-align: center;
+  animation: fadein .4s ease-out;
+}
+
+/* Kepala tiket */
+.brandbox {
+  position: relative;
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 24px 22px 26px;
+  margin: 0;
+}
+
+/* Garis sobek di bawah kepala tiket */
+.brandbox::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 6px;
+  border-bottom: 2px dashed var(--surface);
+  opacity: .75;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto 12px;
+  max-width: 150px;
+  max-height: 64px;
+}
+
+.brand {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  opacity: .85;
+}
+
+.box { margin: 0 22px 12px; }
+.box:first-of-type { margin-top: 0; }
+.info, .modes, #infologin, form, .table, .terms, .foot, .trial, .button, .button2, .notice {
+  margin-left: 22px;
+  margin-right: 22px;
+}
+
+.info {
+  margin-top: 18px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 7px 0;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+}
+
+.modes { display: flex; gap: 8px; margin-bottom: 12px; }
+
+.small-button {
+  flex: 1;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.small-button.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+#infologin {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.username, .password {
+  width: calc(100% - 44px);
+  height: 46px;
+  margin: 0 22px 10px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 17px;
+  letter-spacing: .05em;
+  text-align: center;
+  outline: none;
+}
+
+.username:focus, .password:focus { border-color: var(--primary); }
+
+.button, .button2 {
+  width: calc(100% - 44px);
+  height: 48px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.button { background: var(--primary); color: var(--on-primary); }
+
+.button2 {
+  margin-top: 8px;
+  background: transparent;
+  border: 2px solid var(--primary);
+  color: var(--text);
+}
+
+.button:hover, .button2:hover { filter: brightness(1.08); }
+
+.notice {
+  background: rgba(220, 38, 38, .14);
+  border: 1px solid rgba(220, 38, 38, .5);
+  color: #dc2626;
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.icon { display: inline-flex; width: 16px; height: 16px; }
+.icon svg { width: 100%; height: 100%; }
+
+.table, .table2 {
+  width: calc(100% - 44px);
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.table caption {
+  font-weight: 800;
+  font-size: 14px;
+  padding-bottom: 8px;
+}
+
+.table th, .table td, .table2 td {
+  border: 1px dashed var(--border);
+  padding: 7px 9px;
+}
+
+.table th { background: var(--primary); color: var(--on-primary); border-style: solid; }
+.table2 { text-align: left; }
+.table2 td:first-child { color: var(--muted); width: 45%; }
+
+.trial { margin-top: 12px; font-size: 13px; }
+a { color: var(--primary); }
+
+.terms {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.foot {
+  margin-top: 14px;
+  padding-bottom: 22px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  opacity: .85;
+}
+
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }

@@ -1,0 +1,230 @@
+/* Korporat — dua kolom di layar lebar: identitas di kiri, form di kanan. */
+
+:root {
+  --primary: {{PRIMARY}};
+  --on-primary: {{ON_PRIMARY}};
+  --bg: {{BG}};
+  --surface: {{SURFACE}};
+  --text: {{TEXT}};
+  --muted: {{MUTED}};
+  --border: {{BORDER}};
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main {
+  width: 100%;
+  max-width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 32px 28px;
+  animation: fadein .4s ease-out;
+}
+
+/* Dua kolom mulai tablet ke atas */
+@media (min-width: 860px) {
+  .main {
+    max-width: 760px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 44px;
+    align-items: start;
+    padding: 44px 40px;
+  }
+  .brandbox {
+    grid-column: 1;
+    grid-row: 1 / span 20;
+    align-self: center;
+    border-right: 1px solid var(--border);
+    padding-right: 40px;
+    text-align: left;
+  }
+  .logo { margin-left: 0; }
+  .info, .modes, #infologin, form, .notice, .button, .button2, .table, .terms, .foot, .trial {
+    grid-column: 2;
+  }
+}
+
+.box { margin-bottom: 12px; }
+
+.brandbox { margin-bottom: 22px; text-align: center; }
+
+.logo {
+  display: block;
+  margin: 0 auto 18px;
+  max-width: 180px;
+  max-height: 76px;
+}
+
+.brand {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+  padding-top: 14px;
+  border-top: 3px solid var(--primary);
+  display: inline-block;
+}
+
+.subtitle {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.info {
+  background: transparent;
+  border-left: 3px solid var(--primary);
+  border-radius: 0;
+  padding: 6px 0 6px 10px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+}
+
+.modes { display: flex; gap: 8px; }
+
+.small-button {
+  flex: 1;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.small-button.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+#infologin {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.username, .password {
+  width: 100%;
+  height: 44px;
+  margin-bottom: 10px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+}
+
+.username:focus, .password:focus { border-color: var(--primary); }
+
+.button, .button2 {
+  width: 100%;
+  height: 46px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.button { background: var(--primary); color: var(--on-primary); }
+
+.button2 {
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.button:hover, .button2:hover { filter: brightness(1.08); }
+
+.notice {
+  background: rgba(220, 38, 38, .14);
+  border: 1px solid rgba(220, 38, 38, .5);
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.icon { display: inline-flex; width: 16px; height: 16px; }
+.icon svg { width: 100%; height: 100%; }
+
+.table, .table2 {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.table caption {
+  font-weight: 700;
+  font-size: 14px;
+  padding-bottom: 8px;
+  text-align: left;
+}
+
+.table th, .table td, .table2 td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.table th { background: var(--primary); color: var(--on-primary); }
+.table2 td:first-child { color: var(--muted); width: 45%; }
+
+.trial { margin-top: 12px; font-size: 13px; }
+a { color: var(--primary); }
+
+.terms {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.foot {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  opacity: .85;
+}
+
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }

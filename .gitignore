@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# bahan rujukan lokal (template hotspot milik pelanggan, dsb)
+/_contoh-hotspot/

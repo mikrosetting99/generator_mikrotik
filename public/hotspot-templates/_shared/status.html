@@ -1,54 +1,87 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Status koneksi — {{TITLE}}</title>
-<style>
-  :root {
-    --primary: {{PRIMARY}};
-    --bg: {{BG}};
-    --surface: {{SURFACE}};
-    --text: {{TEXT}};
-    --muted: {{MUTED}};
-    --border: {{BORDER}};
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    padding: 24px; background: var(--bg); color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  }
-  .card {
-    width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 18px; padding: 32px 28px;
-  }
-  .logo { max-width: 150px; max-height: 64px; margin: 0 auto 18px; display: block; }
-  h1 { margin: 0 0 8px; font-size: 20px; text-align: center; }
-  p.sub { margin: 0 0 22px; font-size: 14px; color: var(--muted); line-height: 1.6; text-align: center; }
-  .rows { font-size: 14px; color: var(--muted); line-height: 2.1;
-          border-top: 1px solid var(--border); padding-top: 16px; }
-  .rows b { color: var(--text); font-weight: 600; }
-  .btn {
-    display: block; width: 100%; margin-top: 22px; padding: 13px; border: 0; border-radius: 12px;
-    background: var(--primary); color: #06121c; font-size: 15px; font-weight: 700;
-    text-align: center; text-decoration: none; cursor: pointer;
-  }
-</style>
+  <title id="title">{{TITLE}}</title>
+  $(if refresh-timeout)
+  <meta http-equiv="refresh" content="$(refresh-timeout-secs)">
+  $(endif)
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css">
+  <script language="JavaScript">
+    $(if advert-pending == 'yes')
+    var popup = '';
+    function focusAdvert() { if (window.focus) popup.focus(); }
+    function openAdvert() {
+      popup = open('$(link-advert)', 'hotspot_advert', '');
+      setTimeout("focusAdvert()", 1000);
+    }
+    $(endif)
+
+    function openLogout() {
+      if (window.name != 'hotspot_status') return true;
+      open('$(link-logout)', 'hotspot_logout',
+        'toolbar=0,location=0,directories=0,status=0,menubars=0,resizable=1,width=300,height=320');
+      window.close();
+      return false;
+    }
+  </script>
 </head>
-<body>
-<div class="card">
-  {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
-  <h1>Status koneksi</h1>
-  <p class="sub">Ringkasan pemakaian sesi Anda saat ini.</p>
-  <div class="rows">
-    <div>Username: <b>$(username)</b></div>
-    <div>IP: <b>$(ip)</b></div>
-    <div>Lama terhubung: <b>$(uptime)</b></div>
-    <div>Download: <b>$(bytes-in-nice)</b></div>
-    <div>Upload: <b>$(bytes-out-nice)</b></div>
+
+<body $(if advert-pending == 'yes')onLoad="openAdvert()"$(endif)>
+  <div class="main">
+    <form action="$(link-logout)" name="logout" onSubmit="return openLogout()">
+
+      <div class="box brandbox">
+        {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
+        $(if login-by == 'trial')
+        <h3 class="brand">Pengguna trial</h3>
+        $(elif login-by != 'mac')
+        <h3 class="brand" id="user">$(username)</h3>
+        $(endif)
+        <p class="subtitle">Anda sedang terhubung ke internet.</p>
+      </div>
+
+      <table class="table2">
+        <tr><td>IP Address</td><td>$(ip)</td></tr>
+        <tr><td>MAC Address</td><td>$(mac)</td></tr>
+        <tr><td>Lama terhubung</td><td>$(uptime)</td></tr>
+        <tr><td>Download</td><td>$(bytes-out-nice)</td></tr>
+        <tr><td>Upload</td><td>$(bytes-in-nice)</td></tr>
+        $(if remain-bytes-total)
+        <tr><td>Sisa kuota</td><td>$(remain-bytes-total-nice)</td></tr>
+        $(endif)
+        $(if session-time-left)
+        <tr><td>Sisa waktu</td><td>$(session-time-left)</td></tr>
+        $(endif)
+        $(if blocked == 'yes')
+        <tr><td>Status</td><td><a href="$(link-advert)" target="hotspot_advert">iklan perlu dibuka</a></td></tr>
+        $(elif refresh-timeout)
+        <tr><td>Refresh</td><td>$(refresh-timeout)</td></tr>
+        $(endif)
+      </table>
+
+      $(if login-by-mac != 'yes')
+      <button class="button2" type="submit">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17l5-5-5-5"/><path d="M19 12H7"/><path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4"/></svg>
+        </span>Logout
+      </button>
+      $(endif)
+    </form>
+
+    {{#WA_LINK}}<a class="button" href="{{WA_LINK}}">{{WA_LABEL}}</a>{{/WA_LINK}}
+
+    <div class="foot">
+      Terhubung ke $(hostname)
+      {{#FOOTER}}<br>{{FOOTER}}{{/FOOTER}}
+    </div>
   </div>
-  <a class="btn" href="$(link-logout)">Keluar (logout)</a>
-</div>
+
+  <script type="text/javascript">
+    document.getElementById('title').innerHTML = window.location.hostname + " > status";
+  </script>
 </body>
+
 </html>

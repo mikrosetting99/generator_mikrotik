@@ -71,7 +71,15 @@ export interface HotspotEntry {
 /* ------------------------------------------------ halaman login hotspot */
 
 export type HotspotTemplateId = "minimal" | "voucher" | "korporat" | "gelap";
-export type HotspotPageMode = "gelap" | "terang";
+export type LoginMode = "voucher" | "member";
+
+/** Satu baris pada tabel harga paket di halaman login. */
+export interface VoucherPackage {
+  id: string;
+  name: string;
+  duration: string;
+  price: string;
+}
 
 /**
  * Kustomisasi halaman login hotspot. Satu router hanya punya satu folder
@@ -79,13 +87,21 @@ export type HotspotPageMode = "gelap" | "terang";
  */
 export interface HotspotPageConfig {
   template: HotspotTemplateId;
-  mode: HotspotPageMode;
   primaryColor: string;
+  /** Warna latar bebas; warna teks & garis diturunkan dari kecerahannya. */
+  bgColor: string;
   title: string;
   subtitle: string;
   /** Logo disimpan sebagai data URI, lalu ditulis jadi berkas di dalam zip. */
   logoDataUrl: string;
   logoName: string;
+  /** Mode yang aktif saat halaman login pertama kali dibuka. */
+  loginMode: LoginMode;
+  showModeSwitch: boolean;
+  /** Teks berjalan di atas form login. */
+  marquee: string;
+  showTrial: boolean;
+  packages: VoucherPackage[];
   terms: string;
   whatsapp: string;
   whatsappLabel: string;

@@ -1,0 +1,53 @@
+# Pesan error yang tampil ke pengguna hotspot saat login lewat http/https.
+# Teks di sebelah kanan tanda "=" boleh diubah sesuka Anda.
+#
+# Variabel yang bisa dipakai:
+#	$(error-orig)	- pesan error asli dari hotspot
+#	$(ip)		- alamat IP klien
+#	$(username)	- username yang dipakai untuk login
+
+# Seharusnya tidak pernah terjadi. Bila muncul, ada masalah di dalam RouterOS.
+internal-error = Terjadi kesalahan internal ($(error-orig))
+
+# Muncul bila konfigurasi hotspot belum benar.
+config-error = Konfigurasi hotspot belum tepat ($(error-orig))
+
+# Halaman status atau logout dibuka padahal pengguna belum login.
+not-logged-in = Anda belum masuk (IP $(ip))
+
+# IP pool untuk hotspot sudah habis.
+ippool-empty = Alamat IP habis. Hubungi petugas.
+
+# Layanan hotspot sedang dimatikan.
+shutting-down = Layanan hotspot sedang ditutup sementara.
+
+# Batas jumlah pemakaian bersama (shared-users) terlampaui.
+user-session-limit = Kode ini sedang dipakai di perangkat lain ($(username))
+
+# Batas jumlah klien aktif sesuai lisensi RouterOS terlampaui.
+license-session-limit = Jumlah pengguna sedang penuh. Coba beberapa saat lagi.
+
+# Username berbentuk MAC address tetapi bukan milik perangkat ini.
+wrong-mac-username = Kode tidak cocok dengan perangkat ini ($(username))
+
+# Login http-chap gagal karena browser tidak mengirim balasan terenkripsi.
+chap-missing = Browser tidak mengirim balasan. Aktifkan JavaScript lalu coba lagi.
+
+# Username atau password salah.
+invalid-username = Kode voucher atau password salah. Periksa lagi lalu coba ulang.
+
+# User terikat ke MAC address tertentu, tetapi login dari perangkat lain.
+invalid-mac = Kode $(username) hanya bisa dipakai di perangkat yang pertama kali memakainya.
+
+# Batas waktu dan kuota untuk user lokal.
+uptime-limit = Masa aktif kode $(username) sudah habis.
+traffic-limit = Kuota kode $(username) sudah habis.
+
+# RADIUS server tidak menjawab.
+radius-timeout = Server tidak merespon. Coba beberapa saat lagi.
+
+# Proses otorisasi sebelumnya belum selesai.
+auth-in-progress = Proses login sebelumnya belum selesai, coba lagi sebentar.
+
+# Pesan khusus dari RADIUS server.
+radius-reply = $(error-orig)

@@ -1,0 +1,201 @@
+/* Minimal — kartu login sederhana di tengah layar. */
+
+:root {
+  --primary: {{PRIMARY}};
+  --on-primary: {{ON_PRIMARY}};
+  --bg: {{BG}};
+  --surface: {{SURFACE}};
+  --text: {{TEXT}};
+  --muted: {{MUTED}};
+  --border: {{BORDER}};
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 20px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main {
+  width: 100%;
+  max-width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  animation: fadein .4s ease-out;
+}
+
+.box { margin-bottom: 12px; }
+.brandbox { margin-bottom: 18px; }
+
+.logo {
+  display: block;
+  margin: 0 auto 14px;
+  max-width: 160px;
+  max-height: 72px;
+}
+
+.brand {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.info {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-radius: 10px;
+  padding: 7px 0;
+  margin-bottom: 14px;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.modes { display: flex; gap: 8px; }
+
+.small-button {
+  flex: 1;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.small-button.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+#infologin {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.username, .password {
+  width: 100%;
+  height: 44px;
+  margin-bottom: 10px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  text-align: center;
+  outline: none;
+}
+
+.username:focus, .password:focus { border-color: var(--primary); }
+
+.button, .button2 {
+  width: 100%;
+  height: 46px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.button { background: var(--primary); color: var(--on-primary); }
+
+.button2 {
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.button:hover, .button2:hover { filter: brightness(1.08); }
+
+.notice {
+  background: rgba(220, 38, 38, .14);
+  border: 1px solid rgba(220, 38, 38, .5);
+  color: #dc2626;
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.icon { display: inline-flex; width: 16px; height: 16px; }
+.icon svg { width: 100%; height: 100%; }
+
+.table, .table2 {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.table caption {
+  font-weight: 700;
+  font-size: 14px;
+  padding-bottom: 8px;
+}
+
+.table th, .table td, .table2 td {
+  border: 1px solid var(--border);
+  padding: 7px 9px;
+}
+
+.table th { background: var(--primary); color: var(--on-primary); }
+.table2 { text-align: left; }
+.table2 td:first-child { color: var(--muted); width: 45%; }
+
+.trial { margin-top: 12px; font-size: 13px; }
+a { color: var(--primary); }
+
+.terms {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.foot {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  opacity: .85;
+}
+
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }

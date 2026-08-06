@@ -2,7 +2,7 @@
 <html lang="id">
 
 <head>
-  <title id="title">{{TITLE}}</title>
+  <title>{{PAGE_TITLE}}</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css">
@@ -20,7 +20,7 @@
 <body onLoad="startRedirect()">
   <div class="main">
     <div class="box brandbox">
-      {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
+      {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{PAGE_TITLE}}">{{/LOGO}}
       <h3 class="brand">Berhasil masuk</h3>
       <p class="subtitle">Anda sudah terhubung ke internet. Halaman akan dialihkan otomatis.</p>
     </div>
@@ -37,9 +37,6 @@
     </div>
   </div>
 
-  <script type="text/javascript">
-    document.getElementById('title').innerHTML = window.location.hostname + " > redirect";
-  </script>
 </body>
 
 </html>

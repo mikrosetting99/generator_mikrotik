@@ -17,6 +17,13 @@ body {
   min-height: 100vh;
   padding: 20px;
   background: var(--bg);
+{{#BG_IMAGE}}
+  background-image: linear-gradient({{OVERLAY}}, {{OVERLAY}}), url('{{BG_IMAGE}}');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+{{/BG_IMAGE}}
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 14px;
@@ -199,3 +206,38 @@ a { color: var(--primary); }
 }
 
 @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+/* --- polesan interaksi, sama untuk semua desain --- */
+
+.username:focus,
+.password:focus {
+  box-shadow: 0 0 0 3px {{FOCUS_RING}};
+}
+
+.button:active,
+.button2:active,
+.small-button:active {
+  transform: translateY(1px);
+}
+
+/* Pengguna keyboard tetap melihat elemen mana yang sedang aktif. */
+.button:focus-visible,
+.button2:focus-visible,
+.small-button:focus-visible,
+.username:focus-visible,
+.password:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.logo { object-fit: contain; }
+marquee { display: block; }
+
+/* Sembunyikan kolom password yang disembunyikan mode voucher, termasuk marginnya. */
+.password[type="hidden"] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .main { animation: none; }
+  * { transition: none !important; }
+}

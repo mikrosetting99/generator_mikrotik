@@ -2,7 +2,7 @@
 <html lang="id">
 
 <head>
-  <title id="title">{{TITLE}}</title>
+  <title>{{PAGE_TITLE}}</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="-1">
@@ -13,7 +13,7 @@
 <body>
   <div class="main">
     <div class="box brandbox">
-      {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
+      {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{PAGE_TITLE}}">{{/LOGO}}
       <h3 class="brand">Terjadi kesalahan</h3>
     </div>
 
@@ -27,9 +27,6 @@
     </div>
   </div>
 
-  <script type="text/javascript">
-    document.getElementById('title').innerHTML = window.location.hostname + " > error";
-  </script>
 </body>
 
 </html>

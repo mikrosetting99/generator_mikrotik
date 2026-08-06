@@ -245,6 +245,16 @@ export function normalizeConfig(raw: unknown): SetupConfig {
         ? asString(hotspotPage.logoDataUrl)
         : "",
       logoName: asString(hotspotPage.logoName),
+      bgImageDataUrl: /^data:image\//i.test(asString(hotspotPage.bgImageDataUrl))
+        ? asString(hotspotPage.bgImageDataUrl)
+        : "",
+      bgImageName: asString(hotspotPage.bgImageName),
+      bgOverlay:
+        typeof hotspotPage.bgOverlay === "number" &&
+        hotspotPage.bgOverlay >= 0 &&
+        hotspotPage.bgOverlay <= 90
+          ? hotspotPage.bgOverlay
+          : base.hotspotPage.bgOverlay,
       loginMode: (loginMode === "member" ? "member" : "voucher") as LoginMode,
       showModeSwitch: asBool(hotspotPage.showModeSwitch, base.hotspotPage.showModeSwitch),
       marquee: asString(hotspotPage.marquee, base.hotspotPage.marquee),

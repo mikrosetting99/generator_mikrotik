@@ -1,4 +1,4 @@
-import { derivePalette, isHexColor } from "./color";
+import { derivePalette, isHexColor, rgba } from "./color";
 import type { HotspotPageConfig, HotspotTemplateId } from "./types";
 import type { ZipEntry } from "./zip";
 
@@ -101,23 +101,27 @@ export function whatsappLink(value: string): string {
   return number ? `https://wa.me/${number}` : "";
 }
 
-/** Nama berkas logo di dalam folder hotspot, mengikuti tipe gambarnya. */
-export function logoFileName(dataUrl: string): string {
+/** Nama berkas gambar di dalam folder hotspot, mengikuti tipe berkasnya. */
+export function imageFileName(dataUrl: string, base: string): string {
   const match = /^data:image\/(png|jpeg|jpg|gif|svg\+xml|webp);/i.exec(dataUrl);
   const ext = (match?.[1] ?? "png").toLowerCase();
-  return `logo.${ext === "svg+xml" ? "svg" : ext === "jpeg" ? "jpg" : ext}`;
+  return `${base}.${ext === "svg+xml" ? "svg" : ext === "jpeg" ? "jpg" : ext}`;
 }
 
-export function templateVars(
-  page: HotspotPageConfig,
-  fallbackTitle: string,
-): Record<string, string> {
+export function logoFileName(dataUrl: string): string {
+  return imageFileName(dataUrl, "logo");
+}
+
+export function bgFileName(dataUrl: string): string {
+  return imageFileName(dataUrl, "background");
+}
+
+export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const template = getTemplate(page.template);
   const primary = isHexColor(page.primaryColor) ? page.primaryColor.trim() : template.defaultPrimary;
-  const palette = derivePalette(
-    isHexColor(page.bgColor) ? page.bgColor.trim() : template.defaultBg,
-    primary,
-  );
+  const bgColor = isHexColor(page.bgColor) ? page.bgColor.trim() : template.defaultBg;
+  const palette = derivePalette(bgColor, primary);
+  const title = page.title.trim();
 
   const rows = page.packages
     .filter((p) => p.name.trim() || p.duration.trim() || p.price.trim())
@@ -129,12 +133,16 @@ export function templateVars(
     );
 
   return {
-    TITLE: escapeHtml(page.title.trim() || fallbackTitle || "Hotspot"),
+    // Judul hanya tampil bila diisi — nama/identity router sengaja tidak dipakai.
+    TITLE: escapeHtml(title),
+    PAGE_TITLE: escapeHtml(title || "Hotspot"),
     SUBTITLE: escapeHtml(page.subtitle.trim()),
     MARQUEE: escapeHtml(page.marquee.trim()),
     TERMS: escapeHtml(page.terms.trim()),
     FOOTER: escapeHtml(page.footer.trim()),
     LOGO: page.logoDataUrl ? logoFileName(page.logoDataUrl) : "",
+    BG_IMAGE: page.bgImageDataUrl ? bgFileName(page.bgImageDataUrl) : "",
+    OVERLAY: rgba(bgColor, Math.max(0, Math.min(90, page.bgOverlay)) / 100),
     WA_LINK: whatsappLink(page.whatsapp),
     WA_LABEL: escapeHtml(page.whatsappLabel.trim() || "Hubungi admin"),
     START_MODE: page.loginMode === "member" ? "member" : "voucher",
@@ -144,6 +152,7 @@ export function templateVars(
     PACKAGE_ROWS: rows.join("\n"),
     PRIMARY: primary,
     ON_PRIMARY: palette.onPrimary,
+    FOCUS_RING: rgba(primary, 0.28),
     BG: palette.bg,
     SURFACE: palette.surface,
     TEXT: palette.text,
@@ -194,14 +203,14 @@ export function fetchStyle(id: HotspotTemplateId): Promise<string> {
   return fetchTemplateFile(`${id}/style.css`);
 }
 
-function readmeText(title: string, page: HotspotPageConfig, logoFile: string): string {
+function readmeText(page: HotspotPageConfig, logoFile: string, bgFile: string): string {
   const template = getTemplate(page.template);
   const link = whatsappLink(page.whatsapp);
 
   return `PAKET HALAMAN LOGIN HOTSPOT MIKROTIK
 ====================================
 Dibuat oleh Generator Script Mikrotik by Mikrosetting.com
-Untuk hotspot : ${title}
+Untuk hotspot : ${page.title.trim() || "(tanpa nama)"}
 Desain        : ${template.name}
 Mode awal     : ${page.loginMode === "member" ? "Member" : "Voucher"}
 
@@ -217,7 +226,7 @@ ISI PAKET
   radvert.html   halaman advertisement
   errors.txt     teks pesan error berbahasa Indonesia
   style.css      seluruh tampilan & warna — cukup berkas ini yang diubah
-  md5.js         dipakai metode autentikasi http-chap${logoFile ? `\n  ${logoFile}       logo yang Anda unggah` : ""}
+  md5.js         dipakai metode autentikasi http-chap${logoFile ? `\n  ${logoFile}       logo yang Anda unggah` : ""}${bgFile ? `\n  ${bgFile}  gambar latar yang Anda unggah` : ""}
 
 CARA UPLOAD
 -----------
@@ -250,12 +259,8 @@ ${
 }
 
 /** Membangun seluruh isi paket zip halaman login. */
-export async function buildHotspotPackage(
-  page: HotspotPageConfig,
-  fallbackTitle: string,
-): Promise<ZipEntry[]> {
-  const vars = templateVars(page, fallbackTitle);
-  const title = page.title.trim() || fallbackTitle || "Hotspot";
+export async function buildHotspotPackage(page: HotspotPageConfig): Promise<ZipEntry[]> {
+  const vars = templateVars(page);
 
   const [pages, style, verbatim] = await Promise.all([
     Promise.all(SHARED_PAGES.map((file) => fetchTemplateFile(`_shared/${file}`))),
@@ -274,6 +279,11 @@ export async function buildHotspotPackage(
     entries.push({ name: logoFile, dataUrl: page.logoDataUrl });
   }
 
-  entries.push({ name: "PETUNJUK-UPLOAD.txt", content: readmeText(title, page, logoFile) });
+  const bgFile = page.bgImageDataUrl ? bgFileName(page.bgImageDataUrl) : "";
+  if (bgFile) {
+    entries.push({ name: bgFile, dataUrl: page.bgImageDataUrl });
+  }
+
+  entries.push({ name: "PETUNJUK-UPLOAD.txt", content: readmeText(page, logoFile, bgFile) });
   return entries;
 }

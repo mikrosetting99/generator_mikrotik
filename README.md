@@ -35,8 +35,12 @@ Builder modular mengikuti urutan section pada PRD:
 11. **IP Hotspot** — metode autentikasi http-pap/http-chap/mac-cookie/cookie, plus editor
     halaman login: 4 desain (Minimal, Voucher, Korporat, Gelap Modern), warna tema & latar
     bebas, unggah logo, mode Voucher/Member, teks berjalan, tabel harga paket, tautan trial,
-    dan tombol WhatsApp. Pratinjau langsung, hasilnya satu folder `hotspot` lengkap
-    dalam `.zip`.
+    dan tombol WhatsApp. Logo dan gambar latar diunggah sendiri (dengan batas ukuran dan
+    saran dimensi), lengkap dengan pengatur kepekatan lapisan di atas foto. Pratinjau
+    langsung, hasilnya satu folder `hotspot` lengkap dalam `.zip`.
+
+    Nama atau identity router **tidak** ikut tampil di halaman login — judul hanya diambil
+    dari isian pengguna, dan dikosongkan berarti hanya logo yang tampil.
 12. **PPPoE Server** — profile, pool, rate limit, dan daftar PPP secret. Metode autentikasi
     tidak diekspos di form; script memakai bawaan RouterOS.
 13. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
@@ -137,11 +141,13 @@ Placeholder yang tersedia:
 | Placeholder | Isi |
 |---|---|
 | `{{TITLE}}` `{{SUBTITLE}}` `{{MARQUEE}}` `{{TERMS}}` `{{FOOTER}}` | teks dari form (sudah di-escape) |
+| `{{PAGE_TITLE}}` | judul tab; berisi "Hotspot" bila nama dikosongkan |
 | `{{LOGO}}` | nama berkas logo, mis. `logo.png` |
+| `{{BG_IMAGE}}` `{{OVERLAY}}` | berkas gambar latar dan lapisan gelap di atasnya |
 | `{{WA_LINK}}` `{{WA_LABEL}}` | tautan wa.me dan teks tombol |
 | `{{START_MODE}}` `{{MODE_SWITCH}}` `{{TRIAL}}` | mode awal login & tombol opsional |
 | `{{PACKAGES}}` `{{PACKAGE_ROWS}}` | tabel harga paket |
-| `{{PRIMARY}}` `{{ON_PRIMARY}}` `{{BG}}` `{{SURFACE}}` `{{TEXT}}` `{{MUTED}}` `{{BORDER}}` | warna |
+| `{{PRIMARY}}` `{{ON_PRIMARY}}` `{{FOCUS_RING}}` `{{BG}}` `{{SURFACE}}` `{{TEXT}}` `{{MUTED}}` `{{BORDER}}` | warna |
 | `{{#KEY}}…{{/KEY}}` | tampil hanya bila terisi |
 | `{{^KEY}}…{{/KEY}}` | tampil hanya bila kosong |
 

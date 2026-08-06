@@ -2,7 +2,7 @@
 <html lang="id">
 
 <head>
-  <title id="title">{{TITLE}}</title>
+  <title>{{PAGE_TITLE}}</title>
   $(if refresh-timeout)
   <meta http-equiv="refresh" content="$(refresh-timeout-secs)">
   $(endif)
@@ -34,7 +34,7 @@
     <form action="$(link-logout)" name="logout" onSubmit="return openLogout()">
 
       <div class="box brandbox">
-        {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
+        {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{PAGE_TITLE}}">{{/LOGO}}
         $(if login-by == 'trial')
         <h3 class="brand">Pengguna trial</h3>
         $(elif login-by != 'mac')
@@ -74,14 +74,10 @@
     {{#WA_LINK}}<a class="button" href="{{WA_LINK}}">{{WA_LABEL}}</a>{{/WA_LINK}}
 
     <div class="foot">
-      Terhubung ke $(hostname)
-      {{#FOOTER}}<br>{{FOOTER}}{{/FOOTER}}
+      {{#FOOTER}}{{FOOTER}}{{/FOOTER}}
     </div>
   </div>
 
-  <script type="text/javascript">
-    document.getElementById('title').innerHTML = window.location.hostname + " > status";
-  </script>
 </body>
 
 </html>

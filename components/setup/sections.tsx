@@ -1047,7 +1047,36 @@ export function HotspotSection({ config, patch, issues }: SectionProps) {
 
 const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
 const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
-const MAX_LOGO_BYTES = 200 * 1024;
+/**
+ * Batas ukuran berkas gambar. Penyimpanan flash router terbatas — hAP lite
+ * hanya punya 16 MB — jadi paket halaman login harus tetap ringan.
+ */
+const IMAGE_LIMITS = {
+  logo: {
+    maxBytes: 200 * 1024,
+    idealWidth: 400,
+    idealHeight: 160,
+    hint: "Ideal 400 × 160 px (rasio 5:2), PNG latar transparan, maksimal 200 KB.",
+  },
+  background: {
+    maxBytes: 600 * 1024,
+    idealWidth: 1600,
+    idealHeight: 900,
+    hint: "Ideal 1600 × 900 px (rasio 16:9), JPG, maksimal 600 KB.",
+  },
+} as const;
+
+interface ImageInfo {
+  width: number;
+  height: number;
+  bytes: number;
+}
+
+function formatSize(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    : `${Math.round(bytes / 1024)} KB`;
+}
 
 function LoginPageEditor({
   config,
@@ -1060,10 +1089,13 @@ function LoginPageEditor({
   const setPage = (partial: Partial<typeof page>) =>
     patch({ hotspotPage: { ...page, ...partial } });
 
-  const fileInput = useRef<HTMLInputElement>(null);
+  const logoInput = useRef<HTMLInputElement>(null);
+  const bgInput = useRef<HTMLInputElement>(null);
   const [logoError, setLogoError] = useState("");
+  const [bgError, setBgError] = useState("");
+  const [logoInfo, setLogoInfo] = useState<ImageInfo | null>(null);
+  const [bgInfo, setBgInfo] = useState<ImageInfo | null>(null);
   const [preview, setPreview] = useState("");
-  const fallbackTitle = config.system.identity || config.hotspots[0]?.name || "Hotspot";
 
   // Pratinjau: gabungkan login.html + style.css milik desain terpilih, lalu
   // ganti variabel RouterOS dengan contoh nilai supaya terbaca wajar.
@@ -1072,7 +1104,12 @@ function LoginPageEditor({
     Promise.all([fetchLoginTemplate(), fetchStyle(page.template)])
       .then(([source, style]) => {
         if (!active) return;
-        const vars = { ...templateVars(page, fallbackTitle), LOGO: page.logoDataUrl };
+        // Di pratinjau, berkas gambar diganti data URI-nya langsung.
+        const vars = {
+          ...templateVars(page),
+          LOGO: page.logoDataUrl,
+          BG_IMAGE: page.bgImageDataUrl,
+        };
         const html = renderTemplate(source, vars)
           // Sisipkan CSS langsung, karena iframe tidak bisa memuat style.css.
           .replace(
@@ -1083,7 +1120,6 @@ function LoginPageEditor({
           .replace(/\$\(if chap-id\)[\s\S]*?\$\(endif\)/g, "")
           .replace(/\$\(if trial == 'yes'\)/g, "")
           .replace(/\$\(endif\)/g, "")
-          .replace(/\$\(hostname\)/g, fallbackTitle)
           .replace(/\$\(ip-address\)/g, "192.168.20.25")
           .replace(/\$\([^)]*\)/g, "");
         setPreview(html);
@@ -1092,25 +1128,71 @@ function LoginPageEditor({
     return () => {
       active = false;
     };
-  }, [page, fallbackTitle]);
+  }, [page]);
 
-  const pickLogo = (file: File) => {
-    setLogoError("");
+  // Baca dimensi gambar yang sudah tersimpan (mis. setelah memuat konfigurasi).
+  useEffect(() => {
+    const read = (dataUrl: string, set: (info: ImageInfo | null) => void) => {
+      if (!dataUrl) return set(null);
+      const img = new Image();
+      img.onload = () =>
+        set({
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+          // Perkiraan ukuran asli dari panjang base64.
+          bytes: Math.round((dataUrl.length - dataUrl.indexOf(",") - 1) * 0.75),
+        });
+      img.onerror = () => set(null);
+      img.src = dataUrl;
+    };
+    read(page.logoDataUrl, setLogoInfo);
+    read(page.bgImageDataUrl, setBgInfo);
+  }, [page.logoDataUrl, page.bgImageDataUrl]);
+
+  const pickImage = (
+    file: File,
+    kind: "logo" | "background",
+    onError: (message: string) => void,
+  ) => {
+    const limit = IMAGE_LIMITS[kind];
+    onError("");
     if (!file.type.startsWith("image/")) {
-      setLogoError("Berkas harus berupa gambar (PNG, JPG, atau SVG).");
+      onError("Berkas harus berupa gambar (PNG, JPG, WEBP, atau SVG).");
       return;
     }
-    if (file.size > MAX_LOGO_BYTES) {
-      setLogoError(
-        `Ukuran logo ${Math.round(file.size / 1024)} KB — maksimal 200 KB agar tidak memenuhi penyimpanan router.`,
+    if (file.size > limit.maxBytes) {
+      onError(
+        `Ukuran berkas ${formatSize(file.size)} — maksimal ${formatSize(limit.maxBytes)}. ` +
+          `Perkecil dulu agar tidak memenuhi penyimpanan router.`,
       );
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => setPage({ logoDataUrl: String(reader.result), logoName: file.name });
-    reader.onerror = () => setLogoError("Gagal membaca berkas.");
+    reader.onload = () => {
+      const dataUrl = String(reader.result);
+      if (kind === "logo") setPage({ logoDataUrl: dataUrl, logoName: file.name });
+      else setPage({ bgImageDataUrl: dataUrl, bgImageName: file.name });
+    };
+    reader.onerror = () => onError("Gagal membaca berkas.");
     reader.readAsDataURL(file);
   };
+
+  /** Catatan bila dimensi gambar jauh dari ukuran yang disarankan. */
+  const dimensionNote = (info: ImageInfo | null, kind: "logo" | "background") => {
+    if (!info) return null;
+    const limit = IMAGE_LIMITS[kind];
+    const tooBig = info.width > limit.idealWidth * 2 || info.height > limit.idealHeight * 2;
+    const tooSmall = info.width < limit.idealWidth / 2.5;
+    return (
+      <p className={`mt-1.5 text-xs ${tooBig || tooSmall ? "text-warn" : "text-faint"}`}>
+        {info.width} × {info.height} px · {formatSize(info.bytes)}
+        {tooBig && " — jauh lebih besar dari yang diperlukan, perkecil agar halaman cepat terbuka."}
+        {tooSmall && " — terlalu kecil, bisa terlihat pecah di layar besar."}
+      </p>
+    );
+  };
+
+  const totalImageBytes = (logoInfo?.bytes ?? 0) + (bgInfo?.bytes ?? 0);
 
   const swatches = (
     presets: string[],
@@ -1200,11 +1282,14 @@ function LoginPageEditor({
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="space-y-4">
           <div className={grid2}>
-            <Field label="Nama hotspot" hint={`Kosong = memakai "${fallbackTitle}".`}>
+            <Field
+              label="Nama hotspot"
+              hint="Kosongkan bila cukup logo saja. Nama/identity router tidak ikut ditampilkan."
+            >
               <TextInput
                 value={page.title}
                 onChange={(title) => setPage({ title })}
-                placeholder={fallbackTitle}
+                placeholder="Warnet Kita"
               />
             </Field>
             <Field label="Teks sambutan" hint="Tampil di bawah nama hotspot.">
@@ -1223,50 +1308,145 @@ function LoginPageEditor({
             halaman tetap terbaca meski Anda memilih latar terang maupun gelap.
           </p>
 
-          {/* Logo */}
-          <div>
-            <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
-              Logo
+          {/* Logo & gambar latar */}
+          <div className="rounded-xl border border-line-soft bg-raised/50 p-4">
+            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">
+              Gambar
             </span>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Button size="sm" onClick={() => fileInput.current?.click()}>
-                <Upload className="h-3.5 w-3.5" />
-                {page.logoDataUrl ? "Ganti logo" : "Unggah logo"}
-              </Button>
-              {page.logoDataUrl && (
-                <>
-                  <span className="max-w-[160px] truncate font-mono text-[11px] text-faint">
-                    {page.logoName}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    className="px-2"
-                    ariaLabel="Hapus logo"
-                    title="Hapus logo"
-                    onClick={() => setPage({ logoDataUrl: "", logoName: "" })}
-                  >
-                    <Trash className="h-3.5 w-3.5" />
+
+            <div className="mt-3.5 grid gap-5 sm:grid-cols-2">
+              {/* Logo */}
+              <div>
+                <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                  Logo
+                </span>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Button size="sm" onClick={() => logoInput.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    {page.logoDataUrl ? "Ganti" : "Unggah logo"}
                   </Button>
+                  {page.logoDataUrl && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      className="px-2"
+                      ariaLabel="Hapus logo"
+                      title="Hapus logo"
+                      onClick={() => setPage({ logoDataUrl: "", logoName: "" })}
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <input
+                    ref={logoInput}
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (file) pickImage(file, "logo", setLogoError);
+                    }}
+                  />
+                </div>
+                {page.logoDataUrl && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={page.logoDataUrl}
+                    alt="Pratinjau logo"
+                    className="mt-3 max-h-16 max-w-[160px] rounded-md border border-line-soft bg-canvas object-contain p-1.5"
+                  />
+                )}
+                <p className="mt-2 text-xs leading-relaxed text-faint">{IMAGE_LIMITS.logo.hint}</p>
+                {dimensionNote(logoInfo, "logo")}
+                {logoError && <p className="mt-1.5 text-xs text-bad">{logoError}</p>}
+              </div>
+
+              {/* Gambar latar */}
+              <div>
+                <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                  Gambar latar
+                </span>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Button size="sm" onClick={() => bgInput.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    {page.bgImageDataUrl ? "Ganti" : "Unggah latar"}
+                  </Button>
+                  {page.bgImageDataUrl && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      className="px-2"
+                      ariaLabel="Hapus gambar latar"
+                      title="Hapus gambar latar"
+                      onClick={() => setPage({ bgImageDataUrl: "", bgImageName: "" })}
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <input
+                    ref={bgInput}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (file) pickImage(file, "background", setBgError);
+                    }}
+                  />
+                </div>
+                {page.bgImageDataUrl && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={page.bgImageDataUrl}
+                    alt="Pratinjau gambar latar"
+                    className="mt-3 h-16 w-full rounded-md border border-line-soft object-cover"
+                  />
+                )}
+                <p className="mt-2 text-xs leading-relaxed text-faint">
+                  {IMAGE_LIMITS.background.hint}
+                </p>
+                {dimensionNote(bgInfo, "background")}
+                {bgError && <p className="mt-1.5 text-xs text-bad">{bgError}</p>}
+              </div>
+            </div>
+
+            {page.bgImageDataUrl && (
+              <div className="mt-4 border-t border-line-soft pt-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                    Kepekatan lapisan gelap
+                  </span>
+                  <span className="font-mono text-[11px] text-brand">{page.bgOverlay}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={90}
+                  step={5}
+                  value={page.bgOverlay}
+                  aria-label="Kepekatan lapisan gelap di atas gambar latar"
+                  onChange={(e) => setPage({ bgOverlay: Number(e.target.value) })}
+                  className="mt-2 w-full accent-[color:var(--color-brand)]"
+                />
+                <p className="mt-1.5 text-xs leading-relaxed text-faint">
+                  Lapisan warna latar di atas foto. Naikkan bila teks jadi sulit dibaca karena
+                  fotonya ramai.
+                </p>
+              </div>
+            )}
+
+            <p className="mt-4 text-xs leading-relaxed text-faint">
+              Kedua gambar ikut masuk ke paket dan di-upload ke router — tidak boleh diambil dari
+              internet, karena klien belum punya akses sebelum login.
+              {totalImageBytes > 0 && (
+                <>
+                  {" "}
+                  Total gambar saat ini <span className="text-muted">{formatSize(totalImageBytes)}</span>.
                 </>
               )}
-              <input
-                ref={fileInput}
-                type="file"
-                accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  event.target.value = "";
-                  if (file) pickLogo(file);
-                }}
-              />
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-faint">
-              PNG/JPG/SVG maksimal 200 KB. Berkas ikut masuk ke paket dan di-upload ke router —
-              logo tidak boleh diambil dari internet karena klien belum punya akses sebelum login.
             </p>
-            {logoError && <p className="mt-1.5 text-xs text-bad">{logoError}</p>}
           </div>
 
           {/* Mode login */}

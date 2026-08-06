@@ -90,11 +90,17 @@ export interface HotspotPageConfig {
   primaryColor: string;
   /** Warna latar bebas; warna teks & garis diturunkan dari kecerahannya. */
   bgColor: string;
+  /** Nama yang tampil di halaman login. Kosong = judul disembunyikan. */
   title: string;
   subtitle: string;
   /** Logo disimpan sebagai data URI, lalu ditulis jadi berkas di dalam zip. */
   logoDataUrl: string;
   logoName: string;
+  /** Gambar latar, juga ikut jadi berkas di dalam zip. */
+  bgImageDataUrl: string;
+  bgImageName: string;
+  /** Kepekatan lapisan gelap di atas gambar latar, 0–90 persen. */
+  bgOverlay: number;
   /** Mode yang aktif saat halaman login pertama kali dibuka. */
   loginMode: LoginMode;
   showModeSwitch: boolean;

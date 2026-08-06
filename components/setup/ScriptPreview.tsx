@@ -31,7 +31,7 @@ function slug(value: string): string {
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "mikrotik"
+      .replace(/^-|-$/g, "") || "hotspot"
   );
 }
 
@@ -116,9 +116,8 @@ export function ScriptPreview({
     setBuildingZip(true);
     setZipError("");
     try {
-      const fallback = config.system.identity || config.hotspots[0]?.name || "Hotspot";
-      const entries = await buildHotspotPackage(config.hotspotPage, fallback);
-      download(createZip(entries), `hotspot-login-${slug(fallback)}.zip`);
+      const entries = await buildHotspotPackage(config.hotspotPage);
+      download(createZip(entries), `hotspot-login-${slug(config.hotspotPage.title)}.zip`);
     } catch (error) {
       setZipError(
         error instanceof Error ? error.message : "Gagal menyiapkan paket halaman login.",

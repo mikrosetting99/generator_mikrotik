@@ -52,6 +52,12 @@ export function mix(hex: string, amount: number): string {
   return toHex(r + (target - r) * t, g + (target - g) * t, b + (target - b) * t);
 }
 
+/** Bentuk rgba() dari sebuah warna hex, untuk lapisan transparan. */
+export function rgba(hex: string, alpha: number): string {
+  const [r, g, b] = toRgb(isHexColor(hex) ? hex : "#000000");
+  return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, alpha)).toFixed(2)})`;
+}
+
 /** Campur dua warna: t=0 menghasilkan `a`, t=1 menghasilkan `b`. */
 export function blend(a: string, b: string, t: number): string {
   const [r1, g1, b1] = toRgb(a);

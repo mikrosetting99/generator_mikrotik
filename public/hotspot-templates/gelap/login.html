@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login — {{TITLE}}</title>
+<style>
+  :root {
+    --primary: {{PRIMARY}};
+    --bg: {{BG}};
+    --surface: {{SURFACE}};
+    --text: {{TEXT}};
+    --muted: {{MUTED}};
+    --border: {{BORDER}};
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px; background: var(--bg); color: var(--text); position: relative; overflow-x: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  /* Cahaya ambien di belakang kartu */
+  body::before {
+    content: ""; position: fixed; inset: -30% 0 auto; height: 70vh; pointer-events: none;
+    background: radial-gradient(50% 60% at 50% 0%, var(--primary), transparent 70%); opacity: .16;
+  }
+  .card {
+    position: relative; width: 100%; max-width: 380px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 20px; padding: 34px 28px;
+    box-shadow: 0 30px 70px -40px rgba(0, 0, 0, .9);
+  }
+  .logo { max-width: 160px; max-height: 70px; margin: 0 auto 20px; display: block; }
+  .dot { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--primary);
+         margin: 0 auto 14px; box-shadow: 0 0 0 6px rgba(255, 255, 255, .05); }
+  h1 { margin: 0 0 6px; font-size: 21px; text-align: center; letter-spacing: -.01em; }
+  p.sub { margin: 0 0 24px; font-size: 14px; color: var(--muted); line-height: 1.6; text-align: center; }
+  label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+          color: var(--muted); margin-bottom: 7px; }
+  input[type=text], input[type=password] {
+    width: 100%; padding: 13px 14px; margin-bottom: 16px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    font-size: 16px; outline: none; transition: border-color .2s;
+  }
+  input[type=text]:focus, input[type=password]:focus { border-color: var(--primary); }
+  input[type=submit] {
+    width: 100%; padding: 14px; border: 0; border-radius: 12px; cursor: pointer;
+    background: var(--primary); color: #06121c; font-size: 16px; font-weight: 700;
+  }
+  .alert {
+    background: rgba(248, 113, 113, .12); border: 1px solid rgba(248, 113, 113, .45);
+    color: #f87171; padding: 11px 13px; border-radius: 12px; font-size: 13px; margin-bottom: 18px;
+  }
+  .wa {
+    display: block; margin-top: 12px; padding: 13px; border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text); font-size: 14px; text-align: center; text-decoration: none;
+  }
+  .terms { margin-top: 18px; font-size: 12px; color: var(--muted); line-height: 1.7; text-align: center; }
+  .foot { margin-top: 14px; font-size: 11px; color: var(--muted); text-align: center; opacity: .75; }
+</style>
+</head>
+<body>
+<div class="card">
+  {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
+  {{^LOGO}}<span class="dot"></span>{{/LOGO}}
+  <h1>{{TITLE}}</h1>
+  {{#SUBTITLE}}<p class="sub">{{SUBTITLE}}</p>{{/SUBTITLE}}
+
+  $(if error)<div class="alert">$(error)</div>$(endif)
+
+  <form name="login" action="$(link-login-only)" method="post" $(if chap-id)onSubmit="return doLogin()"$(endif)>
+    <input type="hidden" name="dst" value="$(link-orig)">
+    <input type="hidden" name="popup" value="true">
+
+    <label for="username">Username</label>
+    <input id="username" type="text" name="username" autocomplete="username" autocapitalize="none" value="$(username)">
+
+    <label for="password">Password</label>
+    <input id="password" type="password" name="password" autocomplete="current-password">
+
+    <input type="submit" value="Login">
+  </form>
+
+  {{#WA_LINK}}<a class="wa" href="{{WA_LINK}}">{{WA_LABEL}}</a>{{/WA_LINK}}
+  {{#TERMS}}<p class="terms">{{TERMS}}</p>{{/TERMS}}
+  <p class="foot">Terhubung ke $(hostname) &middot; IP Anda $(ip-address)</p>
+  {{#FOOTER}}<p class="foot">{{FOOTER}}</p>{{/FOOTER}}
+</div>
+
+<form name="sendin" action="$(link-login-only)" method="post" style="display:none">
+  <input type="hidden" name="username">
+  <input type="hidden" name="password">
+  <input type="hidden" name="dst" value="$(link-orig)">
+  <input type="hidden" name="popup" value="true">
+</form>
+
+$(if chap-id)
+<script type="text/javascript" src="/md5.js"></script>
+<script type="text/javascript">
+function doLogin() {
+  document.sendin.username.value = document.login.username.value;
+  document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value + '$(chap-challenge)');
+  document.sendin.submit();
+  return false;
+}
+</script>
+$(endif)
+</body>
+</html>

@@ -1,4 +1,5 @@
 import { createDefaultConfig, uid } from "./defaults";
+import { isHexColor, TEMPLATES } from "./hotspot-page";
 import { getModel } from "./models";
 import type {
   AddressEntry,
@@ -6,6 +7,8 @@ import type {
   DhcpServerEntry,
   HotspotAuth,
   HotspotEntry,
+  HotspotPageMode,
+  HotspotTemplateId,
   PoolEntry,
   PppoeSecret,
   RosVersion,
@@ -160,6 +163,10 @@ export function normalizeConfig(raw: unknown): SetupConfig {
     };
   });
 
+  const hotspotPage = asRecord(input.hotspotPage);
+  const templateId = asString(hotspotPage.template, base.hotspotPage.template);
+  const mode = asString(hotspotPage.mode, base.hotspotPage.mode);
+
   const secrets: PppoeSecret[] = asArray(pppoe.secrets).map((item) => {
     const s = asRecord(item);
     return { id: uid("sec"), user: asString(s.user), password: asString(s.password) };
@@ -205,6 +212,27 @@ export function normalizeConfig(raw: unknown): SetupConfig {
     pools,
     dhcpServers,
     hotspots,
+    hotspotPage: {
+      template: (TEMPLATES.some((t) => t.id === templateId)
+        ? templateId
+        : base.hotspotPage.template) as HotspotTemplateId,
+      mode: (mode === "terang" || mode === "gelap" ? mode : base.hotspotPage.mode) as HotspotPageMode,
+      primaryColor: isHexColor(asString(hotspotPage.primaryColor))
+        ? asString(hotspotPage.primaryColor)
+        : base.hotspotPage.primaryColor,
+      title: asString(hotspotPage.title),
+      subtitle: asString(hotspotPage.subtitle, base.hotspotPage.subtitle),
+      // Terima hanya data URI gambar — menolak URL luar yang tidak akan
+      // termuat di halaman login sebelum klien terhubung ke internet.
+      logoDataUrl: /^data:image\//i.test(asString(hotspotPage.logoDataUrl))
+        ? asString(hotspotPage.logoDataUrl)
+        : "",
+      logoName: asString(hotspotPage.logoName),
+      terms: asString(hotspotPage.terms),
+      whatsapp: asString(hotspotPage.whatsapp),
+      whatsappLabel: asString(hotspotPage.whatsappLabel, base.hotspotPage.whatsappLabel),
+      footer: asString(hotspotPage.footer),
+    },
     pppoe: {
       enabled: asBool(pppoe.enabled, false),
       iface: asString(pppoe.iface),

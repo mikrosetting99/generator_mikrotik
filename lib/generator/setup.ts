@@ -1,3 +1,4 @@
+import { whatsappLink } from "../hotspot-page";
 import { addressOfInterface, lanInterfaces } from "../interfaces";
 import { getModel } from "../models";
 import { addressPart, isCidr, networkOf } from "../net";
@@ -357,6 +358,17 @@ export function generateSetupScript(config: SetupConfig): string {
         ])}`,
       );
     }
+    if (whatsappLink(config.hotspotPage.whatsapp)) {
+      s.blank().comment("Walled garden — agar tombol WhatsApp di halaman login bisa dibuka");
+      s.comment("sebelum pengguna berhasil login.");
+      s.line("/ip hotspot walled-garden");
+      for (const host of ["wa.me", "*.whatsapp.com", "*.whatsapp.net", "*.wa.me"]) {
+        s.line(`add ${args([["dst-host", host], ["comment", tag("tombol WhatsApp")]])}`);
+      }
+      s.comment("Catatan: membuka chat di aplikasi WhatsApp mungkin masih perlu aturan");
+      s.comment("tambahan berbasis IP karena aplikasinya tidak memakai HTTP biasa.");
+    }
+
     s.blank().comment("Tambahkan user hotspot sesuai kebutuhan, contoh:");
     s.comment('/ip hotspot user add name=user1 password="PasswordKuat" profile=default');
   }

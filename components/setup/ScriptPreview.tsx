@@ -92,6 +92,8 @@ export function ScriptPreview({
   onJump: (section: Issue["section"]) => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [buildingZip, setBuildingZip] = useState(false);
+  const [zipError, setZipError] = useState("");
   const errors = issues.filter((i) => i.level === "error");
   const warnings = issues.filter((i) => i.level === "warn");
   const blocked = errors.length > 0;
@@ -106,6 +108,23 @@ export function ScriptPreview({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
+    }
+  };
+
+  // Template halaman login diambil dari server, jadi prosesnya asinkron.
+  const downloadLoginPage = async () => {
+    setBuildingZip(true);
+    setZipError("");
+    try {
+      const fallback = config.system.identity || config.hotspots[0]?.name || "Hotspot";
+      const entries = await buildHotspotPackage(config.hotspotPage, fallback);
+      download(createZip(entries), `hotspot-login-${slug(fallback)}.zip`);
+    } catch (error) {
+      setZipError(
+        error instanceof Error ? error.message : "Gagal menyiapkan paket halaman login.",
+      );
+    } finally {
+      setBuildingZip(false);
     }
   };
 
@@ -175,20 +194,18 @@ export function ScriptPreview({
           </Button>
           {config.hotspots.length > 0 && (
             <Button
-              onClick={() =>
-                download(
-                  createZip(buildHotspotPackage(config.system.identity || "Hotspot")),
-                  `hotspot-login-${slug(config.system.identity || "mikrotik")}.zip`,
-                )
-              }
+              onClick={downloadLoginPage}
+              disabled={buildingZip}
               title="Unduh paket halaman login hotspot"
             >
               <Download className="h-4 w-4" />
-              Login page
+              {buildingZip ? "Menyiapkan…" : "Login page"}
             </Button>
           )}
         </div>
       </div>
+
+      {zipError && <Note tone="bad">{zipError}</Note>}
 
       {blocked && (
         <div className="rounded-2xl border border-bad/30 bg-bad/[0.06] p-4">

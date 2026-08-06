@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Berhasil masuk — {{TITLE}}</title>
+<style>
+  :root {
+    --primary: {{PRIMARY}};
+    --bg: {{BG}};
+    --surface: {{SURFACE}};
+    --text: {{TEXT}};
+    --muted: {{MUTED}};
+    --border: {{BORDER}};
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  .card {
+    width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; padding: 32px 28px; text-align: center;
+  }
+  .logo { max-width: 150px; max-height: 64px; margin: 0 auto 18px; display: block; }
+  h1 { margin: 0 0 8px; font-size: 20px; }
+  p.sub { margin: 0 0 22px; font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .rows { text-align: left; font-size: 14px; color: var(--muted); line-height: 2.1;
+          border-top: 1px solid var(--border); padding-top: 16px; }
+  .rows b { color: var(--text); font-weight: 600; }
+  a { color: var(--primary); }
+  .info { font-size: 12px; color: var(--muted); margin-top: 18px; }
+</style>
+</head>
+<body>
+<div class="card">
+  {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
+  <h1>Berhasil masuk</h1>
+  <p class="sub">Anda sudah terhubung ke internet. Halaman akan dialihkan otomatis.</p>
+  <div class="rows">
+    <div>Username: <b>$(username)</b></div>
+    <div>IP: <b>$(ip)</b></div>
+  </div>
+  <p class="info">Tidak dialihkan otomatis? <a href="$(link-redirect)">Klik di sini</a>.</p>
+</div>
+<script type="text/javascript">
+setTimeout(function () { location.href = '$(link-redirect)'; }, 1200);
+</script>
+</body>
+</html>

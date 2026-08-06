@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Status koneksi — {{TITLE}}</title>
+<style>
+  :root {
+    --primary: {{PRIMARY}};
+    --bg: {{BG}};
+    --surface: {{SURFACE}};
+    --text: {{TEXT}};
+    --muted: {{MUTED}};
+    --border: {{BORDER}};
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  .card {
+    width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; padding: 32px 28px;
+  }
+  .logo { max-width: 150px; max-height: 64px; margin: 0 auto 18px; display: block; }
+  h1 { margin: 0 0 8px; font-size: 20px; text-align: center; }
+  p.sub { margin: 0 0 22px; font-size: 14px; color: var(--muted); line-height: 1.6; text-align: center; }
+  .rows { font-size: 14px; color: var(--muted); line-height: 2.1;
+          border-top: 1px solid var(--border); padding-top: 16px; }
+  .rows b { color: var(--text); font-weight: 600; }
+  .btn {
+    display: block; width: 100%; margin-top: 22px; padding: 13px; border: 0; border-radius: 12px;
+    background: var(--primary); color: #06121c; font-size: 15px; font-weight: 700;
+    text-align: center; text-decoration: none; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
+  <h1>Status koneksi</h1>
+  <p class="sub">Ringkasan pemakaian sesi Anda saat ini.</p>
+  <div class="rows">
+    <div>Username: <b>$(username)</b></div>
+    <div>IP: <b>$(ip)</b></div>
+    <div>Lama terhubung: <b>$(uptime)</b></div>
+    <div>Download: <b>$(bytes-in-nice)</b></div>
+    <div>Upload: <b>$(bytes-out-nice)</b></div>
+  </div>
+  <a class="btn" href="$(link-logout)">Keluar (logout)</a>
+</div>
+</body>
+</html>

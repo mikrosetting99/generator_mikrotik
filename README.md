@@ -32,8 +32,10 @@ Builder modular mengikuti urutan section pada PRD:
 8. **IP Address** — per interface fisik/bridge/VLAN.
 9. **IP Pool** — dengan pengisian otomatis dari subnet interface.
 10. **DHCP Server** — network & gateway diisi otomatis dari IP address interface.
-11. **IP Hotspot** — metode autentikasi http-pap/http-chap/mac-cookie/cookie, plus paket
-    halaman login yang diunduh terpisah sebagai `.zip`.
+11. **IP Hotspot** — metode autentikasi http-pap/http-chap/mac-cookie/cookie, plus editor
+    halaman login: 4 desain (Minimal, Voucher, Korporat, Gelap Modern), mode gelap/terang,
+    warna tema, unggah logo, teks sambutan/syarat/footer, dan tombol WhatsApp. Pratinjau
+    langsung, hasilnya diunduh sebagai `.zip`.
 12. **PPPoE Server** — profile, pool, rate limit, dan daftar PPP secret. Metode autentikasi
     tidak diekspos di form; script memakai bawaan RouterOS.
 13. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
@@ -93,12 +95,43 @@ lib/
   net.ts              # helper IP/CIDR
   validate.ts         # validasi per section
   storage.ts          # simpan/muat + normalisasi konfigurasi
-  hotspot-page.ts     # berkas halaman login hotspot
+  hotspot-page.ts     # registry template + renderer + pembangun paket login
   zip.ts              # penulis ZIP tanpa dependensi
   generator/
     script-builder.ts # penyusun teks script
     setup.ts          # generator menu 1
 ```
+
+## Menambah desain halaman login
+
+Berkas template ada di `public/hotspot-templates/`:
+
+```
+public/hotspot-templates/
+  _shared/     # alogin, status, logout, error — dipakai semua desain
+  minimal/login.html
+  voucher/login.html
+  korporat/login.html
+  gelap/login.html
+```
+
+Untuk menambah desain baru: buat folder berisi `login.html`, lalu daftarkan pada
+`TEMPLATES` di [lib/hotspot-page.ts](lib/hotspot-page.ts) (id, nama, deskripsi, warna
+default, palet gelap & terang). Tidak perlu mengubah kode lain — cukup commit dan
+`bash deploy.sh`.
+
+Placeholder yang tersedia di template:
+
+| Placeholder | Isi |
+|---|---|
+| `{{TITLE}}` `{{SUBTITLE}}` `{{TERMS}}` `{{FOOTER}}` | teks dari form (sudah di-escape) |
+| `{{LOGO}}` | nama berkas logo, mis. `logo.png` |
+| `{{WA_LINK}}` `{{WA_LABEL}}` | tautan wa.me dan teks tombol |
+| `{{PRIMARY}}` `{{BG}}` `{{SURFACE}}` `{{TEXT}}` `{{MUTED}}` `{{BORDER}}` | warna |
+| `{{#KEY}}…{{/KEY}}` | tampil hanya bila terisi |
+| `{{^KEY}}…{{/KEY}}` | tampil hanya bila kosong |
+
+Variabel bergaya `$(...)` adalah milik RouterOS dan tidak disentuh renderer.
 
 ## Catatan
 

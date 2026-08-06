@@ -68,6 +68,30 @@ export interface HotspotEntry {
   addressesPerMac: string;
 }
 
+/* ------------------------------------------------ halaman login hotspot */
+
+export type HotspotTemplateId = "minimal" | "voucher" | "korporat" | "gelap";
+export type HotspotPageMode = "gelap" | "terang";
+
+/**
+ * Kustomisasi halaman login hotspot. Satu router hanya punya satu folder
+ * `hotspot` di File List, jadi pengaturan ini berlaku untuk seluruh hotspot.
+ */
+export interface HotspotPageConfig {
+  template: HotspotTemplateId;
+  mode: HotspotPageMode;
+  primaryColor: string;
+  title: string;
+  subtitle: string;
+  /** Logo disimpan sebagai data URI, lalu ditulis jadi berkas di dalam zip. */
+  logoDataUrl: string;
+  logoName: string;
+  terms: string;
+  whatsapp: string;
+  whatsappLabel: string;
+  footer: string;
+}
+
 export interface PppoeSecret {
   id: string;
   user: string;
@@ -146,6 +170,7 @@ export interface SetupConfig {
   pools: PoolEntry[];
   dhcpServers: DhcpServerEntry[];
   hotspots: HotspotEntry[];
+  hotspotPage: HotspotPageConfig;
   pppoe: PppoeConfig;
   firewall: FirewallConfig;
   users: RouterUser[];

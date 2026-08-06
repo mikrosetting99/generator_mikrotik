@@ -71,7 +71,25 @@ class ByteWriter {
 
 export interface ZipEntry {
   name: string;
-  content: string;
+  /** Isi berkas teks. Abaikan bila memakai `dataUrl`. */
+  content?: string;
+  /** Berkas biner (mis. logo) dalam bentuk data URI. */
+  dataUrl?: string;
+}
+
+/** Mengubah data URI menjadi byte mentah untuk ditulis ke dalam zip. */
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const comma = dataUrl.indexOf(",");
+  const payload = comma >= 0 ? dataUrl.slice(comma + 1) : "";
+  const header = comma >= 0 ? dataUrl.slice(0, comma) : "";
+
+  if (!header.includes(";base64")) {
+    return new TextEncoder().encode(decodeURIComponent(payload));
+  }
+  const binary = atob(payload);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
 }
 
 export function createZip(entries: ZipEntry[], date = new Date()): Blob {
@@ -83,7 +101,9 @@ export function createZip(entries: ZipEntry[], date = new Date()): Blob {
 
   for (const entry of entries) {
     const nameBytes = encoder.encode(entry.name);
-    const dataBytes = encoder.encode(entry.content);
+    const dataBytes = entry.dataUrl
+      ? dataUrlToBytes(entry.dataUrl)
+      : encoder.encode(entry.content ?? "");
     const crc = crc32(dataBytes);
 
     // Local file header

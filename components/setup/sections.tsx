@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, Plus, Trash } from "@/components/icons";
+import { useEffect, useRef, useState } from "react";
+import { AlertCircle, AlertTriangle, Check, Plus, Trash, Upload } from "@/components/icons";
 import {
   Button,
   CheckPill,
@@ -25,11 +26,20 @@ import {
   newWan,
   TIMEZONES,
 } from "@/lib/defaults";
+import {
+  fetchLoginTemplate,
+  isHexColor,
+  renderTemplate,
+  templateVars,
+  TEMPLATES,
+  whatsappLink,
+} from "@/lib/hotspot-page";
 import { addressOfInterface, allInterfaces, physicalInterfaces } from "@/lib/interfaces";
 import { getModel, modelsBySeries, ROS_LABEL } from "@/lib/models";
 import { addressPart, networkOf, suggestPoolRange } from "@/lib/net";
 import type {
   HotspotAuth,
+  HotspotPageMode,
   Issue,
   RosVersion,
   SectionId,
@@ -1025,18 +1035,313 @@ export function HotspotSection({ config, patch, issues }: SectionProps) {
           );
         })}
       </div>
-      {config.hotspots.length > 0 && (
-        <div className="mt-4">
-          <Note>
-            Script hanya berisi konfigurasi hotspot. Unduh paket halaman login lewat tombol
-            <span className="text-ink"> Unduh login page </span>
-            di panel script, lalu upload isinya ke folder <span className="font-mono">hotspot</span>{" "}
-            pada menu Files di Winbox.
-          </Note>
-        </div>
-      )}
+      {config.hotspots.length > 0 && <LoginPageEditor config={config} patch={patch} />}
       <IssueList issues={issues} />
     </Panel>
+  );
+}
+
+/* --------------------------------------------- k2: halaman login hotspot */
+
+const COLOR_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#a78bfa", "#f472b6", "#ef4444", "#14b8a6"];
+const MAX_LOGO_BYTES = 200 * 1024;
+
+function LoginPageEditor({
+  config,
+  patch,
+}: {
+  config: SetupConfig;
+  patch: (partial: Partial<SetupConfig>) => void;
+}) {
+  const page = config.hotspotPage;
+  const setPage = (partial: Partial<typeof page>) =>
+    patch({ hotspotPage: { ...page, ...partial } });
+
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [logoError, setLogoError] = useState("");
+  const [preview, setPreview] = useState("");
+  const fallbackTitle = config.system.identity || config.hotspots[0]?.name || "Hotspot";
+
+  // Pratinjau: ambil template, isi placeholder, lalu ganti variabel RouterOS
+  // dengan contoh nilai supaya halaman terbaca wajar di dalam iframe.
+  useEffect(() => {
+    let active = true;
+    fetchLoginTemplate(page.template)
+      .then((source) => {
+        if (!active) return;
+        const html = renderTemplate(source, {
+          ...templateVars(page, fallbackTitle),
+          LOGO: page.logoDataUrl,
+        });
+        setPreview(
+          html
+            .replace(/\$\(if error\)[\s\S]*?\$\(endif\)/g, "")
+            .replace(/\$\(if chap-id\)[\s\S]*?\$\(endif\)/g, "")
+            .replace(/\$\(hostname\)/g, fallbackTitle)
+            .replace(/\$\(ip-address\)/g, "192.168.20.25")
+            .replace(/\$\([^)]*\)/g, ""),
+        );
+      })
+      .catch(() => active && setPreview(""));
+    return () => {
+      active = false;
+    };
+  }, [page, fallbackTitle]);
+
+  const pickLogo = (file: File) => {
+    setLogoError("");
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Berkas harus berupa gambar (PNG, JPG, atau SVG).");
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setLogoError(
+        `Ukuran logo ${Math.round(file.size / 1024)} KB — maksimal 200 KB agar tidak memenuhi penyimpanan router.`,
+      );
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () =>
+      setPage({ logoDataUrl: String(reader.result), logoName: file.name });
+    reader.onerror = () => setLogoError("Gagal membaca berkas.");
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="mt-6 border-t border-line-soft pt-5">
+      <h3 className="text-sm font-semibold text-ink">Halaman login</h3>
+      <p className="mt-1 text-[13px] leading-relaxed text-muted">
+        Pilih desain lalu sesuaikan. Hasilnya diunduh sebagai paket{" "}
+        <span className="font-mono text-ink">.zip</span> lewat tombol Login page di panel script,
+        untuk di-upload ke folder <span className="font-mono text-ink">hotspot</span> pada menu
+        Files Winbox.
+      </p>
+
+      {/* Pilihan desain */}
+      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+        {TEMPLATES.map((template) => {
+          const active = page.template === template.id;
+          return (
+            <button
+              key={template.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setPage({ template: template.id, primaryColor: template.defaultPrimary })}
+              className={`rounded-xl border p-3.5 text-left transition-all duration-200 ${
+                active
+                  ? "border-brand bg-brand/[0.08]"
+                  : "border-line-soft bg-canvas/50 hover:border-line"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span
+                  className="h-3 w-3 shrink-0 rounded-full"
+                  style={{ background: template.defaultPrimary }}
+                />
+                <span className={`text-sm font-medium ${active ? "text-ink" : "text-muted"}`}>
+                  {template.name}
+                </span>
+                {active && <Check className="ml-auto h-3.5 w-3.5 text-brand" />}
+              </span>
+              <span className="mt-1.5 block text-xs leading-relaxed text-faint">
+                {template.description}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <div className="space-y-4">
+          <div className={grid2}>
+            <Field label="Nama hotspot" hint={`Kosong = memakai "${fallbackTitle}".`}>
+              <TextInput
+                value={page.title}
+                onChange={(title) => setPage({ title })}
+                placeholder={fallbackTitle}
+              />
+            </Field>
+            <Field label="Mode warna">
+              <Select
+                value={page.mode}
+                placeholder=""
+                onChange={(mode) => setPage({ mode: mode as HotspotPageMode })}
+                options={[
+                  { value: "gelap", label: "Gelap" },
+                  { value: "terang", label: "Terang" },
+                ]}
+              />
+            </Field>
+          </div>
+
+          <Field label="Teks sambutan">
+            <TextInput
+              value={page.subtitle}
+              onChange={(subtitle) => setPage({ subtitle })}
+              placeholder="Masuk dengan akun yang diberikan petugas."
+            />
+          </Field>
+
+          {/* Warna tema */}
+          <div>
+            <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+              Warna tema
+            </span>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {COLOR_PRESETS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  title={color}
+                  aria-label={`Warna ${color}`}
+                  aria-pressed={page.primaryColor.toLowerCase() === color}
+                  onClick={() => setPage({ primaryColor: color })}
+                  className={`h-8 w-8 rounded-lg border-2 transition-transform hover:scale-110 ${
+                    page.primaryColor.toLowerCase() === color
+                      ? "border-ink"
+                      : "border-transparent"
+                  }`}
+                  style={{ background: color }}
+                />
+              ))}
+              <input
+                type="color"
+                aria-label="Warna khusus"
+                value={isHexColor(page.primaryColor) ? page.primaryColor : "#38bdf8"}
+                onChange={(e) => setPage({ primaryColor: e.target.value })}
+                className="h-8 w-12 cursor-pointer rounded-lg border border-line bg-canvas p-1"
+              />
+            </div>
+          </div>
+
+          {/* Logo */}
+          <div>
+            <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+              Logo
+            </span>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={() => fileInput.current?.click()}>
+                <Upload className="h-3.5 w-3.5" />
+                {page.logoDataUrl ? "Ganti logo" : "Unggah logo"}
+              </Button>
+              {page.logoDataUrl && (
+                <>
+                  <span className="max-w-[160px] truncate font-mono text-[11px] text-faint">
+                    {page.logoName}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    className="px-2"
+                    ariaLabel="Hapus logo"
+                    title="Hapus logo"
+                    onClick={() => setPage({ logoDataUrl: "", logoName: "" })}
+                  >
+                    <Trash className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              )}
+              <input
+                ref={fileInput}
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (file) pickLogo(file);
+                }}
+              />
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-faint">
+              PNG/JPG/SVG maksimal 200 KB. Berkas ikut masuk ke paket zip dan di-upload ke router —
+              logo tidak boleh diambil dari internet karena klien belum punya akses sebelum login.
+            </p>
+            {logoError && <p className="mt-1.5 text-xs text-bad">{logoError}</p>}
+          </div>
+
+          {/* WhatsApp */}
+          <div className={grid2}>
+            <Field
+              label="Nomor WhatsApp"
+              hint={
+                whatsappLink(page.whatsapp)
+                  ? whatsappLink(page.whatsapp)
+                  : "Kosongkan bila tidak perlu tombol WhatsApp."
+              }
+            >
+              <TextInput
+                mono
+                value={page.whatsapp}
+                onChange={(whatsapp) => setPage({ whatsapp })}
+                placeholder="081234567890"
+              />
+            </Field>
+            <Field label="Teks tombol WhatsApp">
+              <TextInput
+                value={page.whatsappLabel}
+                onChange={(whatsappLabel) => setPage({ whatsappLabel })}
+                placeholder="Beli voucher via WhatsApp"
+              />
+            </Field>
+          </div>
+
+          <div className={grid2}>
+            <Field label="Catatan / syarat pemakaian">
+              <TextInput
+                value={page.terms}
+                onChange={(terms) => setPage({ terms })}
+                placeholder="Dilarang mengunduh berkas berukuran besar."
+              />
+            </Field>
+            <Field label="Teks footer">
+              <TextInput
+                value={page.footer}
+                onChange={(footer) => setPage({ footer })}
+                placeholder="© 2026 Warnet Kita"
+              />
+            </Field>
+          </div>
+
+          {whatsappLink(page.whatsapp) && (
+            <Note>
+              Rule walled garden untuk domain WhatsApp otomatis ditambahkan ke script, supaya tombol
+              itu bisa dibuka sebelum pengguna login.
+            </Note>
+          )}
+        </div>
+
+        {/* Pratinjau */}
+        <div>
+          <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+            Pratinjau
+          </span>
+          <div className="mt-2 overflow-hidden rounded-xl border border-line bg-canvas">
+            <div className="flex items-center gap-1.5 border-b border-line-soft px-3 py-2">
+              <span className="h-2 w-2 rounded-full bg-line" />
+              <span className="h-2 w-2 rounded-full bg-line" />
+              <span className="ml-1 font-mono text-[10px] text-faint">login.html</span>
+            </div>
+            {preview ? (
+              <iframe
+                title="Pratinjau halaman login hotspot"
+                srcDoc={preview}
+                sandbox=""
+                className="block h-[420px] w-full border-0 bg-white"
+              />
+            ) : (
+              <div className="grid h-[420px] place-items-center text-xs text-faint">
+                Memuat pratinjau…
+              </div>
+            )}
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-faint">
+            Tampilan sebenarnya di ponsel akan memenuhi layar. Kolom login tidak berfungsi di
+            pratinjau ini.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 

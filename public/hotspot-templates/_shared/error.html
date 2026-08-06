@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terjadi kesalahan — {{TITLE}}</title>
+<style>
+  :root {
+    --primary: {{PRIMARY}};
+    --bg: {{BG}};
+    --surface: {{SURFACE}};
+    --text: {{TEXT}};
+    --muted: {{MUTED}};
+    --border: {{BORDER}};
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  .card {
+    width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; padding: 32px 28px; text-align: center;
+  }
+  .logo { max-width: 150px; max-height: 64px; margin: 0 auto 18px; display: block; }
+  h1 { margin: 0 0 14px; font-size: 20px; }
+  .alert {
+    background: rgba(248, 113, 113, .12); border: 1px solid rgba(248, 113, 113, .45);
+    color: #f87171; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.6;
+  }
+  .btn {
+    display: block; width: 100%; margin-top: 22px; padding: 13px; border: 0; border-radius: 12px;
+    background: var(--primary); color: #06121c; font-size: 15px; font-weight: 700;
+    text-align: center; text-decoration: none;
+  }
+  .wa {
+    display: block; margin-top: 10px; padding: 12px; border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text); font-size: 14px; text-decoration: none;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{TITLE}}">{{/LOGO}}
+  <h1>Terjadi kesalahan</h1>
+  <div class="alert">$(error)</div>
+  <a class="btn" href="$(link-login)">Kembali ke halaman login</a>
+  {{#WA_LINK}}<a class="wa" href="{{WA_LINK}}">{{WA_LABEL}}</a>{{/WA_LINK}}
+</div>
+</body>
+</html>

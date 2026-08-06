@@ -1,3 +1,26 @@
+/**
+ * Menu yang TIDAK punya properti `comment` pada perintah `add`.
+ *
+ * Menyertakannya membuat seluruh perintah gagal — RouterOS menjawab
+ * "expected end of command" tepat di posisi `comment=`, dan objeknya sama
+ * sekali tidak terbentuk. Dua yang pertama terbukti dari error router nyata;
+ * dua sisanya satu keluarga dengan hotspot profile sehingga diperlakukan sama,
+ * karena kehilangan penanda jauh lebih ringan akibatnya daripada gagal membuat
+ * objeknya.
+ */
+const NO_COMMENT_ON_ADD = new Set([
+  "/ip dhcp-server",
+  "/ip hotspot profile",
+  "/ip hotspot",
+  "/interface pppoe-server server",
+]);
+
+/** Membuang `comment=...` di menu yang tidak mendukungnya. */
+function stripUnsupportedComment(menu: string, addArgs: string): string {
+  if (!NO_COMMENT_ON_ADD.has(menu)) return addArgs;
+  return addArgs.replace(/\s*comment=(?:"(?:[^"\\]|\\.)*"|\S+)\s*$/, "");
+}
+
 /** Penyusun teks script RouterOS — menjaga format & komentar tetap konsisten. */
 export class ScriptBuilder {
   private lines: string[] = [];
@@ -59,7 +82,7 @@ export class ScriptBuilder {
    */
   addIfMissing(menu: string, findPairs: Array<[string, ArgValue]>, addArgs: string): this {
     this.line(`:if ([:len [${menu} find where ${findArgs(findPairs)}]] = 0) do={`);
-    this.line(`  ${menu} add ${addArgs}`);
+    this.line(`  ${menu} add ${stripUnsupportedComment(menu, addArgs)}`);
     return this.line("}");
   }
 

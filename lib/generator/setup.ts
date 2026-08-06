@@ -683,7 +683,9 @@ export function generateSetupScript(config: SetupConfig): string {
   if (config.users.some((u) => u.name.trim())) {
     s.comment("  /user print                -> daftar user router");
   }
-  s.blank().comment(`Seluruh objek hasil script ini diberi comment "${BRAND}".`);
+  s.blank().comment(`Objek hasil script ini diberi comment "${BRAND}".`);
+  s.comment("Pengecualian: DHCP server, hotspot, profil hotspot, dan PPPoE server");
+  s.comment("memang tidak punya kolom comment di RouterOS.");
   s.comment(`Menghapus semuanya: /ip firewall filter remove [find comment~"${BRAND}"]`);
   s.comment("(ulangi untuk menu lain: /ip firewall nat, /ip address, /ip pool, dst)");
 

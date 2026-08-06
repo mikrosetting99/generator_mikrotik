@@ -44,6 +44,25 @@ export class ScriptBuilder {
     return this;
   }
 
+  /**
+   * `add` yang hanya berjalan bila objeknya belum ada.
+   *
+   * Router berkonfigurasi bawaan pabrik sudah punya sebagian objek ini
+   * (interface-list WAN/LAN, DHCP client di ether1, alamat 192.168.88.1, ...).
+   * Tanpa penjagaan, perintah `add` biasa akan gagal dan menampilkan deretan
+   * pesan merah di terminal. Bentuk ini juga membuat script aman dijalankan
+   * dua kali.
+   *
+   * Path menu ditulis lengkap di dalam `find` maupun `add` — tidak
+   * mengandalkan konteks menu berjalan — supaya hasilnya sama baik saat
+   * di-paste ke terminal maupun dijalankan lewat `import`.
+   */
+  addIfMissing(menu: string, findPairs: Array<[string, ArgValue]>, addArgs: string): this {
+    this.line(`:if ([:len [${menu} find where ${findArgs(findPairs)}]] = 0) do={`);
+    this.line(`  ${menu} add ${addArgs}`);
+    return this.line("}");
+  }
+
   blank(): this {
     if (this.dirty && this.lines[this.lines.length - 1] !== "") this.lines.push("");
     return this;
@@ -66,16 +85,27 @@ export function raw(value: string): RawValue {
   return { raw: value };
 }
 
-type ArgValue = string | number | boolean | RawValue | undefined | null;
+export type ArgValue = string | number | boolean | RawValue | undefined | null;
+
+function pair([key, value]: [string, ArgValue]): string {
+  if (typeof value === "boolean") return `${key}=${value ? "yes" : "no"}`;
+  if (value !== null && typeof value === "object") return `${key}=${value.raw}`;
+  return `${key}=${ScriptBuilder.q(String(value))}`;
+}
+
+function present(pairs: Array<[string, ArgValue]>): Array<[string, ArgValue]> {
+  return pairs.filter(([, value]) => value !== undefined && value !== null && value !== "");
+}
 
 /** Merangkai pasangan key=value, melewati nilai kosong. */
 export function args(pairs: Array<[string, ArgValue]>): string {
-  return pairs
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(([key, value]) => {
-      if (typeof value === "boolean") return `${key}=${value ? "yes" : "no"}`;
-      if (value !== null && typeof value === "object") return `${key}=${value.raw}`;
-      return `${key}=${ScriptBuilder.q(String(value))}`;
-    })
-    .join(" ");
+  return present(pairs).map(pair).join(" ");
+}
+
+/**
+ * Kondisi untuk `find where`. Beberapa syarat digabung dengan `and`, sesuai
+ * bentuk yang dianjurkan manual RouterOS.
+ */
+export function findArgs(pairs: Array<[string, ArgValue]>): string {
+  return present(pairs).map(pair).join(" and ");
 }

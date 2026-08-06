@@ -206,7 +206,13 @@ export function validateConfig(config: SetupConfig): Issue[] {
     const tag = hs.name.trim() || `Hotspot ${i + 1}`;
     if (!hs.name.trim()) err("hotspot", `Hotspot ${i + 1}: nama belum diisi.`);
     if (!hs.iface) err("hotspot", `${tag}: interface belum dipilih.`);
-    if (hs.auth.length === 0) err("hotspot", `${tag}: minimal 1 metode autentikasi harus dipilih.`);
+    if (hs.auth.length === 0) {
+      err("hotspot", `${tag}: minimal 1 metode autentikasi harus dipilih.`);
+    } else if (!hs.auth.some((a) => a === "http-pap" || a === "http-chap")) {
+      // cookie & mac-cookie hanya menyimpan sesi; login pertamanya tetap
+      // butuh form HTTP, dan RouterOS menolak profil tanpa salah satunya.
+      err("hotspot", `${tag}: cookie/mac-cookie perlu didampingi http-pap atau http-chap.`);
+    }
     if (!hs.pool) err("hotspot", `${tag}: address pool belum dipilih.`);
     else if (!poolNames.includes(hs.pool)) err("hotspot", `${tag}: pool "${hs.pool}" tidak ada di section IP Pool.`);
     if (hs.iface && !addressOfInterface(config, hs.iface)) {

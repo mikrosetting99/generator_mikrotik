@@ -45,6 +45,13 @@ export function generateSetupScript(config: SetupConfig): string {
   const needsInterfaceList =
     config.firewall.enabled || (config.nat.enabled && config.nat.mode === "global");
 
+  /** Nomor section mengikuti blok yang benar-benar ditulis. */
+  let sectionNo = 0;
+  const section = (title: string, description?: string) => {
+    sectionNo += 1;
+    s.section(`${sectionNo}. ${title}`, description);
+  };
+
   // ---------------------------------------------------------------- header
   s.banner([
     "SCRIPT SETUP MIKROTIK BARU",
@@ -54,14 +61,33 @@ export function generateSetupScript(config: SetupConfig): string {
     `RouterOS   : ${config.ros ? config.ros : "(belum dipilih)"}`,
     `Dibuat     : ${stamp()}`,
     "",
-    "PERINGATAN",
-    "Script ini menambah konfigurasi baru ke router. Jalankan pada router",
-    "kondisi default/reset. Jika router sudah terkonfigurasi, backup dulu:",
+    "CARA PAKAI",
+    "Buka Winbox/WebFig > New Terminal, paste seluruh isi script ini",
+    "sekaligus, lalu tekan Enter.",
+    "",
+    "SIFAT SCRIPT INI",
+    "Hanya menambah, tidak menghapus apa pun. Setiap perintah dilindungi",
+    "pemeriksaan \"buat hanya bila belum ada\", jadi aman dijalankan ulang",
+    "dan tidak memunculkan error di router yang masih berkonfigurasi bawaan.",
+    "Sisi lainnya: objek yang sudah ada TIDAK diubah — bila hasilnya tidak",
+    "sesuai harapan, hapus objek lama itu lalu jalankan script ini lagi.",
+    "",
+    "BACKUP DULU (bila router sudah terpakai)",
     "  /system backup save name=sebelum-setup",
     "  /export file=sebelum-setup",
-    "",
-    "Cara pakai: buka Winbox/WebFig > New Terminal, lalu paste seluruh isi",
-    "script ini sekaligus dan tekan Enter.",
+    ...(config.firewall.enabled
+      ? [
+          "",
+          "CATATAN FIREWALL",
+          "Rule firewall di script ini ditambahkan di URUTAN PALING BAWAH.",
+          "Bila router masih memakai firewall bawaan pabrik, rule bawaan",
+          "dievaluasi lebih dulu sehingga rule baru bisa tidak pernah tercapai.",
+          "Periksa dengan /ip firewall filter print lalu susun ulang bila perlu,",
+          "atau mulai dari router bersih:",
+          "  /system reset-configuration no-defaults=yes",
+          "(perintah itu memutus koneksi — jalankan sendiri, bukan lewat script)",
+        ]
+      : []),
   ]);
 
   if (model?.note) {
@@ -76,7 +102,7 @@ export function generateSetupScript(config: SetupConfig): string {
   // -------------------------------------------------------------- identitas
   const sys = config.system;
   if (sys.identity || sys.timezone || sys.ntp) {
-    s.section("1. IDENTITAS ROUTER & JAM");
+    section("IDENTITAS ROUTER & JAM");
     if (sys.identity) {
       s.line(`/system identity set ${args([["name", sys.identity]])}`);
     }
@@ -96,21 +122,26 @@ export function generateSetupScript(config: SetupConfig): string {
 
   // ----------------------------------------------------------------- bridge
   if (config.bridges.length > 0) {
-    s.section(
-      "2. BRIDGE",
+    section("BRIDGE",
       "Menggabungkan beberapa port fisik menjadi satu segmen LAN.",
     );
-    s.line("/interface bridge");
     for (const bridge of config.bridges) {
       if (!bridge.name.trim()) continue;
-      s.line(`add ${args([["name", bridge.name.trim()], ["comment", tag()]])}`);
+      s.addIfMissing(
+        "/interface bridge",
+        [["name", bridge.name.trim()]],
+        args([["name", bridge.name.trim()], ["comment", tag()]]),
+      );
     }
     const hasPorts = config.bridges.some((b) => b.ports.length > 0);
     if (hasPorts) {
-      s.blank().line("/interface bridge port");
       for (const bridge of config.bridges) {
         for (const port of bridge.ports) {
-          s.line(`add ${args([["bridge", bridge.name.trim()], ["interface", port]])}`);
+          s.addIfMissing(
+            "/interface bridge port",
+            [["interface", port]],
+            args([["bridge", bridge.name.trim()], ["interface", port]]),
+          );
         }
       }
     }
@@ -118,26 +149,26 @@ export function generateSetupScript(config: SetupConfig): string {
 
   // ------------------------------------------------------------------- vlan
   if (config.vlans.length > 0) {
-    s.section("3. VLAN", "Membuat interface VLAN di atas interface induk.");
-    s.line("/interface vlan");
+    section("VLAN", "Membuat interface VLAN di atas interface induk.");
     for (const vlan of config.vlans) {
       if (!vlan.name.trim()) continue;
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/interface vlan",
+        [["name", vlan.name.trim()]],
+        args([
           ["name", vlan.name.trim()],
           ["vlan-id", vlan.vlanId],
           ["interface", vlan.parent],
           ["disabled", false],
           ["comment", tag(`VLAN ${vlan.vlanId} di ${vlan.parent}`)],
-        ])}`,
+        ]),
       );
     }
   }
 
   // -------------------------------------------------------------------- wan
   if (wans.length > 0) {
-    s.section(
-      "4. WAN (koneksi ke ISP)",
+    section("WAN (koneksi ke ISP)",
       wans.length > 1
         ? "Beberapa WAN dibedakan lewat distance — angka terkecil jadi jalur utama."
         : "Konfigurasi jalur internet dari ISP.",
@@ -145,10 +176,13 @@ export function generateSetupScript(config: SetupConfig): string {
 
     const dhcpWans = wans.filter((w) => w.mode === "dhcp");
     if (dhcpWans.length > 0) {
-      s.line("/ip dhcp-client");
+      // Satu interface hanya boleh punya satu DHCP client — router bawaan
+      // pabrik biasanya sudah memasang satu di ether1.
       for (const wan of dhcpWans) {
-        s.line(
-          `add ${args([
+        s.addIfMissing(
+          "/ip dhcp-client",
+          [["interface", wan.iface]],
+          args([
             ["interface", wan.iface],
             ["add-default-route", wan.addDefaultRoute],
             ["default-route-distance", wan.addDefaultRoute ? wan.dhcpDistance : ""],
@@ -156,7 +190,7 @@ export function generateSetupScript(config: SetupConfig): string {
             ["use-peer-ntp", false],
             ["disabled", false],
             ["comment", tag(wan.comment || `WAN ${wan.iface}`)],
-          ])}`,
+          ]),
         );
       }
     }
@@ -164,26 +198,28 @@ export function generateSetupScript(config: SetupConfig): string {
     const staticWans = wans.filter((w) => w.mode === "static");
     if (staticWans.length > 0) {
       s.blank().comment("IP statis dari ISP");
-      s.line("/ip address");
       for (const wan of staticWans) {
-        s.line(
-          `add ${args([
+        s.addIfMissing(
+          "/ip address",
+          [["address", wan.address]],
+          args([
             ["address", wan.address],
             ["interface", wan.iface],
             ["comment", tag(wan.comment || `WAN ${wan.iface}`)],
-          ])}`,
+          ]),
         );
       }
       s.blank().comment("Default route ke gateway ISP");
-      s.line("/ip route");
       for (const wan of staticWans) {
-        s.line(
-          `add ${args([
+        s.addIfMissing(
+          "/ip route",
+          [["dst-address", "0.0.0.0/0"], ["gateway", wan.gateway]],
+          args([
             ["dst-address", "0.0.0.0/0"],
             ["gateway", wan.gateway],
             ["distance", wan.staticDistance],
             ["comment", tag(wan.comment || `default via ${wan.iface}`)],
-          ])}`,
+          ]),
         );
       }
     }
@@ -191,34 +227,44 @@ export function generateSetupScript(config: SetupConfig): string {
 
   // ------------------------------------------------------------ interface list
   if (needsInterfaceList) {
-    s.section(
-      "5. INTERFACE LIST",
+    section("INTERFACE LIST",
       "Pengelompokan interface agar rule NAT & firewall ringkas dan mudah dirawat.",
     );
-    s.line("/interface list");
-    s.line(`add ${args([["name", WAN_LIST]])}`);
-    s.line(`add ${args([["name", LAN_LIST]])}`);
-    s.blank().line("/interface list member");
+    // Konfigurasi bawaan pabrik sudah membuat list WAN & LAN pada banyak model.
+    for (const list of [WAN_LIST, LAN_LIST]) {
+      s.addIfMissing("/interface list", [["name", list]], args([["name", list]]));
+    }
+    s.blank();
     for (const iface of wanIfaces) {
-      s.line(`add ${args([["list", WAN_LIST], ["interface", iface]])}`);
+      s.addIfMissing(
+        "/interface list member",
+        [["list", WAN_LIST], ["interface", iface]],
+        args([["list", WAN_LIST], ["interface", iface]]),
+      );
     }
     for (const iface of lanMembers) {
-      s.line(`add ${args([["list", LAN_LIST], ["interface", iface]])}`);
+      s.addIfMissing(
+        "/interface list member",
+        [["list", LAN_LIST], ["interface", iface]],
+        args([["list", LAN_LIST], ["interface", iface]]),
+      );
     }
   }
 
   // -------------------------------------------------------------- ip address
   const lanAddresses = config.addresses.filter((a) => a.iface && a.address.trim());
   if (lanAddresses.length > 0) {
-    s.section("6. IP ADDRESS", "Alamat IP router di tiap segmen jaringan.");
-    s.line("/ip address");
+    section(
+      "IP ADDRESS", "Alamat IP router di tiap segmen jaringan.");
     for (const addr of lanAddresses) {
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip address",
+        [["address", addr.address.trim()]],
+        args([
           ["address", addr.address.trim()],
           ["interface", addr.iface],
           ["comment", tag(addr.comment || `IP ${addr.iface}`)],
-        ])}`,
+        ]),
       );
     }
   }
@@ -226,8 +272,7 @@ export function generateSetupScript(config: SetupConfig): string {
   // -------------------------------------------------------------------- dns
   const dnsServers = config.dns.servers.map((d) => d.trim()).filter(Boolean);
   if (dnsServers.length > 0 || config.dns.allowRemoteRequests) {
-    s.section(
-      "7. DNS",
+    section("DNS",
       config.dns.allowRemoteRequests
         ? "Router juga melayani permintaan DNS dari klien LAN (allow-remote-requests)."
         : "DNS hanya dipakai oleh router itu sendiri.",
@@ -242,38 +287,42 @@ export function generateSetupScript(config: SetupConfig): string {
 
   // ---------------------------------------------------------------- ip pool
   if (config.pools.length > 0) {
-    s.section("8. IP POOL", "Kumpulan IP yang dibagikan ke klien (DHCP/Hotspot/PPPoE).");
-    s.line("/ip pool");
+    section(
+      "IP POOL", "Kumpulan IP yang dibagikan ke klien (DHCP/Hotspot/PPPoE).");
     for (const pool of config.pools) {
       if (!pool.name.trim()) continue;
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip pool",
+        [["name", pool.name.trim()]],
+        args([
           ["name", pool.name.trim()],
           ["ranges", `${pool.rangeStart.trim()}-${pool.rangeEnd.trim()}`],
           ["comment", tag()],
-        ])}`,
+        ]),
       );
     }
   }
 
   // ----------------------------------------------------------- dhcp server
   if (config.dhcpServers.length > 0) {
-    s.section("9. DHCP SERVER", "Membagikan IP otomatis ke perangkat klien.");
-    s.line("/ip dhcp-server");
+    section(
+      "DHCP SERVER", "Membagikan IP otomatis ke perangkat klien.");
     for (const dhcp of config.dhcpServers) {
       if (!dhcp.name.trim()) continue;
-      s.line(
-        `add ${args([
+      // Satu interface hanya boleh dilayani satu DHCP server.
+      s.addIfMissing(
+        "/ip dhcp-server",
+        [["interface", dhcp.iface]],
+        args([
           ["name", dhcp.name.trim()],
           ["interface", dhcp.iface],
           ["address-pool", dhcp.pool],
           ["lease-time", dhcp.leaseTime || "1d"],
           ["disabled", false],
           ["comment", tag(`DHCP untuk ${dhcp.iface}`)],
-        ])}`,
+        ]),
       );
     }
-    s.blank().line("/ip dhcp-server network");
     for (const dhcp of config.dhcpServers) {
       const ifaceAddress = addressOfInterface(config, dhcp.iface);
       const network = dhcp.network.trim() || networkOf(ifaceAddress);
@@ -282,42 +331,46 @@ export function generateSetupScript(config: SetupConfig): string {
       const dns =
         dhcp.dnsServers.trim() ||
         (config.dns.allowRemoteRequests ? gateway : dnsServers.join(","));
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip dhcp-server network",
+        [["address", network]],
+        args([
           ["address", network],
           ["gateway", gateway],
           ["dns-server", dns],
           ["comment", tag(`network untuk ${dhcp.name.trim() || dhcp.iface}`)],
-        ])}`,
+        ]),
       );
     }
   }
 
   // -------------------------------------------------------------------- nat
   if (config.nat.enabled) {
-    s.section(
-      "10. NAT MASQUERADE",
+    section("NAT MASQUERADE",
       "Menyamarkan IP privat LAN menjadi IP publik WAN agar bisa keluar internet.",
     );
-    s.line("/ip firewall nat");
     if (config.nat.mode === "global") {
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip firewall nat",
+        [["chain", "srcnat"], ["action", "masquerade"], ["out-interface-list", WAN_LIST]],
+        args([
           ["chain", "srcnat"],
           ["action", "masquerade"],
           ["out-interface-list", WAN_LIST],
           ["comment", tag("NAT untuk semua WAN")],
-        ])}`,
+        ]),
       );
     } else {
       for (const iface of config.nat.interfaces) {
-        s.line(
-          `add ${args([
+        s.addIfMissing(
+          "/ip firewall nat",
+          [["chain", "srcnat"], ["action", "masquerade"], ["out-interface", iface]],
+          args([
             ["chain", "srcnat"],
             ["action", "masquerade"],
             ["out-interface", iface],
             ["comment", tag(`NAT via ${iface}`)],
-          ])}`,
+          ]),
         );
       }
     }
@@ -325,29 +378,31 @@ export function generateSetupScript(config: SetupConfig): string {
 
   // ---------------------------------------------------------------- hotspot
   if (config.hotspots.length > 0) {
-    s.section(
-      "11. IP HOTSPOT",
+    section("IP HOTSPOT",
       "Portal login untuk pengguna. Halaman login (file HTML) diunduh terpisah\ndan di-upload ke folder 'hotspot' pada File List router.",
     );
-    s.line("/ip hotspot profile");
     for (const hs of config.hotspots) {
       const ifaceAddress = addressOfInterface(config, hs.iface);
-      s.line(
-        `add ${args([
-          ["name", `hsprof-${hs.name.trim() || hs.iface}`],
+      const profileName = `hsprof-${hs.name.trim() || hs.iface}`;
+      s.addIfMissing(
+        "/ip hotspot profile",
+        [["name", profileName]],
+        args([
+          ["name", profileName],
           ["hotspot-address", addressPart(ifaceAddress)],
           ["dns-name", hs.dnsName.trim()],
           ["html-directory", "hotspot"],
           ["login-by", hs.auth.join(",")],
           ["use-radius", false],
           ["comment", tag(`profil hotspot ${hs.name.trim() || hs.iface}`)],
-        ])}`,
+        ]),
       );
     }
-    s.blank().line("/ip hotspot");
     for (const hs of config.hotspots) {
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip hotspot",
+        [["interface", hs.iface]],
+        args([
           ["name", hs.name.trim()],
           ["interface", hs.iface],
           ["address-pool", hs.pool],
@@ -355,15 +410,18 @@ export function generateSetupScript(config: SetupConfig): string {
           ["addresses-per-mac", hs.addressesPerMac || "2"],
           ["disabled", false],
           ["comment", tag(`hotspot di ${hs.iface}`)],
-        ])}`,
+        ]),
       );
     }
     if (whatsappLink(config.hotspotPage.whatsapp)) {
       s.blank().comment("Walled garden — agar tombol WhatsApp di halaman login bisa dibuka");
       s.comment("sebelum pengguna berhasil login.");
-      s.line("/ip hotspot walled-garden");
       for (const host of ["wa.me", "*.whatsapp.com", "*.whatsapp.net", "*.wa.me"]) {
-        s.line(`add ${args([["dst-host", host], ["comment", tag("tombol WhatsApp")]])}`);
+        s.addIfMissing(
+          "/ip hotspot walled-garden",
+          [["dst-host", host]],
+          args([["dst-host", host], ["comment", tag("tombol WhatsApp")]]),
+        );
       }
       s.comment("Catatan: membuka chat di aplikasi WhatsApp mungkin masih perlu aturan");
       s.comment("tambahan berbasis IP karena aplikasinya tidak memakai HTTP biasa.");
@@ -376,10 +434,12 @@ export function generateSetupScript(config: SetupConfig): string {
   // ------------------------------------------------------------ pppoe server
   if (config.pppoe.enabled) {
     const p = config.pppoe;
-    s.section("12. PPPOE SERVER", "Layanan dial-up PPPoE untuk pelanggan/klien.");
-    s.line("/ppp profile");
-    s.line(
-      `add ${args([
+    section(
+      "PPPOE SERVER", "Layanan dial-up PPPoE untuk pelanggan/klien.");
+    s.addIfMissing(
+      "/ppp profile",
+      [["name", p.profileName.trim()]],
+      args([
         ["name", p.profileName.trim()],
         ["local-address", addressPart(p.localAddress)],
         ["remote-address", p.pool],
@@ -387,12 +447,13 @@ export function generateSetupScript(config: SetupConfig): string {
         ["rate-limit", p.rateLimit.trim()],
         ["only-one", p.oneSessionPerHost],
         ["comment", tag("profil PPPoE")],
-      ])}`,
+      ]),
     );
     s.blank().comment("Metode autentikasi memakai bawaan RouterOS (pap, chap, mschap1, mschap2).");
-    s.line("/interface pppoe-server server");
-    s.line(
-      `add ${args([
+    s.addIfMissing(
+      "/interface pppoe-server server",
+      [["interface", p.iface]],
+      args([
         ["service-name", p.serviceName.trim()],
         ["interface", p.iface],
         ["default-profile", p.profileName.trim()],
@@ -401,21 +462,22 @@ export function generateSetupScript(config: SetupConfig): string {
         ["max-mru", "1480"],
         ["disabled", false],
         ["comment", tag(`PPPoE server di ${p.iface}`)],
-      ])}`,
+      ]),
     );
     if (p.secrets.length > 0) {
       s.blank().comment("Akun pelanggan PPPoE");
-      s.line("/ppp secret");
       for (const secret of p.secrets) {
         if (!secret.user.trim()) continue;
-        s.line(
-          `add ${args([
+        s.addIfMissing(
+          "/ppp secret",
+          [["name", secret.user.trim()]],
+          args([
             ["name", secret.user.trim()],
             ["password", secret.password],
             ["service", "pppoe"],
             ["profile", p.profileName.trim()],
             ["comment", tag()],
-          ])}`,
+          ]),
         );
       }
     }
@@ -424,111 +486,126 @@ export function generateSetupScript(config: SetupConfig): string {
   // --------------------------------------------------------------- firewall
   const fw = config.firewall;
   if (fw.enabled) {
-    s.section(
-      "13. FIREWALL DASAR & PENGAMANAN",
+    section("FIREWALL DASAR & PENGAMANAN",
       "Melindungi router dari akses internet dan membuang paket tidak valid.",
     );
-    s.line("/ip firewall filter");
     s.comment("--- chain input: trafik yang menuju router itu sendiri");
-    s.line(
-      `add ${args([
+    s.addIfMissing(
+      "/ip firewall filter",
+      [["comment", tag("input: terima koneksi yang sudah terbentuk")]],
+      args([
         ["chain", "input"],
         ["action", "accept"],
         ["connection-state", "established,related,untracked"],
-        ["comment", tag("terima koneksi yang sudah terbentuk")],
-      ])}`,
+        ["comment", tag("input: terima koneksi yang sudah terbentuk")],
+      ]),
     );
     if (fw.dropInvalid) {
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip firewall filter",
+        [["comment", tag("input: buang paket invalid")]],
+        args([
           ["chain", "input"],
           ["action", "drop"],
           ["connection-state", "invalid"],
-          ["comment", tag("buang paket invalid")],
-        ])}`,
+          ["comment", tag("input: buang paket invalid")],
+        ]),
       );
     }
     if (fw.allowIcmp) {
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip firewall filter",
+        [["comment", tag("izinkan ping ke router")]],
+        args([
           ["chain", "input"],
           ["action", "accept"],
           ["protocol", "icmp"],
           ["comment", tag("izinkan ping ke router")],
-        ])}`,
+        ]),
       );
     }
     if (fw.protectInput) {
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip firewall filter",
+        [["comment", tag("izinkan akses penuh dari LAN")]],
+        args([
           ["chain", "input"],
           ["action", "accept"],
           ["in-interface-list", LAN_LIST],
           ["comment", tag("izinkan akses penuh dari LAN")],
-        ])}`,
+        ]),
       );
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip firewall filter",
+        [["comment", tag("tolak semua akses dari internet ke router")]],
+        args([
           ["chain", "input"],
           ["action", "drop"],
           ["in-interface-list", WAN_LIST],
           ["comment", tag("tolak semua akses dari internet ke router")],
-        ])}`,
+        ]),
       );
     }
 
     s.blank().comment("--- chain forward: trafik antar jaringan (klien ke internet)");
     if (fw.fasttrack) {
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip firewall filter",
+        [["comment", tag("fasttrack: percepat koneksi yang sudah terbentuk")]],
+        args([
           ["chain", "forward"],
           ["action", "fasttrack-connection"],
           ["connection-state", "established,related"],
           ["hw-offload", v7 ? true : undefined],
           ["comment", tag("fasttrack: percepat koneksi yang sudah terbentuk")],
-        ])}`,
+        ]),
       );
     }
-    s.line(
-      `add ${args([
+    s.addIfMissing(
+      "/ip firewall filter",
+      [["comment", tag("forward: terima koneksi yang sudah terbentuk")]],
+      args([
         ["chain", "forward"],
         ["action", "accept"],
         ["connection-state", "established,related,untracked"],
-        ["comment", tag("terima koneksi yang sudah terbentuk")],
-      ])}`,
+        ["comment", tag("forward: terima koneksi yang sudah terbentuk")],
+      ]),
     );
     if (fw.dropInvalid) {
-      s.line(
-        `add ${args([
+      s.addIfMissing(
+        "/ip firewall filter",
+        [["comment", tag("forward: buang paket invalid")]],
+        args([
           ["chain", "forward"],
           ["action", "drop"],
           ["connection-state", "invalid"],
-          ["comment", tag("buang paket invalid")],
-        ])}`,
+          ["comment", tag("forward: buang paket invalid")],
+        ]),
       );
     }
-    s.line(
-      `add ${args([
+    s.addIfMissing(
+      "/ip firewall filter",
+      [["comment", tag("tolak koneksi baru dari internet yang bukan port forward")]],
+      args([
         ["chain", "forward"],
         ["action", "drop"],
         ["connection-state", "new"],
         ["connection-nat-state", raw("!dstnat")],
         ["in-interface-list", WAN_LIST],
         ["comment", tag("tolak koneksi baru dari internet yang bukan port forward")],
-      ])}`,
+      ]),
     );
 
     if (fw.disableUnusedServices || fw.restrictServices) {
       s.blank().comment("--- layanan router");
-      s.line("/ip service");
       if (fw.disableUnusedServices) {
         for (const service of ["telnet", "ftp", "api", "api-ssl"]) {
-          s.line(`set ${service} ${args([["disabled", true]])}`);
+          s.line(`/ip service set ${service} ${args([["disabled", true]])}`);
         }
       }
       if (fw.restrictServices && fw.mgmtSubnet.trim() && isCidr(fw.mgmtSubnet)) {
         for (const service of ["ssh", "winbox", "www"]) {
-          s.line(`set ${service} ${args([["address", fw.mgmtSubnet.trim()]])}`);
+          s.line(`/ip service set ${service} ${args([["address", fw.mgmtSubnet.trim()]])}`);
         }
       }
     }
@@ -551,24 +628,24 @@ export function generateSetupScript(config: SetupConfig): string {
   // ------------------------------------------------------------------- user
   const newUsers = config.users.filter((u) => u.name.trim());
   if (sys.adminPassword || newUsers.length > 0) {
-    s.section(
-      "14. USER & PASSWORD ROUTER",
+    section("USER & PASSWORD ROUTER",
       "Diletakkan paling akhir agar akses ke router tidak terputus di tengah\njalannya script bila ada perintah sebelumnya yang gagal.",
     );
 
     if (newUsers.length > 0) {
       s.comment("User baru — buat dulu sebelum password admin diganti,");
       s.comment("supaya tetap ada jalan masuk bila password admin terlupa.");
-      s.line("/user");
       for (const user of newUsers) {
-        s.line(
-          `add ${args([
+        s.addIfMissing(
+          "/user",
+          [["name", user.name.trim()]],
+          args([
             ["name", user.name.trim()],
             ["password", user.password],
             ["group", user.group],
             ["address", user.allowedAddress.trim()],
             ["comment", tag(user.comment)],
-          ])}`,
+          ]),
         );
       }
       s.blank();

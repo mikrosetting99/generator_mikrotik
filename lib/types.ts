@@ -96,7 +96,7 @@ export interface HotspotPageConfig {
   /** Logo disimpan sebagai data URI, lalu ditulis jadi berkas di dalam zip. */
   logoDataUrl: string;
   logoName: string;
-  /** Tinggi tampil logo dalam piksel, 40–160. Lebarnya menyesuaikan sendiri. */
+  /** Tinggi tampil logo dalam piksel, 40–260. Lebarnya menyesuaikan sendiri. */
   logoHeight: number;
   /** Gambar latar, juga ikut jadi berkas di dalam zip. */
   bgImageDataUrl: string;

@@ -1381,7 +1381,7 @@ function LoginPageEditor({
                       <input
                         type="range"
                         min={40}
-                        max={160}
+                        max={260}
                         step={5}
                         value={page.logoHeight}
                         aria-label="Tinggi tampil logo"

@@ -248,7 +248,7 @@ export function normalizeConfig(raw: unknown): SetupConfig {
       logoHeight:
         typeof hotspotPage.logoHeight === "number" &&
         hotspotPage.logoHeight >= 40 &&
-        hotspotPage.logoHeight <= 160
+        hotspotPage.logoHeight <= 260
           ? hotspotPage.logoHeight
           : base.hotspotPage.logoHeight,
       bgImageDataUrl: /^data:image\//i.test(asString(hotspotPage.bgImageDataUrl))

@@ -64,6 +64,25 @@ rule FastTrack).
 Section ditampilkan satu per satu sebagai wizard dengan navigasi Kembali/Lanjut; rail kiri
 berfungsi sebagai stepper sekaligus tombol lompat.
 
+### Konfigurasi siap pakai
+
+Tombol **Siap pakai** di header memuat skenario lengkap sekali klik — seluruh section
+langsung terisi dan tinggal disesuaikan:
+
+| Preset | Isinya |
+|---|---|
+| Router dasar | 1 WAN DHCP, bridge LAN ether2–5, DHCP server, NAT, firewall |
+| Warnet + Hotspot voucher | LAN kasir terpisah, segmen hotspot sendiri, halaman login Voucher dengan 3 paket harga |
+| RT/RW Net PPPoE | PPPoE dengan paket 10 & 20 Mbps, pool terpisah, 2 contoh akun |
+| Hotspot + PPPoE sekaligus | Hotspot di ether2–3, PPPoE di ether4–5 |
+| Kantor dengan VLAN | VLAN staff & tamu, dua subnet, dua DHCP server |
+
+Semuanya berbasis hEX (RB750Gr3) + RouterOS v7. Password admin sengaja dikosongkan —
+preset dipakai banyak orang, jadi menanam password bawaan justru berbahaya.
+
+Definisinya ada di [lib/presets.ts](lib/presets.ts); menambah preset cukup menambah satu
+entri pada `PRESETS`.
+
 ### Simpan & muat konfigurasi
 
 Tombol **Simpan / Muat** di header membuka dialog dengan dua jalur:
@@ -109,6 +128,7 @@ lib/
   interfaces.ts       # turunan daftar interface (fisik, bridge, VLAN)
   net.ts              # helper IP/CIDR
   validate.ts         # validasi per section
+  presets.ts          # konfigurasi siap pakai
   storage.ts          # simpan/muat + normalisasi konfigurasi
   color.ts            # turunan palet & jaminan kontras halaman login
   hotspot-page.ts     # registry template + renderer + pembangun paket login

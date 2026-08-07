@@ -218,8 +218,21 @@ export function validateConfig(config: SetupConfig): Issue[] {
     if (hs.iface && !addressOfInterface(config, hs.iface)) {
       err("hotspot", `${tag}: ${hs.iface} belum punya IP address — tambahkan di section IP Address.`);
     }
-    if (config.dhcpServers.some((d) => d.iface === hs.iface)) {
-      warn("hotspot", `${tag}: ${hs.iface} juga menjalankan DHCP Server — pastikan pool-nya tidak tumpang tindih.`);
+    // Klien hotspot tetap butuh DHCP server untuk mendapat IP. Yang benar
+    // adalah keduanya memakai pool yang sama — itu pula yang dilakukan
+    // /ip hotspot setup bawaan RouterOS. Yang perlu ditegur justru bila
+    // poolnya berbeda, atau bila DHCP server-nya tidak ada sama sekali.
+    const dhcpOnIface = config.dhcpServers.filter((d) => d.iface === hs.iface);
+    if (hs.iface && dhcpOnIface.length === 0) {
+      warn(
+        "hotspot",
+        `${tag}: ${hs.iface} belum punya DHCP Server — klien hotspot tidak akan dapat IP otomatis.`,
+      );
+    } else if (hs.pool && dhcpOnIface.some((d) => d.pool && d.pool !== hs.pool)) {
+      warn(
+        "hotspot",
+        `${tag}: DHCP Server di ${hs.iface} memakai pool berbeda dari hotspot — samakan agar tidak bentrok.`,
+      );
     }
   });
 

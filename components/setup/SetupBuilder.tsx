@@ -15,6 +15,7 @@ import {
   Terminal,
   Wand,
 } from "@/components/icons";
+import { PresetDialog } from "@/components/setup/PresetDialog";
 import { SaveLoadDialog } from "@/components/setup/SaveLoadDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ScriptPreview } from "@/components/setup/ScriptPreview";
@@ -36,44 +37,10 @@ import {
   type SectionProps,
 } from "@/components/setup/sections";
 import { Button, Modal } from "@/components/ui";
-import {
-  createDefaultConfig,
-  newAddress,
-  newBridge,
-  newDhcpServer,
-  newPool,
-  newWan,
-} from "@/lib/defaults";
+import { createDefaultConfig } from "@/lib/defaults";
 import { generateSetupScript } from "@/lib/generator/setup";
 import type { SectionId, SetupConfig } from "@/lib/types";
 import { validateConfig } from "@/lib/validate";
-
-/** Contoh konfigurasi umum: hEX dengan 1 WAN DHCP dan satu segmen LAN. */
-function exampleConfig(): SetupConfig {
-  const base = createDefaultConfig();
-  const bridge = { ...newBridge("bridge-lan"), ports: ["ether2", "ether3", "ether4", "ether5"] };
-  const address = { ...newAddress("bridge-lan"), address: "192.168.10.1/24", comment: "LAN utama" };
-  const pool = {
-    ...newPool(),
-    name: "pool-lan",
-    rangeStart: "192.168.10.10",
-    rangeEnd: "192.168.10.254",
-  };
-  const dhcp = { ...newDhcpServer(), name: "dhcp-lan", iface: "bridge-lan", pool: "pool-lan" };
-
-  return {
-    ...base,
-    modelId: "rb750gr3",
-    ros: "v7",
-    system: { ...base.system, identity: "MikroTik-Kantor" },
-    wans: [{ ...newWan("ether1"), comment: "ISP utama" }],
-    bridges: [bridge],
-    addresses: [address],
-    pools: [pool],
-    dhcpServers: [dhcp],
-    firewall: { ...base.firewall, mgmtSubnet: "192.168.10.0/24" },
-  };
-}
 
 const SECTION_COMPONENTS: Record<SectionId, (props: SectionProps) => React.ReactElement> = {
   device: DeviceSection,
@@ -130,6 +97,7 @@ export function SetupBuilder() {
   const [config, setConfig] = useState<SetupConfig>(createDefaultConfig);
   const [step, setStep] = useState(0);
   const [storeOpen, setStoreOpen] = useState(false);
+  const [presetOpen, setPresetOpen] = useState(false);
   const [loadedName, setLoadedName] = useState<string | null>(null);
   const railRef = useRef<HTMLUListElement>(null);
   const firstRender = useRef(true);
@@ -215,15 +183,11 @@ export function SetupBuilder() {
             </Button>
             <Button
               size="sm"
-              onClick={() => {
-                setConfig(exampleConfig());
-                setLoadedName(null);
-                setStep(0);
-              }}
-              title="Isi dengan contoh konfigurasi"
+              onClick={() => setPresetOpen(true)}
+              title="Muat konfigurasi siap pakai"
             >
               <Wand className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Isi contoh</span>
+              <span className="hidden sm:inline">Siap pakai</span>
             </Button>
             <Button
               size="sm"
@@ -389,6 +353,22 @@ export function SetupBuilder() {
           <ScriptPreview script={script} config={config} issues={issues} onJump={jumpToSection} />
         </div>
       </div>
+
+      <Modal
+        open={presetOpen}
+        onClose={() => setPresetOpen(false)}
+        title="Konfigurasi Siap Pakai"
+        description="Pilih satu, seluruh isian langsung terisi dan tinggal disesuaikan."
+      >
+        <PresetDialog
+          onClose={() => setPresetOpen(false)}
+          onPick={(loaded, name) => {
+            setConfig(loaded);
+            setLoadedName(name);
+            setStep(0);
+          }}
+        />
+      </Modal>
 
       <Modal
         open={storeOpen}

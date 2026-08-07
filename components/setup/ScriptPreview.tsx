@@ -117,7 +117,8 @@ export function ScriptPreview({
     setZipError("");
     try {
       const entries = await buildHotspotPackage(config.hotspotPage);
-      download(createZip(entries), `hotspot-login-${slug(config.hotspotPage.title)}.zip`);
+      // Namanya sengaja tetap, mengikuti nama folder tujuannya di router.
+      download(createZip(entries), "hotspot.zip");
     } catch (error) {
       setZipError(
         error instanceof Error ? error.message : "Gagal menyiapkan paket halaman login.",

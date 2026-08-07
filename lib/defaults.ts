@@ -117,7 +117,7 @@ export function createDefaultConfig(): SetupConfig {
     hotspotPage: {
       template: "minimal",
       primaryColor: "#38bdf8",
-      bgColor: "#0b1220",
+      bgColor: "#ffffff",
       title: "",
       subtitle: "",
       logoDataUrl: "",

@@ -241,3 +241,69 @@ marquee { display: block; }
   .main { animation: none; }
   * { transition: none !important; }
 }
+
+/* --- penyesuaian ukuran layar: HP, tablet, laptop --- */
+
+body {
+  /* 100vh di browser HP menghitung bilah alamat yang bisa hilang-timbul,
+     sehingga isi terdorong keluar layar. dvh mengikuti tinggi yang benar-benar
+     terlihat. Baris vh di atas tetap ada sebagai cadangan browser lama. */
+  min-height: 100dvh;
+  padding: clamp(10px, 3vw, 22px);
+  /* Latar tempel patah-patah di sebagian browser HP. */
+  background-attachment: scroll;
+}
+
+/* Kartu tidak boleh melebihi layar. Bila isinya memang panjang — misalnya ada
+   tabel harga — yang menggulung cukup kartunya, bukan seluruh halaman. */
+.main {
+  max-height: calc(100dvh - clamp(20px, 6vw, 44px));
+  overflow-y: auto;
+}
+
+/* Tinggi kontrol ikut tinggi layar tapi tidak pernah di bawah 40px agar tetap
+   nyaman disentuh. Font kolom tetap 16px supaya iOS tidak memperbesar halaman
+   saat kolom disentuh. */
+.username,
+.password {
+  height: clamp(40px, 6.4vh, 46px);
+  font-size: 16px;
+}
+
+.button,
+.button2 {
+  height: clamp(42px, 6.8vh, 48px);
+}
+
+.small-button { height: clamp(32px, 5vh, 36px); }
+
+/* Logo mengikuti pengaturan pengguna, tetapi tidak boleh menghabiskan layar
+   pendek seperti HP dalam posisi mendatar. */
+.logo {
+  max-height: {{LOGO_HEIGHT}}px;
+  max-height: min({{LOGO_HEIGHT}}px, 20vh);
+}
+
+/* Layar pendek: rapatkan jarak antar bagian supaya tetap muat sekali pandang. */
+@media (max-height: 700px) {
+  .brandbox { margin-bottom: 12px; }
+  .box { margin-bottom: 8px; }
+  .info { margin-bottom: 10px; padding: 5px 0; }
+  #infologin { margin-bottom: 8px; }
+  .table,
+  .table2 { margin-top: 10px; }
+  .terms,
+  .foot { margin-top: 10px; }
+  .subtitle { margin-top: 4px; }
+}
+
+/* Layar sangat pendek (HP mendatar, HP lawas): kecilkan bagian yang paling
+   banyak memakan ruang lebih dulu — logo dan tabel harga. */
+@media (max-height: 700px) {
+  .logo { max-height: min({{LOGO_HEIGHT}}px, 14vh); }
+  .brand { font-size: 19px; }
+  .table th,
+  .table td,
+  .table2 td { padding: 5px 7px; }
+  .table caption { padding-bottom: 5px; }
+}

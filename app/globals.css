@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/*
+ * Nilai di @theme adalah tema gelap sekaligus nilai dasar. Tema terang
+ * menimpanya lewat :root[data-theme="light"] di bawah — bukan @theme inline,
+ * supaya utility Tailwind tetap membaca var() dan ikut berubah saat ditimpa.
+ */
 @theme {
   /* Permukaan — "code dark": biru-hitam, hindari #000 murni */
   --color-canvas: #080d16;
@@ -7,6 +12,7 @@
   --color-raised: #131d30;
   --color-line: #22304a;
   --color-line-soft: #1a2436;
+  --color-code: #060a11;
 
   /* Teks — semuanya lolos kontras 4.5:1 di atas canvas & surface */
   --color-ink: #f1f5fb;
@@ -16,15 +22,75 @@
   /* Aksen: cyan = identitas & struktur, hijau = aksi/berhasil */
   --color-brand: #38bdf8;
   --color-brand-dim: #1a6d94;
+  --color-brand-ink: #04121b;
   --color-accent: #22c55e;
   --color-accent-ink: #04150a;
   --color-warn: #f59e0b;
   --color-bad: #f87171;
 
+  /* Dipakai efek yang berbeda arah antara tema gelap dan terang. */
+  --edge-highlight: rgba(148, 190, 230, 0.22);
+  --grid-line: rgba(56, 189, 248, 0.05);
+  --scrollbar-hover: #31456a;
+
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
   --font-mono: var(--font-mono-code), ui-monospace, "Cascadia Code", Consolas, monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/*
+ * Tema terang. Aksen dituakan supaya tetap terbaca di atas permukaan putih —
+ * cyan #38bdf8 hanya 1.9:1 terhadap putih, jauh di bawah syarat teks.
+ */
+:root[data-theme="light"] {
+  --color-canvas: #f4f7fb;
+  --color-surface: #ffffff;
+  --color-raised: #eef2f8;
+  --color-line: #d3dce8;
+  --color-line-soft: #e6ecf4;
+  --color-code: #f7f9fc;
+
+  --color-ink: #0f1b2d;
+  --color-muted: #475569;
+  --color-faint: #5b6b80;
+
+  --color-brand: #0369a1;
+  --color-brand-dim: #7dd3fc;
+  --color-brand-ink: #ffffff;
+  --color-accent: #15803d;
+  --color-accent-ink: #ffffff;
+  --color-warn: #b45309;
+  --color-bad: #be123c;
+
+  --edge-highlight: rgba(15, 27, 45, 0.08);
+  --grid-line: rgba(3, 105, 161, 0.07);
+  --scrollbar-hover: #b6c3d4;
+}
+
+/* Tanpa JavaScript, ikuti setelan perangkat. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --color-canvas: #f4f7fb;
+    --color-surface: #ffffff;
+    --color-raised: #eef2f8;
+    --color-line: #d3dce8;
+    --color-line-soft: #e6ecf4;
+    --color-code: #f7f9fc;
+    --color-ink: #0f1b2d;
+    --color-muted: #475569;
+    --color-faint: #5b6b80;
+    --color-brand: #0369a1;
+    --color-brand-dim: #7dd3fc;
+    --color-brand-ink: #ffffff;
+    --color-accent: #15803d;
+    --color-accent-ink: #ffffff;
+    --color-warn: #b45309;
+    --color-bad: #be123c;
+    --edge-highlight: rgba(15, 27, 45, 0.08);
+    --grid-line: rgba(3, 105, 161, 0.07);
+    --scrollbar-hover: #b6c3d4;
+  }
 }
 
 html {
@@ -61,8 +127,8 @@ button:disabled {
 /* Latar grid halus khas perangkat jaringan */
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 48px 48px;
   -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 35%, transparent 78%);
   mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 35%, transparent 78%);
@@ -80,8 +146,8 @@ button:disabled {
   background: linear-gradient(
     to right,
     transparent,
-    rgba(148, 190, 230, 0.22) 22%,
-    rgba(148, 190, 230, 0.22) 78%,
+    var(--edge-highlight) 22%,
+    var(--edge-highlight) 78%,
     transparent
   );
   pointer-events: none;
@@ -92,7 +158,7 @@ button:disabled {
 }
 
 ::selection {
-  background: rgba(56, 189, 248, 0.3);
+  background: color-mix(in srgb, var(--color-brand) 30%, transparent);
 }
 
 * {
@@ -111,14 +177,23 @@ button:disabled {
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #31456a;
+  background: var(--scrollbar-hover);
   background-clip: content-box;
 }
 
-input,
-select,
-textarea {
+/* Menentukan warna bawaan kontrol form, scrollbar, dan color picker browser. */
+:root {
   color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+  }
 }
 
 /* Hormati preferensi pengguna yang membatasi animasi. */

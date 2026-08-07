@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Cpu, Lock, Route, Shield, Split, Terminal } from "@/components/icons";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const MENUS = [
   {
@@ -73,6 +74,10 @@ export default function Home() {
       <div aria-hidden className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-[560px]" />
 
       <div className="relative mx-auto w-full max-w-6xl px-5 py-14 sm:py-20">
+        <div className="mb-6 flex justify-end">
+          <ThemeToggle />
+        </div>
+
         {/* ---------------------------------------------------------- hero */}
         <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <header className="animate-rise">
@@ -135,7 +140,7 @@ export default function Home() {
                 setup-mikrotik-kantor.rsc
               </span>
             </div>
-            <pre className="overflow-x-auto bg-[#060a11] px-4 py-4 font-mono text-[11.5px] leading-[1.75]">
+            <pre className="overflow-x-auto bg-code px-4 py-4 font-mono text-[11.5px] leading-[1.75]">
               {SAMPLE.map((line, i) => (
                 <div key={i} className="flex gap-3">
                   <span className="w-4 shrink-0 select-none text-right text-faint/40">{i + 1}</span>

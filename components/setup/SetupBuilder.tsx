@@ -16,6 +16,7 @@ import {
   Wand,
 } from "@/components/icons";
 import { SaveLoadDialog } from "@/components/setup/SaveLoadDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ScriptPreview } from "@/components/setup/ScriptPreview";
 import {
   AddressSection,
@@ -207,6 +208,7 @@ export function SetupBuilder() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button size="sm" onClick={() => setStoreOpen(true)} title="Simpan atau muat konfigurasi">
               <Save className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Simpan / Muat</span>

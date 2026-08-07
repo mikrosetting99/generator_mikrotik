@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { themeBootScript } from "@/components/ThemeToggle";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,7 +27,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
+      <head>
+        {/* Menetapkan tema sebelum halaman digambar agar tidak berkedip. */}
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>{children}</body>
     </html>
   );

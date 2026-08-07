@@ -7,6 +7,11 @@ sebagai file `.rsc`.
 Seluruh proses generate berjalan di browser — IP, password, dan data lain tidak pernah
 dikirim ke server.
 
+Antarmukanya punya tema **terang dan gelap**. Saat pertama dibuka, temanya mengikuti setelan
+perangkat; tombol matahari/bulan di header mengubahnya dan pilihan itu diingat. Warna diatur
+lewat token di [app/globals.css](app/globals.css) — nilai `@theme` adalah tema gelap, dan
+`:root[data-theme="light"]` menimpanya.
+
 ## Status menu
 
 | Menu | Status |
@@ -90,6 +95,8 @@ app/
   setup/page.tsx      # menu 1
 components/
   ui.tsx              # primitif form (Field, Select, Toggle, Panel, ...)
+  icons.tsx           # ikon SVG inline bergaya Lucide
+  ThemeToggle.tsx     # pengalih tema terang/gelap + skrip anti-kedip
   setup/
     SetupBuilder.tsx   # state builder + layout + navigasi wizard
     sections.tsx       # seluruh section form menu 1

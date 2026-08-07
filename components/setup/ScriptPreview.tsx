@@ -155,7 +155,7 @@ export function ScriptPreview({
           </span>
         </div>
 
-        <pre className="max-h-[40vh] overflow-auto bg-[#060a11] px-3 py-3 font-mono text-[11.5px] leading-[1.7] xl:max-h-[calc(100vh-25rem)] xl:min-h-[280px]">
+        <pre className="max-h-[40vh] overflow-auto bg-code px-3 py-3 font-mono text-[11.5px] leading-[1.7] xl:max-h-[calc(100vh-25rem)] xl:min-h-[280px]">
           {lines.map((line, i) => (
             <div key={i} className="flex gap-3 px-1 hover:bg-white/[0.03]">
               <span className="w-7 shrink-0 select-none text-right text-faint/40">{i + 1}</span>

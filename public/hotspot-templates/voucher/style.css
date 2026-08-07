@@ -71,8 +71,8 @@ body {
 .logo {
   display: block;
   margin: 0 auto 12px;
-  max-width: 150px;
-  max-height: 64px;
+  max-width: 100%;
+  max-height: {{LOGO_HEIGHT}}px;
 }
 
 .brand {

@@ -116,6 +116,7 @@ export function createDefaultConfig(): SetupConfig {
       subtitle: "",
       logoDataUrl: "",
       logoName: "",
+      logoHeight: 90,
       bgImageDataUrl: "",
       bgImageName: "",
       bgOverlay: 55,

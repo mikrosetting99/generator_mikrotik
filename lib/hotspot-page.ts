@@ -141,6 +141,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     TERMS: escapeHtml(page.terms.trim()),
     FOOTER: escapeHtml(page.footer.trim()),
     LOGO: page.logoDataUrl ? logoFileName(page.logoDataUrl) : "",
+    LOGO_HEIGHT: String(Math.round(Math.max(40, Math.min(160, page.logoHeight || 90)))),
     BG_IMAGE: page.bgImageDataUrl ? bgFileName(page.bgImageDataUrl) : "",
     OVERLAY: rgba(bgColor, Math.max(0, Math.min(90, page.bgOverlay)) / 100),
     WA_LINK: whatsappLink(page.whatsapp),

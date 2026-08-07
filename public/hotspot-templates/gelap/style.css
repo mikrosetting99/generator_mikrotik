@@ -64,8 +64,8 @@ body::before {
 .logo {
   display: block;
   margin: 0 auto 14px;
-  max-width: 160px;
-  max-height: 72px;
+  max-width: 100%;
+  max-height: {{LOGO_HEIGHT}}px;
 }
 
 .brand {

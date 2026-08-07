@@ -245,6 +245,12 @@ export function normalizeConfig(raw: unknown): SetupConfig {
         ? asString(hotspotPage.logoDataUrl)
         : "",
       logoName: asString(hotspotPage.logoName),
+      logoHeight:
+        typeof hotspotPage.logoHeight === "number" &&
+        hotspotPage.logoHeight >= 40 &&
+        hotspotPage.logoHeight <= 160
+          ? hotspotPage.logoHeight
+          : base.hotspotPage.logoHeight,
       bgImageDataUrl: /^data:image\//i.test(asString(hotspotPage.bgImageDataUrl))
         ? asString(hotspotPage.bgImageDataUrl)
         : "",

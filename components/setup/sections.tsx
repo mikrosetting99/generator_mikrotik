@@ -1361,12 +1361,38 @@ function LoginPageEditor({
                   />
                 </div>
                 {page.logoDataUrl && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={page.logoDataUrl}
-                    alt="Pratinjau logo"
-                    className="mt-3 max-h-16 max-w-[160px] rounded-md border border-line-soft bg-canvas object-contain p-1.5"
-                  />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={page.logoDataUrl}
+                      alt="Pratinjau logo"
+                      className="mt-3 w-full rounded-md border border-line-soft bg-canvas object-contain p-1.5"
+                      style={{ height: `${page.logoHeight}px` }}
+                    />
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                          Tinggi logo
+                        </span>
+                        <span className="font-mono text-[11px] text-brand">
+                          {page.logoHeight} px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={40}
+                        max={160}
+                        step={5}
+                        value={page.logoHeight}
+                        aria-label="Tinggi tampil logo"
+                        onChange={(e) => setPage({ logoHeight: Number(e.target.value) })}
+                        className="mt-2 w-full accent-[color:var(--color-brand)]"
+                      />
+                      <p className="mt-1.5 text-xs leading-relaxed text-faint">
+                        Lebar menyesuaikan sendiri mengikuti bentuk logo, maksimal selebar kartu.
+                      </p>
+                    </div>
+                  </>
                 )}
                 <p className="mt-2 text-xs leading-relaxed text-faint">{IMAGE_LIMITS.logo.hint}</p>
                 {dimensionNote(logoInfo, "logo")}

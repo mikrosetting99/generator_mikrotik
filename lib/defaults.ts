@@ -1,15 +1,17 @@
-import type {
-  AddressEntry,
-  BridgeEntry,
-  DhcpServerEntry,
-  HotspotEntry,
-  PoolEntry,
-  PppoeSecret,
-  RouterUser,
-  SetupConfig,
-  VlanEntry,
-  VoucherPackage,
-  WanEntry,
+import {
+  DEFAULT_PPP_PROFILE,
+  type AddressEntry,
+  type BridgeEntry,
+  type DhcpServerEntry,
+  type HotspotEntry,
+  type PoolEntry,
+  type PppoeProfile,
+  type PppoeSecret,
+  type RouterUser,
+  type SetupConfig,
+  type VlanEntry,
+  type VoucherPackage,
+  type WanEntry,
 } from "./types";
 
 let counter = 0;
@@ -76,7 +78,11 @@ export function newHotspot(): HotspotEntry {
 }
 
 export function newSecret(): PppoeSecret {
-  return { id: uid("sec"), user: "", password: "" };
+  return { id: uid("sec"), user: "", password: "", profile: DEFAULT_PPP_PROFILE };
+}
+
+export function newPppoeProfile(): PppoeProfile {
+  return { id: uid("ppprof"), name: "", localAddress: "", pool: "", rateLimit: "", onlyOne: true };
 }
 
 export function newPackage(): VoucherPackage {
@@ -134,10 +140,9 @@ export function createDefaultConfig(): SetupConfig {
       enabled: false,
       iface: "",
       serviceName: "pppoe-service",
-      profileName: "pppoe-profile",
-      localAddress: "",
-      pool: "",
-      rateLimit: "",
+      // Mulai dari profile bawaan RouterOS — tidak perlu membuat apa pun.
+      defaultProfile: DEFAULT_PPP_PROFILE,
+      profiles: [],
       oneSessionPerHost: true,
       secrets: [],
     },

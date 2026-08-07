@@ -1,7 +1,7 @@
 import { addressOfInterface, physicalInterfaces } from "./interfaces";
 import { getModel } from "./models";
 import { addressPart, ipInCidr, isCidr, isIpv4 } from "./net";
-import type { Issue, SetupConfig } from "./types";
+import { RESERVED_PPP_PROFILES, type Issue, type SetupConfig } from "./types";
 
 export interface PasswordCheck {
   score: 0 | 1 | 2 | 3 | 4;
@@ -228,20 +228,54 @@ export function validateConfig(config: SetupConfig): Issue[] {
     const p = config.pppoe;
     if (!p.iface) err("pppoe", "Interface PPPoE Server belum dipilih.");
     if (!p.serviceName.trim()) err("pppoe", "Service name belum diisi.");
-    if (!p.profileName.trim()) err("pppoe", "Nama profile belum diisi.");
-    if (!isIpv4(addressPart(p.localAddress))) err("pppoe", "Local address harus alamat IPv4, misal 10.10.10.1.");
-    if (!p.pool) err("pppoe", "IP Pool untuk remote address belum dipilih.");
-    else if (!poolNames.includes(p.pool)) err("pppoe", `Pool "${p.pool}" tidak ada di section IP Pool.`);
-    if (p.rateLimit && !/^\d+[kMG]?\/\d+[kMG]?$/.test(p.rateLimit.trim())) {
-      err("pppoe", 'Rate limit harus format "upload/download", misal 5M/10M.');
+
+    // --- paket / profile ---
+    const profileNames = p.profiles.map((prof) => prof.name.trim()).filter(Boolean);
+    if (new Set(profileNames).size !== profileNames.length) {
+      err("pppoe", "Nama paket tidak boleh duplikat.");
     }
+    p.profiles.forEach((prof, i) => {
+      const label = prof.name.trim() || `Paket #${i + 1}`;
+      if (!prof.name.trim()) {
+        err("pppoe", `Paket #${i + 1}: nama belum diisi.`);
+      } else if (!NAME_OK.test(prof.name.trim())) {
+        err("pppoe", `${label}: nama hanya boleh huruf, angka, titik, strip, dan underscore.`);
+      } else if (RESERVED_PPP_PROFILES.includes(prof.name.trim())) {
+        // Nama ini sudah dipakai RouterOS; membuatnya akan dilewati penjagaan
+        // sehingga pengaturan yang diisi di sini tidak pernah terpasang.
+        err("pppoe", `${label}: nama itu milik profile bawaan RouterOS — pakai nama lain.`);
+      }
+      if (prof.localAddress.trim() && !isIpv4(addressPart(prof.localAddress))) {
+        err("pppoe", `${label}: local address harus alamat IPv4, misal 10.10.10.1.`);
+      }
+      if (prof.pool && !poolNames.includes(prof.pool)) {
+        err("pppoe", `${label}: pool "${prof.pool}" tidak ada di section IP Pool.`);
+      }
+      if (prof.rateLimit.trim() && !/^\d+[kMG]?\/\d+[kMG]?$/.test(prof.rateLimit.trim())) {
+        err("pppoe", `${label}: rate limit harus format "upload/download", misal 5M/10M.`);
+      }
+      if (!prof.pool && !prof.localAddress.trim() && !prof.rateLimit.trim()) {
+        warn("pppoe", `${label}: belum ada pengaturan apa pun, isinya sama saja dengan profile bawaan.`);
+      }
+    });
+
+    const knownProfiles = [...RESERVED_PPP_PROFILES, ...profileNames];
+    if (!knownProfiles.includes(p.defaultProfile.trim())) {
+      err("pppoe", `Default profile "${p.defaultProfile}" tidak ada — pilih ulang.`);
+    }
+
+    // --- akun pelanggan ---
     const users = p.secrets.map((s) => s.user.trim()).filter(Boolean);
     if (new Set(users).size !== users.length) err("pppoe", "Username PPPoE duplikat.");
     p.secrets.forEach((secret, i) => {
+      const label = secret.user.trim() || `User #${i + 1}`;
       if (!secret.user.trim()) err("pppoe", `User #${i + 1}: username belum diisi.`);
-      if (!secret.password.trim()) err("pppoe", `User #${i + 1}: password belum diisi.`);
+      if (!secret.password.trim()) err("pppoe", `${label}: password belum diisi.`);
       else if (secret.password.trim().length < 6) {
-        warn("pppoe", `User #${i + 1}: password kurang dari 6 karakter.`);
+        warn("pppoe", `${label}: password kurang dari 6 karakter.`);
+      }
+      if (!knownProfiles.includes(secret.profile.trim())) {
+        err("pppoe", `${label}: paket "${secret.profile}" tidak ada — pilih ulang.`);
       }
     });
   }

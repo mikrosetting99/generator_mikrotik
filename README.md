@@ -41,8 +41,11 @@ Builder modular mengikuti urutan section pada PRD:
 
     Nama atau identity router **tidak** ikut tampil di halaman login — judul hanya diambil
     dari isian pengguna, dan dikosongkan berarti hanya logo yang tampil.
-12. **PPPoE Server** — profile, pool, rate limit, dan daftar PPP secret. Metode autentikasi
-    tidak diekspos di form; script memakai bawaan RouterOS.
+12. **PPPoE Server** — mulai dari profile `default` bawaan RouterOS, jadi tanpa mengisi apa
+    pun sudah bisa jalan. Paket layanan (PPP profile) bisa ditambah sebanyak yang perlu —
+    masing-masing dengan rate limit, IP pool, dan local address sendiri — lalu tiap akun
+    PPP secret memilih paketnya. Metode autentikasi tidak diekspos di form; script memakai
+    bawaan RouterOS.
 13. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
     Winbox/SSH/WebFig, neighbor discovery, dan MAC server. **Mati secara default**,
     diaktifkan sendiri bila diperlukan.

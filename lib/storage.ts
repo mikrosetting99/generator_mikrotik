@@ -1,6 +1,7 @@
 import { createDefaultConfig, uid } from "./defaults";
 import { isHexColor, TEMPLATES } from "./hotspot-page";
 import { getModel } from "./models";
+import { DEFAULT_PPP_PROFILE, RESERVED_PPP_PROFILES } from "./types";
 import type {
   AddressEntry,
   BridgeEntry,
@@ -10,6 +11,7 @@ import type {
   HotspotTemplateId,
   LoginMode,
   PoolEntry,
+  PppoeProfile,
   PppoeSecret,
   RosVersion,
   RouterUser,
@@ -182,9 +184,48 @@ export function normalizeConfig(raw: unknown): SetupConfig {
     };
   });
 
+  const pppoeProfiles: PppoeProfile[] = asArray(pppoe.profiles).map((item) => {
+    const prof = asRecord(item);
+    return {
+      id: uid("ppprof"),
+      name: asString(prof.name),
+      localAddress: asString(prof.localAddress),
+      pool: asString(prof.pool),
+      rateLimit: asString(prof.rateLimit),
+      onlyOne: asBool(prof.onlyOne, true),
+    };
+  });
+
+  // Konfigurasi lama menyimpan satu profile sebagai field lepas. Angkat jadi
+  // entri paket supaya isian yang sudah dibuat pengguna tidak hilang.
+  const legacyProfileName = asString(pppoe.profileName);
+  if (pppoeProfiles.length === 0 && legacyProfileName) {
+    pppoeProfiles.push({
+      id: uid("ppprof"),
+      name: legacyProfileName,
+      localAddress: asString(pppoe.localAddress),
+      pool: asString(pppoe.pool),
+      rateLimit: asString(pppoe.rateLimit),
+      onlyOne: asBool(pppoe.oneSessionPerHost, true),
+    });
+  }
+
+  const knownProfiles = [
+    ...RESERVED_PPP_PROFILES,
+    ...pppoeProfiles.map((prof) => prof.name.trim()).filter(Boolean),
+  ];
+  const pickProfile = (value: string) =>
+    knownProfiles.includes(value.trim()) ? value.trim() : DEFAULT_PPP_PROFILE;
+
   const secrets: PppoeSecret[] = asArray(pppoe.secrets).map((item) => {
     const s = asRecord(item);
-    return { id: uid("sec"), user: asString(s.user), password: asString(s.password) };
+    return {
+      id: uid("sec"),
+      user: asString(s.user),
+      password: asString(s.password),
+      // Berkas lama tidak punya profile per akun — ikut profile lama bila ada.
+      profile: pickProfile(asString(s.profile, legacyProfileName)),
+    };
   });
 
   const users: RouterUser[] = asArray(input.users).map((item) => {
@@ -275,10 +316,8 @@ export function normalizeConfig(raw: unknown): SetupConfig {
       enabled: asBool(pppoe.enabled, false),
       iface: asString(pppoe.iface),
       serviceName: asString(pppoe.serviceName, base.pppoe.serviceName),
-      profileName: asString(pppoe.profileName, base.pppoe.profileName),
-      localAddress: asString(pppoe.localAddress),
-      pool: asString(pppoe.pool),
-      rateLimit: asString(pppoe.rateLimit),
+      defaultProfile: pickProfile(asString(pppoe.defaultProfile, legacyProfileName)),
+      profiles: pppoeProfiles,
       oneSessionPerHost: asBool(pppoe.oneSessionPerHost, true),
       secrets,
     },

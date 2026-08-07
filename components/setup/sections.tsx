@@ -21,6 +21,7 @@ import {
   newHotspot,
   newPackage,
   newPool,
+  newPppoeProfile,
   newSecret,
   newUser,
   newVlan,
@@ -39,6 +40,7 @@ import {
 import { addressOfInterface, allInterfaces, physicalInterfaces } from "@/lib/interfaces";
 import { getModel, modelsBySeries, ROS_LABEL } from "@/lib/models";
 import { addressPart, networkOf, suggestPoolRange } from "@/lib/net";
+import { DEFAULT_PPP_PROFILE } from "@/lib/types";
 import type {
   HotspotAuth,
   Issue,
@@ -1688,6 +1690,17 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
   const pools = poolOptions(config);
   const setPppoe = (partial: Partial<typeof p>) => patch({ pppoe: { ...p, ...partial } });
 
+  const updateProfile = (id: string, partial: Partial<(typeof p.profiles)[number]>) =>
+    setPppoe({ profiles: p.profiles.map((x) => (x.id === id ? { ...x, ...partial } : x)) });
+
+  // Profile bawaan RouterOS selalu tersedia, ditambah paket buatan pengguna.
+  const profileOptions = [
+    { value: DEFAULT_PPP_PROFILE, label: `${DEFAULT_PPP_PROFILE} — bawaan RouterOS` },
+    ...p.profiles
+      .filter((prof) => prof.name.trim())
+      .map((prof) => ({ value: prof.name.trim(), label: prof.name.trim() })),
+  ];
+
   return (
     <Panel
       id="pppoe"
@@ -1716,34 +1729,15 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
                 placeholder="pppoe-service"
               />
             </Field>
-            <Field label="Nama profile" required>
-              <TextInput
-                mono
-                value={p.profileName}
-                onChange={(profileName) => setPppoe({ profileName })}
-                placeholder="pppoe-profile"
-              />
-            </Field>
-          </div>
-
-          <div className={grid3}>
-            <Field label="Local address" required hint="IP router pada sisi PPPoE, misal 10.10.10.1">
-              <TextInput
-                mono
-                value={p.localAddress}
-                onChange={(localAddress) => setPppoe({ localAddress })}
-                placeholder="10.10.10.1"
-              />
-            </Field>
-            <Field label="IP Pool (remote address)" required>
-              <Select value={p.pool} onChange={(pool) => setPppoe({ pool })} options={pools} />
-            </Field>
-            <Field label="Rate limit" hint='Format "upload/download", misal 5M/10M. Kosongkan = tanpa limit.'>
-              <TextInput
-                mono
-                value={p.rateLimit}
-                onChange={(rateLimit) => setPppoe({ rateLimit })}
-                placeholder="5M/10M"
+            <Field
+              label="Default profile"
+              hint="Dipakai klien yang tidak diberi paket sendiri."
+            >
+              <Select
+                value={p.defaultProfile}
+                placeholder=""
+                onChange={(defaultProfile) => setPppoe({ defaultProfile })}
+                options={profileOptions}
               />
             </Field>
           </div>
@@ -1755,8 +1749,92 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
             hint="Satu akun hanya bisa dipakai satu sesi dalam waktu bersamaan."
           />
 
+          {/* Paket layanan */}
           <div className="rounded-xl border border-line-soft bg-raised/60 p-4">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <span className="font-mono text-xs uppercase tracking-wide text-brand/80">
+                Paket layanan (PPP profile)
+              </span>
+              <Button
+                size="sm"
+                onClick={() => setPppoe({ profiles: [...p.profiles, newPppoeProfile()] })}
+              >
+                <Plus className="h-3.5 w-3.5" /> Tambah paket
+              </Button>
+            </div>
+
+            {p.profiles.length === 0 ? (
+              <EmptyState>
+                Belum ada paket — memakai profile <span className="font-mono">default</span> bawaan
+                RouterOS. Tambahkan paket bila ingin membedakan kecepatan antar pelanggan.
+              </EmptyState>
+            ) : (
+              <div className="space-y-4">
+                {p.profiles.map((prof, index) => (
+                  <Row
+                    key={prof.id}
+                    label={prof.name.trim() || `Paket ${index + 1}`}
+                    onRemove={() =>
+                      setPppoe({ profiles: p.profiles.filter((x) => x.id !== prof.id) })
+                    }
+                  >
+                    <div className={grid3}>
+                      <Field label="Nama paket" required>
+                        <TextInput
+                          mono
+                          value={prof.name}
+                          onChange={(name) => updateProfile(prof.id, { name })}
+                          placeholder="paket-10mbps"
+                        />
+                      </Field>
+                      <Field
+                        label="Rate limit"
+                        hint='Format "upload/download", misal 5M/10M.'
+                      >
+                        <TextInput
+                          mono
+                          value={prof.rateLimit}
+                          onChange={(rateLimit) => updateProfile(prof.id, { rateLimit })}
+                          placeholder="5M/10M"
+                        />
+                      </Field>
+                      <Field label="IP Pool (remote address)" hint="Kosong = ikut bawaan RouterOS.">
+                        <Select
+                          value={prof.pool}
+                          placeholder="— bawaan —"
+                          onChange={(pool) => updateProfile(prof.id, { pool })}
+                          options={pools}
+                        />
+                      </Field>
+                    </div>
+                    <div className={`mt-4 ${grid2}`}>
+                      <Field
+                        label="Local address"
+                        hint="IP router pada sisi PPPoE. Kosong = ikut bawaan RouterOS."
+                      >
+                        <TextInput
+                          mono
+                          value={prof.localAddress}
+                          onChange={(localAddress) => updateProfile(prof.id, { localAddress })}
+                          placeholder="10.10.10.1"
+                        />
+                      </Field>
+                      <Toggle
+                        checked={prof.onlyOne}
+                        onChange={(onlyOne) => updateProfile(prof.id, { onlyOne })}
+                        label="Only one"
+                        hint="Satu akun paket ini hanya boleh satu sesi aktif."
+                      />
+                    </div>
+                  </Row>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Akun pelanggan */}
+          <div className="rounded-xl border border-line-soft bg-raised/60 p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
               <span className="font-mono text-xs uppercase tracking-wide text-brand/80">
                 Akun pelanggan (PPP secret)
               </span>
@@ -1770,7 +1848,7 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
               <div className="space-y-3">
                 {p.secrets.map((secret, index) => (
                   <div key={secret.id} className="flex items-end gap-2">
-                    <Field label={`Username ${index + 1}`} className="flex-1">
+                    <Field label={index === 0 ? "Username" : ""} className="flex-1">
                       <TextInput
                         mono
                         value={secret.user}
@@ -1782,7 +1860,7 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
                         placeholder="pelanggan01"
                       />
                     </Field>
-                    <Field label="Password" className="flex-1">
+                    <Field label={index === 0 ? "Password" : ""} className="flex-1">
                       <TextInput
                         mono
                         value={secret.password}
@@ -1796,9 +1874,23 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
                         placeholder="password"
                       />
                     </Field>
+                    <Field label={index === 0 ? "Paket" : ""} className="flex-1">
+                      <Select
+                        value={secret.profile}
+                        placeholder=""
+                        onChange={(profile) =>
+                          setPppoe({
+                            secrets: p.secrets.map((s) =>
+                              s.id === secret.id ? { ...s, profile } : s,
+                            ),
+                          })
+                        }
+                        options={profileOptions}
+                      />
+                    </Field>
                     <Button
                       variant="danger"
-                      className="px-3"
+                      className="mb-0.5 px-3"
                       title={`Hapus user ${index + 1}`}
                       ariaLabel={`Hapus user ${index + 1}`}
                       onClick={() =>
@@ -1812,11 +1904,6 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
               </div>
             )}
           </div>
-
-          <Note tone="warn">
-            Spesifikasi section PPPoE masih berstatus draft di PRD — field di atas mengikuti pola
-            section lain dan dapat berubah setelah dikonfirmasi.
-          </Note>
         </div>
       )}
       <IssueList issues={issues} />

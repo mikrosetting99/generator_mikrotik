@@ -116,20 +116,42 @@ export interface HotspotPageConfig {
   footer: string;
 }
 
+/** Nama profile bawaan RouterOS — selalu tersedia tanpa perlu dibuat. */
+export const DEFAULT_PPP_PROFILE = "default";
+
+/** Nama profile bawaan yang tidak boleh ditimpa. */
+export const RESERVED_PPP_PROFILES = ["default", "default-encryption"];
+
+/**
+ * Satu paket layanan PPPoE. Dipakai untuk membedakan kecepatan atau
+ * segmen IP antar kelompok pelanggan.
+ */
+export interface PppoeProfile {
+  id: string;
+  name: string;
+  /** IP router pada sisi PPPoE. Kosong = ikut bawaan RouterOS. */
+  localAddress: string;
+  /** Pool untuk remote address. Kosong = ikut bawaan RouterOS. */
+  pool: string;
+  rateLimit: string;
+  onlyOne: boolean;
+}
+
 export interface PppoeSecret {
   id: string;
   user: string;
   password: string;
+  /** Nama profile yang dipakai akun ini. */
+  profile: string;
 }
 
 export interface PppoeConfig {
   enabled: boolean;
   iface: string;
   serviceName: string;
-  profileName: string;
-  localAddress: string;
-  pool: string;
-  rateLimit: string;
+  /** Profile untuk klien yang tidak punya profile sendiri. */
+  defaultProfile: string;
+  profiles: PppoeProfile[];
   oneSessionPerHost: boolean;
   secrets: PppoeSecret[];
 }

@@ -2,7 +2,7 @@ import { whatsappLink } from "../hotspot-page";
 import { addressOfInterface, lanInterfaces } from "../interfaces";
 import { getModel } from "../models";
 import { addressPart, isCidr, networkOf } from "../net";
-import type { SetupConfig } from "../types";
+import { DEFAULT_PPP_PROFILE, type SetupConfig } from "../types";
 import { args, raw, ScriptBuilder } from "./script-builder";
 
 const WAN_LIST = "WAN";
@@ -436,27 +436,38 @@ export function generateSetupScript(config: SetupConfig): string {
     const p = config.pppoe;
     section(
       "PPPOE SERVER", "Layanan dial-up PPPoE untuk pelanggan/klien.");
-    s.addIfMissing(
-      "/ppp profile",
-      [["name", p.profileName.trim()]],
-      args([
-        ["name", p.profileName.trim()],
-        ["local-address", addressPart(p.localAddress)],
-        ["remote-address", p.pool],
-        ["dns-server", dnsServers.join(",") || addressPart(p.localAddress)],
-        ["rate-limit", p.rateLimit.trim()],
-        ["only-one", p.oneSessionPerHost],
-        ["comment", tag("profil PPPoE")],
-      ]),
-    );
-    s.blank().comment("Metode autentikasi memakai bawaan RouterOS (pap, chap, mschap1, mschap2).");
+    const profiles = p.profiles.filter((prof) => prof.name.trim());
+    if (profiles.length > 0) {
+      s.comment("Paket layanan. Klien tanpa profile sendiri memakai default-profile");
+      s.comment("yang diatur di server PPPoE di bawah.");
+      for (const prof of profiles) {
+        s.addIfMissing(
+          "/ppp profile",
+          [["name", prof.name.trim()]],
+          args([
+            ["name", prof.name.trim()],
+            ["local-address", addressPart(prof.localAddress)],
+            ["remote-address", prof.pool],
+            ["dns-server", dnsServers.join(",") || addressPart(prof.localAddress)],
+            ["rate-limit", prof.rateLimit.trim()],
+            ["only-one", prof.onlyOne],
+            ["comment", tag(`paket PPPoE ${prof.name.trim()}`)],
+          ]),
+        );
+      }
+      s.blank();
+    } else {
+      s.comment("Memakai profile bawaan RouterOS — tidak ada paket khusus yang dibuat.");
+    }
+
+    s.comment("Metode autentikasi memakai bawaan RouterOS (pap, chap, mschap1, mschap2).");
     s.addIfMissing(
       "/interface pppoe-server server",
       [["interface", p.iface]],
       args([
         ["service-name", p.serviceName.trim()],
         ["interface", p.iface],
-        ["default-profile", p.profileName.trim()],
+        ["default-profile", p.defaultProfile.trim() || DEFAULT_PPP_PROFILE],
         ["one-session-per-host", p.oneSessionPerHost],
         ["max-mtu", "1480"],
         ["max-mru", "1480"],
@@ -464,10 +475,11 @@ export function generateSetupScript(config: SetupConfig): string {
         ["comment", tag(`PPPoE server di ${p.iface}`)],
       ]),
     );
-    if (p.secrets.length > 0) {
+
+    const secrets = p.secrets.filter((secret) => secret.user.trim());
+    if (secrets.length > 0) {
       s.blank().comment("Akun pelanggan PPPoE");
-      for (const secret of p.secrets) {
-        if (!secret.user.trim()) continue;
+      for (const secret of secrets) {
         s.addIfMissing(
           "/ppp secret",
           [["name", secret.user.trim()]],
@@ -475,7 +487,7 @@ export function generateSetupScript(config: SetupConfig): string {
             ["name", secret.user.trim()],
             ["password", secret.password],
             ["service", "pppoe"],
-            ["profile", p.profileName.trim()],
+            ["profile", secret.profile.trim() || DEFAULT_PPP_PROFILE],
             ["comment", tag()],
           ]),
         );

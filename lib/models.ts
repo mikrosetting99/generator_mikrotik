@@ -199,6 +199,15 @@ export const MIKROTIK_MODELS: MikrotikModel[] = [
 
   /* --------------------------------------------------- RB2011 s/d RB5009 */
   {
+    id: "rb450gx4",
+    name: "RB450Gx4",
+    series: "RouterBOARD",
+    arch: "arm",
+    supports: BOTH,
+    interfaces: seq(5),
+    wireless: "none",
+  },
+  {
     id: "rb2011uias",
     name: "RB2011UiAS-2HnD",
     series: "RouterBOARD",

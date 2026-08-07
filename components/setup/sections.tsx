@@ -1099,34 +1099,45 @@ function LoginPageEditor({
 
   // Pratinjau: gabungkan login.html + style.css milik desain terpilih, lalu
   // ganti variabel RouterOS dengan contoh nilai supaya terbaca wajar.
+  //
+  // Dirender ulang setelah pengetikan berhenti sejenak. Tanpa jeda ini iframe
+  // dimuat ulang di setiap ketikan — boros dan membuat tampilan berkedip.
   useEffect(() => {
     let active = true;
-    Promise.all([fetchLoginTemplate(), fetchStyle(page.template)])
-      .then(([source, style]) => {
-        if (!active) return;
-        // Di pratinjau, berkas gambar diganti data URI-nya langsung.
-        const vars = {
-          ...templateVars(page),
-          LOGO: page.logoDataUrl,
-          BG_IMAGE: page.bgImageDataUrl,
-        };
-        const html = renderTemplate(source, vars)
-          // Sisipkan CSS langsung, karena iframe tidak bisa memuat style.css.
-          .replace(
-            /<link rel="stylesheet" href="style.css">/,
-            `<style>${renderTemplate(style, vars)}</style>`,
-          )
-          .replace(/\$\(if error\)[\s\S]*?\$\(endif\)/g, "")
-          .replace(/\$\(if chap-id\)[\s\S]*?\$\(endif\)/g, "")
-          .replace(/\$\(if trial == 'yes'\)/g, "")
-          .replace(/\$\(endif\)/g, "")
-          .replace(/\$\(ip-address\)/g, "192.168.20.25")
-          .replace(/\$\([^)]*\)/g, "");
-        setPreview(html);
-      })
-      .catch(() => active && setPreview(""));
+    const timer = setTimeout(() => {
+      Promise.all([fetchLoginTemplate(), fetchStyle(page.template)])
+        .then(([source, style]) => {
+          if (!active) return;
+          // Di pratinjau, berkas gambar diganti data URI-nya langsung.
+          const vars = {
+            ...templateVars(page),
+            LOGO: page.logoDataUrl,
+            BG_IMAGE: page.bgImageDataUrl,
+          };
+          const html = renderTemplate(source, vars)
+            // Sisipkan CSS langsung, karena iframe tidak bisa memuat style.css.
+            .replace(
+              /<link rel="stylesheet" href="style\.css">/,
+              `<style>${renderTemplate(style, vars)}</style>`,
+            )
+            // Halaman asli memindahkan kursor ke kolom username saat dimuat.
+            // Di dalam iframe, fokus itu membuat browser menggulung halaman ke
+            // posisi pratinjau — form di atasnya jadi tersentak setiap render.
+            .replace(/^\s*username\.focus\(\);\s*$/gm, "")
+            .replace(/\$\(if error\)[\s\S]*?\$\(endif\)/g, "")
+            .replace(/\$\(if chap-id\)[\s\S]*?\$\(endif\)/g, "")
+            .replace(/\$\(if trial == 'yes'\)/g, "")
+            .replace(/\$\(endif\)/g, "")
+            .replace(/\$\(ip-address\)/g, "192.168.20.25")
+            .replace(/\$\([^)]*\)/g, "");
+          setPreview(html);
+        })
+        .catch(() => active && setPreview(""));
+    }, 300);
+
     return () => {
       active = false;
+      clearTimeout(timer);
     };
   }, [page]);
 

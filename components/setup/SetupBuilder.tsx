@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Check,
   Cpu,
+  FileText,
   FolderOpen,
   Lock,
   Rotate,
@@ -15,6 +16,7 @@ import {
   Terminal,
   Wand,
 } from "@/components/icons";
+import { HandoverDialog } from "@/components/setup/HandoverDialog";
 import { PresetDialog } from "@/components/setup/PresetDialog";
 import { SaveLoadDialog } from "@/components/setup/SaveLoadDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -123,6 +125,7 @@ export function SetupBuilder() {
   const [activeId, setActiveId] = useState<SectionId>("device");
   const [storeOpen, setStoreOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
+  const [handoverOpen, setHandoverOpen] = useState(false);
   const [loadedName, setLoadedName] = useState<string | null>(null);
   const railRef = useRef<HTMLUListElement>(null);
   const firstRender = useRef(true);
@@ -214,6 +217,14 @@ export function SetupBuilder() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Button
+              size="sm"
+              onClick={() => setHandoverOpen(true)}
+              title="Buat berita acara serah terima"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">BAST</span>
+            </Button>
             <Button size="sm" onClick={() => setStoreOpen(true)} title="Simpan atau muat konfigurasi">
               <Save className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Simpan / Muat</span>
@@ -390,6 +401,15 @@ export function SetupBuilder() {
           <ScriptPreview script={script} config={config} issues={issues} onJump={jumpToSection} />
         </div>
       </div>
+
+      <Modal
+        open={handoverOpen}
+        onClose={() => setHandoverOpen(false)}
+        title="Berita Acara Serah Terima"
+        description="Dokumen penyerahan pekerjaan ke pelanggan, isinya diambil dari konfigurasi yang sudah dibuat."
+      >
+        <HandoverDialog config={config} patch={patch} />
+      </Modal>
 
       <Modal
         open={presetOpen}

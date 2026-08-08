@@ -160,6 +160,19 @@ export function createDefaultConfig(): SetupConfig {
       limitMacServer: true,
     },
     users: [],
+    handover: {
+      docNumber: "",
+      date: "",
+      companyName: "",
+      technicianName: "",
+      customerName: "",
+      customerAddress: "",
+      customerPhone: "",
+      serialNumber: "",
+      scope: "Instalasi dan konfigurasi router MikroTik sesuai kebutuhan pelanggan.",
+      notes: "",
+      includeCredentials: true,
+    },
   };
 }
 

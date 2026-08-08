@@ -166,6 +166,7 @@ export function normalizeConfig(raw: unknown): SetupConfig {
     };
   });
 
+  const handover = asRecord(input.handover);
   const hotspotPage = asRecord(input.hotspotPage);
   const templateId = asString(hotspotPage.template, base.hotspotPage.template);
   const loginMode = asString(hotspotPage.loginMode, base.hotspotPage.loginMode);
@@ -337,6 +338,21 @@ export function normalizeConfig(raw: unknown): SetupConfig {
       limitMacServer: asBool(firewall.limitMacServer, base.firewall.limitMacServer),
     },
     users,
+    handover: {
+      docNumber: asString(handover.docNumber),
+      // Tanggal disimpan apa adanya; format salah cukup dikosongkan supaya
+      // dokumen memakai tanggal cetak.
+      date: /^\d{4}-\d{2}-\d{2}$/.test(asString(handover.date)) ? asString(handover.date) : "",
+      companyName: asString(handover.companyName),
+      technicianName: asString(handover.technicianName),
+      customerName: asString(handover.customerName),
+      customerAddress: asString(handover.customerAddress),
+      customerPhone: asString(handover.customerPhone),
+      serialNumber: asString(handover.serialNumber),
+      scope: asString(handover.scope, base.handover.scope),
+      notes: asString(handover.notes),
+      includeCredentials: asBool(handover.includeCredentials, base.handover.includeCredentials),
+    },
   };
 }
 

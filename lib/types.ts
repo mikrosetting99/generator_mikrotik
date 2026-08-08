@@ -201,6 +201,27 @@ export interface FirewallConfig {
   limitMacServer: boolean;
 }
 
+/**
+ * Data untuk Berita Acara Serah Terima. Bukan konfigurasi router, tetapi ikut
+ * tersimpan bersamanya supaya satu berkas konfigurasi = satu pekerjaan.
+ */
+export interface HandoverInfo {
+  docNumber: string;
+  /** Format yyyy-mm-dd. Kosong = memakai tanggal hari ini saat dicetak. */
+  date: string;
+  companyName: string;
+  technicianName: string;
+  customerName: string;
+  customerAddress: string;
+  customerPhone: string;
+  /** Nomor seri perangkat, disalin dari stiker atau /system routerboard print. */
+  serialNumber: string;
+  scope: string;
+  notes: string;
+  /** Sertakan password admin & akun PPPoE di dokumen. */
+  includeCredentials: boolean;
+}
+
 export interface SetupConfig {
   modelId: string;
   /** Dipakai saat model = custom: daftar interface dipisah koma/baris baru. */
@@ -220,6 +241,7 @@ export interface SetupConfig {
   pppoe: PppoeConfig;
   firewall: FirewallConfig;
   users: RouterUser[];
+  handover: HandoverInfo;
 }
 
 export type SectionId =

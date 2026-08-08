@@ -85,6 +85,23 @@ preset dipakai banyak orang, jadi menanam password bawaan justru berbahaya.
 Definisinya ada di [lib/presets.ts](lib/presets.ts); menambah preset cukup menambah satu
 entri pada `PRESETS`.
 
+### Berita Acara Serah Terima
+
+Tombol **BAST** di header menyusun dokumen serah terima ke pelanggan. Isinya diambil dari
+konfigurasi yang sudah dibuat — perangkat, WAN, segmen jaringan, VLAN, peran tiap port,
+layanan hotspot/PPPoE — ditambah data pelanggan, pelaksana, lingkup pekerjaan, dan blok
+tanda tangan.
+
+Dokumen dicetak lewat dialog cetak browser: pilih **Save as PDF** untuk menyimpan berkas,
+atau langsung ke printer untuk lembar tanda tangan. Tidak memakai pustaka PDF apa pun —
+hasil cetaknya teks tajam, bukan gambar. Ada juga tombol unduh `.html` bila dokumennya
+ingin diarsipkan atau diedit dulu.
+
+Password dicantumkan secara bawaan karena pelanggan memang memerlukannya; ada toggle untuk
+menyembunyikannya bila dokumen akan digandakan.
+
+Templat dokumen ada di [lib/handover.ts](lib/handover.ts).
+
 ### Simpan & muat konfigurasi
 
 Tombol **Simpan / Muat** di header membuka dialog dengan dua jalur:
@@ -123,6 +140,7 @@ components/
     sections.tsx       # seluruh section form menu 1
     ScriptPreview.tsx  # preview, copy, download .rsc & paket hotspot
     SaveLoadDialog.tsx # simpan/muat konfigurasi (browser & file .json)
+    HandoverDialog.tsx # form Berita Acara Serah Terima
     PresetDialog.tsx   # pemilih konfigurasi siap pakai
 lib/
   models.ts           # database model Mikrotik + kompatibilitas RouterOS
@@ -133,6 +151,7 @@ lib/
   validate.ts         # validasi per section
   presets.ts          # konfigurasi siap pakai
   storage.ts          # simpan/muat + normalisasi konfigurasi
+  handover.ts         # dokumen Berita Acara Serah Terima
   color.ts            # turunan palet & jaminan kontras halaman login
   hotspot-page.ts     # registry template + renderer + pembangun paket login
   zip.ts              # penulis ZIP tanpa dependensi

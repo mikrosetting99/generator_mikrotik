@@ -45,6 +45,14 @@ export const ChevronDown = (p: IconProps) => (
   </Icon>
 );
 
+export const FileText = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+    <path d="M14 3v5h5" />
+    <path d="M9 13h6M9 17h6" />
+  </Icon>
+);
+
 export const Sun = (p: IconProps) => (
   <Icon {...p}>
     <circle cx="12" cy="12" r="4" />

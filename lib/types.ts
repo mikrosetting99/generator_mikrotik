@@ -233,6 +233,7 @@ export type SectionId =
   | "pool"
   | "dhcp"
   | "hotspot"
+  | "loginpage"
   | "pppoe"
   | "firewall"
   | "user";

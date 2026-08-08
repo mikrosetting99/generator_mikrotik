@@ -69,6 +69,7 @@ export const SECTION_META: Array<{ id: SectionId; step: string; title: string }>
   { id: "pool", step: "i", title: "IP Pool" },
   { id: "dhcp", step: "j", title: "DHCP Server" },
   { id: "hotspot", step: "k", title: "IP Hotspot" },
+  { id: "loginpage", step: "k2", title: "Halaman Login" },
   { id: "pppoe", step: "l", title: "PPPoE Server" },
   { id: "firewall", step: "m", title: "Firewall Dasar" },
   { id: "user", step: "n", title: "User Mikrotik" },
@@ -1039,7 +1040,15 @@ export function HotspotSection({ config, patch, issues }: SectionProps) {
           );
         })}
       </div>
-      {config.hotspots.length > 0 && <LoginPageEditor config={config} patch={patch} />}
+      {config.hotspots.length > 0 && (
+        <div className="mt-4">
+          <Note>
+            Tampilan halaman login diatur di langkah berikutnya —{" "}
+            <span className="text-ink">Halaman Login</span> — yang terbuka begitu hotspot
+            ditambahkan di sini.
+          </Note>
+        </div>
+      )}
       <IssueList issues={issues} />
     </Panel>
   );
@@ -1078,6 +1087,41 @@ function formatSize(bytes: number): string {
   return bytes >= 1024 * 1024
     ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
     : `${Math.round(bytes / 1024)} KB`;
+}
+
+/**
+ * Halaman login hanya relevan bila ada hotspot, jadi section ini baru muncul
+ * di daftar langkah setelah hotspot ditambahkan. Penjagaan di bawah untuk
+ * jaga-jaga bila section ini dibuka lewat tautan langsung.
+ */
+export function LoginPageSection({ config, patch, issues }: SectionProps) {
+  if (config.hotspots.length === 0) {
+    return (
+      <Panel
+        id="loginpage"
+        step="k2"
+        title="Halaman Login"
+        optional
+        description="Tampilan portal login yang dilihat pengguna hotspot."
+      >
+        <EmptyState>
+          Tambahkan hotspot di langkah sebelumnya, lalu halaman ini akan terbuka.
+        </EmptyState>
+      </Panel>
+    );
+  }
+
+  return (
+    <Panel
+      id="loginpage"
+      step="k2"
+      title="Halaman Login"
+      description="Pilih desain lalu sesuaikan. Hasilnya diunduh sebagai hotspot.zip lewat tombol Login page di panel script, untuk di-upload ke folder hotspot pada menu Files Winbox."
+    >
+      <LoginPageEditor config={config} patch={patch} />
+      <IssueList issues={issues} />
+    </Panel>
+  );
 }
 
 function LoginPageEditor({
@@ -1244,14 +1288,12 @@ function LoginPageEditor({
   );
 
   return (
-    <div className="mt-6 border-t border-line-soft pt-5">
-      <h3 className="text-sm font-semibold text-ink">Halaman login</h3>
-      <p className="mt-1 text-[13px] leading-relaxed text-muted">
+    <div>
+      <p className="text-[13px] leading-relaxed text-muted">
         Paket berisi satu folder <span className="font-mono text-ink">hotspot</span> lengkap —
         seluruh halaman, <span className="font-mono text-ink">style.css</span>,{" "}
         <span className="font-mono text-ink">md5.js</span>, dan{" "}
-        <span className="font-mono text-ink">errors.txt</span> berbahasa Indonesia. Unduh lewat
-        tombol Login page di panel script.
+        <span className="font-mono text-ink">errors.txt</span> berbahasa Indonesia.
       </p>
 
       {/* Pilihan desain */}

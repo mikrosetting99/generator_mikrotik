@@ -37,24 +37,26 @@ Builder modular mengikuti urutan section pada PRD:
 8. **IP Address** — per interface fisik/bridge/VLAN.
 9. **IP Pool** — dengan pengisian otomatis dari subnet interface.
 10. **DHCP Server** — network & gateway diisi otomatis dari IP address interface.
-11. **IP Hotspot** — metode autentikasi http-pap/http-chap/mac-cookie/cookie, plus editor
-    halaman login: 4 desain (Minimal, Voucher, Korporat, Gelap Modern), warna tema & latar
-    bebas, unggah logo, mode Voucher/Member, teks berjalan, tabel harga paket, tautan trial,
-    dan tombol WhatsApp. Logo dan gambar latar diunggah sendiri (dengan batas ukuran dan
-    saran dimensi), lengkap dengan pengatur kepekatan lapisan di atas foto. Pratinjau
-    langsung, hasilnya satu folder `hotspot` lengkap dalam `.zip`.
+11. **IP Hotspot** — interface, address pool, dan metode autentikasi
+    http-pap/http-chap/mac-cookie/cookie.
+12. **Halaman Login** — langkah tersendiri yang **baru muncul setelah hotspot ditambahkan**.
+    Berisi 4 desain (Minimal, Voucher, Korporat, Gelap Modern), warna tema & latar bebas,
+    unggah logo dengan pengatur tinggi, unggah gambar latar dengan pengatur kepekatan,
+    mode Voucher/Member, teks berjalan, tabel harga paket, tautan trial, dan tombol
+    WhatsApp. Ada pratinjau langsung; hasilnya satu folder `hotspot` lengkap dalam
+    `hotspot.zip`.
 
     Nama atau identity router **tidak** ikut tampil di halaman login — judul hanya diambil
     dari isian pengguna, dan dikosongkan berarti hanya logo yang tampil.
-12. **PPPoE Server** — mulai dari profile `default` bawaan RouterOS, jadi tanpa mengisi apa
+13. **PPPoE Server** — mulai dari profile `default` bawaan RouterOS, jadi tanpa mengisi apa
     pun sudah bisa jalan. Paket layanan (PPP profile) bisa ditambah sebanyak yang perlu —
     masing-masing dengan rate limit, IP pool, dan local address sendiri — lalu tiap akun
     PPP secret memilih paketnya. Metode autentikasi tidak diekspos di form; script memakai
     bawaan RouterOS.
-13. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
+14. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
     Winbox/SSH/WebFig, neighbor discovery, dan MAC server. **Mati secara default**,
     diaktifkan sendiri bila diperlukan.
-14. **User Mikrotik** — ganti password admin dan tambah user baru (nama, password, group
+15. **User Mikrotik** — ganti password admin dan tambah user baru (nama, password, group
     full/write/read, batas subnet login). Section terakhir, dan blok ini juga diletakkan
     paling akhir di script agar akses ke router tidak terputus di tengah eksekusi.
 
@@ -121,6 +123,7 @@ components/
     sections.tsx       # seluruh section form menu 1
     ScriptPreview.tsx  # preview, copy, download .rsc & paket hotspot
     SaveLoadDialog.tsx # simpan/muat konfigurasi (browser & file .json)
+    PresetDialog.tsx   # pemilih konfigurasi siap pakai
 lib/
   models.ts           # database model Mikrotik + kompatibilitas RouterOS
   types.ts            # bentuk konfigurasi builder

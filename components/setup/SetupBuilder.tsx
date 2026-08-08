@@ -27,6 +27,7 @@ import {
   DnsSection,
   FirewallSection,
   HotspotSection,
+  LoginPageSection,
   NatSection,
   PoolSection,
   PppoeSection,
@@ -53,13 +54,29 @@ const SECTION_COMPONENTS: Record<SectionId, (props: SectionProps) => React.React
   pool: PoolSection,
   dhcp: DhcpSection,
   hotspot: HotspotSection,
+  loginpage: LoginPageSection,
   pppoe: PppoeSection,
   firewall: FirewallSection,
   user: UserSection,
 };
 
 /** Section yang boleh dilewati tanpa mengisi apa pun. */
-const OPTIONAL_SECTIONS = new Set<SectionId>(["bridge", "vlan", "hotspot", "pppoe", "user"]);
+const OPTIONAL_SECTIONS = new Set<SectionId>([
+  "bridge",
+  "vlan",
+  "hotspot",
+  "loginpage",
+  "pppoe",
+  "user",
+]);
+
+/**
+ * Halaman login tidak ada gunanya tanpa hotspot, jadi langkahnya baru muncul
+ * setelah hotspot ditambahkan.
+ */
+function visibleSections(config: SetupConfig) {
+  return SECTION_META.filter((meta) => meta.id !== "loginpage" || config.hotspots.length > 0);
+}
 
 /** Apakah sebuah section sudah diisi sesuatu oleh pengguna. */
 function isFilled(config: SetupConfig, id: SectionId): boolean {
@@ -84,6 +101,12 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
       return config.dhcpServers.length > 0;
     case "hotspot":
       return config.hotspots.length > 0;
+    case "loginpage":
+      return Boolean(
+        config.hotspotPage.title.trim() ||
+          config.hotspotPage.logoDataUrl ||
+          config.hotspotPage.packages.length > 0,
+      );
     case "pppoe":
       return config.pppoe.enabled;
     case "firewall":
@@ -95,7 +118,9 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
 
 export function SetupBuilder() {
   const [config, setConfig] = useState<SetupConfig>(createDefaultConfig);
-  const [step, setStep] = useState(0);
+  // Langkah dilacak lewat id, bukan indeks: daftar langkahnya berubah panjang
+  // saat hotspot ditambah atau dihapus, dan indeks akan meleset karenanya.
+  const [activeId, setActiveId] = useState<SectionId>("device");
   const [storeOpen, setStoreOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
   const [loadedName, setLoadedName] = useState<string | null>(null);
@@ -109,30 +134,42 @@ export function SetupBuilder() {
   const issues = useMemo(() => validateConfig(config), [config]);
   const script = useMemo(() => generateSetupScript(config), [config]);
   const locked = !config.modelId || !config.ros;
-  const total = SECTION_META.length;
-  const current = SECTION_META[step];
+
+  const steps = useMemo(() => visibleSections(config), [config]);
+  const total = steps.length;
+  const step = Math.max(
+    0,
+    steps.findIndex((meta) => meta.id === activeId),
+  );
+  const current = steps[step];
   const Section = SECTION_COMPONENTS[current.id];
   const isLast = step === total - 1;
 
   const goTo = useCallback(
     (index: number) => {
-      setStep(Math.min(Math.max(index, 0), total - 1));
+      const target = steps[Math.min(Math.max(index, 0), steps.length - 1)];
+      if (target) setActiveId(target.id);
     },
-    [total],
+    [steps],
   );
 
   const jumpToSection = useCallback(
     (id: SectionId) => {
-      const index = SECTION_META.findIndex((meta) => meta.id === id);
-      if (index >= 0) goTo(index);
+      if (steps.some((meta) => meta.id === id)) setActiveId(id);
     },
-    [goTo],
+    [steps],
   );
 
   // Perangkat & RouterOS wajib dipilih — kunci langkah lain sampai terisi.
   useEffect(() => {
-    if (locked && step !== 0) setStep(0);
-  }, [locked, step]);
+    if (locked && activeId !== "device") setActiveId("device");
+  }, [locked, activeId]);
+
+  // Langkah yang sedang dibuka bisa hilang dari daftar — misalnya hotspot
+  // terakhir dihapus saat berada di langkah Halaman Login.
+  useEffect(() => {
+    if (!steps.some((meta) => meta.id === activeId)) setActiveId("hotspot");
+  }, [steps, activeId]);
 
   // Pindah langkah: kembali ke atas dan tarik chip aktif ke tengah rail.
   useEffect(() => {
@@ -144,7 +181,7 @@ export function SetupBuilder() {
     railRef.current
       ?.querySelector('[aria-current="step"]')
       ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [step]);
+  }, [activeId]);
 
   const currentIssues = issues.filter((i) => i.section === current.id);
   const currentErrors = currentIssues.filter((i) => i.level === "error");
@@ -197,7 +234,7 @@ export function SetupBuilder() {
                 if (confirm("Kosongkan semua isian?")) {
                   setConfig(createDefaultConfig());
                   setLoadedName(null);
-                  setStep(0);
+                  setActiveId("device");
                 }
               }}
             >
@@ -230,7 +267,7 @@ export function SetupBuilder() {
             ref={railRef}
             className="flex gap-1.5 overflow-x-auto pb-2 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0"
           >
-            {SECTION_META.map((meta, index) => {
+            {steps.map((meta, index) => {
               const sectionIssues = issues.filter((i) => i.section === meta.id);
               const hasError = sectionIssues.some((i) => i.level === "error");
               const filled = isFilled(config, meta.id);
@@ -306,7 +343,7 @@ export function SetupBuilder() {
                   Langkah {step + 1} dari {total}
                 </p>
                 <p className="truncate text-xs text-muted">
-                  {isLast ? "Section terakhir" : `Berikutnya: ${SECTION_META[step + 1].title}`}
+                  {isLast ? "Section terakhir" : `Berikutnya: title`}
                 </p>
               </div>
 
@@ -365,7 +402,7 @@ export function SetupBuilder() {
           onPick={(loaded, name) => {
             setConfig(loaded);
             setLoadedName(name);
-            setStep(0);
+            setActiveId("device");
           }}
         />
       </Modal>
@@ -382,7 +419,7 @@ export function SetupBuilder() {
           onLoad={(loaded, name) => {
             setConfig(loaded);
             setLoadedName(name);
-            setStep(0);
+            setActiveId("device");
           }}
         />
       </Modal>

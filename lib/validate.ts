@@ -1,4 +1,4 @@
-import { addressOfInterface, physicalInterfaces } from "./interfaces";
+import { addressOfInterface, physicalInterfaces, wirelessInterfaces } from "./interfaces";
 import { getModel } from "./models";
 import { addressPart, ipInCidr, isCidr, isIpv4 } from "./net";
 import { RESERVED_PPP_PROFILES, type Issue, type SetupConfig } from "./types";
@@ -125,6 +125,64 @@ export function validateConfig(config: SetupConfig): Issue[] {
       if (wanIfaces.includes(port)) {
         err("bridge", `${tag}: ${port} sudah dipakai sebagai WAN, jangan dijadikan port bridge.`);
       }
+    }
+  });
+
+  // --- f2: Wireless -----------------------------------------------------
+  const radios = config.wireless.radios;
+  const availableRadios = wirelessInterfaces(config);
+  const radioIfaces = radios.map((r) => r.iface).filter(Boolean);
+  if (new Set(radioIfaces).size !== radioIfaces.length) {
+    err("wireless", "Satu radio tidak boleh diatur dua kali.");
+  }
+  radios.forEach((radio, i) => {
+    const tag = radio.ssid.trim() || radio.iface || `Radio ${i + 1}`;
+    if (!radio.iface) {
+      err("wireless", `Radio ${i + 1}: interface belum dipilih.`);
+    } else if (!availableRadios.includes(radio.iface)) {
+      err("wireless", `${tag}: ${radio.iface} bukan radio pada model yang dipilih.`);
+    }
+
+    if (!radio.ssid.trim()) {
+      err("wireless", `Radio ${i + 1}: SSID belum diisi.`);
+    } else if (radio.ssid.trim().length > 32) {
+      err("wireless", `${tag}: SSID maksimal 32 karakter.`);
+    }
+
+    if (radio.security !== "open") {
+      // Batas WPA-PSK: 8–63 karakter. Di luar itu router menolak kuncinya.
+      if (radio.password.length < 8) {
+        err("wireless", `${tag}: password WiFi minimal 8 karakter.`);
+      } else if (radio.password.length > 63) {
+        err("wireless", `${tag}: password WiFi maksimal 63 karakter.`);
+      }
+    }
+
+    if (radio.mode !== "ap" || !radio.iface) return;
+
+    // Radio yang tidak digabung ke bridge dan tidak punya IP tidak terhubung
+    // ke mana pun — SSID-nya muncul, tapi klien tidak dapat apa-apa.
+    const bridge = portOwner.get(radio.iface);
+    const segment = bridge || radio.iface;
+    if (!bridge && !addressOfInterface(config, radio.iface)) {
+      warn(
+        "wireless",
+        `${tag}: ${radio.iface} belum masuk bridge mana pun dan belum punya IP — klien WiFi tidak akan dapat akses. Jadikan port bridge di section Bridge.`,
+      );
+    }
+
+    const behindHotspot = config.hotspots.some((h) => h.iface === segment);
+    if (radio.security === "open" && !behindHotspot) {
+      warn(
+        "wireless",
+        `${tag}: jaringan terbuka tanpa portal hotspot — siapa pun dalam jangkauan bisa memakai internet Anda.`,
+      );
+    }
+    if (radio.security !== "open" && behindHotspot) {
+      warn(
+        "wireless",
+        `${tag}: klien harus melewati dua lapis login — password WiFi lalu halaman hotspot. Untuk hotspot voucher, biasanya SSID dibuat terbuka.`,
+      );
     }
   });
 

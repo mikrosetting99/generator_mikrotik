@@ -20,6 +20,10 @@ import type {
   VlanEntry,
   VoucherPackage,
   WanEntry,
+  WirelessBand,
+  WirelessEntry,
+  WirelessMode,
+  WirelessSecurity,
 } from "./types";
 
 const STORAGE_KEY = "generator-mikrotik/setup-configs";
@@ -58,6 +62,14 @@ const asStringList = (value: unknown): string[] =>
   asArray(value).filter((item): item is string => typeof item === "string");
 
 const HOTSPOT_AUTH_VALUES: HotspotAuth[] = ["http-pap", "http-chap", "mac-cookie", "cookie"];
+const WIRELESS_MODES: WirelessMode[] = ["ap", "station-bridge", "station"];
+const WIRELESS_BANDS: WirelessBand[] = ["auto", "2ghz", "5ghz", "5ghz-n"];
+const WIRELESS_SECURITY: WirelessSecurity[] = ["wpa2", "wpa2-wpa3", "open"];
+
+/** Nilai dari daftar tertutup; apa pun di luar itu jatuh ke nilai pertama. */
+function asOption<T extends string>(value: unknown, allowed: T[]): T {
+  return allowed.includes(value as T) ? (value as T) : allowed[0];
+}
 
 /**
  * Membentuk ulang konfigurasi dari data mentah (file impor / localStorage).
@@ -104,6 +116,22 @@ export function normalizeConfig(raw: unknown): SetupConfig {
   const bridges: BridgeEntry[] = asArray(input.bridges).map((item) => {
     const b = asRecord(item);
     return { id: uid("br"), name: asString(b.name), ports: asStringList(b.ports) };
+  });
+
+  const wireless = asRecord(input.wireless);
+  const radios: WirelessEntry[] = asArray(wireless.radios).map((item) => {
+    const r = asRecord(item);
+    return {
+      id: uid("wl"),
+      iface: asString(r.iface),
+      ssid: asString(r.ssid),
+      mode: asOption(r.mode, WIRELESS_MODES),
+      band: asOption(r.band, WIRELESS_BANDS),
+      security: asOption(r.security, WIRELESS_SECURITY),
+      password: asString(r.password),
+      hideSsid: asBool(r.hideSsid, false),
+      clientIsolation: asBool(r.clientIsolation, false),
+    };
   });
 
   const vlans: VlanEntry[] = asArray(input.vlans).map((item) => {
@@ -264,6 +292,10 @@ export function normalizeConfig(raw: unknown): SetupConfig {
       interfaces: asStringList(nat.interfaces),
     },
     bridges,
+    wireless: {
+      country: asString(wireless.country, base.wireless.country),
+      radios,
+    },
     vlans,
     addresses,
     pools,
@@ -361,6 +393,10 @@ export function stripSecrets(config: SetupConfig): SetupConfig {
   return {
     ...config,
     system: { ...config.system, adminPassword: "" },
+    wireless: {
+      ...config.wireless,
+      radios: config.wireless.radios.map((r) => ({ ...r, password: "" })),
+    },
     pppoe: {
       ...config.pppoe,
       secrets: config.pppoe.secrets.map((s) => ({ ...s, password: "" })),
@@ -372,6 +408,7 @@ export function stripSecrets(config: SetupConfig): SetupConfig {
 export function hasSecrets(config: SetupConfig): boolean {
   return (
     Boolean(config.system.adminPassword) ||
+    config.wireless.radios.some((r) => r.password) ||
     config.pppoe.secrets.some((s) => s.password) ||
     config.users.some((u) => u.password)
   );
@@ -386,6 +423,7 @@ export function describeConfig(config: SetupConfig): string {
   const wanCount = config.wans.filter((w) => w.iface).length;
   if (wanCount > 0) parts.push(`${wanCount} WAN`);
   if (config.vlans.length > 0) parts.push(`${config.vlans.length} VLAN`);
+  if (config.wireless.radios.some((r) => r.ssid.trim())) parts.push("WiFi");
   if (config.hotspots.length > 0) parts.push("hotspot");
   if (config.pppoe.enabled) parts.push("PPPoE");
   return parts.join(" · ");

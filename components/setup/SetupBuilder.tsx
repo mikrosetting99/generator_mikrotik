@@ -37,11 +37,13 @@ import {
   UserSection,
   VlanSection,
   WanSection,
+  WirelessSection,
   type SectionProps,
 } from "@/components/setup/sections";
 import { Button, Modal } from "@/components/ui";
 import { createDefaultConfig } from "@/lib/defaults";
 import { generateSetupScript } from "@/lib/generator/setup";
+import { wirelessInterfaces } from "@/lib/interfaces";
 import type { SectionId, SetupConfig } from "@/lib/types";
 import { validateConfig } from "@/lib/validate";
 
@@ -51,6 +53,7 @@ const SECTION_COMPONENTS: Record<SectionId, (props: SectionProps) => React.React
   dns: DnsSection,
   nat: NatSection,
   bridge: BridgeSection,
+  wireless: WirelessSection,
   vlan: VlanSection,
   address: AddressSection,
   pool: PoolSection,
@@ -65,6 +68,7 @@ const SECTION_COMPONENTS: Record<SectionId, (props: SectionProps) => React.React
 /** Section yang boleh dilewati tanpa mengisi apa pun. */
 const OPTIONAL_SECTIONS = new Set<SectionId>([
   "bridge",
+  "wireless",
   "vlan",
   "hotspot",
   "loginpage",
@@ -73,11 +77,16 @@ const OPTIONAL_SECTIONS = new Set<SectionId>([
 ]);
 
 /**
- * Halaman login tidak ada gunanya tanpa hotspot, jadi langkahnya baru muncul
- * setelah hotspot ditambahkan.
+ * Sebagian langkah hanya relevan pada keadaan tertentu: halaman login tidak
+ * ada gunanya tanpa hotspot, dan Wireless tidak ada gunanya pada perangkat
+ * yang memang tidak punya radio.
  */
 function visibleSections(config: SetupConfig) {
-  return SECTION_META.filter((meta) => meta.id !== "loginpage" || config.hotspots.length > 0);
+  return SECTION_META.filter((meta) => {
+    if (meta.id === "loginpage") return config.hotspots.length > 0;
+    if (meta.id === "wireless") return wirelessInterfaces(config).length > 0;
+    return true;
+  });
 }
 
 /** Apakah sebuah section sudah diisi sesuatu oleh pengguna. */
@@ -93,6 +102,8 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
       return config.nat.enabled;
     case "bridge":
       return config.bridges.length > 0;
+    case "wireless":
+      return config.wireless.radios.length > 0;
     case "vlan":
       return config.vlans.length > 0;
     case "address":
@@ -168,10 +179,17 @@ export function SetupBuilder() {
     if (locked && activeId !== "device") setActiveId("device");
   }, [locked, activeId]);
 
-  // Langkah yang sedang dibuka bisa hilang dari daftar — misalnya hotspot
-  // terakhir dihapus saat berada di langkah Halaman Login.
+  // Langkah yang sedang dibuka bisa hilang dari daftar — hotspot terakhir
+  // dihapus saat berada di Halaman Login, atau model diganti ke perangkat
+  // tanpa radio saat berada di Wireless. Mundur ke langkah terdekat sebelumnya
+  // agar posisi pengguna dalam alur tetap terasa masuk akal.
   useEffect(() => {
-    if (!steps.some((meta) => meta.id === activeId)) setActiveId("hotspot");
+    if (steps.some((meta) => meta.id === activeId)) return;
+    const order = SECTION_META.findIndex((meta) => meta.id === activeId);
+    const previous = [...steps]
+      .reverse()
+      .find((meta) => SECTION_META.findIndex((m) => m.id === meta.id) < order);
+    setActiveId((previous ?? steps[0]).id);
   }, [steps, activeId]);
 
   // Pindah langkah: kembali ke atas dan tarik chip aktif ke tengah rail.
@@ -354,7 +372,7 @@ export function SetupBuilder() {
                   Langkah {step + 1} dari {total}
                 </p>
                 <p className="truncate text-xs text-muted">
-                  {isLast ? "Section terakhir" : `Berikutnya: title`}
+                  {isLast ? "Section terakhir" : `Berikutnya: ${steps[step + 1].title}`}
                 </p>
               </div>
 

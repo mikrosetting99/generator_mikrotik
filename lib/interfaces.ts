@@ -1,4 +1,4 @@
-import { getModel } from "./models";
+import { getModel, type WirelessKind } from "./models";
 import type { SetupConfig } from "./types";
 
 export interface IfaceOption {
@@ -19,6 +19,30 @@ function parseCustom(raw: string): string[] {
 export function physicalInterfaces(config: SetupConfig): string[] {
   if (config.modelId === "custom") return parseCustom(config.customInterfaces);
   return getModel(config.modelId)?.interfaces ?? [];
+}
+
+const LEGACY_RADIO = /^wlan\d*$/i;
+const WIFI_RADIO = /^wifi\d*$/i;
+
+/**
+ * Paket wireless yang dipakai perangkat — menentukan menu RouterOS-nya:
+ * `/interface wireless` untuk generasi ac ke bawah, `/interface wifi` untuk ax.
+ * Model custom ditebak dari penamaan interface yang diisi pengguna.
+ */
+export function wirelessKind(config: SetupConfig): WirelessKind {
+  if (config.modelId !== "custom") return getModel(config.modelId)?.wireless ?? "none";
+  const names = physicalInterfaces(config);
+  if (names.some((name) => WIFI_RADIO.test(name))) return "wifi";
+  if (names.some((name) => LEGACY_RADIO.test(name))) return "legacy";
+  return "none";
+}
+
+/** Radio yang dimiliki perangkat, sesuai penamaan bawaan pabrik. */
+export function wirelessInterfaces(config: SetupConfig): string[] {
+  const kind = wirelessKind(config);
+  if (kind === "none") return [];
+  const pattern = kind === "wifi" ? WIFI_RADIO : LEGACY_RADIO;
+  return physicalInterfaces(config).filter((name) => pattern.test(name));
 }
 
 /** Semua interface yang bisa dipilih di dropdown, lengkap dengan asal-usulnya. */

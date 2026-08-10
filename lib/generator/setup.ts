@@ -1,8 +1,13 @@
 import { whatsappLink } from "../hotspot-page";
-import { addressOfInterface, lanInterfaces } from "../interfaces";
+import { addressOfInterface, lanInterfaces, wirelessKind } from "../interfaces";
 import { getModel } from "../models";
 import { addressPart, isCidr, networkOf } from "../net";
-import { DEFAULT_PPP_PROFILE, type SetupConfig } from "../types";
+import {
+  DEFAULT_PPP_PROFILE,
+  type SetupConfig,
+  type WirelessBand,
+  type WirelessEntry,
+} from "../types";
 import { args, raw, ScriptBuilder } from "./script-builder";
 
 const WAN_LIST = "WAN";
@@ -33,6 +38,24 @@ function lanListMembers(config: SetupConfig): string[] {
   for (const vlan of config.vlans) if (vlan.name.trim()) members.add(vlan.name.trim());
   for (const wan of config.wans) members.delete(wan.iface);
   return [...members];
+}
+
+/**
+ * Nilai `band=` RouterOS untuk tiap pilihan di form.
+ *
+ * "auto" tidak dipetakan ke apa pun: propertinya memang tidak ditulis, supaya
+ * radio memakai band bawaannya. Band yang salah — 5 GHz pada radio 2.4 GHz,
+ * atau mode ac pada radio yang hanya n — membuat perintahnya ditolak router.
+ */
+const WIRELESS_BAND: Record<Exclude<WirelessBand, "auto">, { legacy: string; wifi: string }> = {
+  "2ghz": { legacy: "2ghz-b/g/n", wifi: "2ghz-ax" },
+  "5ghz": { legacy: "5ghz-a/n/ac", wifi: "5ghz-ax" },
+  "5ghz-n": { legacy: "5ghz-a/n", wifi: "5ghz-ac" },
+};
+
+/** Nama profile keamanan yang dibuat untuk sebuah radio. */
+function securityProfileName(radio: WirelessEntry): string {
+  return `sec-${radio.iface}`;
 }
 
 export function generateSetupScript(config: SetupConfig): string {
@@ -143,6 +166,100 @@ export function generateSetupScript(config: SetupConfig): string {
             args([["bridge", bridge.name.trim()], ["interface", port]]),
           );
         }
+      }
+    }
+  }
+
+  // --------------------------------------------------------------- wireless
+  const radios = config.wireless.radios.filter((r) => r.iface && r.ssid.trim());
+  if (radios.length > 0) {
+    const kind = wirelessKind(config);
+    const country = config.wireless.country.trim();
+
+    section(
+      "WIRELESS (WiFi)",
+      kind === "wifi"
+        ? "Radio ax diatur lewat menu /interface wifi (RouterOS 7.13 ke atas).\nPada RouterOS 7.8–7.12 menu itu masih bernama /interface wifiwave2 —\nganti kata 'wifi' menjadi 'wifiwave2' bila router menolak perintahnya."
+        : "Radio diatur lewat menu /interface wireless (paket wireless).",
+    );
+    s.comment("Radio dicari memakai nama bawaan pabrik. Bila radio pernah diganti");
+    s.comment("nama, blok di bawah dilewati tanpa mengubah apa pun — sesuaikan");
+    s.comment("namanya di sini, atau kembalikan nama radio seperti semula.");
+    s.blank();
+    s.comment("Agar klien WiFi masuk ke segmen yang sama dengan port kabel, radio");
+    s.comment("harus menjadi port bridge — diatur di section BRIDGE.");
+    s.blank();
+
+    if (kind === "wifi") {
+      for (const radio of radios) {
+        const open = radio.security === "open";
+        const isAp = radio.mode === "ap";
+        s.setIfPresent(
+          "/interface wifi",
+          [["name", radio.iface]],
+          args([
+            ["configuration.mode", radio.mode === "ap" ? "ap" : radio.mode],
+            ["configuration.ssid", radio.ssid.trim()],
+            ["configuration.country", country],
+            ["configuration.hide-ssid", isAp ? radio.hideSsid : undefined],
+            // Daftar kosong berarti jaringan terbuka. Ditulis eksplisit supaya
+            // sisa pengaturan keamanan lama pada radio ikut terhapus.
+            [
+              "security.authentication-types",
+              open ? raw('""') : radio.security === "wpa2-wpa3" ? "wpa2-psk,wpa3-psk" : "wpa2-psk",
+            ],
+            ["security.passphrase", open ? raw('""') : radio.password],
+            ["datapath.client-isolation", isAp ? radio.clientIsolation : undefined],
+            ["channel.band", radio.band === "auto" ? undefined : WIRELESS_BAND[radio.band].wifi],
+            ["disabled", false],
+            ["comment", tag(`WiFi ${radio.ssid.trim()}`)],
+          ]),
+        );
+      }
+    } else {
+      if (radios.some((r) => r.security === "wpa2-wpa3")) {
+        s.comment("Catatan: paket wireless lama belum mendukung WPA3 — radio yang");
+        s.comment("memilihnya tetap dipasang WPA2-PSK.");
+        s.blank();
+      }
+      s.comment("Profil keamanan dibuat lebih dulu, lalu ditunjuk oleh radionya.");
+      for (const radio of radios) {
+        const open = radio.security === "open";
+        const profile = securityProfileName(radio);
+        s.addIfMissing(
+          "/interface wireless security-profiles",
+          [["name", profile]],
+          args([
+            ["name", profile],
+            ["mode", open ? "none" : "dynamic-keys"],
+            ["authentication-types", open ? undefined : "wpa2-psk"],
+            ["unicast-ciphers", open ? undefined : "aes-ccm"],
+            ["group-ciphers", open ? undefined : "aes-ccm"],
+            ["wpa2-pre-shared-key", open ? undefined : radio.password],
+          ]),
+        );
+      }
+      s.blank();
+      for (const radio of radios) {
+        const isAp = radio.mode === "ap";
+        s.setIfPresent(
+          "/interface wireless",
+          [["name", radio.iface]],
+          args([
+            ["mode", isAp ? "ap-bridge" : radio.mode],
+            ["ssid", radio.ssid.trim()],
+            ["security-profile", securityProfileName(radio)],
+            // Nama negara di menu wireless lama ditulis huruf kecil.
+            ["country", country.toLowerCase()],
+            ["band", radio.band === "auto" ? undefined : WIRELESS_BAND[radio.band].legacy],
+            ["frequency", isAp ? "auto" : undefined],
+            ["hide-ssid", isAp ? radio.hideSsid : undefined],
+            // default-forwarding=no memutus lalu lintas antar klien di radio ini.
+            ["default-forwarding", isAp ? !radio.clientIsolation : undefined],
+            ["disabled", false],
+            ["comment", tag(`WiFi ${radio.ssid.trim()}`)],
+          ]),
+        );
       }
     }
   }
@@ -686,6 +803,13 @@ export function generateSetupScript(config: SetupConfig): string {
   s.comment("  /ip dhcp-server lease print -> klien yang sudah dapat IP");
   s.comment("  /ip firewall filter print  -> urutan rule firewall");
   s.comment("  /ping 8.8.8.8              -> tes koneksi internet dari router");
+  if (radios.length > 0) {
+    s.comment(
+      wirelessKind(config) === "wifi"
+        ? "  /interface wifi print      -> SSID & status tiap radio"
+        : "  /interface wireless print  -> SSID & status tiap radio",
+    );
+  }
   if (config.hotspots.length > 0) {
     s.comment("  /ip hotspot active print   -> user hotspot yang sedang login");
   }
@@ -698,6 +822,9 @@ export function generateSetupScript(config: SetupConfig): string {
   s.blank().comment(`Objek hasil script ini diberi comment "${BRAND}".`);
   s.comment("Pengecualian: DHCP server, hotspot, profil hotspot, dan PPPoE server");
   s.comment("memang tidak punya kolom comment di RouterOS.");
+  if (radios.length > 0 && wirelessKind(config) === "legacy") {
+    s.comment('Profil keamanan wireless dikenali dari namanya yang berawalan "sec-".');
+  }
   s.comment(`Menghapus semuanya: /ip firewall filter remove [find comment~"${BRAND}"]`);
   s.comment("(ulangi untuk menu lain: /ip firewall nat, /ip address, /ip pool, dst)");
 

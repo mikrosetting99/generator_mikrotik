@@ -26,7 +26,9 @@ import {
   newUser,
   newVlan,
   newWan,
+  newWireless,
   TIMEZONES,
+  WIRELESS_COUNTRIES,
 } from "@/lib/defaults";
 import {
   fetchLoginTemplate,
@@ -37,7 +39,13 @@ import {
   TEMPLATES,
   whatsappLink,
 } from "@/lib/hotspot-page";
-import { addressOfInterface, allInterfaces, physicalInterfaces } from "@/lib/interfaces";
+import {
+  addressOfInterface,
+  allInterfaces,
+  physicalInterfaces,
+  wirelessInterfaces,
+  wirelessKind,
+} from "@/lib/interfaces";
 import { getModel, modelsBySeries, ROS_LABEL } from "@/lib/models";
 import { addressPart, networkOf, suggestPoolRange } from "@/lib/net";
 import { DEFAULT_PPP_PROFILE } from "@/lib/types";
@@ -64,6 +72,7 @@ export const SECTION_META: Array<{ id: SectionId; step: string; title: string }>
   { id: "dns", step: "d", title: "DNS" },
   { id: "nat", step: "e", title: "NAT" },
   { id: "bridge", step: "f", title: "Bridge" },
+  { id: "wireless", step: "f2", title: "Wireless" },
   { id: "vlan", step: "g", title: "VLAN" },
   { id: "address", step: "h", title: "IP Address" },
   { id: "pool", step: "i", title: "IP Pool" },
@@ -601,6 +610,216 @@ export function BridgeSection({ config, patch, issues }: SectionProps) {
           );
         })}
       </div>
+      <IssueList issues={issues} />
+    </Panel>
+  );
+}
+
+/* --------------------------------------------------------- f2: wireless */
+
+const WIRELESS_MODE_OPTIONS = [
+  { value: "ap", label: "Access Point — memancarkan SSID" },
+  { value: "station-bridge", label: "Klien ke AP MikroTik (station-bridge)" },
+  { value: "station", label: "Klien ke AP merek lain (station)" },
+];
+
+export function WirelessSection({ config, patch, issues }: SectionProps) {
+  const kind = wirelessKind(config);
+  const available = wirelessInterfaces(config);
+  const radios = config.wireless.radios;
+  const taken = new Set(radios.map((r) => r.iface).filter(Boolean));
+  const unused = available.find((name) => !taken.has(name));
+
+  const update = (id: string, partial: Partial<(typeof radios)[number]>) =>
+    patch({
+      wireless: {
+        ...config.wireless,
+        radios: radios.map((r) => (r.id === id ? { ...r, ...partial } : r)),
+      },
+    });
+
+  // Pilihan yang tidak berlaku untuk paket wireless perangkat ini tetap
+  // ditampilkan namun dimatikan — supaya konfigurasi lama yang memakainya
+  // tidak berubah menjadi kotak kosong tanpa penjelasan.
+  const bandOptions = [
+    { value: "auto", label: "Ikut bawaan radio — paling aman" },
+    { value: "2ghz", label: kind === "wifi" ? "2.4 GHz — ax" : "2.4 GHz — b/g/n" },
+    { value: "5ghz", label: kind === "wifi" ? "5 GHz — ax" : "5 GHz — a/n/ac" },
+    { value: "5ghz-n", label: "5 GHz — a/n (radio lama tanpa ac)", disabled: kind === "wifi" },
+  ];
+  const securityOptions = [
+    { value: "wpa2", label: "WPA2-PSK" },
+    { value: "wpa2-wpa3", label: "WPA2 + WPA3", disabled: kind !== "wifi" },
+    { value: "open", label: "Terbuka — tanpa password" },
+  ];
+
+  return (
+    <Panel
+      id="wireless"
+      step="f2"
+      title="Wireless (WiFi)"
+      optional
+      description={
+        kind === "wifi"
+          ? "Radio ax diatur lewat menu /interface wifi RouterOS v7."
+          : "Radio diatur lewat menu /interface wireless."
+      }
+      right={
+        <Button
+          size="sm"
+          disabled={!unused}
+          title={unused ? "Atur satu radio lagi" : "Semua radio sudah diatur"}
+          onClick={() =>
+            patch({
+              wireless: { ...config.wireless, radios: [...radios, newWireless(unused)] },
+            })
+          }
+        >
+          <Plus className="h-3.5 w-3.5" /> Tambah Radio
+        </Button>
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field
+          label="Negara (regulatory domain)"
+          hint="Menentukan channel dan daya pancar yang legal dipakai."
+        >
+          <Select
+            value={config.wireless.country}
+            placeholder="Ikut bawaan router"
+            onChange={(country) => patch({ wireless: { ...config.wireless, country } })}
+            options={WIRELESS_COUNTRIES.map((c) => ({ value: c, label: c }))}
+          />
+        </Field>
+      </div>
+
+      <div className="mt-5 space-y-4">
+        {radios.length === 0 && (
+          <EmptyState>
+            Belum ada radio yang diatur — {available.join(", ") || "perangkat ini"} masih memakai
+            setelan bawaan pabrik.
+          </EmptyState>
+        )}
+        {radios.map((radio, index) => {
+          const isAp = radio.mode === "ap";
+          const open = radio.security === "open";
+          return (
+            <Row
+              key={radio.id}
+              label={`Radio ${index + 1}`}
+              onRemove={() =>
+                patch({
+                  wireless: {
+                    ...config.wireless,
+                    radios: radios.filter((r) => r.id !== radio.id),
+                  },
+                })
+              }
+            >
+              <div className={grid3}>
+                <Field label="Radio" required>
+                  <Select
+                    value={radio.iface}
+                    onChange={(iface) => update(radio.id, { iface })}
+                    options={available.map((name) => ({
+                      value: name,
+                      label: name,
+                      disabled: name !== radio.iface && taken.has(name),
+                    }))}
+                  />
+                </Field>
+                <Field label="Nama WiFi (SSID)" required>
+                  <TextInput
+                    value={radio.ssid}
+                    onChange={(ssid) => update(radio.id, { ssid })}
+                    placeholder="WiFi-Kantor"
+                  />
+                </Field>
+                <Field label="Mode">
+                  <Select
+                    value={radio.mode}
+                    placeholder=""
+                    onChange={(mode) =>
+                      update(radio.id, { mode: mode as (typeof radios)[number]["mode"] })
+                    }
+                    options={WIRELESS_MODE_OPTIONS}
+                  />
+                </Field>
+              </div>
+
+              <div className={`mt-4 ${grid3}`}>
+                <Field label="Keamanan">
+                  <Select
+                    value={radio.security}
+                    placeholder=""
+                    onChange={(security) =>
+                      update(radio.id, { security: security as (typeof radios)[number]["security"] })
+                    }
+                    options={securityOptions}
+                  />
+                </Field>
+                <Field
+                  label="Password WiFi"
+                  required={!open}
+                  hint={
+                    open
+                      ? "Tidak dipakai pada jaringan terbuka."
+                      : "8–63 karakter. Sengaja terlihat — password ini memang dibagikan ke pengguna."
+                  }
+                >
+                  <TextInput
+                    mono
+                    disabled={open}
+                    value={radio.password}
+                    onChange={(password) => update(radio.id, { password })}
+                    placeholder="minimal 8 karakter"
+                  />
+                </Field>
+                <Field
+                  label="Band"
+                  hint="Biarkan bawaan bila tidak yakin radio mana yang 2.4 dan mana yang 5 GHz."
+                >
+                  <Select
+                    value={radio.band}
+                    placeholder=""
+                    onChange={(band) =>
+                      update(radio.id, { band: band as (typeof radios)[number]["band"] })
+                    }
+                    options={bandOptions}
+                  />
+                </Field>
+              </div>
+
+              {isAp && (
+                <div className={`mt-4 ${grid2}`}>
+                  <Toggle
+                    checked={radio.hideSsid}
+                    onChange={(hideSsid) => update(radio.id, { hideSsid })}
+                    label="Sembunyikan SSID"
+                    hint="Nama WiFi tidak muncul di daftar; pengguna harus mengetik sendiri."
+                  />
+                  <Toggle
+                    checked={radio.clientIsolation}
+                    onChange={(clientIsolation) => update(radio.id, { clientIsolation })}
+                    label="Isolasi antar klien"
+                    hint="Perangkat yang terhubung tidak bisa saling melihat. Cocok untuk WiFi tamu."
+                  />
+                </div>
+              )}
+            </Row>
+          );
+        })}
+      </div>
+
+      {radios.length > 0 && (
+        <div className="mt-4">
+          <Note>
+            Agar klien WiFi berada di segmen yang sama dengan port kabel, radio harus dijadikan{" "}
+            <span className="text-ink">port bridge</span> di langkah Bridge. Tanpa itu SSID tetap
+            muncul, tetapi klien tidak mendapat IP maupun internet.
+          </Note>
+        </div>
+      )}
       <IssueList issues={issues} />
     </Panel>
   );

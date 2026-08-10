@@ -32,14 +32,25 @@ Builder modular mengikuti urutan section pada PRD:
    `default-route-distance`) atau Static.
 4. **DNS** — daftar server + `allow-remote-requests`.
 5. **NAT** — masquerade global (`out-interface-list=WAN`) atau per interface.
-6. **Bridge** *(opsional)* — beberapa bridge, pemilihan port member.
-7. **VLAN** — banyak VLAN, dengan induk interface fisik atau bridge.
-8. **IP Address** — per interface fisik/bridge/VLAN.
-9. **IP Pool** — dengan pengisian otomatis dari subnet interface.
-10. **DHCP Server** — network & gateway diisi otomatis dari IP address interface.
-11. **IP Hotspot** — interface, address pool, dan metode autentikasi
+6. **Bridge** *(opsional)* — beberapa bridge, pemilihan port member. Radio wireless
+   ikut muncul sebagai pilihan port di sini.
+7. **Wireless** — langkah tersendiri yang **hanya muncul bila model punya radio**.
+   Tiap radio diatur sendiri: SSID, mode (Access Point / station), keamanan
+   (WPA2-PSK, WPA2+WPA3 pada perangkat ax, atau terbuka), password, band,
+   sembunyikan SSID, dan isolasi antar klien. Menu RouterOS-nya menyesuaikan
+   perangkat: `/interface wireless` untuk generasi ac ke bawah, `/interface wifi`
+   untuk ax.
+
+   Band bawaannya **"ikut bawaan radio"** dan tidak menulis `band=` sama sekali —
+   memasang band yang tidak didukung radio membuat perintahnya ditolak router,
+   sedangkan penomoran wlan1/wlan2 berbeda antar model.
+8. **VLAN** — banyak VLAN, dengan induk interface fisik atau bridge.
+9. **IP Address** — per interface fisik/bridge/VLAN.
+10. **IP Pool** — dengan pengisian otomatis dari subnet interface.
+11. **DHCP Server** — network & gateway diisi otomatis dari IP address interface.
+12. **IP Hotspot** — interface, address pool, dan metode autentikasi
     http-pap/http-chap/mac-cookie/cookie.
-12. **Halaman Login** — langkah tersendiri yang **baru muncul setelah hotspot ditambahkan**.
+13. **Halaman Login** — langkah tersendiri yang **baru muncul setelah hotspot ditambahkan**.
     Berisi 4 desain (Minimal, Voucher, Korporat, Gelap Modern), warna tema & latar bebas,
     unggah logo dengan pengatur tinggi, unggah gambar latar dengan pengatur kepekatan,
     mode Voucher/Member, teks berjalan, tabel harga paket, tautan trial, dan tombol
@@ -48,20 +59,24 @@ Builder modular mengikuti urutan section pada PRD:
 
     Nama atau identity router **tidak** ikut tampil di halaman login — judul hanya diambil
     dari isian pengguna, dan dikosongkan berarti hanya logo yang tampil.
-13. **PPPoE Server** — mulai dari profile `default` bawaan RouterOS, jadi tanpa mengisi apa
+14. **PPPoE Server** — mulai dari profile `default` bawaan RouterOS, jadi tanpa mengisi apa
     pun sudah bisa jalan. Paket layanan (PPP profile) bisa ditambah sebanyak yang perlu —
     masing-masing dengan rate limit, IP pool, dan local address sendiri — lalu tiap akun
     PPP secret memilih paketnya. Metode autentikasi tidak diekspos di form; script memakai
     bawaan RouterOS.
-14. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
+15. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
     Winbox/SSH/WebFig, neighbor discovery, dan MAC server. **Mati secara default**,
     diaktifkan sendiri bila diperlukan.
-15. **User Mikrotik** — ganti password admin dan tambah user baru (nama, password, group
+16. **User Mikrotik** — ganti password admin dan tambah user baru (nama, password, group
     full/write/read, batas subnet login). Section terakhir, dan blok ini juga diletakkan
     paling akhir di script agar akses ke router tidak terputus di tengah eksekusi.
 
 Perbedaan sintaks v6/v7 ditangani generator (mis. NTP client, parameter `hw-offload` pada
-rule FastTrack).
+rule FastTrack), begitu pula perbedaan menu wireless lama dan menu `wifi` perangkat ax.
+
+Radio tidak pernah dibuat oleh script — hanya diubah, dan itu pun dijaga pemeriksaan
+"kerjakan hanya bila radio dengan nama ini ada". Perangkat yang radionya sudah diganti
+nama akan melewati blok itu tanpa mengubah apa pun.
 
 Section ditampilkan satu per satu sebagai wizard dengan navigasi Kembali/Lanjut; rail kiri
 berfungsi sebagai stepper sekaligus tombol lompat.
@@ -77,10 +92,13 @@ langsung terisi dan tinggal disesuaikan:
 | Warnet + Hotspot voucher | LAN kasir terpisah, segmen hotspot sendiri, halaman login Voucher dengan 3 paket harga |
 | RT/RW Net PPPoE | PPPoE dengan paket 10 & 20 Mbps, pool terpisah, 2 contoh akun |
 | Hotspot + PPPoE sekaligus | Hotspot di ether2–3, PPPoE di ether4–5 |
+| Hotspot WiFi (hAP ac²) | Dua radio jadi port bridge-hotspot, SSID terbuka + halaman login voucher |
 | Kantor dengan VLAN | VLAN staff & tamu, dua subnet, dua DHCP server |
 
-Semuanya berbasis hEX (RB750Gr3) + RouterOS v7. Password admin sengaja dikosongkan —
-preset dipakai banyak orang, jadi menanam password bawaan justru berbahaya.
+Semuanya berbasis hEX (RB750Gr3) + RouterOS v7, kecuali **Hotspot WiFi** yang memakai
+hAP ac² — hotspot tanpa WiFi hampir tidak ada gunanya, dan hEX memang tidak punya radio.
+Password admin sengaja dikosongkan — preset dipakai banyak orang, jadi menanam password
+bawaan justru berbahaya.
 
 Definisinya ada di [lib/presets.ts](lib/presets.ts); menambah preset cukup menambah satu
 entri pada `PRESETS`.
@@ -89,8 +107,8 @@ entri pada `PRESETS`.
 
 Tombol **BAST** di header menyusun dokumen serah terima ke pelanggan. Isinya diambil dari
 konfigurasi yang sudah dibuat — perangkat, WAN, segmen jaringan, VLAN, peran tiap port,
-layanan hotspot/PPPoE — ditambah data pelanggan, pelaksana, lingkup pekerjaan, dan blok
-tanda tangan.
+nama & password WiFi, layanan hotspot/PPPoE — ditambah data pelanggan, pelaksana, lingkup
+pekerjaan, dan blok tanda tangan.
 
 Dokumen dicetak lewat dialog cetak browser: pilih **Save as PDF** untuk menyimpan berkas,
 atau langsung ke printer untuk lembar tanda tangan. Tidak memakai pustaka PDF apa pun —
@@ -111,7 +129,8 @@ Tombol **Simpan / Muat** di header membuka dialog dengan dua jalur:
 - **File `.json`** — unduh untuk dipindah ke perangkat/teknisi lain, lalu muat lewat "Muat dari
   file".
 
-Password admin dan PPPoE **tidak ikut tersimpan** kecuali toggle "Sertakan password" dinyalakan.
+Password admin, WiFi, dan PPPoE **tidak ikut tersimpan** kecuali toggle "Sertakan password"
+dinyalakan.
 Saat memuat, konfigurasi dinormalisasi terhadap nilai default: field yang hilang diisi, field
 asing dibuang, model/RouterOS yang tidak cocok direset, dan id tiap baris dibuat ulang — jadi
 file lama tetap bisa dipakai meski bentuk konfigurasi berubah.
@@ -146,7 +165,7 @@ lib/
   models.ts           # database model Mikrotik + kompatibilitas RouterOS
   types.ts            # bentuk konfigurasi builder
   defaults.ts         # nilai awal & pembuat baris list
-  interfaces.ts       # turunan daftar interface (fisik, bridge, VLAN)
+  interfaces.ts       # turunan daftar interface (fisik, bridge, VLAN, radio)
   net.ts              # helper IP/CIDR
   validate.ts         # validasi per section
   presets.ts          # konfigurasi siap pakai

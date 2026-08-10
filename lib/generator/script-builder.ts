@@ -86,6 +86,21 @@ export class ScriptBuilder {
     return this.line("}");
   }
 
+  /**
+   * `set` yang hanya berjalan bila objeknya memang ada.
+   *
+   * Dipakai untuk objek bawaan pabrik yang tidak pernah dibuat sendiri —
+   * radio wireless, misalnya. Tanpa penjagaan ini, perangkat yang radionya
+   * sudah diganti nama (atau tidak punya radio sama sekali) akan memunculkan
+   * pesan error, padahal sisanya berjalan normal.
+   */
+  setIfPresent(menu: string, findPairs: Array<[string, ArgValue]>, setArgs: string): this {
+    const where = findArgs(findPairs);
+    this.line(`:if ([:len [${menu} find where ${where}]] > 0) do={`);
+    this.line(`  ${menu} set [find where ${where}] ${setArgs}`);
+    return this.line("}");
+  }
+
   blank(): this {
     if (this.dirty && this.lines[this.lines.length - 1] !== "") this.lines.push("");
     return this;

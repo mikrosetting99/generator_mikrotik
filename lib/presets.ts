@@ -9,6 +9,7 @@ import {
   newPppoeProfile,
   newSecret,
   newWan,
+  newWireless,
 } from "./defaults";
 import type { SetupConfig } from "./types";
 
@@ -269,6 +270,90 @@ function kantorVlan(): SetupConfig {
   };
 }
 
+/* ------------------------------------------------ 6. hotspot WiFi hAP ac² */
+
+/**
+ * Satu-satunya preset yang tidak memakai hEX: hotspot tanpa WiFi hampir tidak
+ * ada gunanya, dan hEX memang tidak punya radio.
+ */
+function hotspotWifi(): SetupConfig {
+  const config = base();
+  return {
+    ...config,
+    modelId: "rbd52g-hap-ac2",
+    system: { ...config.system, identity: "Router-Hotspot-WiFi" },
+    bridges: [
+      { ...newBridge("bridge-lan"), ports: ["ether2"] },
+      {
+        ...newBridge("bridge-hotspot"),
+        // Radio ikut menjadi port bridge — tanpa ini klien WiFi tidak
+        // pernah sampai ke segmen hotspot.
+        ports: ["ether3", "ether4", "ether5", "wlan1", "wlan2"],
+      },
+    ],
+    wireless: {
+      country: "Indonesia",
+      radios: [
+        {
+          ...newWireless("wlan1"),
+          ssid: "Hotspot-WiFi",
+          // Terbuka karena autentikasinya sudah ditangani halaman login
+          // hotspot — pengguna tidak perlu dua kali memasukkan sandi.
+          security: "open",
+          clientIsolation: true,
+        },
+        {
+          ...newWireless("wlan2"),
+          ssid: "Hotspot-WiFi-5G",
+          security: "open",
+          clientIsolation: true,
+        },
+      ],
+    },
+    addresses: [
+      { ...newAddress("bridge-lan"), address: "192.168.10.1/24", comment: "LAN pengelola" },
+      { ...newAddress("bridge-hotspot"), address: "10.10.0.1/24", comment: "segmen hotspot" },
+    ],
+    pools: [
+      { ...newPool(), name: "pool-lan", rangeStart: "192.168.10.10", rangeEnd: "192.168.10.254" },
+      { ...newPool(), name: "pool-hotspot", rangeStart: "10.10.0.10", rangeEnd: "10.10.0.254" },
+    ],
+    dhcpServers: [
+      { ...newDhcpServer(), name: "dhcp-lan", iface: "bridge-lan", pool: "pool-lan" },
+      {
+        ...newDhcpServer(),
+        name: "dhcp-hotspot",
+        iface: "bridge-hotspot",
+        pool: "pool-hotspot",
+        leaseTime: "1h",
+      },
+    ],
+    hotspots: [
+      {
+        ...newHotspot(),
+        name: "hotspot1",
+        iface: "bridge-hotspot",
+        pool: "pool-hotspot",
+        dnsName: "wifi.lokal",
+        auth: ["http-chap", "http-pap"],
+      },
+    ],
+    hotspotPage: {
+      ...config.hotspotPage,
+      template: "voucher",
+      title: "Hotspot WiFi",
+      subtitle: "Masukkan kode voucher untuk terhubung",
+      loginMode: "voucher",
+      marquee: "Voucher tersedia di kasir",
+      packages: [
+        { ...newPackage(), name: "3 Jam", duration: "3 jam", price: "Rp 5.000" },
+        { ...newPackage(), name: "1 Hari", duration: "24 jam", price: "Rp 10.000" },
+      ],
+    },
+    firewall: { ...config.firewall, mgmtSubnet: "192.168.10.0/24", fasttrack: false },
+  };
+}
+
 export const PRESETS: Preset[] = [
   {
     id: "router-dasar",
@@ -312,6 +397,18 @@ export const PRESETS: Preset[] = [
       "Paket PPPoE standar 10 Mbps",
     ],
     build: hotspotDanPppoe,
+  },
+  {
+    id: "hotspot-wifi",
+    name: "Hotspot WiFi (hAP ac²)",
+    description:
+      "Hotspot lengkap dengan dua radio WiFi yang sudah masuk ke segmen hotspot — SSID terbuka, autentikasi lewat halaman login voucher.",
+    points: [
+      "hAP ac² · wlan1 & wlan2 jadi port bridge-hotspot",
+      "SSID terbuka + isolasi antar klien",
+      "LAN pengelola terpisah di ether2",
+    ],
+    build: hotspotWifi,
   },
   {
     id: "kantor-vlan",

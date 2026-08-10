@@ -1,4 +1,4 @@
-import { allInterfaces, physicalInterfaces } from "./interfaces";
+import { allInterfaces, physicalInterfaces, wirelessInterfaces } from "./interfaces";
 import { getModel } from "./models";
 import { addressPart, networkOf } from "./net";
 import type { SetupConfig } from "./types";
@@ -50,6 +50,8 @@ export function portRoles(config: SetupConfig): PortRole[] {
     for (const port of bridge.ports) bridgeOf.set(port, bridge.name.trim());
   }
 
+  const radios = wirelessInterfaces(config);
+
   return physicalInterfaces(config).map((iface) => {
     const wan = config.wans.find((w) => w.iface === iface);
     if (wan) {
@@ -61,6 +63,20 @@ export function portRoles(config: SetupConfig): PortRole[] {
     }
 
     const bridge = bridgeOf.get(iface);
+
+    // Radio diperiksa lebih dulu: radio tanpa SSID yang kebetulan menjadi port
+    // bridge akan terbaca "anggota bridge-lan" — seolah WiFi-nya sudah menyala,
+    // padahal justru belum diatur sama sekali.
+    if (radios.includes(iface)) {
+      const radio = config.wireless.radios.find((r) => r.iface === iface && r.ssid.trim());
+      if (!radio) return { iface, role: "Radio — belum diatur", detail: "" };
+      return {
+        iface,
+        role: `Radio WiFi — ${radio.ssid.trim()}`,
+        detail: bridge ? `anggota ${bridge}` : "tidak digabung ke bridge mana pun",
+      };
+    }
+
     if (bridge) {
       const address = config.addresses.find((a) => a.iface === bridge);
       return {
@@ -108,8 +124,43 @@ function segmentRows(config: SetupConfig): string {
   return rows.join("");
 }
 
+const SECURITY_LABEL: Record<string, string> = {
+  wpa2: "WPA2-PSK",
+  "wpa2-wpa3": "WPA2 / WPA3",
+  open: "Terbuka",
+};
+
 function servicesSection(config: SetupConfig): string {
   const blocks: string[] = [];
+
+  // Nama dan password WiFi adalah hal pertama yang ditanyakan pelanggan,
+  // jadi keduanya berdiri sendiri di bagian paling atas layanan.
+  const radios = config.wireless.radios.filter((r) => r.iface && r.ssid.trim());
+  if (radios.length > 0) {
+    const showPassword = config.handover.includeCredentials;
+    const rows = radios
+      .map((radio) => {
+        const password =
+          radio.security === "open"
+            ? "tanpa password"
+            : showPassword
+              ? radio.password || DASH
+              : "diserahkan terpisah";
+        return `<tr>
+          <td>${esc(radio.ssid.trim())}</td>
+          <td>${esc(radio.iface)}</td>
+          <td>${esc(SECURITY_LABEL[radio.security] ?? radio.security)}</td>
+          <td>${esc(password)}</td>
+        </tr>`;
+      })
+      .join("");
+
+    blocks.push(`<h2>Jaringan WiFi</h2>
+      <table class="grid">
+        <tr><th>Nama WiFi (SSID)</th><th>Radio</th><th>Keamanan</th><th>Password</th></tr>
+        ${rows}
+      </table>`);
+  }
 
   if (config.hotspots.length > 0) {
     const rows = config.hotspots

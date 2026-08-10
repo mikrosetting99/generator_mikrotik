@@ -12,6 +12,7 @@ import {
   type VlanEntry,
   type VoucherPackage,
   type WanEntry,
+  type WirelessEntry,
 } from "./types";
 
 let counter = 0;
@@ -38,6 +39,22 @@ export function newWan(iface = ""): WanEntry {
 
 export function newBridge(name = "bridge-lan"): BridgeEntry {
   return { id: uid("br"), name, ports: [] };
+}
+
+export function newWireless(iface = ""): WirelessEntry {
+  return {
+    id: uid("wl"),
+    iface,
+    ssid: "",
+    mode: "ap",
+    // Band bawaan radio sudah benar untuk perangkat kerasnya — hanya diubah
+    // bila pengguna memang tahu radio mana yang sedang diatur.
+    band: "auto",
+    security: "wpa2",
+    password: "",
+    hideSsid: false,
+    clientIsolation: false,
+  };
 }
 
 export function newVlan(): VlanEntry {
@@ -109,6 +126,7 @@ export function createDefaultConfig(): SetupConfig {
     dns: { servers: ["8.8.8.8", "1.1.1.1"], allowRemoteRequests: true },
     nat: { enabled: true, mode: "global", interfaces: [] },
     bridges: [],
+    wireless: { country: "Indonesia", radios: [] },
     vlans: [],
     addresses: [],
     pools: [],
@@ -175,6 +193,13 @@ export function createDefaultConfig(): SetupConfig {
     },
   };
 }
+
+/**
+ * Regulatory domain wireless. Sengaja pendek — hanya negara yang benar-benar
+ * dilayani — karena nama negara di RouterOS harus persis, dan salah satu huruf
+ * saja membuat perintahnya ditolak.
+ */
+export const WIRELESS_COUNTRIES = ["Indonesia", "Malaysia", "Singapore"];
 
 export const TIMEZONES = [
   "Asia/Jakarta",

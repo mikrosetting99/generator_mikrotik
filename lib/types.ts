@@ -116,6 +116,43 @@ export interface HotspotPageConfig {
   footer: string;
 }
 
+/* --------------------------------------------------------------- wireless */
+
+/** Cara radio dipakai: memancarkan sinyal sendiri, atau menempel ke AP lain. */
+export type WirelessMode = "ap" | "station-bridge" | "station";
+
+/**
+ * Band radio. "auto" berarti setelan band bawaan radio tidak disentuh sama
+ * sekali — pilihan paling aman, karena memasang band yang tidak didukung
+ * membuat perintahnya ditolak router.
+ */
+export type WirelessBand = "auto" | "2ghz" | "5ghz" | "5ghz-n";
+
+export type WirelessSecurity = "wpa2" | "wpa2-wpa3" | "open";
+
+export interface WirelessEntry {
+  id: string;
+  /** Nama radio bawaan pabrik: wlan1, wifi1, ... */
+  iface: string;
+  ssid: string;
+  mode: WirelessMode;
+  band: WirelessBand;
+  security: WirelessSecurity;
+  password: string;
+  hideSsid: boolean;
+  /** Klien pada SSID ini tidak bisa saling menghubungi. */
+  clientIsolation: boolean;
+}
+
+export interface WirelessConfig {
+  /**
+   * Regulatory domain — menentukan channel dan daya pancar yang legal.
+   * Kosong = biarkan setelan bawaan router.
+   */
+  country: string;
+  radios: WirelessEntry[];
+}
+
 /** Nama profile bawaan RouterOS — selalu tersedia tanpa perlu dibuat. */
 export const DEFAULT_PPP_PROFILE = "default";
 
@@ -232,6 +269,7 @@ export interface SetupConfig {
   dns: DnsConfig;
   nat: NatConfig;
   bridges: BridgeEntry[];
+  wireless: WirelessConfig;
   vlans: VlanEntry[];
   addresses: AddressEntry[];
   pools: PoolEntry[];
@@ -250,6 +288,7 @@ export type SectionId =
   | "dns"
   | "nat"
   | "bridge"
+  | "wireless"
   | "vlan"
   | "address"
   | "pool"

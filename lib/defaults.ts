@@ -103,7 +103,7 @@ export function newPppoeProfile(): PppoeProfile {
 }
 
 export function newPackage(): VoucherPackage {
-  return { id: uid("pkg"), name: "", duration: "", price: "" };
+  return { id: uid("pkg"), name: "", duration: "", validity: "", price: "" };
 }
 
 export function newUser(): RouterUser {

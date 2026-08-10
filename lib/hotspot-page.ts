@@ -1,14 +1,18 @@
-import { derivePalette, isHexColor, rgba } from "./color";
-import type { HotspotPageConfig, HotspotTemplateId } from "./types";
+import { contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
+import type { HotspotPageConfig, HotspotTemplateId, VoucherPackage } from "./types";
 import type { ZipEntry } from "./zip";
 
 /**
  * Paket halaman login hotspot RouterOS.
  *
  * Strukturnya mengikuti isi folder `hotspot` bawaan RouterOS: seluruh halaman
- * HTML dipakai bersama oleh semua desain, dan yang membedakan tema hanyalah
- * `style.css`. Menambah desain baru cukup menaruh satu style.css di
+ * HTML dipakai bersama oleh semua desain, dan yang membedakan tema umumnya
+ * hanya `style.css`. Menambah desain cukup menaruh satu style.css di
  * `public/hotspot-templates/<id>/` lalu mendaftarkannya pada TEMPLATES.
+ *
+ * Desain yang susunannya memang berbeda — bukan sekadar berbeda warna — boleh
+ * membawa `login.html` sendiri di folder yang sama dan menandainya dengan
+ * `ownLogin`. Halaman lainnya tetap memakai versi bersama.
  *
  * Variabel bergaya `$(nama)` diproses router saat halaman disajikan, jadi
  * berkas harus di-upload apa adanya ke folder "hotspot" pada File List.
@@ -22,6 +26,8 @@ export interface HotspotTemplate {
   description: string;
   defaultPrimary: string;
   defaultBg: string;
+  /** Desain ini memakai login.html miliknya sendiri, bukan versi bersama. */
+  ownLogin?: boolean;
 }
 
 export const TEMPLATES: HotspotTemplate[] = [
@@ -53,6 +59,15 @@ export const TEMPLATES: HotspotTemplate[] = [
     defaultPrimary: "#a78bfa",
     defaultBg: "#07070d",
   },
+  {
+    id: "poster",
+    name: "Poster",
+    description:
+      "Latar foto penuh, nama usaha berukuran besar, dan kartu harga berjajar. Gaya yang lazim dipakai RT/RW Net.",
+    defaultPrimary: "#3d93ff",
+    defaultBg: "#0e3a7d",
+    ownLogin: true,
+  },
 ];
 
 export function getTemplate(id: HotspotTemplateId): HotspotTemplate {
@@ -76,14 +91,26 @@ function escapeHtml(value: string): string {
  * - `{{^KEY}}...{{/KEY}}` → tampil hanya bila nilainya kosong
  */
 export function renderTemplate(source: string, vars: Record<string, string>): string {
-  return source
-    .replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, key: string, body: string) =>
-      vars[key] ? body : "",
-    )
-    .replace(/\{\{\^(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, key: string, body: string) =>
-      vars[key] ? "" : body,
-    )
-    .replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? "");
+  let out = source;
+
+  // Blok boleh bersarang — misalnya kolom bersyarat di dalam tabel bersyarat.
+  // Satu kali jalan hanya menyentuh lapisan terluar, karena penggantian
+  // dilanjutkan dari titik sesudah blok yang baru diganti. Karena itu diulang
+  // sampai tidak ada lagi yang berubah, dengan batas kedalaman sebagai
+  // pengaman.
+  for (let depth = 0; depth < 8; depth += 1) {
+    const next = out
+      .replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, key: string, body: string) =>
+        vars[key] ? body : "",
+      )
+      .replace(/\{\{\^(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, key: string, body: string) =>
+        vars[key] ? "" : body,
+      );
+    if (next === out) break;
+    out = next;
+  }
+
+  return out.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? "");
 }
 
 /** 08123... / +62812... / 62812... → 62812... */
@@ -116,26 +143,97 @@ export function bgFileName(dataUrl: string): string {
   return imageFileName(dataUrl, "background");
 }
 
+/**
+ * Judul boleh dipecah dua warna dengan tanda "|", misalnya "PRO|NET".
+ * Tandanya sendiri tidak pernah ikut tampil.
+ */
+function plainTitle(title: string): string {
+  // Tandanya dibuang, bukan diganti spasi — agar hasilnya sama persis dengan
+  // yang terbaca di layar: "PRO|NET" tetap PRONET, "PRO | NET" tetap berjarak.
+  return title.replace(/\|/g, "").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Spasi di sekitar tanda sengaja dipertahankan apa adanya: "PRO|NET" menyatu
+ * menjadi PRONET, sedangkan "PRO | NET" tetap berjarak satu spasi karena HTML
+ * merapatkan spasi berlebih sendiri.
+ */
+function titleHtml(title: string): string {
+  const cut = title.indexOf("|");
+  const head = cut >= 0 ? title.slice(0, cut) : title;
+  const tail = cut >= 0 ? title.slice(cut + 1) : "";
+  return (
+    `<span class="t1">${escapeHtml(head)}</span>` +
+    (tail.trim() ? `<span class="t2">${escapeHtml(tail)}</span>` : "")
+  );
+}
+
+/** Ikon jam & kalender pada kartu harga desain Poster. */
+const ICON_DURATION =
+  '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5 V13 L15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 2.5 h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const ICON_VALIDITY =
+  '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10 h18 M8 3 v4 M16 3 v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="7" y="13" width="4" height="3" rx="1" fill="currentColor"/></svg>';
+
+function cardRow(label: string, value: string, icon: string): string {
+  return (
+    `        <div class="row"><span class="txt">` +
+    `<span class="lbl">${escapeHtml(label)}</span>` +
+    `<span class="val">${escapeHtml(value)}</span></span>${icon}</div>`
+  );
+}
+
+/** Satu kartu harga untuk desain Poster. */
+function packageCard(pkg: VoucherPackage): string {
+  const rows: string[] = [];
+  if (pkg.duration.trim()) rows.push(cardRow("Durasi", pkg.duration.trim(), ICON_DURATION));
+  if (pkg.validity.trim()) rows.push(cardRow("Masa aktif", pkg.validity.trim(), ICON_VALIDITY));
+
+  const panel =
+    rows.length > 0 ? `      <div class="panel">\n${rows.join('\n        <div class="sep"></div>\n')}\n      </div>` : "";
+
+  return (
+    `      <div class="card">\n` +
+    `        <div class="h">${escapeHtml(pkg.name.trim() || "Harga")}</div>\n` +
+    `        <div class="price">${escapeHtml(pkg.price.trim())}</div>\n` +
+    (panel ? `${panel}\n` : "") +
+    `      </div>`
+  );
+}
+
 export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const template = getTemplate(page.template);
   const primary = isHexColor(page.primaryColor) ? page.primaryColor.trim() : template.defaultPrimary;
   const bgColor = isHexColor(page.bgColor) ? page.bgColor.trim() : template.defaultBg;
   const palette = derivePalette(bgColor, primary);
+  // Kartu dipilih dari arah yang paling menjauh dari latar. Menebak lewat
+  // "gelap atau terang" saja meleset pada warna mid-tone seperti hijau, yang
+  // sama-sama dekat ke putih maupun hitam.
+  const cardLight = mix(bgColor, 0.86);
+  const cardDark = mix(bgColor, -0.78);
+  const card =
+    contrastRatio(cardLight, bgColor) >= contrastRatio(cardDark, bgColor) ? cardLight : cardDark;
   const title = page.title.trim();
 
-  const rows = page.packages
-    .filter((p) => p.name.trim() || p.duration.trim() || p.price.trim())
-    .map(
-      (p) =>
-        `      <tr><td>${escapeHtml(p.name.trim())}</td>` +
-        `<td>${escapeHtml(p.duration.trim())}</td>` +
-        `<td>${escapeHtml(p.price.trim())}</td></tr>`,
-    );
+  const packages = page.packages.filter(
+    (p) => p.name.trim() || p.duration.trim() || p.validity.trim() || p.price.trim(),
+  );
+  // Kolom masa aktif baru ditampilkan bila memang ada yang mengisinya, supaya
+  // tabel tidak menyisakan kolom kosong pada pemakaian yang sederhana.
+  const anyValidity = packages.some((p) => p.validity.trim());
+
+  const rows = packages.map(
+    (p) =>
+      `      <tr><td>${escapeHtml(p.name.trim())}</td>` +
+      `<td>${escapeHtml(p.duration.trim())}</td>` +
+      (anyValidity ? `<td>${escapeHtml(p.validity.trim())}</td>` : "") +
+      `<td>${escapeHtml(p.price.trim())}</td></tr>`,
+  );
 
   return {
     // Judul hanya tampil bila diisi — nama/identity router sengaja tidak dipakai.
-    TITLE: escapeHtml(title),
-    PAGE_TITLE: escapeHtml(title || "Hotspot"),
+    TITLE: escapeHtml(plainTitle(title)),
+    TITLE_HTML: titleHtml(title),
+    PAGE_TITLE: escapeHtml(plainTitle(title) || "Hotspot"),
     SUBTITLE: escapeHtml(page.subtitle.trim()),
     MARQUEE: escapeHtml(page.marquee.trim()),
     TERMS: escapeHtml(page.terms.trim()),
@@ -149,11 +247,19 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     START_MODE: page.loginMode === "member" ? "member" : "voucher",
     MODE_SWITCH: page.showModeSwitch ? "1" : "",
     TRIAL: page.showTrial ? "1" : "",
-    PACKAGES: rows.length > 0 ? "1" : "",
+    PACKAGES: packages.length > 0 ? "1" : "",
+    PACKAGE_VALIDITY: anyValidity ? "1" : "",
     PACKAGE_ROWS: rows.join("\n"),
+    PACKAGE_CARDS: packages.map(packageCard).join("\n"),
     PRIMARY: primary,
+    PRIMARY_DARK: mix(primary, -0.34),
     ON_PRIMARY: palette.onPrimary,
     FOCUS_RING: rgba(primary, 0.28),
+    // Kartu harga desain Poster sengaja melawan arah latar supaya menonjol di
+    // atas foto — latar gelap mendapat kartu terang, dan sebaliknya.
+    CARD: card,
+    ON_CARD: readableOn(card),
+    CARD_MUTED: mutedOn(card),
     BG: palette.bg,
     SURFACE: palette.surface,
     TEXT: palette.text,
@@ -164,7 +270,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
 
 /* --------------------------------------------------------- pengambilan */
 
-/** Halaman yang dipakai bersama semua desain, ikut diisi placeholder. */
+/** Halaman yang ikut diisi placeholder. login.html bisa ditimpa per desain. */
 const SHARED_PAGES = [
   "login.html",
   "alogin.html",
@@ -194,9 +300,16 @@ async function fetchTemplateFile(path: string): Promise<string> {
   return text;
 }
 
-/** Isi login.html mentah — dipakai juga oleh pratinjau. */
-export function fetchLoginTemplate(): Promise<string> {
-  return fetchTemplateFile("_shared/login.html");
+/**
+ * Isi login.html mentah milik sebuah desain — dipakai juga oleh pratinjau.
+ *
+ * Desain bertanda `ownLogin` memakai berkasnya sendiri; sisanya memakai versi
+ * bersama. Sengaja dibaca dari penanda, bukan dengan mencoba mengambil berkas
+ * lalu menunggu 404 — percobaan yang gagal menyisakan error di konsol browser
+ * dan menunda pratinjau tanpa alasan.
+ */
+export function fetchLoginTemplate(id: HotspotTemplateId): Promise<string> {
+  return fetchTemplateFile(getTemplate(id).ownLogin ? `${id}/login.html` : "_shared/login.html");
 }
 
 /** Isi style.css sebuah desain — dipakai juga oleh pratinjau. */
@@ -264,7 +377,13 @@ export async function buildHotspotPackage(page: HotspotPageConfig): Promise<ZipE
   const vars = templateVars(page);
 
   const [pages, style, verbatim] = await Promise.all([
-    Promise.all(SHARED_PAGES.map((file) => fetchTemplateFile(`_shared/${file}`))),
+    Promise.all(
+      SHARED_PAGES.map((file) =>
+        file === "login.html"
+          ? fetchLoginTemplate(page.template)
+          : fetchTemplateFile(`_shared/${file}`),
+      ),
+    ),
     fetchStyle(page.template),
     Promise.all(VERBATIM_FILES.map((file) => fetchTemplateFile(`_shared/${file}`))),
   ]);

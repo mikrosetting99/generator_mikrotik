@@ -5,10 +5,15 @@
   <title>{{PAGE_TITLE}}</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="theme-color" content="{{BG}}" />
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body onload="{{START_MODE}}()">
+<!-- Penanda halaman login: nama usaha hanya tampil sebesar poster di sini.
+     status.html & logout.html memakai kelas .brand yang sama untuk menampilkan
+     username, dan itu harus tetap berukuran wajar. -->
+<body class="page-login" onload="{{START_MODE}}()">
 
   $(if chap-id)
   <form name="sendin" action="$(link-login-only)" method="post">
@@ -29,6 +34,10 @@
   </script>
   $(endif)
 
+  <!-- Lapisan latar berdiri sendiri agar gambar tetap menutupi layar penuh
+       sementara isinya boleh menggulung di atasnya. -->
+  <div class="bg"><i></i></div>
+
   <div id="main" class="main">
 
     <div class="box brandbox">
@@ -40,6 +49,12 @@
     {{#MARQUEE}}
     <div class="info"><marquee scrollamount="4">{{MARQUEE}}</marquee></div>
     {{/MARQUEE}}
+
+    {{#PACKAGES}}
+    <div class="cards">
+{{PACKAGE_CARDS}}
+    </div>
+    {{/PACKAGES}}
 
     {{#MODE_SWITCH}}
     <div class="box modes">
@@ -56,15 +71,15 @@
     </div>
     {{/MODE_SWITCH}}
 
-    <div class="box" id="infologin"></div>
-
     $(if error)<div class="notice">$(error)</div>$(endif)
 
     <form autocomplete="off" name="login" action="$(link-login-only)" method="post" $(if chap-id)onSubmit="return doLogin()"$(endif)>
       <input type="hidden" name="dst" value="$(link-orig)" />
       <input type="hidden" name="popup" value="true" />
-      <input class="username" name="username" type="text" value="$(username)" autocapitalize="none" autocorrect="off" />
-      <input class="password" name="password" placeholder="Password" type="password" />
+      <input class="username" name="username" type="text" value="$(username)"
+             autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
+      <input class="password" name="password" placeholder="Password" type="password"
+             autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
 
       <button class="button" type="submit">
         <span class="icon">
@@ -72,6 +87,8 @@
         </span>Login
       </button>
     </form>
+
+    <div class="box" id="infologin"></div>
 
     {{#WA_LINK}}
     <a class="button2" href="{{WA_LINK}}">
@@ -88,19 +105,6 @@
     </div>
     $(endif)
     {{/TRIAL}}
-
-    {{#PACKAGES}}
-    <table class="table">
-      <caption>Paket Internet</caption>
-      <tr>
-        <th>Paket</th>
-        <th>Durasi</th>
-        {{#PACKAGE_VALIDITY}}<th>Masa aktif</th>{{/PACKAGE_VALIDITY}}
-        <th>Harga</th>
-      </tr>
-      {{PACKAGE_ROWS}}
-    </table>
-    {{/PACKAGES}}
 
     {{#TERMS}}<div class="terms">{{TERMS}}</div>{{/TERMS}}
 
@@ -124,12 +128,12 @@
     }
 
     function voucher() {
-      username.placeholder = "Kode Voucher";
+      username.placeholder = "Masukkan kode voucher di sini";
       username.className = "username single";
       password.type = "hidden";
       password.value = username.value;
       username.onkeyup = setpass;
-      infologin.innerHTML = "Masukkan kode voucher, lalu klik Login.";
+      infologin.innerHTML = "Masukkan kode voucher, lalu tekan Login.";
       if (btnVoucher) { btnVoucher.className = "small-button active"; }
       if (btnMember) { btnMember.className = "small-button"; }
       username.focus();
@@ -142,11 +146,37 @@
       password.type = "password";
       password.value = "";
       username.onkeyup = null;
-      infologin.innerHTML = "Masukkan username dan password, lalu klik Login.";
+      infologin.innerHTML = "Masukkan username dan password, lalu tekan Login.";
       if (btnMember) { btnMember.className = "small-button active"; }
       if (btnVoucher) { btnVoucher.className = "small-button"; }
       username.focus();
     }
+
+    // Nama usaha dikecilkan sendiri bila terlalu panjang untuk lebar layar,
+    // supaya huruf besarnya tidak pernah terpotong di tepi.
+    (function () {
+      function fit() {
+        try {
+          var brand = document.querySelector('.brand');
+          if (!brand || !brand.parentNode) { return; }
+          brand.style.fontSize = '';
+          var max = brand.parentNode.clientWidth;
+          if (!max) { return; }
+          var size = parseFloat(window.getComputedStyle
+            ? getComputedStyle(brand).fontSize : '48') || 48;
+          var guard = 0;
+          while (guard++ < 80 && size > 16 && brand.scrollWidth > max) {
+            size -= 1;
+            brand.style.fontSize = size + 'px';
+          }
+        } catch (e) { }
+      }
+      fit();
+      if (window.addEventListener) {
+        window.addEventListener('resize', fit, false);
+        window.addEventListener('load', fit, false);
+      }
+    })();
   </script>
 </body>
 

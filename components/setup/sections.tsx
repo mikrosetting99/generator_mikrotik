@@ -1370,7 +1370,7 @@ function LoginPageEditor({
   useEffect(() => {
     let active = true;
     const timer = setTimeout(() => {
-      Promise.all([fetchLoginTemplate(), fetchStyle(page.template)])
+      Promise.all([fetchLoginTemplate(page.template), fetchStyle(page.template)])
         .then(([source, style]) => {
           if (!active) return;
           // Di pratinjau, berkas gambar diganti data URI-nya langsung.
@@ -1558,12 +1558,16 @@ function LoginPageEditor({
           <div className={grid2}>
             <Field
               label="Nama hotspot"
-              hint="Kosongkan bila cukup logo saja. Nama/identity router tidak ikut ditampilkan."
+              hint={
+                page.template === "poster"
+                  ? "Tanda | mewarnai kata sesudahnya, misalnya PRO|NET. Kosongkan bila cukup logo saja."
+                  : "Kosongkan bila cukup logo saja. Nama/identity router tidak ikut ditampilkan."
+              }
             >
               <TextInput
                 value={page.title}
                 onChange={(title) => setPage({ title })}
-                placeholder="Warnet Kita"
+                placeholder={page.template === "poster" ? "PRO|NET" : "Warnet Kita"}
               />
             </Field>
             <Field label="Teks sambutan" hint="Tampil di bawah nama hotspot.">
@@ -1821,7 +1825,7 @@ function LoginPageEditor({
                         placeholder="2 Jam"
                       />
                     </Field>
-                    <Field label={index === 0 ? "Masa aktif" : ""} className="flex-1">
+                    <Field label={index === 0 ? "Durasi" : ""} className="flex-1">
                       <TextInput
                         value={pkg.duration}
                         onChange={(duration) =>
@@ -1832,6 +1836,19 @@ function LoginPageEditor({
                           })
                         }
                         placeholder="2 jam"
+                      />
+                    </Field>
+                    <Field label={index === 0 ? "Masa aktif" : ""} className="flex-1">
+                      <TextInput
+                        value={pkg.validity}
+                        onChange={(validity) =>
+                          setPage({
+                            packages: page.packages.map((p) =>
+                              p.id === pkg.id ? { ...p, validity } : p,
+                            ),
+                          })
+                        }
+                        placeholder="opsional"
                       />
                     </Field>
                     <Field label={index === 0 ? "Harga" : ""} className="flex-1">

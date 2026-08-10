@@ -210,6 +210,7 @@ export function normalizeConfig(raw: unknown): SetupConfig {
       id: uid("pkg"),
       name: asString(p.name),
       duration: asString(p.duration),
+      validity: asString(p.validity),
       price: asString(p.price),
     };
   });

@@ -51,7 +51,7 @@ Builder modular mengikuti urutan section pada PRD:
 12. **IP Hotspot** — interface, address pool, dan metode autentikasi
     http-pap/http-chap/mac-cookie/cookie.
 13. **Halaman Login** — langkah tersendiri yang **baru muncul setelah hotspot ditambahkan**.
-    Berisi 4 desain (Minimal, Voucher, Korporat, Gelap Modern), warna tema & latar bebas,
+    Berisi 5 desain (Minimal, Voucher, Korporat, Gelap Modern, Poster), warna tema & latar bebas,
     unggah logo dengan pengatur tinggi, unggah gambar latar dengan pengatur kepekatan,
     mode Voucher/Member, teks berjalan, tabel harga paket, tautan trial, dan tombol
     WhatsApp. Ada pratinjau langsung; hasilnya satu folder `hotspot` lengkap dalam
@@ -103,7 +103,7 @@ langsung terisi dan tinggal disesuaikan:
 | Warnet + Hotspot voucher | LAN kasir terpisah, segmen hotspot sendiri, halaman login Voucher dengan 3 paket harga |
 | RT/RW Net PPPoE | PPPoE dengan paket 10 & 20 Mbps, pool terpisah, 2 contoh akun |
 | Hotspot + PPPoE sekaligus | Hotspot di ether2–3, PPPoE di ether4–5 |
-| Hotspot WiFi (hAP ac²) | Dua radio jadi port bridge-hotspot, SSID terbuka + halaman login voucher |
+| Hotspot WiFi (hAP ac²) | Dua radio jadi port bridge-hotspot, SSID terbuka + halaman login desain Poster |
 | Kantor dengan VLAN | VLAN staff & tamu, dua subnet, dua DHCP server |
 
 Semuanya berbasis hEX (RB750Gr3) + RouterOS v7, kecuali **Hotspot WiFi** yang memakai
@@ -201,8 +201,8 @@ rlogin.html  redirect.html  radvert.html
 errors.txt   md5.js   style.css   logo.png   PETUNJUK-UPLOAD.txt
 ```
 
-Seluruh HTML dipakai bersama semua desain; yang membedakan tema **hanya `style.css`**.
-Sumbernya:
+Seluruh HTML dipakai bersama semua desain; yang membedakan tema umumnya **hanya
+`style.css`**. Sumbernya:
 
 ```
 public/hotspot-templates/
@@ -211,12 +211,25 @@ public/hotspot-templates/
   voucher/style.css
   korporat/style.css
   gelap/style.css
+  poster/style.css
+  poster/login.html # susunannya memang beda, jadi bawa halaman sendiri
 ```
 
 Untuk menambah desain baru: buat folder berisi `style.css` (pakai kelas yang sama
 dengan tema lain), lalu daftarkan pada `TEMPLATES` di
 [lib/hotspot-page.ts](lib/hotspot-page.ts) — id, nama, deskripsi, warna tema dan latar
 default. Tidak perlu mengubah kode lain.
+
+Desain yang susunannya benar-benar berbeda — bukan sekadar beda warna — boleh membawa
+`login.html` sendiri di folder yang sama, lalu ditandai `ownLogin: true` pada entri
+TEMPLATES. Halaman lainnya (status, logout, error, …) tetap memakai versi bersama, jadi
+`style.css`-nya **wajib** ikut menata kelas `.table2`, `.brand`, dan `.button2` yang
+dipakai halaman-halaman itu.
+
+Desain **Poster** memakainya: latar foto penuh, nama usaha berukuran besar bergaris tebal,
+dan kartu harga berjajar — bukan tabel. Pada desain ini nama boleh dipecah dua warna
+dengan tanda `|`, misalnya `PRO|NET` (menyatu) atau `HOTSPOT | WIFI` (berjarak); kata
+sesudah tanda itu memakai warna tema. Tandanya sendiri tidak pernah ikut tampil.
 
 Placeholder yang tersedia:
 
@@ -228,7 +241,11 @@ Placeholder yang tersedia:
 | `{{BG_IMAGE}}` `{{OVERLAY}}` | berkas gambar latar dan lapisan gelap di atasnya |
 | `{{WA_LINK}}` `{{WA_LABEL}}` | tautan wa.me dan teks tombol |
 | `{{START_MODE}}` `{{MODE_SWITCH}}` `{{TRIAL}}` | mode awal login & tombol opsional |
-| `{{PACKAGES}}` `{{PACKAGE_ROWS}}` | tabel harga paket |
+| `{{TITLE_HTML}}` | judul dalam dua span `.t1`/`.t2`, dipecah di tanda `|` |
+| `{{PACKAGES}}` `{{PACKAGE_ROWS}}` `{{PACKAGE_VALIDITY}}` | tabel harga paket & kolom masa aktif |
+| `{{PACKAGE_CARDS}}` | paket sebagai kartu, dipakai desain Poster |
+| `{{CARD}}` `{{ON_CARD}}` `{{CARD_MUTED}}` | warna kartu harga, dipilih melawan arah latar |
+| `{{PRIMARY_DARK}}` | warna tema versi gelap, untuk gradasi tombol |
 | `{{PRIMARY}}` `{{ON_PRIMARY}}` `{{FOCUS_RING}}` `{{BG}}` `{{SURFACE}}` `{{TEXT}}` `{{MUTED}}` `{{BORDER}}` | warna |
 | `{{#KEY}}…{{/KEY}}` | tampil hanya bila terisi |
 | `{{^KEY}}…{{/KEY}}` | tampil hanya bila kosong |

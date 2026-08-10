@@ -70,14 +70,20 @@ export interface HotspotEntry {
 
 /* ------------------------------------------------ halaman login hotspot */
 
-export type HotspotTemplateId = "minimal" | "voucher" | "korporat" | "gelap";
+export type HotspotTemplateId = "minimal" | "voucher" | "korporat" | "gelap" | "poster";
 export type LoginMode = "voucher" | "member";
 
 /** Satu baris pada tabel harga paket di halaman login. */
 export interface VoucherPackage {
   id: string;
   name: string;
+  /** Lama pemakaian setelah voucher dipakai. */
   duration: string;
+  /**
+   * Batas waktu voucher masih boleh dipakai, terhitung sejak pertama login.
+   * Berbeda dari durasi, dan lazim dicantumkan terpisah pada voucher.
+   */
+  validity: string;
   price: string;
 }
 

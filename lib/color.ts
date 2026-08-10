@@ -100,6 +100,11 @@ function dimmed(text: string, bg: string, maxAmount = 0.34, minRatio = 3): strin
   return result;
 }
 
+/** Warna teks sekunder yang masih terbaca di atas sebuah latar. */
+export function mutedOn(bg: string): string {
+  return dimmed(readableOn(bg), bg);
+}
+
 /** Menurunkan seluruh palet dari satu warna latar. */
 export function derivePalette(bg: string, primary: string): DerivedPalette {
   const safeBg = isHexColor(bg) ? bg.trim() : "#0b1220";

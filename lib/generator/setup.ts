@@ -754,6 +754,51 @@ export function generateSetupScript(config: SetupConfig): string {
     }
   }
 
+  // -------------------------------------------------------- anti tethering
+  const anti = config.antiTethering;
+  const antiIfaces = anti.interfaces.filter(Boolean);
+  if (anti.enabled && antiIfaces.length > 0) {
+    section(
+      "ANTI TETHERING (UBAH TTL)",
+      "Paket yang keluar ke klien diberi TTL rendah. Perangkat klien masih bisa\nmemakainya sendiri, tetapi tidak bisa meneruskannya lagi — meneruskan\nmembuat TTL menjadi 0 dan paketnya dibuang.",
+    );
+
+    if (anti.ttl === "1") {
+      s.comment("TTL 1: semua pembagian ulang terhenti, termasuk router milik pelanggan.");
+    } else {
+      s.comment("TTL 2: menyisakan satu lompatan, jadi router milik pelanggan tetap");
+      s.comment("jalan, tetapi perangkat di belakangnya tidak bisa tethering lagi.");
+    }
+    if (fw.enabled && fw.fasttrack) {
+      s.blank();
+      s.comment("PENTING: FastTrack aktif. Koneksi yang sudah ter-fasttrack melewati");
+      s.comment("mangle, sehingga aturan di bawah tidak berlaku untuk koneksi itu.");
+      s.comment("Matikan FastTrack bila anti tethering harus benar-benar rapat.");
+    }
+    s.blank();
+
+    for (const iface of antiIfaces) {
+      const label = tag(`anti tethering ${iface}`);
+      s.addIfMissing(
+        "/ip firewall mangle",
+        [["comment", label]],
+        args([
+          ["chain", "postrouting"],
+          ["action", "change-ttl"],
+          ["new-ttl", `set:${anti.ttl}`],
+          ["out-interface", iface],
+          ["comment", label],
+        ]),
+      );
+    }
+
+    s.blank().comment("Bila ada perangkat yang memang boleh membagi ulang — misalnya");
+    s.comment("access point tambahan milik sendiri — kecualikan lebih dulu, contoh:");
+    s.comment(
+      `/ip firewall mangle add chain=postrouting action=accept dst-address=192.168.10.5 out-interface=${antiIfaces[0]} place-before=0`,
+    );
+  }
+
   // ------------------------------------------------------------------- user
   const newUsers = config.users.filter((u) => u.name.trim());
   if (sys.adminPassword || newUsers.length > 0) {
@@ -818,6 +863,9 @@ export function generateSetupScript(config: SetupConfig): string {
   }
   if (config.users.some((u) => u.name.trim())) {
     s.comment("  /user print                -> daftar user router");
+  }
+  if (anti.enabled && antiIfaces.length > 0) {
+    s.comment("  /ip firewall mangle print stats -> hitungan paket anti tethering");
   }
   s.blank().comment(`Objek hasil script ini diberi comment "${BRAND}".`);
   s.comment("Pengecualian: DHCP server, hotspot, profil hotspot, dan PPPoE server");

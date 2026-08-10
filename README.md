@@ -64,9 +64,20 @@ Builder modular mengikuti urutan section pada PRD:
     masing-masing dengan rate limit, IP pool, dan local address sendiri — lalu tiap akun
     PPP secret memilih paketnya. Metode autentikasi tidak diekspos di form; script memakai
     bawaan RouterOS.
-15. **Firewall Dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
-    Winbox/SSH/WebFig, neighbor discovery, dan MAC server. **Mati secara default**,
-    diaktifkan sendiri bila diperlukan.
+15. **Firewall & TTL** — dua bagian yang bisa dipakai terpisah:
+
+    - **Firewall dasar** — proteksi chain input/forward, FastTrack, pembatasan layanan
+      Winbox/SSH/WebFig, neighbor discovery, dan MAC server. **Mati secara default**,
+      diaktifkan sendiri bila diperlukan.
+    - **Anti tethering** — rule `change-ttl` di chain `postrouting` ke arah interface
+      klien. Paket sampai ke perangkat klien dengan TTL 1, masih bisa dipakai
+      perangkat itu tetapi tidak bisa diteruskan lagi, sehingga satu akun hotspot
+      tidak bisa dibagikan ulang lewat tethering atau repeater. Nilai TTL bisa
+      diubah ke 2 agar pelanggan yang memakai router sendiri tetap jalan.
+
+      Interface WAN ditolak — ke arah ISP, TTL rendah bukan mencegah tethering
+      melainkan memutus internet. FastTrack yang masih aktif diperingatkan, karena
+      koneksi ber-FastTrack melewati mangle sehingga aturannya tidak berlaku.
 16. **User Mikrotik** — ganti password admin dan tambah user baru (nama, password, group
     full/write/read, batas subnet login). Section terakhir, dan blok ini juga diletakkan
     paling akhir di script agar akses ke router tidak terputus di tengah eksekusi.
@@ -107,8 +118,8 @@ entri pada `PRESETS`.
 
 Tombol **BAST** di header menyusun dokumen serah terima ke pelanggan. Isinya diambil dari
 konfigurasi yang sudah dibuat — perangkat, WAN, segmen jaringan, VLAN, peran tiap port,
-nama & password WiFi, layanan hotspot/PPPoE — ditambah data pelanggan, pelaksana, lingkup
-pekerjaan, dan blok tanda tangan.
+nama & password WiFi, layanan hotspot/PPPoE, pembatasan pembagian koneksi — ditambah data
+pelanggan, pelaksana, lingkup pekerjaan, dan blok tanda tangan.
 
 Dokumen dicetak lewat dialog cetak browser: pilih **Save as PDF** untuk menyimpan berkas,
 atau langsung ke printer untuk lembar tanda tangan. Tidak memakai pustaka PDF apa pun —

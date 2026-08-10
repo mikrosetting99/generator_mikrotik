@@ -208,6 +208,21 @@ function servicesSection(config: SetupConfig): string {
       </table>`);
   }
 
+  // Pembatasan yang akan dirasakan pelanggan sehari-hari lebih baik tertulis
+  // sejak awal daripada menjadi keluhan "internetnya tidak bisa dibagi".
+  const anti = config.antiTethering;
+  if (anti.enabled && anti.interfaces.filter(Boolean).length > 0) {
+    blocks.push(`<h2>Pembatasan Pembagian Koneksi</h2>
+      <p>
+        Koneksi pada ${esc(anti.interfaces.filter(Boolean).join(", "))} dibatasi agar tidak dapat
+        dibagikan ulang${
+          anti.ttl === "1"
+            ? " — tethering dari ponsel, repeater, maupun router tambahan tidak akan bekerja."
+            : ": router milik pelanggan tetap dapat digunakan, tetapi perangkat di belakangnya tidak dapat membagikan koneksi lagi."
+        }
+      </p>`);
+  }
+
   return blocks.join("\n");
 }
 

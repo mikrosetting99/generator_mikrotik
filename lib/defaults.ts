@@ -177,6 +177,7 @@ export function createDefaultConfig(): SetupConfig {
       limitDiscovery: true,
       limitMacServer: true,
     },
+    antiTethering: { enabled: false, interfaces: [], ttl: "1" },
     users: [],
     handover: {
       docNumber: "",

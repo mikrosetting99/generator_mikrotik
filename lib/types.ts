@@ -239,6 +239,26 @@ export interface FirewallConfig {
 }
 
 /**
+ * Anti tethering dengan mengubah TTL paket menuju klien.
+ *
+ * Paket yang sampai ke perangkat klien dengan TTL 1 masih bisa dipakai
+ * perangkat itu sendiri, tetapi tidak bisa diteruskan lagi — meneruskan berarti
+ * TTL turun menjadi 0 dan paketnya dibuang. Akibatnya satu akun hotspot tidak
+ * bisa dibagikan ulang lewat tethering atau repeater.
+ */
+export interface AntiTetheringConfig {
+  enabled: boolean;
+  /** Interface arah klien yang dikenai aturan. */
+  interfaces: string[];
+  /**
+   * "1" memblokir semua pembagian ulang. "2" menyisakan satu lompatan, jadi
+   * pelanggan yang memakai router sendiri tetap jalan namun perangkat di
+   * belakangnya tidak bisa tethering lagi.
+   */
+  ttl: "1" | "2";
+}
+
+/**
  * Data untuk Berita Acara Serah Terima. Bukan konfigurasi router, tetapi ikut
  * tersimpan bersamanya supaya satu berkas konfigurasi = satu pekerjaan.
  */
@@ -278,6 +298,7 @@ export interface SetupConfig {
   hotspotPage: HotspotPageConfig;
   pppoe: PppoeConfig;
   firewall: FirewallConfig;
+  antiTethering: AntiTetheringConfig;
   users: RouterUser[];
   handover: HandoverInfo;
 }

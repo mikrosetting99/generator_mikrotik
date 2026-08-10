@@ -365,6 +365,44 @@ export function validateConfig(config: SetupConfig): Issue[] {
     }
   }
 
+  // --- Anti tethering -----------------------------------------------------
+  const anti = config.antiTethering;
+  if (anti.enabled) {
+    const chosen = anti.interfaces.filter(Boolean);
+    if (chosen.length === 0) {
+      err("firewall", "Anti tethering aktif tapi belum ada interface yang dipilih.");
+    }
+    for (const iface of chosen) {
+      if (wanIfaces.includes(iface)) {
+        // Ke arah WAN, TTL rendah membuat paket mati sebelum sampai tujuan —
+        // bukan anti tethering, melainkan memutus internet.
+        err(
+          "firewall",
+          `Anti tethering: ${iface} adalah interface WAN. Aturan ini dipasang ke arah klien, bukan ke arah ISP.`,
+        );
+      }
+      const owner = portOwner.get(iface);
+      if (owner) {
+        warn(
+          "firewall",
+          `Anti tethering: ${iface} adalah port bridge ${owner} — pasang di bridge-nya agar trafik benar-benar melewati aturan ini.`,
+        );
+      }
+    }
+    if (config.firewall.enabled && config.firewall.fasttrack) {
+      warn(
+        "firewall",
+        "Anti tethering tidak akan konsisten selama FastTrack aktif — koneksi ber-FastTrack melewati mangle. Matikan FastTrack bila aturan ini harus rapat.",
+      );
+    }
+    if (anti.ttl === "1" && config.pppoe.enabled && chosen.includes(config.pppoe.iface)) {
+      warn(
+        "firewall",
+        "TTL 1 di interface PPPoE akan memutus pelanggan yang memakai router sendiri. Pakai TTL 2 bila pelanggan PPPoE punya router di rumahnya.",
+      );
+    }
+  }
+
   // --- User router -------------------------------------------------------
   if (config.system.adminPassword) {
     const check = checkPassword(config.system.adminPassword);

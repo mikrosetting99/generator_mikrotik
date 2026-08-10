@@ -123,7 +123,7 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
     case "pppoe":
       return config.pppoe.enabled;
     case "firewall":
-      return config.firewall.enabled;
+      return config.firewall.enabled || config.antiTethering.enabled;
     case "user":
       return Boolean(config.system.adminPassword) || config.users.length > 0;
   }

@@ -80,7 +80,7 @@ export const SECTION_META: Array<{ id: SectionId; step: string; title: string }>
   { id: "hotspot", step: "k", title: "IP Hotspot" },
   { id: "loginpage", step: "k2", title: "Halaman Login" },
   { id: "pppoe", step: "l", title: "PPPoE Server" },
-  { id: "firewall", step: "m", title: "Firewall Dasar" },
+  { id: "firewall", step: "m", title: "Firewall & TTL" },
   { id: "user", step: "n", title: "User Mikrotik" },
 ];
 
@@ -2177,6 +2177,13 @@ export function PppoeSection({ config, patch, issues }: SectionProps) {
 export function FirewallSection({ config, patch, issues }: SectionProps) {
   const fw = config.firewall;
   const setFw = (partial: Partial<typeof fw>) => patch({ firewall: { ...fw, ...partial } });
+  const anti = config.antiTethering;
+  const setAnti = (partial: Partial<typeof anti>) =>
+    patch({ antiTethering: { ...anti, ...partial } });
+  const wanIfaces = new Set(config.wans.map((w) => w.iface).filter(Boolean));
+  // Port yang sudah jadi member bridge dilewati: trafik klien keluar lewat
+  // bridge-nya, jadi aturan di port anggota tidak pernah tersentuh.
+  const clientIfaces = ifaceOptions(config, { skipEnslaved: true }).filter((i) => !i.disabled);
   const lanCandidates = config.addresses
     .filter((a) => a.address.trim())
     .map((a) => networkOf(a.address))
@@ -2186,8 +2193,8 @@ export function FirewallSection({ config, patch, issues }: SectionProps) {
     <Panel
       id="firewall"
       step="m"
-      title="Firewall Dasar & Pengamanan"
-      description="Rule standar agar router tidak terbuka dari internet. Aman dijalankan pada router baru."
+      title="Firewall Dasar & Anti Tethering"
+      description="Rule standar agar router tidak terbuka dari internet, ditambah pembatasan TTL agar satu akun tidak bisa dibagikan ulang. Keduanya bisa dipakai terpisah."
     >
       <Toggle
         checked={fw.enabled}
@@ -2288,6 +2295,80 @@ export function FirewallSection({ config, patch, issues }: SectionProps) {
           </Note>
         </div>
       )}
+
+      {/* Blok terpisah: berguna sendiri, jadi tidak ikut mati saat firewall
+          dasar dimatikan. */}
+      <div className="mt-6 border-t border-line-soft pt-5">
+        <Toggle
+          checked={anti.enabled}
+          onChange={(enabled) => setAnti({ enabled })}
+          label="Anti tethering (ubah TTL)"
+          hint="Satu akun tidak bisa dibagikan ulang lewat tethering HP atau repeater."
+        />
+
+        {anti.enabled && (
+          <div className="mt-4 space-y-4">
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+                Interface arah klien <span className="text-bad">*</span>
+              </span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {clientIfaces.map((iface) => {
+                  const isWan = wanIfaces.has(iface.value);
+                  const active = anti.interfaces.includes(iface.value);
+                  return (
+                    <CheckPill
+                      key={iface.value}
+                      active={active}
+                      disabled={isWan}
+                      onClick={() =>
+                        setAnti({
+                          interfaces: active
+                            ? anti.interfaces.filter((i) => i !== iface.value)
+                            : [...anti.interfaces, iface.value],
+                        })
+                      }
+                    >
+                      {iface.value}
+                    </CheckPill>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-faint">
+                Pilih bridge atau interface tempat klien berada — bukan interface ke ISP.
+              </p>
+            </div>
+
+            <Field
+              label="Nilai TTL"
+              hint={
+                anti.ttl === "1"
+                  ? "Paling ketat. Pelanggan yang memakai router sendiri ikut terputus."
+                  : "Menyisakan satu lompatan: router pelanggan tetap jalan, perangkat di belakangnya tidak bisa tethering lagi."
+              }
+            >
+              <Select
+                value={anti.ttl}
+                placeholder=""
+                onChange={(ttl) => setAnti({ ttl: ttl === "2" ? "2" : "1" })}
+                options={[
+                  { value: "1", label: "1 — blokir semua pembagian ulang" },
+                  { value: "2", label: "2 — izinkan satu router pelanggan" },
+                ]}
+              />
+            </Field>
+
+            {fw.enabled && fw.fasttrack && (
+              <Note tone="warn">
+                FastTrack masih aktif. Koneksi yang sudah ter-FastTrack melewati mangle, jadi anti
+                tethering tidak akan berlaku untuk koneksi tersebut — matikan FastTrack di atas bila
+                aturan ini harus rapat.
+              </Note>
+            )}
+          </div>
+        )}
+      </div>
+
       <IssueList issues={issues} />
     </Panel>
   );

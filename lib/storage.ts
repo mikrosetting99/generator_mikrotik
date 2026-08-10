@@ -95,6 +95,7 @@ export function normalizeConfig(raw: unknown): SetupConfig {
   const nat = asRecord(input.nat);
   const pppoe = asRecord(input.pppoe);
   const firewall = asRecord(input.firewall);
+  const antiTethering = asRecord(input.antiTethering);
 
   const wans: WanEntry[] = asArray(input.wans).map((item) => {
     const w = asRecord(item);
@@ -368,6 +369,11 @@ export function normalizeConfig(raw: unknown): SetupConfig {
       ),
       limitDiscovery: asBool(firewall.limitDiscovery, base.firewall.limitDiscovery),
       limitMacServer: asBool(firewall.limitMacServer, base.firewall.limitMacServer),
+    },
+    antiTethering: {
+      enabled: asBool(antiTethering.enabled, false),
+      interfaces: asStringList(antiTethering.interfaces),
+      ttl: antiTethering.ttl === "2" ? "2" : "1",
     },
     users,
     handover: {

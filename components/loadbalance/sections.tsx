@@ -145,14 +145,14 @@ export function IspSection({ config, patch, issues }: SectionProps) {
                 />
               </Field>
               <Field
-                label="Target recursive gateway"
+                label="Target cek jalur"
                 required
-                hint="IP publik unik untuk menguji jalur ISP ini, mis. resolver DNS."
+                hint="IP publik unik untuk menguji jalur ISP ini, mis. resolver DNS. Dipakai metode failover manapun yang aktif."
               >
                 <TextInput
                   mono
-                  value={isp.recursiveTarget}
-                  onChange={(recursiveTarget) => update(isp.id, { recursiveTarget })}
+                  value={isp.checkTarget}
+                  onChange={(checkTarget) => update(isp.id, { checkTarget })}
                   placeholder="8.8.8.8"
                 />
               </Field>
@@ -196,27 +196,79 @@ export function OptionsSection({ config, patch, issues }: SectionProps) {
       id="options"
       step="d"
       title="Opsi Lanjutan"
-      description="Metode pembagian PCC dan NAT keluar untuk tiap ISP."
+      description="Load Balance (PCC) dan Failover independen — aktifkan salah satu atau dua-duanya."
     >
-      <Field
-        label="Metode classifier PCC"
-        hint="both-addresses-and-ports paling direkomendasikan — seimbang tanpa memutus koneksi berjalan."
-      >
-        <Select
-          value={config.classifier}
-          placeholder=""
-          onChange={(classifier) =>
-            patch({ classifier: classifier as LoadBalanceConfig["classifier"] })
-          }
-          options={[
-            { value: "both-addresses-and-ports", label: "both-addresses-and-ports (disarankan)" },
-            { value: "both-addresses", label: "both-addresses — IP sumber & tujuan saja" },
-            { value: "src-address", label: "src-address — per IP klien" },
-          ]}
+      <div className="space-y-3">
+        <Toggle
+          checked={config.pccEnabled}
+          onChange={(pccEnabled) => patch({ pccEnabled })}
+          label="Aktifkan Load Balance (PCC)"
+          hint="Bagi koneksi baru dari LAN ke tiap ISP sesuai bobot. Matikan bila cuma butuh failover tanpa pembagian beban."
         />
-      </Field>
+        {config.pccEnabled && (
+          <div className="pl-4">
+            <Field
+              label="Metode classifier PCC"
+              hint="both-addresses-and-ports paling direkomendasikan — seimbang tanpa memutus koneksi berjalan."
+            >
+              <Select
+                value={config.classifier}
+                placeholder=""
+                onChange={(classifier) =>
+                  patch({ classifier: classifier as LoadBalanceConfig["classifier"] })
+                }
+                options={[
+                  { value: "both-addresses-and-ports", label: "both-addresses-and-ports (disarankan)" },
+                  { value: "both-addresses", label: "both-addresses — IP sumber & tujuan saja" },
+                  { value: "src-address", label: "src-address — per IP klien" },
+                ]}
+              />
+            </Field>
+          </div>
+        )}
 
-      <div className="mt-4">
+        <Toggle
+          checked={config.failoverEnabled}
+          onChange={(failoverEnabled) => patch({ failoverEnabled })}
+          label="Aktifkan Failover"
+          hint="Pindah otomatis ke ISP lain saat satu ISP putus. Matikan bila cuma butuh pembagian beban tanpa cadangan."
+        />
+        {config.failoverEnabled && (
+          <div className="space-y-3 pl-4">
+            <Field
+              label="Metode deteksi & failover"
+              hint={
+                config.failoverMethod === "recursive"
+                  ? "Murni di level routing — paling ringan, tidak butuh script tambahan."
+                  : config.failoverMethod === "netwatch"
+                    ? "Pakai /tool netwatch — fleksibel, cocok bila sudah biasa pakai Netwatch."
+                    : "Pakai /system scheduler + script ping — tidak bergantung fitur Netwatch."
+              }
+            >
+              <Select
+                value={config.failoverMethod}
+                placeholder=""
+                onChange={(failoverMethod) =>
+                  patch({ failoverMethod: failoverMethod as LoadBalanceConfig["failoverMethod"] })
+                }
+                options={[
+                  { value: "recursive", label: "Recursive Gateway (disarankan)" },
+                  { value: "netwatch", label: "Netwatch Ping" },
+                  { value: "schedule", label: "Scheduler Check" },
+                ]}
+              />
+            </Field>
+            <Field label="Interval cek" hint="Format durasi RouterOS, misal 10s atau 1m.">
+              <TextInput
+                mono
+                value={config.checkInterval}
+                onChange={(checkInterval) => patch({ checkInterval })}
+                placeholder="10s"
+              />
+            </Field>
+          </div>
+        )}
+
         <Toggle
           checked={config.natEnabled}
           onChange={(natEnabled) => patch({ natEnabled })}
@@ -227,8 +279,8 @@ export function OptionsSection({ config, patch, issues }: SectionProps) {
 
       <div className="mt-4">
         <Note>
-          Trafik dari router sendiri (mis. ping, update) tidak ikut dibagi PCC — itu memakai
-          default route umum di section ISP (kolom Distance), bukan mangle.
+          Trafik dari router sendiri (mis. ping, update) tidak ikut dibagi PCC — itu selalu
+          memakai default route umum (kolom Distance di section ISP), bukan mangle.
         </Note>
       </div>
       <IssueList issues={issues} />

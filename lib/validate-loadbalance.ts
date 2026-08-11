@@ -4,6 +4,9 @@ import type { LbIssue, LoadBalanceConfig } from "./types-loadbalance";
 /** Nama objek RouterOS: hindari spasi & karakter yang butuh escaping. */
 const NAME_OK = /^[A-Za-z0-9_.-]+$/;
 
+/** Format durasi RouterOS, mis. "10s", "500ms", "1m". */
+const DURATION_OK = /^\d+(ms|s|m|h)$/;
+
 export function validateLoadBalanceConfig(config: LoadBalanceConfig): LbIssue[] {
   const issues: LbIssue[] = [];
   const err = (section: LbIssue["section"], message: string) =>
@@ -23,6 +26,14 @@ export function validateLoadBalanceConfig(config: LoadBalanceConfig): LbIssue[] 
     err("lan", "Nama interface LAN hanya boleh huruf, angka, titik, strip, dan underscore.");
   }
 
+  // --- Opsi -------------------------------------------------------------
+  if (!config.pccEnabled && !config.failoverEnabled) {
+    err("options", "Aktifkan minimal salah satu: Load Balance (PCC) atau Failover.");
+  }
+  if (config.failoverEnabled && !DURATION_OK.test(config.checkInterval.trim())) {
+    err("options", "Interval cek harus format durasi RouterOS, misal 10s atau 1m.");
+  }
+
   // --- ISP --------------------------------------------------------------
   const filled = config.isps.filter((i) => i.iface.trim());
   if (config.isps.length < 2 || filled.length < 2) {
@@ -37,9 +48,11 @@ export function validateLoadBalanceConfig(config: LoadBalanceConfig): LbIssue[] 
     err("isp", "Interface ISP tidak boleh sama dengan interface LAN.");
   }
 
-  const targets = filled.map((i) => i.recursiveTarget.trim()).filter(Boolean);
-  if (new Set(targets).size !== targets.length) {
-    err("isp", "Target recursive gateway tidak boleh sama antar-ISP — masing-masing butuh host route sendiri.");
+  if (config.failoverEnabled) {
+    const targets = filled.map((i) => i.checkTarget.trim()).filter(Boolean);
+    if (new Set(targets).size !== targets.length) {
+      err("isp", "Target cek jalur tidak boleh sama antar-ISP — masing-masing butuh host route sendiri.");
+    }
   }
 
   const distances = filled.map((i) => i.distance);
@@ -56,10 +69,10 @@ export function validateLoadBalanceConfig(config: LoadBalanceConfig): LbIssue[] 
     if (!isIpv4(isp.gateway)) {
       err("isp", `${tag}: gateway bukan alamat IPv4 yang valid.`);
     }
-    if (!isIpv4(isp.recursiveTarget)) {
-      err("isp", `${tag}: target recursive gateway bukan alamat IPv4 yang valid.`);
+    if (config.failoverEnabled && !isIpv4(isp.checkTarget)) {
+      err("isp", `${tag}: target cek jalur bukan alamat IPv4 yang valid.`);
     }
-    if (!/^\d+$/.test(isp.weight) || Number(isp.weight) < 1) {
+    if (config.pccEnabled && (!/^\d+$/.test(isp.weight) || Number(isp.weight) < 1)) {
       err("isp", `${tag}: bobot PCC harus bilangan bulat 1 atau lebih.`);
     }
     if (!/^\d+$/.test(isp.distance) || Number(isp.distance) < 1 || Number(isp.distance) > 255) {
@@ -67,9 +80,11 @@ export function validateLoadBalanceConfig(config: LoadBalanceConfig): LbIssue[] 
     }
   });
 
-  const totalWeight = filled.reduce((sum, i) => sum + (Number(i.weight) || 0), 0);
-  if (totalWeight > 20) {
-    warn("isp", "Total bobot PCC cukup besar — makin banyak rule mangle yang dibuat (satu rule per satuan bobot).");
+  if (config.pccEnabled) {
+    const totalWeight = filled.reduce((sum, i) => sum + (Number(i.weight) || 0), 0);
+    if (totalWeight > 20) {
+      warn("isp", "Total bobot PCC cukup besar — makin banyak rule mangle yang dibuat (satu rule per satuan bobot).");
+    }
   }
 
   return issues;

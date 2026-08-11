@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Cpu, Lock, Route, Shield, Split, Terminal } from "@/components/icons";
+import { ArrowRight, Cpu, FileText, Lock, Route, Shield, Split, Terminal } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const MENUS = [
@@ -42,6 +42,20 @@ const MENUS = [
       "Recursive gateway berjenjang",
       "Default route per routing-mark otomatis",
       "Kompatibel dengan Load Balance PCC",
+    ],
+    ready: true,
+  },
+  {
+    href: "/hotspot-login",
+    step: "04",
+    icon: FileText,
+    title: "Halaman Login Hotspot",
+    description:
+      "Kustomisasi tampilan portal login hotspot: template, warna, logo, dan tabel harga paket voucher.",
+    points: [
+      "5 template siap pakai",
+      "Upload logo & gambar latar sendiri",
+      "Unduh langsung sebagai hotspot.zip",
     ],
     ready: true,
   },
@@ -165,7 +179,7 @@ export default function Home() {
         <h2 className="mt-20 text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
           Pilih menu
         </h2>
-        <div className="mt-5 grid gap-5 md:grid-cols-3">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {MENUS.map((menu) => {
             const Glyph = menu.icon;
             const card = (

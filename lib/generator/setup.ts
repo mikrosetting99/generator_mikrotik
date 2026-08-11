@@ -1,4 +1,3 @@
-import { whatsappLink } from "../hotspot-page";
 import { addressOfInterface, lanInterfaces, wirelessKind } from "../interfaces";
 import { getModel } from "../models";
 import { addressPart, isCidr, networkOf } from "../net";
@@ -530,7 +529,7 @@ export function generateSetupScript(config: SetupConfig): string {
         ]),
       );
     }
-    if (whatsappLink(config.hotspotPage.whatsapp)) {
+    if (config.hotspots.some((hs) => hs.whatsappWalledGarden)) {
       s.blank().comment("Walled garden — agar tombol WhatsApp di halaman login bisa dibuka");
       s.comment("sebelum pengguna berhasil login.");
       for (const host of ["wa.me", "*.whatsapp.com", "*.whatsapp.net", "*.wa.me"]) {

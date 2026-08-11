@@ -1,5 +1,5 @@
 import { contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
-import type { HotspotPageConfig, HotspotTemplateId, VoucherPackage } from "./types";
+import type { HotspotPageConfig, HotspotTemplateId, VoucherPackage } from "./types-hotspot-login";
 import type { ZipEntry } from "./zip";
 
 /**

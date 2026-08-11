@@ -1,5 +1,4 @@
 import { createDefaultConfig, uid } from "./defaults";
-import { isHexColor, TEMPLATES } from "./hotspot-page";
 import { getModel } from "./models";
 import { DEFAULT_PPP_PROFILE, RESERVED_PPP_PROFILES } from "./types";
 import type {
@@ -8,8 +7,6 @@ import type {
   DhcpServerEntry,
   HotspotAuth,
   HotspotEntry,
-  HotspotTemplateId,
-  LoginMode,
   PoolEntry,
   PppoeProfile,
   PppoeSecret,
@@ -18,7 +15,6 @@ import type {
   SetupConfig,
   UserGroup,
   VlanEntry,
-  VoucherPackage,
   WanEntry,
   WirelessBand,
   WirelessEntry,
@@ -192,28 +188,11 @@ export function normalizeConfig(raw: unknown): SetupConfig {
       dnsName: asString(h.dnsName),
       auth: auth.length > 0 ? auth : ["http-chap", "http-pap"],
       addressesPerMac: asString(h.addressesPerMac, "2"),
+      whatsappWalledGarden: asBool(h.whatsappWalledGarden, false),
     };
   });
 
   const handover = asRecord(input.handover);
-  const hotspotPage = asRecord(input.hotspotPage);
-  const templateId = asString(hotspotPage.template, base.hotspotPage.template);
-  const loginMode = asString(hotspotPage.loginMode, base.hotspotPage.loginMode);
-  // Berkas lama menyimpan mode gelap/terang; petakan ke warna latar.
-  const legacyMode = asString(hotspotPage.mode);
-  const bgFallback =
-    legacyMode === "terang" ? "#eef2f7" : legacyMode === "gelap" ? "#0b1220" : base.hotspotPage.bgColor;
-
-  const packages: VoucherPackage[] = asArray(hotspotPage.packages).map((item) => {
-    const p = asRecord(item);
-    return {
-      id: uid("pkg"),
-      name: asString(p.name),
-      duration: asString(p.duration),
-      validity: asString(p.validity),
-      price: asString(p.price),
-    };
-  });
 
   const pppoeProfiles: PppoeProfile[] = asArray(pppoe.profiles).map((item) => {
     const prof = asRecord(item);
@@ -303,50 +282,6 @@ export function normalizeConfig(raw: unknown): SetupConfig {
     pools,
     dhcpServers,
     hotspots,
-    hotspotPage: {
-      template: (TEMPLATES.some((t) => t.id === templateId)
-        ? templateId
-        : base.hotspotPage.template) as HotspotTemplateId,
-      primaryColor: isHexColor(asString(hotspotPage.primaryColor))
-        ? asString(hotspotPage.primaryColor)
-        : base.hotspotPage.primaryColor,
-      bgColor: isHexColor(asString(hotspotPage.bgColor))
-        ? asString(hotspotPage.bgColor)
-        : bgFallback,
-      title: asString(hotspotPage.title),
-      subtitle: asString(hotspotPage.subtitle),
-      // Terima hanya data URI gambar — menolak URL luar yang tidak akan
-      // termuat di halaman login sebelum klien terhubung ke internet.
-      logoDataUrl: /^data:image\//i.test(asString(hotspotPage.logoDataUrl))
-        ? asString(hotspotPage.logoDataUrl)
-        : "",
-      logoName: asString(hotspotPage.logoName),
-      logoHeight:
-        typeof hotspotPage.logoHeight === "number" &&
-        hotspotPage.logoHeight >= 40 &&
-        hotspotPage.logoHeight <= 260
-          ? hotspotPage.logoHeight
-          : base.hotspotPage.logoHeight,
-      bgImageDataUrl: /^data:image\//i.test(asString(hotspotPage.bgImageDataUrl))
-        ? asString(hotspotPage.bgImageDataUrl)
-        : "",
-      bgImageName: asString(hotspotPage.bgImageName),
-      bgOverlay:
-        typeof hotspotPage.bgOverlay === "number" &&
-        hotspotPage.bgOverlay >= 0 &&
-        hotspotPage.bgOverlay <= 90
-          ? hotspotPage.bgOverlay
-          : base.hotspotPage.bgOverlay,
-      loginMode: (loginMode === "member" ? "member" : "voucher") as LoginMode,
-      showModeSwitch: asBool(hotspotPage.showModeSwitch, base.hotspotPage.showModeSwitch),
-      marquee: asString(hotspotPage.marquee, base.hotspotPage.marquee),
-      showTrial: asBool(hotspotPage.showTrial, base.hotspotPage.showTrial),
-      packages,
-      terms: asString(hotspotPage.terms),
-      whatsapp: asString(hotspotPage.whatsapp),
-      whatsappLabel: asString(hotspotPage.whatsappLabel, base.hotspotPage.whatsappLabel),
-      footer: asString(hotspotPage.footer),
-    },
     pppoe: {
       enabled: asBool(pppoe.enabled, false),
       iface: asString(pppoe.iface),

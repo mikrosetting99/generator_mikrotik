@@ -10,7 +10,6 @@ import {
   type RouterUser,
   type SetupConfig,
   type VlanEntry,
-  type VoucherPackage,
   type WanEntry,
   type WirelessEntry,
 } from "./types";
@@ -91,6 +90,7 @@ export function newHotspot(): HotspotEntry {
     dnsName: "",
     auth: ["http-chap", "http-pap"],
     addressesPerMac: "2",
+    whatsappWalledGarden: false,
   };
 }
 
@@ -100,10 +100,6 @@ export function newSecret(): PppoeSecret {
 
 export function newPppoeProfile(): PppoeProfile {
   return { id: uid("ppprof"), name: "", localAddress: "", pool: "", rateLimit: "", onlyOne: true };
-}
-
-export function newPackage(): VoucherPackage {
-  return { id: uid("pkg"), name: "", duration: "", validity: "", price: "" };
 }
 
 export function newUser(): RouterUser {
@@ -132,28 +128,6 @@ export function createDefaultConfig(): SetupConfig {
     pools: [],
     dhcpServers: [],
     hotspots: [],
-    hotspotPage: {
-      template: "minimal",
-      primaryColor: "#38bdf8",
-      bgColor: "#ffffff",
-      title: "",
-      subtitle: "",
-      logoDataUrl: "",
-      logoName: "",
-      logoHeight: 130,
-      bgImageDataUrl: "",
-      bgImageName: "",
-      bgOverlay: 55,
-      loginMode: "voucher",
-      showModeSwitch: true,
-      marquee: "Selamat datang di jaringan hotspot kami",
-      showTrial: false,
-      packages: [],
-      terms: "",
-      whatsapp: "",
-      whatsappLabel: "Beli voucher via WhatsApp",
-      footer: "",
-    },
     pppoe: {
       enabled: false,
       iface: "",

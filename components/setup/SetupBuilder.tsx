@@ -29,7 +29,6 @@ import {
   DnsSection,
   FirewallSection,
   HotspotSection,
-  LoginPageSection,
   NatSection,
   PoolSection,
   PppoeSection,
@@ -59,7 +58,6 @@ const SECTION_COMPONENTS: Record<SectionId, (props: SectionProps) => React.React
   pool: PoolSection,
   dhcp: DhcpSection,
   hotspot: HotspotSection,
-  loginpage: LoginPageSection,
   pppoe: PppoeSection,
   firewall: FirewallSection,
   user: UserSection,
@@ -71,19 +69,15 @@ const OPTIONAL_SECTIONS = new Set<SectionId>([
   "wireless",
   "vlan",
   "hotspot",
-  "loginpage",
   "pppoe",
   "user",
 ]);
 
 /**
- * Sebagian langkah hanya relevan pada keadaan tertentu: halaman login tidak
- * ada gunanya tanpa hotspot, dan Wireless tidak ada gunanya pada perangkat
- * yang memang tidak punya radio.
+ * Wireless tidak ada gunanya pada perangkat yang memang tidak punya radio.
  */
 function visibleSections(config: SetupConfig) {
   return SECTION_META.filter((meta) => {
-    if (meta.id === "loginpage") return config.hotspots.length > 0;
     if (meta.id === "wireless") return wirelessInterfaces(config).length > 0;
     return true;
   });
@@ -114,12 +108,6 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
       return config.dhcpServers.length > 0;
     case "hotspot":
       return config.hotspots.length > 0;
-    case "loginpage":
-      return Boolean(
-        config.hotspotPage.title.trim() ||
-          config.hotspotPage.logoDataUrl ||
-          config.hotspotPage.packages.length > 0,
-      );
     case "pppoe":
       return config.pppoe.enabled;
     case "firewall":

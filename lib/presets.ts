@@ -4,7 +4,6 @@ import {
   newBridge,
   newDhcpServer,
   newHotspot,
-  newPackage,
   newPool,
   newPppoeProfile,
   newSecret,
@@ -102,22 +101,6 @@ function warnetHotspot(): SetupConfig {
         auth: ["http-chap", "http-pap"],
       },
     ],
-    hotspotPage: {
-      ...config.hotspotPage,
-      template: "voucher",
-      primaryColor: "#f59e0b",
-      title: "Warnet Kita",
-      subtitle: "Internet cepat untuk semua",
-      loginMode: "voucher",
-      marquee: "Selamat datang — masukkan kode voucher untuk mulai",
-      packages: [
-        { ...newPackage(), name: "2 Jam", duration: "2 jam", validity: "3 jam", price: "Rp 5.000" },
-        { ...newPackage(), name: "1 Hari", duration: "24 jam", validity: "2 hari", price: "Rp 10.000" },
-        { ...newPackage(), name: "1 Minggu", duration: "7 hari", validity: "10 hari", price: "Rp 50.000" },
-      ],
-      whatsappLabel: "Beli voucher via WhatsApp",
-      footer: "Hubungi petugas bila mengalami kendala",
-    },
     firewall: { ...config.firewall, mgmtSubnet: "192.168.10.0/24", fasttrack: false },
   };
 }
@@ -206,13 +189,6 @@ function hotspotDanPppoe(): SetupConfig {
         auth: ["http-chap", "http-pap"],
       },
     ],
-    hotspotPage: {
-      ...config.hotspotPage,
-      template: "minimal",
-      title: "Hotspot",
-      loginMode: "voucher",
-      marquee: "Masukkan kode voucher untuk terhubung",
-    },
     pppoe: {
       ...config.pppoe,
       enabled: true,
@@ -338,22 +314,6 @@ function hotspotWifi(): SetupConfig {
         auth: ["http-chap", "http-pap"],
       },
     ],
-    hotspotPage: {
-      ...config.hotspotPage,
-      template: "poster",
-      primaryColor: "#3d93ff",
-      bgColor: "#0e3a7d",
-      // Tanda | mewarnai kata sesudahnya pada desain Poster.
-      title: "HOTSPOT | WIFI",
-      subtitle: "“Cepat, Stabil, dan Murah”",
-      loginMode: "voucher",
-      showModeSwitch: false,
-      marquee: "Voucher tersedia di kasir",
-      packages: [
-        { ...newPackage(), name: "3 Jam", duration: "3 jam", validity: "5 jam", price: "Rp 5.000" },
-        { ...newPackage(), name: "1 Hari", duration: "24 jam", validity: "2 hari", price: "Rp 10.000" },
-      ],
-    },
     firewall: { ...config.firewall, mgmtSubnet: "192.168.10.0/24", fasttrack: false },
   };
 }
@@ -370,11 +330,11 @@ export const PRESETS: Preset[] = [
     id: "warnet-hotspot",
     name: "Warnet + Hotspot voucher",
     description:
-      "LAN terpisah untuk kasir, segmen hotspot sendiri, lengkap dengan halaman login bergaya voucher dan tabel harga.",
+      "LAN terpisah untuk kasir dan segmen hotspot sendiri. Atur tampilan halaman login voucher di menu Halaman Login Hotspot.",
     points: [
       "LAN kasir ether2 · hotspot ether3–5",
       "Hotspot 10.10.0.0/24 + DHCP sepool",
-      "Halaman login Voucher, mode kode voucher, 3 paket harga",
+      "Halaman login diatur terpisah di menu Halaman Login Hotspot",
     ],
     build: warnetHotspot,
   },
@@ -397,7 +357,7 @@ export const PRESETS: Preset[] = [
       "Dua layanan di satu router: hotspot voucher di dua port, PPPoE pelanggan di dua port lainnya.",
     points: [
       "Hotspot ether2–3 · PPPoE ether4–5",
-      "Halaman login Minimal, mode voucher",
+      "Halaman login diatur terpisah di menu Halaman Login Hotspot",
       "Paket PPPoE standar 10 Mbps",
     ],
     build: hotspotDanPppoe,
@@ -406,7 +366,7 @@ export const PRESETS: Preset[] = [
     id: "hotspot-wifi",
     name: "Hotspot WiFi (hAP ac²)",
     description:
-      "Hotspot lengkap dengan dua radio WiFi yang sudah masuk ke segmen hotspot — SSID terbuka, autentikasi lewat halaman login voucher.",
+      "Hotspot lengkap dengan dua radio WiFi yang sudah masuk ke segmen hotspot — SSID terbuka, autentikasi lewat halaman login voucher (diatur di menu Halaman Login Hotspot).",
     points: [
       "hAP ac² · wlan1 & wlan2 jadi port bridge-hotspot",
       "SSID terbuka + isolasi antar klien",

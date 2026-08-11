@@ -18,7 +18,7 @@ const MENUS = [
     ready: true,
   },
   {
-    href: "#",
+    href: "/loadbalance",
     step: "02",
     icon: Split,
     title: "Load Balance PCC",
@@ -29,21 +29,21 @@ const MENUS = [
       "Routing table per ISP",
       "Bobot distribusi per ISP",
     ],
-    ready: false,
+    ready: true,
   },
   {
-    href: "#",
+    href: "/loadbalance",
     step: "03",
     icon: Route,
     title: "Fail Over",
     description:
-      "Pindah otomatis ke ISP cadangan saat jalur utama terputus, lewat Recursive Gateway maupun Netwatch.",
+      "Pindah otomatis ke ISP cadangan saat jalur utama terputus, lewat Recursive Gateway — satu builder yang sama dengan Load Balance PCC.",
     points: [
       "Recursive gateway berjenjang",
-      "Netwatch on-up / on-down",
+      "Default route per routing-mark otomatis",
       "Kompatibel dengan Load Balance PCC",
     ],
-    ready: false,
+    ready: true,
   },
 ];
 

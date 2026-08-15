@@ -395,12 +395,14 @@ export function Modal({
   children: ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
 
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") closeRef.current();
     };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -411,7 +413,8 @@ export function Modal({
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when the modal opens/closes, not when the caller's inline onClose identity changes (that was stealing focus on every keystroke)
+  }, [open]);
 
   if (!open) return null;
 

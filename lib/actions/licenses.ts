@@ -68,8 +68,8 @@ export async function createLicenseOrder(_prev: string | undefined, formData: Fo
     .insert(paket.map((p) => ({ ...p, order_id: data.id })));
   if (errPaket) return errPaket.message;
 
-  revalidatePath("/lisensi");
-  redirect(`/lisensi/${data.id}/edit`);
+  revalidatePath("/login-page-hotspot");
+  redirect(`/login-page-hotspot/${data.id}/edit`);
 }
 
 export async function updateLicenseOrder(id: string, _prev: string | undefined, formData: FormData) {
@@ -102,8 +102,8 @@ export async function updateLicenseOrder(id: string, _prev: string | undefined, 
     .insert(paket.map((p) => ({ ...p, order_id: id })));
   if (errPaket) return errPaket.message;
 
-  revalidatePath("/lisensi");
-  revalidatePath(`/lisensi/${id}/edit`);
+  revalidatePath("/login-page-hotspot");
+  revalidatePath(`/login-page-hotspot/${id}/edit`);
   return "Tersimpan.";
 }
 
@@ -141,13 +141,13 @@ export async function terbitkanLisensi(id: string, _prev: string | undefined, fo
     .eq("id", id);
   if (error) return error.message;
 
-  revalidatePath("/lisensi");
-  revalidatePath(`/lisensi/${id}/edit`);
+  revalidatePath("/login-page-hotspot");
+  revalidatePath(`/login-page-hotspot/${id}/edit`);
   return `Kunci terbit: ${kunci}`;
 }
 
 export async function deleteLicenseOrder(id: string) {
   const supabase = await createClient();
   await supabase.from("license_orders").delete().eq("id", id);
-  revalidatePath("/lisensi");
+  revalidatePath("/login-page-hotspot");
 }

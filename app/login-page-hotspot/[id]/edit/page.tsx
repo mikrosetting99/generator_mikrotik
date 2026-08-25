@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download } from "@/components/icons";
 import { ambilPesanan, terbitkanLisensi, updateLicenseOrder } from "@/lib/actions/licenses";
-import { LicenseForm } from "@/components/lisensi/LicenseForm";
-import { LicenseIssue } from "@/components/lisensi/LicenseIssue";
+import { LicenseForm } from "@/components/login-page-hotspot/LicenseForm";
+import { LicenseIssue } from "@/components/login-page-hotspot/LicenseIssue";
 import { Button, Note } from "@/components/ui";
 import { jalurArsip } from "@/lib/license/arsip";
 
-export default async function LisensiEditPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PesananEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const pesanan = await ambilPesanan(id);
   if (!pesanan) notFound();
@@ -15,7 +15,7 @@ export default async function LisensiEditPage({ params }: { params: Promise<{ id
   return (
     <div>
       <Link
-        href="/lisensi"
+        href="/login-page-hotspot"
         className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-brand"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -31,7 +31,7 @@ export default async function LisensiEditPage({ params }: { params: Promise<{ id
             Setiap kali diunduh, berkasnya dicetak ulang dari data di halaman ini.
           </p>
         </div>
-        <a href={`/lisensi/${pesanan.id}/unduh`}>
+        <a href={`/login-page-hotspot/${pesanan.id}/unduh`}>
           <Button variant="primary">
             <Download className="h-4 w-4" />
             Unduh Folder

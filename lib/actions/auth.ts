@@ -23,5 +23,5 @@ export async function signIn(_prevState: string | undefined, formData: FormData)
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/lisensi/login");
+  redirect("/login-page-hotspot/login");
 }

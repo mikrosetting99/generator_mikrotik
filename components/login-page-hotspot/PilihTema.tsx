@@ -41,7 +41,7 @@ export function PilihTema({
               )}
             >
               <Image
-                src={`/lisensi-thumb/${t.slug}.jpg`}
+                src={`/login-page-hotspot-thumb/${t.slug}.jpg`}
                 alt=""
                 width={320}
                 height={640}

@@ -18,7 +18,7 @@ const WARNA_STATUS: Record<StatusPesanan, string> = {
   batal: "border-bad/25 bg-bad/[0.07] text-bad",
 };
 
-export default async function LisensiPage() {
+export default async function PesananPage() {
   const pesanan = await daftarPesanan();
   const namaTemplate = new Map(TEMPLATES.map((t) => [t.slug, t.nama]));
 
@@ -26,12 +26,12 @@ export default async function LisensiPage() {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-ink">Pesanan Lisensi</h1>
+          <h1 className="text-lg font-semibold text-ink">Pesanan Login Page</h1>
           <p className="mt-1 text-sm text-muted">
             Satu pesanan menghasilkan satu folder login page siap upload ke MikroTik.
           </p>
         </div>
-        <Link href="/lisensi/new">
+        <Link href="/login-page-hotspot/new">
           <Button variant="brand" size="sm">
             <Plus className="h-4 w-4" />
             Pesanan Baru
@@ -80,12 +80,12 @@ export default async function LisensiPage() {
               </span>
 
               <div className="flex items-center gap-1">
-                <a href={`/lisensi/${p.id}/unduh`} title="Unduh folder">
+                <a href={`/login-page-hotspot/${p.id}/unduh`} title="Unduh folder">
                   <Button size="sm" ariaLabel="Unduh folder">
                     <Download className="h-4 w-4" />
                   </Button>
                 </a>
-                <Link href={`/lisensi/${p.id}/edit`} title="Buka pesanan">
+                <Link href={`/login-page-hotspot/${p.id}/edit`} title="Buka pesanan">
                   <Button size="sm" variant="ghost" ariaLabel="Buka pesanan">
                     <FileText className="h-4 w-4" />
                   </Button>

@@ -6,12 +6,12 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const metadata = {
-  title: "Lisensi Login Page — Mikrosetting.com",
+  title: "Login Page Hotspot — Mikrosetting.com",
   robots: { index: false, follow: false },
 };
 
-export default async function LisensiLayout({ children }: { children: React.ReactNode }) {
-  /* Halaman login memakai layout ini juga, jadi tombol keluar hanya tampil
+export default async function LoginPageHotspotLayout({ children }: { children: React.ReactNode }) {
+  /* Halaman masuk memakai layout ini juga, jadi tombol keluar hanya tampil
      kalau memang ada sesi. Middleware yang mengurus pengalihannya. */
   let masuk = false;
   if (isSupabaseConfigured()) {
@@ -36,7 +36,7 @@ export default async function LisensiLayout({ children }: { children: React.Reac
 
           <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-ink">
             <Lock className="h-4 w-4 text-brand" />
-            Lisensi
+            Login Page Hotspot
           </span>
 
           <ThemeToggle />

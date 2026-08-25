@@ -7,9 +7,9 @@ import { tujuanAman } from "@/lib/license/tujuan";
  * Bagian yang hanya boleh dibuka penerbit, bukan pengunjung umum:
  * penerbitan lisensi, dan generator halaman login yang menjadi produknya.
  */
-const RUTE_TERKUNCI = ["/lisensi", "/hotspot-login"];
+const RUTE_TERKUNCI = ["/login-page-hotspot", "/hotspot-login"];
 
-const RUTE_MASUK = "/lisensi/login";
+const RUTE_MASUK = "/login-page-hotspot/login";
 
 function terkunci(pathname: string): boolean {
   return RUTE_TERKUNCI.some(

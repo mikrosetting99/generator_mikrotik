@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { ArrowLeft } from "@/components/icons";
 import { createLicenseOrder } from "@/lib/actions/licenses";
-import { LicenseForm } from "@/components/lisensi/LicenseForm";
+import { LicenseForm } from "@/components/login-page-hotspot/LicenseForm";
 
-export default function LisensiBaruPage() {
+export default function PesananBaruPage() {
   return (
     <div>
       <Link
-        href="/lisensi"
+        href="/login-page-hotspot"
         className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-brand"
       >
         <ArrowLeft className="h-4 w-4" />

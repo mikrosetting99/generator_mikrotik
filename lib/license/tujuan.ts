@@ -9,7 +9,7 @@
  * Karakter kedua diperiksa lewat kodenya (47 = "/", 92 = garis miring terbalik)
  * supaya aturannya terbaca jelas tanpa perlu escaping di dalam pola.
  */
-export function tujuanAman(nilai: unknown, cadangan = "/lisensi"): string {
+export function tujuanAman(nilai: unknown, cadangan = "/login-page-hotspot"): string {
   const path = typeof nilai === "string" ? nilai : "";
   if (!path.startsWith("/")) return cadangan;
   // "/" saja bukan tujuan yang berguna di sini — itu beranda, bukan halaman

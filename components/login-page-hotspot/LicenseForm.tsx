@@ -3,9 +3,9 @@
 import { useActionState, useState } from "react";
 import { Plus, Trash } from "@/components/icons";
 import { Button, Panel, cn, controlBase } from "@/components/ui";
-import { ImageField } from "@/components/lisensi/ImageField";
-import { PilihTema } from "@/components/lisensi/PilihTema";
-import { Pratinjau } from "@/components/lisensi/Pratinjau";
+import { ImageField } from "@/components/login-page-hotspot/ImageField";
+import { PilihTema } from "@/components/login-page-hotspot/PilihTema";
+import { Pratinjau } from "@/components/login-page-hotspot/Pratinjau";
 import { TEMPLATES, cariTemplate } from "@/lib/license/templates";
 import type { PesananLengkap } from "@/lib/license/pesanan";
 

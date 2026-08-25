@@ -11,5 +11,5 @@ export async function middleware(request: NextRequest) {
  * umum dan tidak boleh ikut terkunci.
  */
 export const config = {
-  matcher: ["/lisensi/:path*", "/hotspot-login/:path*"],
+  matcher: ["/login-page-hotspot/:path*", "/hotspot-login/:path*"],
 };

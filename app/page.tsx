@@ -46,19 +46,19 @@ const MENUS = [
     ready: true,
   },
   {
-    href: "/lisensi",
+    href: "/login-page-hotspot",
     step: "04",
     icon: Lock,
-    title: "Lisensi Login Page",
+    title: "Login Page Hotspot",
     description:
-      "Untuk dijual kembali: cetak login page bertema lengkap dengan paket dan harga pembeli, lalu terbitkan kunci lisensi yang terikat ke routernya.",
+      "Cetak halaman login hotspot bertema lengkap dengan paket dan harga pembeli, lalu terbitkan kunci yang mengikat halaman itu ke router tujuan.",
     points: [
       "Enam tema, muat satu layar di HP",
       "Paket, warna, logo, dan latar dari form",
-      "Kunci lisensi terikat ke identity router",
+      "Kunci terikat ke identity router",
     ],
     ready: true,
-    /* Bagian penerbit lisensi, bukan alat umum seperti menu lainnya.
+    /* Bagian penerbit, bukan alat umum seperti menu lainnya.
        Ditandai supaya pengunjung tahu sebelum menekan dan mendarat di
        layar login — middleware yang menjaganya, bukan penandaan ini. */
     privat: true,

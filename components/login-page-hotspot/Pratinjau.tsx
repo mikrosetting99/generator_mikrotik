@@ -51,7 +51,7 @@ export function Pratinjau() {
     setSibuk(true);
     setSalah(null);
     try {
-      const res = await fetch("/lisensi/pratinjau", { method: "POST", body: new FormData(form) });
+      const res = await fetch("/login-page-hotspot/pratinjau", { method: "POST", body: new FormData(form) });
       if (!res.ok) throw new Error(`Server menjawab ${res.status}`);
       const html = await res.text();
       const baru = URL.createObjectURL(new Blob([html], { type: "text/html" }));

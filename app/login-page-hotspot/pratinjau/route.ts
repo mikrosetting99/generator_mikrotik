@@ -15,9 +15,9 @@ import { pecahNomor } from "@/lib/license/nomor";
  * pun hanya karena satu kolom belum terisi membuat fiturnya tidak berguna.
  * Yang kosong diisi contoh secukupnya.
  *
- * Middleware sudah menjaga seluruh /lisensi, jadi rute ini tidak memeriksa
- * sesi lagi — tapi kalau matcher di middleware.ts berubah, pemeriksaan itu
- * harus dipindahkan ke sini.
+ * Middleware sudah menjaga seluruh /login-page-hotspot, jadi rute ini tidak
+ * memeriksa sesi lagi — tapi kalau matcher di middleware.ts berubah,
+ * pemeriksaan itu harus dipindahkan ke sini.
  */
 export async function POST(req: Request) {
   try {

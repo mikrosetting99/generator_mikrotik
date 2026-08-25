@@ -4,12 +4,16 @@ import { useActionState } from "react";
 import { signIn } from "@/lib/actions/auth";
 import { Button, cn, controlBase } from "@/components/ui";
 
-export function LoginForm() {
+export function LoginForm({ lanjut }: { lanjut?: string }) {
   const [error, formAction, pending] = useActionState(signIn, undefined);
   const kolom = cn(controlBase, "h-11 sm:h-10");
 
   return (
     <form action={formAction} className="grid gap-4 rounded-xl border border-line bg-surface p-5">
+      {/* Tujuan semula, dititipkan middleware. Nilainya tetap diperiksa ulang
+          di sisi server sebelum dipakai mengalihkan. */}
+      {lanjut && <input type="hidden" name="lanjut" value={lanjut} />}
+
       <div className="grid gap-1.5">
         <label className="text-xs font-medium text-muted" htmlFor="email">
           Email

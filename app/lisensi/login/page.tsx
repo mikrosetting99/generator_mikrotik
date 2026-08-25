@@ -1,6 +1,12 @@
 import { LoginForm } from "@/components/lisensi/LoginForm";
 
-export default function LisensiLoginPage() {
+export default async function LisensiLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ lanjut?: string }>;
+}) {
+  const { lanjut } = await searchParams;
+
   return (
     <div className="mx-auto max-w-sm py-10">
       <h1 className="text-lg font-semibold text-ink">Masuk</h1>
@@ -9,7 +15,7 @@ export default function LisensiLoginPage() {
         <span className="font-mono text-xs text-brand">/setup</span>.
       </p>
       <div className="mt-6">
-        <LoginForm />
+        <LoginForm lanjut={lanjut} />
       </div>
     </div>
   );

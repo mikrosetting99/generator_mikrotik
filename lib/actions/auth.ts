@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { tujuanAman } from "@/lib/license/tujuan";
 
 export async function signIn(_prevState: string | undefined, formData: FormData) {
   const email = String(formData.get("email") ?? "");
@@ -14,7 +15,9 @@ export async function signIn(_prevState: string | undefined, formData: FormData)
     return "Email atau password salah.";
   }
 
-  redirect("/lisensi");
+  // Tujuan semula dititipkan middleware lewat kolom tersembunyi; nilainya
+  // tetap diperiksa ulang di sini, bukan dipercaya begitu saja dari form.
+  redirect(tujuanAman(formData.get("lanjut")));
 }
 
 export async function signOut() {

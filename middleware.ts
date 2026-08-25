@@ -6,9 +6,10 @@ export async function middleware(request: NextRequest) {
 }
 
 /**
- * Hanya bagian lisensi yang dijaga. Generator setup MikroTik di /setup
- * memang untuk umum dan tidak boleh ikut terkunci.
+ * Bagian penerbit yang dijaga: penerbitan lisensi dan generator halaman login
+ * yang menjadi produknya. Menu /setup, /loadbalance, dan sisanya memang untuk
+ * umum dan tidak boleh ikut terkunci.
  */
 export const config = {
-  matcher: ["/lisensi/:path*"],
+  matcher: ["/lisensi/:path*", "/hotspot-login/:path*"],
 };

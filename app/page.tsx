@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Cpu, FileText, Lock, Route, Shield, Split, Terminal } from "@/components/icons";
+import { ArrowRight, Cpu, Lock, Route, Shield, Split, Terminal } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const MENUS = [
@@ -46,22 +46,8 @@ const MENUS = [
     ready: true,
   },
   {
-    href: "/hotspot-login",
-    step: "04",
-    icon: FileText,
-    title: "Halaman Login Hotspot",
-    description:
-      "Kustomisasi tampilan portal login hotspot: template, warna, logo, dan tabel harga paket voucher.",
-    points: [
-      "5 template siap pakai",
-      "Upload logo & gambar latar sendiri",
-      "Unduh langsung sebagai hotspot.zip",
-    ],
-    ready: true,
-  },
-  {
     href: "/lisensi",
-    step: "05",
+    step: "04",
     icon: Lock,
     title: "Lisensi Login Page",
     description:

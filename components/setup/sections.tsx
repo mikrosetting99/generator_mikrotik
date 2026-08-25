@@ -1258,7 +1258,7 @@ export function HotspotSection({ config, patch, issues }: SectionProps) {
         <div className="mt-4">
           <Note>
             Tampilan halaman login (template, warna, logo, paket voucher) diatur di menu
-            terpisah — <span className="text-ink">Halaman Login Hotspot</span> — dari menu utama.
+            terpisah — <span className="text-ink">Lisensi Login Page</span> — dari menu utama.
           </Note>
         </div>
       )}

@@ -59,6 +59,24 @@ const MENUS = [
     ],
     ready: true,
   },
+  {
+    href: "/lisensi",
+    step: "05",
+    icon: Lock,
+    title: "Lisensi Login Page",
+    description:
+      "Untuk dijual kembali: cetak login page bertema lengkap dengan paket dan harga pembeli, lalu terbitkan kunci lisensi yang terikat ke routernya.",
+    points: [
+      "Enam tema, muat satu layar di HP",
+      "Paket, warna, logo, dan latar dari form",
+      "Kunci lisensi terikat ke identity router",
+    ],
+    ready: true,
+    /* Bagian penerbit lisensi, bukan alat umum seperti menu lainnya.
+       Ditandai supaya pengunjung tahu sebelum menekan dan mendarat di
+       layar login — middleware yang menjaganya, bukan penandaan ini. */
+    privat: true,
+  },
 ];
 
 const SAMPLE = [
@@ -179,7 +197,7 @@ export default function Home() {
         <h2 className="mt-20 text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
           Pilih menu
         </h2>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {MENUS.map((menu) => {
             const Glyph = menu.icon;
             const card = (
@@ -200,7 +218,11 @@ export default function Home() {
                   >
                     <Glyph className="h-5 w-5" />
                   </span>
-                  {menu.ready ? (
+                  {menu.privat ? (
+                    <span className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+                      khusus admin
+                    </span>
+                  ) : menu.ready ? (
                     <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
                       siap
                     </span>
@@ -230,7 +252,7 @@ export default function Home() {
 
                 {menu.ready && (
                   <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand">
-                    Mulai konfigurasi
+                    {menu.privat ? "Buka generator" : "Mulai konfigurasi"}
                     <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
                   </span>
                 )}

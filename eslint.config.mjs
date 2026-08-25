@@ -20,6 +20,9 @@ const eslintConfig = [
       "next-env.d.ts",
       // Berkas template hotspot disajikan apa adanya ke router, bukan kode aplikasi.
       "public/hotspot-templates/**",
+      // Template login page berlisensi: HTML dan JavaScript untuk router,
+      // termasuk md5.js bawaan MikroTik yang sengaja tidak disentuh.
+      "templates/**",
       // Bahan rujukan lokal, tidak ikut ter-commit.
       "_contoh-hotspot/**",
     ],

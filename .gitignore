@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -42,3 +43,14 @@ next-env.d.ts
 
 # bahan rujukan lokal (template hotspot milik pelanggan, dsb)
 /_contoh-hotspot/
+
+# Arsip hasil cetak login page (berisi kunci lisensi pelanggan)
+/data/hasil/
+
+# Latar bawaan tema: sebagian memakai karya resmi pihak lain (Naruto,
+# Mobile Legends). Repo ini publik, jadi gambarnya tidak ikut. Unggah
+# manual ke templates/<tema>/img/bg.jpg di server lewat File Manager
+# aaPanel; tanpa berkas itu temanya jatuh ke hiasan SVG bawaannya dan
+# tetap berfungsi.
+templates/*/img/*.jpg
+templates/*/img/*.png

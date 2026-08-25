@@ -51,7 +51,7 @@ export function Field({
 
 /* ----------------------------------------------------------------- inputs */
 
-const controlBase =
+export const controlBase =
   "w-full rounded-lg border border-line bg-canvas px-3 text-sm text-ink outline-none " +
   "transition-[border-color,box-shadow,background-color] duration-200 " +
   "placeholder:text-faint/70 hover:border-line/80 " +
@@ -243,9 +243,12 @@ export function Button({
   className,
   title,
   ariaLabel,
+  type = "button",
 }: {
   onClick?: () => void;
   children: ReactNode;
+  /** "submit" dipakai form yang dikirim ke server action. */
+  type?: "button" | "submit";
   variant?: "default" | "primary" | "brand" | "ghost" | "danger";
   size?: "sm" | "md";
   disabled?: boolean;
@@ -265,7 +268,7 @@ export function Button({
   };
   return (
     <button
-      type="button"
+      type={type}
       title={title}
       aria-label={ariaLabel}
       onClick={onClick}

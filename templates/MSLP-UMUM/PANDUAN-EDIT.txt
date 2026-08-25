@@ -1,0 +1,306 @@
+===============================================================================
+  PANDUAN EDIT - LOGIN PAGE HOTSPOT MIKROTIK
+  MIKROSETTING  /  TEMA UMUM
+===============================================================================
+
+  Semua tampilan diatur oleh SATU file saja: login.html
+  Halaman ini punya DUA tab:
+     VOUCHER  -> pengguna hanya isi kode voucher (username = password)
+     MEMBER   -> pengguna isi username dan password sendiri
+
+  CIRI TEMA INI
+  -------------
+  1. Tampilan TERANG dan bersih, cocok untuk brand apa pun.
+  2. Seluruh nuansa warna ditentukan oleh SATU baris saja: --acc
+     Ganti satu warna itu, seluruh halaman ikut berubah.
+  3. Tidak butuh file gambar. Latar dan emblem dibuat dari kode.
+  4. Muat satu layar di HP, tanpa scroll.
+
+  PENTING SEBELUM MULAI
+  ---------------------
+  1. Simpan dengan encoding UTF-8.
+  2. Backup dulu: copy login.html jadi login-BACKUP.html
+  3. Cek hasilnya lewat preview.html, JANGAN buka login.html langsung.
+  4. Setelah upload, hapus cache browser di HP.
+
+===============================================================================
+  1. ISI FOLDER
+===============================================================================
+
+  login.html      <-- SATU-SATUNYA file yang perlu diedit
+  preview.html    <-- HANYA UNTUK MENGETES DI KOMPUTER, JANGAN DIUPLOAD
+  md5.js          <-- WAJIB ADA, jangan dihapus (untuk login CHAP)
+  favicon.ico     <-- ikon kecil di tab browser
+  img/            <-- FOLDER GAMBAR, isinya:
+                      logo.png  <-- OPSIONAL, logo usaha
+                      bg.jpg    <-- OPSIONAL, foto latar
+                      bg.mp4    <-- OPSIONAL, latar video
+  style.css       <-- dipakai halaman status/logout saja, BUKAN login
+  error.html      alogin.html   logout.html   status.html
+  redirect.html   rlogin.html   radvert.html
+  errors.txt      errors-en.txt
+  font/           <-- ikon untuk halaman status/logout
+
+  Alat pembuat kunci lisensi ada DI LUAR folder ini:
+    ..\_LISENSI-MIKROSETTING\generator-lisensi.html   (rahasia, lihat bagian 7)
+
+===============================================================================
+  2. GANTI WARNA   (paling gampang, satu baris)
+===============================================================================
+
+  Cari baris ini di bagian paling atas <style>:
+
+      --acc:#4b56d6;            /* WARNA UTAMA - ganti di sini saja */
+
+  Warna itu dipakai untuk tombol Masuk, tab yang aktif, garis fokus,
+  emblem, dan harga. Ganti satu baris, seluruh halaman ikut berubah.
+
+  PILIHAN WARNA YANG SUDAH DICOBA
+    Indigo   #4b56d6   (bawaan, netral dan tenang)
+    Biru     #2563eb   (paling umum, terkesan terpercaya)
+    Toska    #0d9488   (segar, cocok untuk desa/wisata)
+    Hijau    #16a34a   (ramah, cocok untuk warung)
+    Ungu     #7c3aed   (modern)
+    Jingga   #ea580c   (hangat dan mencolok)
+    Merah    #dc2626   (tegas)
+
+  KALAU GANTI --acc, GANTI JUGA DUA BARIS DI BAWAHNYA
+      --acc-lembut:rgba(75,86,214,.10);
+      --acc-tepi:rgba(75,86,214,.28);
+  Angka 75,86,214 adalah bentuk RGB dari #4b56d6. Kalau tidak diganti,
+  bayangan fokus pada kolom isian warnanya jadi tidak serasi.
+
+    Contoh untuk biru #2563eb  ->  rgba(37,99,235,.10) dan rgba(37,99,235,.28)
+    Cari nilai RGB warna Anda di google, ketik: "hex to rgb"
+
+  Ada satu lagi di baris  --bayang-aksen  dan pada  .btn:active
+  yang memakai rgba(75,86,214,...). Ganti kalau ingin benar-benar seragam.
+
+===============================================================================
+  3. GANTI LOGO DAN NAMA
+===============================================================================
+
+  PAKAI GAMBAR
+    Taruh  logo.png  di dalam folder  img/
+    Emblem wifi bawaan otomatis hilang, diganti logo Anda.
+    Tulisan nama di bawahnya TETAP TAMPIL.
+
+    Ukuran disarankan : 500 x 500 px (kotak) atau 900 x 300 px (melebar)
+    Format            : PNG latar transparan
+    Besar file        : di bawah 80 KB (kecilkan lewat tinypng.com)
+
+    Ukuran di layar diatur baris ini:
+      .logo{...height:clamp(56px,10.5vh,120px)...}
+
+  GANTI TULISAN NAMA
+    <div class="wm">MIKRO<span class="b">SETTING</span></div>
+    <div class="wmsub">Internet Hotspot Voucher</div>
+
+      Tulisan di luar <span> = warna hitam
+      Tulisan di dalam <span class="b"> = warna aksen
+      wmsub = tulisan kecil berjarak di bawahnya
+
+    Contoh: <div class="wm">WIFI<span class="b">KITA</span></div>
+
+    Nama sebaiknya maksimal 14 huruf, tulisan kecil maksimal 26 huruf.
+
+  JANGAN LUPA DUA TEMPAT LAIN
+    <title id="title">MIKROSETTING - Login Hotspot</title>
+    <div class="footMini">&copy; 2026 <b>MIKROSETTING</b> ...
+
+    Cara cepat: Ctrl+H di Notepad++, Find MIKROSETTING, Replace All.
+
+===============================================================================
+  4. GANTI PAKET
+===============================================================================
+
+  Cari penanda:  PAKET  -  BAGIAN YANG BOLEH DIEDIT
+
+  Satu kartu bentuknya seperti ini:
+
+    <a class="pk" style="--pc:#4b56d6" href="https://wa.me/62...?text=...">
+      <span class="dur">1 Bulan</span>                   <-- nama paket
+      <span class="price angka"><i>Rp</i>70.000</span>    <-- harga
+      <span class="meta">30 hari</span>                  <-- keterangan
+      <span class="buy">Pesan</span>                     <-- hanya di laptop
+    </a>
+
+      --pc  = warna garis tipis di kepala kartu DAN warna harga
+      angka = membuat angka sejajar rapi, jangan dihapus
+
+  ATURAN EMAS: ubah hanya tulisan DI ANTARA tanda  >  dan  <
+
+  WARNA BAWAAN TIAP KARTU
+    Disusun sebagai satu deret serasi, bukan warna-warni acak:
+
+      1 Bulan    #4b56d6   indigo
+      2 Minggu   #5a7fd4   biru
+      1 Minggu   #4f97c4   biru muda
+      1 Hari     #5aa8a0   toska
+      6 Jam      #7fa86a   hijau sage
+
+    Kalau ingin semua kartu berwarna sama, isi semuanya dengan --acc Anda.
+
+  JAGA TULISANNYA PENDEK
+    Di HP lebar satu kartu hanya sekitar 67 piksel. Harga maksimal 6 angka,
+    nama paket maksimal 9 huruf. Harga jutaan tulis singkat: <i>Rp</i>1,2jt
+
+  MENAMBAH ATAU MENGURANGI KARTU - BUTUH 2 LANGKAH
+
+    Langkah 1: salin atau hapus satu blok <a class="pk"> ... </a> UTUH,
+               masih di dalam <div class="paket"> ... </div>
+
+    Langkah 2: cari baris ini, ganti angkanya sesuai jumlah kartu:
+               .paket{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+
+               PENTING: tulis  minmax(0,1fr)  bukan  1fr  saja.
+               Kalau ditulis 1fr, kolom menolak menyusut dan seluruh
+               halaman melebar melewati layar HP.
+
+    3-4 kartu paling lega, 5 bawaan, 6 masih terbaca, 7 ke atas jangan.
+
+===============================================================================
+  5. GANTI TULISAN LAIN
+===============================================================================
+
+  Judul kotak (VOUCHER)  <h1 class="m-voucher">Masukkan kode voucher</h1>
+  Judul kotak (MEMBER)   <h1 class="m-member">Masuk sebagai member</h1>
+  Nama tab               Voucher  dan  Member
+  Tulisan di kolom       data-ph-voucher="Kode voucher"
+                         data-ph-member="Username"
+                         placeholder="Password"
+  Tombol                 <button class="btn" type="submit">Masuk
+  Di bawah tombol        Koneksi aman dan terenkripsi
+  Tombol WhatsApp        <span class="lbl">Butuh bantuan</span>
+  Judul daftar paket     <h2>Pilihan paket</h2>
+  Kotak promo            hanya di layar lebar, cari class="promo"
+  Strip keunggulan       hanya di layar lebar, cari class="stats"
+
+  NOMOR WHATSAPP muncul di 7 tempat. Ctrl+H di Notepad++:
+    Find 6281112001036   Replace 62xxxxxxxxxxx   (awali 62, tanpa 0)
+    Find 0811-1200-1036  Replace 08xx-xxxx-xxxx
+
+===============================================================================
+  6. LATAR BELAKANG
+===============================================================================
+
+  Bawaan: gradasi lembut biru-ungu-merah muda dengan lingkaran tipis di
+  sudut. Dibuat dari kode, tidak butuh file, dan DIAM tanpa animasi.
+
+  PAKAI FOTO
+    Taruh  bg.jpg  di folder  img/
+    Ukuran 1080 x 1920 px, di bawah 150 KB.
+    Hiasan lingkaran bawaan otomatis dimatikan.
+
+    Karena tema ini TERANG, foto diberi kabut PUTIH supaya tulisan tetap
+    terbaca. Cari baris  .hasbg .bg{  lalu setel tiga angkanya
+    (sekarang .72 / .60 / .82). Kecilkan kalau foto terlalu pudar.
+
+  PAKAI VIDEO (opsional, bawaannya MATI)
+    Taruh img/bg.mp4, lalu ubah  var PAKAI_VIDEO = false;  jadi  true
+    Ukuran 720x1280, 8-12 detik, MP4/H.264, TANPA SUARA, di bawah 1 MB.
+    Video diunduh pelanggan SEBELUM mereka punya internet - pakai hanya
+    untuk hotspot indoor bersinyal kuat.
+
+===============================================================================
+  7. LISENSI   (khusus MIKROSETTING, jangan dijelaskan ke pembeli)
+===============================================================================
+
+  Halaman hanya tampil kalau kunci lisensinya cocok dengan router tempat
+  dia dipasang. Kunci berlaku selamanya, satu kunci untuk satu router.
+
+  Tema ini memakai LIS_SALT yang SAMA dengan tema lain, jadi satu kunci
+  berlaku untuk semua tema di router yang sama.
+
+  JANGAN SAMPAI TERTUKAR
+    var LIS_KEY   = KUNCI dari generator, bentuknya 4-4-4
+    var LIS_SALT  = RESEP RAHASIA, harus sama persis dengan generator
+    var LIS_MODE  = "kunci" blokir, "ingat" tetap boleh login
+
+  ALUR: pembeli buka halaman, muncul ID Router, kirim ke Anda, Anda buatkan
+  kunci lewat generator, pembeli tempel di LIS_KEY, upload ulang.
+
+  MENGUJI DI KOMPUTER: buka preview.html, otomatis MODE UJI, tidak dikunci.
+
+===============================================================================
+  8. UPLOAD KE MIKROTIK
+===============================================================================
+
+  1. Winbox > Files > seret FOLDER template ke jendela Files
+     (sertakan img/ dan font/, JANGAN sertakan preview.html)
+  2. IP > Hotspot > Server Profiles > klik profile Anda
+  3. Isi HTML Directory dengan nama folder tadi > Apply > OK
+  4. Tab Login: centang HTTP CHAP dan HTTP PAP
+  5. Tes di HP, atau buka http://192.168.88.1/login
+
+  AGAR TOMBOL WHATSAPP BISA DIKLIK SEBELUM LOGIN
+      /ip hotspot walled-garden
+      add dst-host=wa.me
+      add dst-host=*.wa.me
+      add dst-host=*.whatsapp.com
+      add dst-host=*.whatsapp.net
+      add dst-host=*.cdn.whatsapp.net
+
+===============================================================================
+  9. JANGAN DIUBAH
+===============================================================================
+
+  Kode MikroTik: link-login-only, link-orig, username, chap-id,
+  chap-challenge, error, if..., endif, identity, server-address.
+  Jumlah pembuka "if" harus sama dengan penutup "endif", yaitu 2 dan 2.
+
+  JANGAN HAPUS:
+    - fungsi vSync() dan vSubmit() di bagian <head>
+    - onSubmit="return vSubmit()" pada tag form
+    - blok PEMERIKSA LISENSI dan <div id="lisBlok">
+    - fungsi fitOneScreen()
+    - satuan svh pada min-height:100svh di blok .app
+    - kata minmax(0,1fr) pada baris .paket
+
+  Jangan mengubah nama file login.html dan md5.js, kata di dalam class="",
+  id="card" id="tabV" id="tabM" id="fUser" id="fPass" id="inUser" id="inPass"
+  id="lisBlok" id="lisId" id="lisWa" id="bgvid", serta name="username"
+  dan name="password".
+
+===============================================================================
+  10. TIGA TINGKAT UKURAN LAYAR
+===============================================================================
+
+  HP     : di bawah 600px   -> ukuran ikut layar
+  Tablet : 600px - 1023px   -> @media (min-width:600px), lebar isi maks 600px
+  Laptop : 1024px ke atas   -> @media (min-width:1024px), lebar isi maks 660px
+
+  Mulai tablet muncul juga: strip keunggulan, kotak promo, tombol Pesan
+  di tiap kartu, dan kaki halaman lengkap.
+
+  Penjaga fitOneScreen() berlaku di semua ukuran: kalau isinya kelebihan,
+  halaman dikecilkan sendiri maksimal 22%.
+
+  MENGETES: buka preview.html di Chrome, F12, Ctrl+Shift+M,
+  ketik lebar 360 (HP), 768 (tablet), 1280 (laptop).
+
+===============================================================================
+  11. KALAU ADA MASALAH
+===============================================================================
+
+  Halaman melebar, ada bagian terpotong di kanan
+    Kata minmax(0,1fr) pada baris .paket terhapus atau diubah jadi 1fr saja.
+
+  Kartu menumpuk ke bawah
+    Angka repeat(...) tidak sama dengan jumlah kartu. Lihat bagian 4.
+
+  Warna fokus kolom isian tidak serasi
+    --acc sudah diganti tapi --acc-lembut dan --acc-tepi belum. Lihat bagian 2.
+
+  Voucher ditolak padahal kodenya benar
+    HTTP CHAP / PAP belum dicentang, atau md5.js tidak ikut terupload,
+    atau fungsi vSync/vSubmit terhapus.
+
+  Selalu muncul layar lisensi
+    LIS_KEY kosong atau bukan bentuk 4-4-4, atau LIS_SALT beda dengan
+    generator, atau ID Router tidak sama persis (huruf besar-kecil).
+
+  Perubahan tidak kelihatan di HP
+    Cache browser. Hapus cache, atau matikan wifi lalu sambungkan ulang.
+
+===============================================================================

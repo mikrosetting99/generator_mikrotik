@@ -131,12 +131,85 @@ dan menampilkan status di akhir.
 
 ---
 
+## Environment variable
+
+Bagian publik aplikasi — `/setup` dan generator script lainnya — tidak butuh
+apa pun dan tetap jalan walau berkas ini kosong. Yang membutuhkannya hanya
+`/lisensi`, tempat menerbitkan lisensi login page hotspot.
+
+Salin `.env.example` jadi `.env.local` di folder aplikasi, lalu isi:
+
+```bash
+cp .env.example .env.local
+nano .env.local
+```
+
+| Variabel | Untuk apa |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Login penerbit dan riwayat pesanan |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sama |
+| `MSLP_LICENSE_SALT` | Resep rahasia pembuat kunci lisensi |
+| `MSLP_LICENSOR_WA` | Nomor WhatsApp tujuan permintaan lisensi |
+| `MSLP_ARSIP_DIR` | Opsional. Folder arsip hasil cetak; bawaannya `data/hasil` |
+
+**`MSLP_LICENSE_SALT` harus sama persis** dengan `LIS_SALT` di dalam
+`login.html` yang sudah beredar di router pembeli. Kalau nilainya berubah,
+semua kunci yang pernah diterbitkan langsung mati dan tidak bisa ditarik
+kembali. Variabel ini hanya dibaca di sisi server dan tidak pernah ikut ke
+browser — jangan pernah diberi awalan `NEXT_PUBLIC_`.
+
+Setelah mengubah `.env.local`, muat ulang PM2 agar terbaca:
+
+```bash
+pm2 reload ecosystem.config.js --update-env
+```
+
+---
+
 ## Catatan
 
-- **Tidak ada environment variable** yang perlu diisi. Aplikasi tidak memakai
-  database, API key, maupun layanan eksternal — semua generate script berjalan
-  di browser pengunjung.
 - **Firewall**: port 3001 tidak perlu dibuka ke publik. Cukup 80/443 untuk Nginx.
-- Aplikasi ini sebenarnya bisa juga di-*static export* (`output: "export"`) dan
-  dilayani Nginx tanpa Node sama sekali, karena tidak ada API route maupun server
-  action. Opsi itu lebih hemat resource bila suatu saat ingin dipindahkan.
+- **HTTPS wajib.** Halaman `/lisensi` mengirim email dan password lewat form
+  biasa; tanpa TLS keduanya lewat sebagai teks polos.
+- **Static export sudah tidak bisa lagi.** Dulu aplikasi ini murni berjalan di
+  browser sehingga `output: "export"` masih mungkin. Sejak ada `/lisensi`,
+  aplikasi memakai middleware, server action, dan route handler yang membaca
+  folder `templates/` dari disk — semuanya menuntut proses Node yang hidup.
+- `templates/` harus ikut ter-*deploy*. Route unduh membacanya saat diminta,
+  bukan saat build, jadi folder itu harus ada di samping aplikasi di server.
+
+---
+
+## Dua folder yang diurus lewat File Manager aaPanel
+
+**`templates/` — sumber login page.** Dibaca setiap kali ada permintaan cetak,
+bukan saat build. Jadi menyunting `templates/MSLP-NARUTO/login.html` langsung
+dari File Manager aaPanel akan langsung terpakai pada cetakan berikutnya —
+tanpa `npm run build`, tanpa `pm2 reload`. Mengganti `img/bg.jpg` sebuah tema
+juga cukup ditimpa di situ.
+
+Menambah tema yang benar-benar baru tetap perlu satu entri di
+`lib/license/templates.ts`, karena tiap tema punya slot warna dan ciri sendiri
+(punya pita tingkatan atau tidak, punya latar bawaan atau tidak).
+
+**`data/hasil/` — arsip hasil cetak.** Setiap kali tombol unduh ditekan,
+salinan zip-nya ditulis di sini dengan nama `0007-Nama-Usaha-MSLP-NARUTO.zip`.
+Satu pesanan satu berkas, ditimpa tiap unduhan — arsip yang beranak setiap
+penekanan tombol akan memenuhi disk, dan yang lama tidak berguna karena
+isinya selalu bisa dicetak ulang dari data pesanan.
+
+Dua hal yang perlu diketahui:
+
+- Folder ini **tidak punya alamat web**. Nginx aaPanel hanya meneruskan ke
+  Next.js (`location / { proxy_pass ... }`), tidak melayani berkas dari disk.
+  Jangan pernah memindahkannya ke dalam `public/`: isinya halaman berlisensi
+  lengkap dengan kuncinya, dan di `public/` siapa pun yang menebak namanya
+  bisa mengunduhnya.
+- Isinya **tidak ikut git** dan tidak ikut backup kode. Kalau arsipnya
+  dianggap penting, masukkan foldernya ke jadwal backup aaPanel. Kehilangannya
+  tidak fatal — pesanannya ada di Supabase dan bisa dicetak ulang kapan saja.
+
+Kalau disk aplikasi sempit, arahkan ke tempat lain lewat `MSLP_ARSIP_DIR`,
+misalnya `/www/backup/lisensi`. Pastikan pengguna yang menjalankan PM2 punya
+izin tulis ke situ; kalau gagal menulis, unduhan tetap berhasil dan
+kegagalannya hanya dicatat di `pm2 logs generator-mikrotik`.

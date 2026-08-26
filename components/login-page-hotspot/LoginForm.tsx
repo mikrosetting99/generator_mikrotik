@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { signIn } from "@/lib/actions/auth";
 import { Button, cn, controlBase } from "@/components/ui";
 
@@ -40,6 +41,13 @@ export function LoginForm({ lanjut }: { lanjut?: string }) {
       <Button type="submit" variant="brand" disabled={pending}>
         {pending ? "Memeriksa…" : "Masuk"}
       </Button>
+
+      <p className="text-center text-xs text-muted">
+        Belum punya akun?{" "}
+        <Link href="/login-page-hotspot/daftar" className="font-medium text-brand hover:underline">
+          Daftar
+        </Link>
+      </p>
     </form>
   );
 }

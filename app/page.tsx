@@ -58,7 +58,7 @@ const MENUS = [
       "Kunci terikat ke identity router",
     ],
     ready: true,
-    /* Bagian penerbit, bukan alat umum seperti menu lainnya.
+    /* Bagian berbayar, bukan alat umum seperti menu lainnya.
        Ditandai supaya pengunjung tahu sebelum menekan dan mendarat di
        layar login — middleware yang menjaganya, bukan penandaan ini. */
     privat: true,

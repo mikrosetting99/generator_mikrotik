@@ -11,6 +11,9 @@ const RUTE_TERKUNCI = ["/login-page-hotspot", "/hotspot-login"];
 
 const RUTE_MASUK = "/login-page-hotspot/login";
 
+/** Halaman yang harus tetap terbuka walau belum ada sesi. */
+const RUTE_TERBUKA = [RUTE_MASUK, "/login-page-hotspot/daftar"];
+
 function terkunci(pathname: string): boolean {
   return RUTE_TERKUNCI.some(
     (awalan) => pathname === awalan || pathname.startsWith(`${awalan}/`),
@@ -52,9 +55,9 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isLoginRoute = pathname === RUTE_MASUK;
+  const isTerbuka = RUTE_TERBUKA.includes(pathname);
 
-  if (terkunci(pathname) && !isLoginRoute && !user) {
+  if (terkunci(pathname) && !isTerbuka && !user) {
     const url = request.nextUrl.clone();
     url.pathname = RUTE_MASUK;
     /* Tujuan semula dibawa serta supaya setelah masuk pengguna kembali ke
@@ -63,7 +66,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isLoginRoute && user) {
+  if (isTerbuka && user) {
     const url = request.nextUrl.clone();
     const lanjut = request.nextUrl.searchParams.get("lanjut");
     url.pathname = tujuanAman(lanjut);

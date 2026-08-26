@@ -180,6 +180,14 @@ export const Lock = (p: IconProps) => (
   </Icon>
 );
 
+export const Coin = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M14.5 9.5a3 3 0 0 0-2.5-1.2c-1.4 0-2.5.8-2.5 1.9 0 2.4 5 1.3 5 3.7 0 1.1-1.1 1.9-2.5 1.9a3 3 0 0 1-2.5-1.2" />
+    <path d="M12 7v10" />
+  </Icon>
+);
+
 export const Shield = (p: IconProps) => (
   <Icon {...p}>
     <path d="M12 3 5 6v5.5c0 4.2 2.9 7.6 7 9.5 4.1-1.9 7-5.3 7-9.5V6l-7-3Z" />

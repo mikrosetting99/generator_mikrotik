@@ -3,6 +3,7 @@ import { ArrowLeft, Coin, Lock } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { signOut } from "@/lib/actions/auth";
 import { saldoKoin } from "@/lib/koin/saldo";
+import { apakahAdmin } from "@/lib/koin/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -16,13 +17,16 @@ export default async function LoginPageHotspotLayout({ children }: { children: R
      kalau memang ada sesi. Middleware yang mengurus pengalihannya. */
   let masuk = false;
   let saldo = 0;
+  let admin = false;
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     masuk = Boolean(user);
-    if (masuk) saldo = await saldoKoin();
+    if (masuk) {
+      [saldo, admin] = await Promise.all([saldoKoin(), apakahAdmin()]);
+    }
   }
 
   return (
@@ -43,6 +47,16 @@ export default async function LoginPageHotspotLayout({ children }: { children: R
           </span>
 
           <ThemeToggle />
+
+          {admin && (
+            <Link
+              href="/login-page-hotspot/admin"
+              title="Pengaturan harga & pelanggan"
+              className="rounded-lg px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:bg-raised hover:text-ink"
+            >
+              Pengaturan
+            </Link>
+          )}
 
           {masuk && (
             <Link

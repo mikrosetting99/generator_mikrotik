@@ -67,7 +67,7 @@ export default async function KoinPage({
             {saldo.toLocaleString("id-ID")}
           </span>
           <span className="text-sm text-muted">
-            cukup untuk {cukup.toLocaleString("id-ID")} pesanan &middot; {biaya} koin per pesanan
+            setara {rupiah(saldo)} &middot; cukup untuk {cukup.toLocaleString("id-ID")} pesanan
           </span>
         </div>
       </div>
@@ -116,7 +116,8 @@ export default async function KoinPage({
       {/* --- topup --- */}
       <h2 className="mt-8 text-sm font-semibold text-ink">Tambah koin</h2>
       <p className="mt-1 text-sm text-muted">
-        Pembayaran lewat Duitku: QRIS, virtual account, dan e-wallet.
+        1 koin = Rp 1. Satu pesanan login page {biaya.toLocaleString("id-ID")} koin (
+        {rupiah(biaya)}). Pembayaran lewat Duitku: QRIS, virtual account, dan e-wallet.
       </p>
       <div className="mt-4">
         <TopupPanel paket={paket} />

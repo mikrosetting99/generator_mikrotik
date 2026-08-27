@@ -45,7 +45,7 @@ export function TopupPanel({ paket }: { paket: PaketKoin[] }) {
 
   return (
     <div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {paket.map((p) => (
           <div
             key={p.id}
@@ -55,10 +55,11 @@ export function TopupPanel({ paket }: { paket: PaketKoin[] }) {
               {p.nama}
             </span>
             <span className="mt-1 text-2xl font-bold tracking-tight text-ink">
-              {p.koin.toLocaleString("id-ID")}
-              <span className="ml-1 text-sm font-medium text-muted">koin</span>
+              {rupiah(p.rupiah)}
             </span>
-            <span className="mt-0.5 text-sm text-muted">{rupiah(p.rupiah)}</span>
+            <span className="mt-0.5 text-sm text-muted">
+              {p.koin.toLocaleString("id-ID")} koin
+            </span>
 
             <Button
               variant="brand"

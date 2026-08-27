@@ -31,15 +31,19 @@ function angka(nilai: FormDataEntryValue | null): number | null {
   return Number.isSafeInteger(n) ? n : null;
 }
 
-export async function simpanBiayaPesanan(formData: FormData) {
-  const biaya = angka(formData.get("biaya"));
-  if (biaya === null || biaya < 0) kembali("Biaya pesanan harus angka 0 atau lebih.");
+export async function simpanHargaFitur(formData: FormData) {
+  const kunci = String(formData.get("kunci") ?? "");
+  const harga = angka(formData.get("harga"));
+  const aktif = formData.get("aktif") !== null;
+
+  if (!kunci) kembali("Fitur tidak dikenal.");
+  if (harga === null || harga < 0) kembali("Harga harus angka 0 atau lebih.");
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("pengaturan")
-    .update({ nilai: String(biaya) })
-    .eq("kunci", "biaya_pesanan");
+    .from("fitur")
+    .update({ harga, aktif })
+    .eq("kunci", kunci);
 
   if (error) kembali(error.message);
   kembali();

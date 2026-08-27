@@ -5,14 +5,15 @@ import { cn, controlBase } from "@/lib/kelas";
 import {
   hapusPaket,
   sesuaikanKoin,
-  simpanBiayaPesanan,
+  simpanHargaFitur,
   simpanPaket,
   tambahPaket,
   ubahAktifAkun,
   ubahAktifPaket,
 } from "@/lib/actions/admin";
 import { apakahAdmin, daftarPelanggan, semuaPaket } from "@/lib/koin/admin";
-import { biayaPesanan, rupiah, waktuSingkat } from "@/lib/koin/saldo";
+import { rupiah, waktuSingkat } from "@/lib/koin/saldo";
+import { semuaFitur } from "@/lib/koin/fitur";
 
 export const metadata = {
   title: "Pengaturan — Login Page Hotspot",
@@ -48,9 +49,9 @@ export default async function AdminPage({
     );
   }
 
-  const [paket, biaya, pelanggan] = await Promise.all([
+  const [paket, fitur, pelanggan] = await Promise.all([
     semuaPaket(),
-    biayaPesanan(),
+    semuaFitur(),
     daftarPelanggan(),
   ]);
 
@@ -80,28 +81,62 @@ export default async function AdminPage({
         </div>
       )}
 
-      {/* ---------------------------------------------------- biaya pesanan */}
+      {/* ------------------------------------------------------ harga fitur */}
       <section className="mt-8">
-        <h2 className="text-sm font-semibold text-ink">Biaya satu pesanan</h2>
+        <h2 className="text-sm font-semibold text-ink">Harga fitur</h2>
         <p className="mt-1 text-sm text-muted">
-          Koin yang dipotong setiap pelanggan menyimpan pesanan login page. Admin tidak dipotong.
+          Koin yang dipotong tiap kali pelanggan memakai fitur itu. Isi <b className="text-ink">0</b>{" "}
+          untuk menggratiskannya — fitur gratis tidak memerlukan akun sama sekali. Admin tidak
+          pernah dipotong.
         </p>
 
-        <form action={simpanBiayaPesanan} className="mt-3 flex flex-wrap items-end gap-3">
-          <label className="grid gap-1.5">
-            <span className="text-xs font-medium text-muted">Koin</span>
-            <input
-              name="biaya"
-              defaultValue={biaya}
-              inputMode="numeric"
-              className={cn(kolom, "w-40 font-mono")}
-            />
-          </label>
-          <span className="pb-2.5 text-sm text-muted">= {rupiah(biaya)}</span>
-          <Button type="submit" variant="brand" className="mb-0.5">
-            Simpan
-          </Button>
-        </form>
+        <div className="mt-3 grid gap-2">
+          {fitur.map((f) => (
+            <form
+              key={f.kunci}
+              action={simpanHargaFitur}
+              className={cn(
+                "flex flex-wrap items-end gap-3 rounded-xl border bg-surface px-4 py-3",
+                f.aktif ? "border-line" : "border-dashed border-line/70 opacity-60",
+              )}
+            >
+              <input type="hidden" name="kunci" value={f.kunci} />
+
+              <div className="min-w-[13rem] flex-1">
+                <div className="text-sm font-medium text-ink">{f.nama}</div>
+                <div className="text-xs text-faint">{f.keterangan}</div>
+              </div>
+
+              <label className="grid gap-1.5">
+                <span className="text-xs font-medium text-muted">Koin</span>
+                <input
+                  name="harga"
+                  defaultValue={f.harga}
+                  inputMode="numeric"
+                  className={cn(kolom, "w-32 font-mono")}
+                />
+              </label>
+
+              <span className="pb-2.5 text-sm text-muted">
+                {f.harga === 0 ? "gratis" : `= ${rupiah(f.harga)}`}
+              </span>
+
+              <label className="mb-2 flex items-center gap-2 text-sm text-muted">
+                <input
+                  type="checkbox"
+                  name="aktif"
+                  defaultChecked={f.aktif}
+                  className="h-4 w-4 accent-[color:var(--color-brand)]"
+                />
+                Tersedia
+              </label>
+
+              <Button type="submit" variant="brand" size="sm" className="mb-0.5">
+                Simpan
+              </Button>
+            </form>
+          ))}
+        </div>
       </section>
 
       {/* ----------------------------------------------------- paket topup */}

@@ -49,7 +49,13 @@ function slug(value: string): string {
   );
 }
 
-export function LoadBalanceBuilder() {
+export function LoadBalanceBuilder({
+  hargaPcc = 0,
+  hargaFailover = 0,
+}: {
+  hargaPcc?: number;
+  hargaFailover?: number;
+}) {
   const [config, setConfig] = useState<LoadBalanceConfig>(createDefaultLoadBalanceConfig);
   const [activeId, setActiveId] = useState<LbSectionId>("ros");
   const railRef = useRef<HTMLUListElement>(null);
@@ -101,6 +107,13 @@ export function LoadBalanceBuilder() {
   const currentIssues = issues.filter((i) => i.section === current.id);
   const canAdvance = !(step === 0 && locked);
   const filename = `loadbalance-${slug(config.lanIface || "mikrotik")}.rsc`;
+
+  /* Satu builder menghasilkan dua produk. Yang menagih adalah yang benar-benar
+     dinyalakan; kalau keduanya, PCC yang dipakai karena scriptnya memuat
+     failover sekalian — menagih dua kali untuk satu berkas tidak jujur. */
+  const fitur = config.pccEnabled
+    ? { kunci: "loadbalance", nama: "Load Balance PCC", harga: hargaPcc }
+    : { kunci: "failover", nama: "Fail Over", harga: hargaFailover };
 
   return (
     <main className="min-h-screen">
@@ -263,7 +276,15 @@ export function LoadBalanceBuilder() {
         </div>
 
         <div id="preview" className="min-w-0 scroll-mt-24">
-          <ScriptPreview script={script} issues={issues} onJump={jumpToSection} filename={filename} />
+          <ScriptPreview
+            script={script}
+            issues={issues}
+            onJump={jumpToSection}
+            filename={filename}
+            kunci={fitur.kunci}
+            nama={fitur.nama}
+            harga={fitur.harga}
+          />
         </div>
       </div>
     </main>

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, Cpu, Lock, Route, Shield, Split, Terminal } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { petaHarga } from "@/lib/koin/fitur";
 
 const MENUS = [
   {
     href: "/setup",
+    fitur: "setup",
     step: "01",
     icon: Cpu,
     title: "Setup Mikrotik Baru",
@@ -19,6 +21,7 @@ const MENUS = [
   },
   {
     href: "/loadbalance",
+    fitur: "loadbalance",
     step: "02",
     icon: Split,
     title: "Load Balance PCC",
@@ -33,6 +36,7 @@ const MENUS = [
   },
   {
     href: "/loadbalance",
+    fitur: "failover",
     step: "03",
     icon: Route,
     title: "Fail Over",
@@ -47,6 +51,7 @@ const MENUS = [
   },
   {
     href: "/login-page-hotspot",
+    fitur: "login-page",
     step: "04",
     icon: Lock,
     title: "Login Page Hotspot",
@@ -77,7 +82,12 @@ const SAMPLE = [
   { text: "    in-interface-list=WAN", kind: "cmd" },
 ];
 
-export default function Home() {
+/* Harga bisa diubah admin kapan saja; halaman depan tidak boleh menyebut
+   tarif yang sudah basi. */
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const harga = await petaHarga();
   return (
     <main className="relative min-h-screen overflow-hidden">
       {/* Cahaya ambien di belakang hero */}
@@ -194,7 +204,7 @@ export default function Home() {
                     : "opacity-55"
                 }`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span
                     className={`grid h-10 w-10 place-items-center rounded-xl border transition-colors duration-300 ${
                       menu.ready
@@ -215,6 +225,12 @@ export default function Home() {
                   ) : (
                     <span className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-faint">
                       segera
+                    </span>
+                  )}
+
+                  {harga[menu.fitur] > 0 && (
+                    <span className="rounded-full border border-brand/30 bg-brand/[0.08] px-2.5 py-0.5 text-[10px] font-medium text-brand">
+                      {harga[menu.fitur].toLocaleString("id-ID")} koin
                     </span>
                   )}
                 </div>

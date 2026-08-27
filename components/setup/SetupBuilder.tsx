@@ -117,7 +117,7 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
   }
 }
 
-export function SetupBuilder() {
+export function SetupBuilder({ harga = 0 }: { harga?: number }) {
   const [config, setConfig] = useState<SetupConfig>(createDefaultConfig);
   // Langkah dilacak lewat id, bukan indeks: daftar langkahnya berubah panjang
   // saat hotspot ditambah atau dihapus, dan indeks akan meleset karenanya.
@@ -404,7 +404,13 @@ export function SetupBuilder() {
 
         {/* Preview script */}
         <div id="preview" className="min-w-0 scroll-mt-24">
-          <ScriptPreview script={script} config={config} issues={issues} onJump={jumpToSection} />
+          <ScriptPreview
+            script={script}
+            config={config}
+            issues={issues}
+            onJump={jumpToSection}
+            harga={harga}
+          />
         </div>
       </div>
 

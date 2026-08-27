@@ -10,6 +10,7 @@ import {
   Terminal,
 } from "@/components/icons";
 import { Button, Note } from "@/components/ui";
+import { GerbangFitur } from "@/components/GerbangFitur";
 import type { Issue, SetupConfig } from "@/lib/types";
 
 function download(blob: Blob, filename: string) {
@@ -83,11 +84,14 @@ export function ScriptPreview({
   config,
   issues,
   onJump,
+  harga = 0,
 }: {
   script: string;
   config: SetupConfig;
   issues: Issue[];
   onJump: (section: Issue["section"]) => void;
+  /** Koin untuk membuka salin & unduh. 0 = gratis. */
+  harga?: number;
 }) {
   const [copied, setCopied] = useState(false);
   const errors = issues.filter((i) => i.level === "error");
@@ -150,27 +154,35 @@ export function ScriptPreview({
           <span>RouterOS {config.ros || "—"}</span>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-t border-line-soft bg-canvas/40 px-4 py-3.5">
-          <Button
-            variant="primary"
-            onClick={copy}
-            disabled={blocked}
-            title={blocked ? "Perbaiki error terlebih dahulu" : "Salin seluruh script"}
-            className="flex-1"
+        <div className="border-t border-line-soft bg-canvas/40 px-4 py-3.5">
+          <GerbangFitur
+            kunci="setup"
+            harga={harga}
+            keterangan={`Setup ${config.system.identity || config.modelId || "Mikrotik"}`}
           >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Tersalin" : "Copy to Clipboard"}
-          </Button>
-          <Button
-            onClick={() =>
-              download(new Blob([script], { type: "text/plain;charset=utf-8" }), filename)
-            }
-            disabled={blocked}
-            title="Unduh sebagai file .rsc"
-          >
-            <Download className="h-4 w-4" />
-            .rsc
-          </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="primary"
+                onClick={copy}
+                disabled={blocked}
+                title={blocked ? "Perbaiki error terlebih dahulu" : "Salin seluruh script"}
+                className="flex-1"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Tersalin" : "Copy to Clipboard"}
+              </Button>
+              <Button
+                onClick={() =>
+                  download(new Blob([script], { type: "text/plain;charset=utf-8" }), filename)
+                }
+                disabled={blocked}
+                title="Unduh sebagai file .rsc"
+              >
+                <Download className="h-4 w-4" />
+                .rsc
+              </Button>
+            </div>
+          </GerbangFitur>
         </div>
       </div>
 

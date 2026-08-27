@@ -75,10 +75,18 @@ export async function riwayatKoin(batas = 20): Promise<BarisKoin[]> {
   return (data ?? []) as BarisKoin[];
 }
 
-/** Biaya satu pesanan, dalam koin. Dibaca server, tidak pernah dari browser. */
-export function biayaPesanan(): number {
-  const nilai = Number(process.env.MSLP_BIAYA_PESANAN ?? "25");
-  return Number.isFinite(nilai) && nilai >= 0 ? Math.round(nilai) : 25;
+/**
+ * Biaya satu pesanan, dalam koin.
+ *
+ * Dibaca dari tabel pengaturan — sumber yang sama dengan yang dipakai fungsi
+ * pemotongan di database. Kalau angka yang ditampilkan di layar berasal dari
+ * tempat lain (environment, misalnya), cepat atau lambat keduanya berbeda dan
+ * pelanggan melihat harga yang bukan harga sebenarnya.
+ */
+export async function biayaPesanan(): Promise<number> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("biaya_pesanan");
+  return typeof data === "number" ? data : 25;
 }
 
 export function rupiah(nilai: number): string {

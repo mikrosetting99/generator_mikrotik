@@ -37,14 +37,13 @@ export default async function KoinPage({
 }) {
   const { topup: kembaliDari } = await searchParams;
 
-  const [saldo, paket, topups, riwayat] = await Promise.all([
+  const [saldo, paket, topups, riwayat, biaya] = await Promise.all([
     saldoKoin(),
     paketKoin(),
     riwayatTopup(),
     riwayatKoin(),
+    biayaPesanan(),
   ]);
-
-  const biaya = biayaPesanan();
   const cukup = biaya > 0 ? Math.floor(saldo / biaya) : 0;
   const baru = kembaliDari ? topups.find((t) => t.merchant_order_id === kembaliDari) : undefined;
 

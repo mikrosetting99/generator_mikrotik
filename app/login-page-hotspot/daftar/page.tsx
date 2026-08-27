@@ -6,13 +6,15 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function DaftarPage() {
+export default async function DaftarPage() {
+  const biaya = await biayaPesanan();
+
   return (
     <div className="mx-auto max-w-sm py-10">
       <h1 className="text-lg font-semibold text-ink">Buat akun</h1>
       <p className="mt-1 text-sm text-muted">
         Setelah mendaftar, isi saldo koin lalu buat login page hotspot sendiri. Satu pesanan{" "}
-        {biayaPesanan()} koin.
+        {biaya} koin.
       </p>
       <div className="mt-6">
         <DaftarForm />

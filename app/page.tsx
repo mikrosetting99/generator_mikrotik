@@ -50,9 +50,24 @@ const MENUS = [
     ready: true,
   },
   {
+    href: "/cek",
+    fitur: "cek",
+    step: "04",
+    icon: Shield,
+    title: "Cek Mikrotik",
+    description:
+      "Pemeriksaan router yang sedang bermasalah: internet, IP, DHCP & looping, hotspot, PPPoE, firewall, dan resource — lengkap dengan rekomendasi perbaikannya.",
+    points: [
+      "Script pemeriksa hanya membaca, tidak mengubah",
+      "Jalan lewat Winbox, WebFig, atau SSH",
+      "Hasil beserta alasan dan perintah perbaikan",
+    ],
+    ready: true,
+  },
+  {
     href: "/login-page-hotspot",
     fitur: "login-page",
-    step: "04",
+    step: "05",
     icon: Lock,
     title: "Login Page Hotspot",
     description:

@@ -85,11 +85,6 @@ class Penyusun {
   }
 }
 
-/** Nilai aman untuk ditulis di dalam string RouterOS. */
-function q(nilai: string): string {
-  return `"${nilai.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\$/g, "\\$")}"`;
-}
-
 /**
  * Satu baris laporan.
  *

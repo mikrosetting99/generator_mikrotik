@@ -3,8 +3,10 @@
  *
  * Dua hal yang menentukan bentuknya:
  *
- * 1. Script ini HANYA MEMBACA. Tidak ada satu pun `add`, `set`, `remove`, atau
- *    `enable/disable` di dalamnya. Teknisi menempelkannya di router pelanggan
+ * 1. Script ini tidak mengubah konfigurasi apa pun: tidak ada `add`, `set`,
+ *    `enable`, maupun `disable`. Satu-satunya penghapusan adalah berkas hasil
+ *    pemeriksaan sebelumnya, milik script ini sendiri.
+ *    Teknisi menempelkannya di router pelanggan
  *    yang sedang bermasalah — apa pun yang diubah di keadaan itu membuat
  *    penyebab aslinya makin sulit ditemukan, dan kesalahan kecil bisa memutus
  *    jaringan yang masih setengah jalan.
@@ -21,6 +23,9 @@
  */
 
 export const VERSI_LAPORAN = 1;
+
+/** Nama berkas hasil di menu Files router. */
+export const NAMA_BERKAS = "cek-mikrotik";
 
 export type Bagian =
   | "sistem"
@@ -39,6 +44,12 @@ export interface OpsiCek {
   target: string[];
   /** Banyak paket ping per target. Makin besar makin lama script berjalan. */
   jumlahPing: number;
+  /**
+   * "berkas" menulis hasilnya ke file di router, "layar" mencetaknya di
+   * terminal. Berkas jauh lebih nyaman: memblok ratusan baris di terminal
+   * Winbox sulit dan mudah terpotong.
+   */
+  keluaran: "berkas" | "layar";
 }
 
 export const BAGIAN_LABEL: Record<Bagian, string> = {
@@ -56,6 +67,7 @@ export const OPSI_BAWAAN: OpsiCek = {
   wan: [],
   target: ["8.8.8.8", "1.1.1.1"],
   jumlahPing: 4,
+  keluaran: "berkas",
 };
 
 /* ------------------------------------------------------------------ *
@@ -120,26 +132,6 @@ export function buatScriptCek(opsi: OpsiCek): string {
   const target = opsi.target.filter(Boolean);
   const jumlah = Math.max(1, Math.min(10, opsi.jumlahPing || 4));
 
-  s.komentar("#".repeat(64));
-  s.komentar("SCRIPT PEMERIKSA MIKROTIK");
-  s.komentar("Generator Script Mikrotik by Mikrosetting.com");
-  s.komentar("");
-  s.komentar("Script ini HANYA MEMBACA. Tidak ada perintah yang mengubah,");
-  s.komentar("menambah, atau menghapus apa pun di router.");
-  s.komentar("");
-  s.komentar("CARA PAKAI");
-  s.komentar("1. Buka Winbox/WebFig > New Terminal (atau SSH).");
-  s.komentar("2. Paste seluruh isi ini sekaligus, lalu Enter.");
-  s.komentar("3. Tunggu sampai muncul baris SELESAI di bawah.");
-  s.komentar("4. Blok seluruh keluarannya, salin, lalu tempel kembali");
-  s.komentar("   ke halaman Cek Mikrotik.");
-  if (bagian.has("internet")) {
-    const detik = jumlah * target.length * Math.max(1, opsi.wan.length || 1);
-    s.komentar("");
-    s.komentar(`Pemeriksaan internet memakai ping, jadi butuh sekitar ${detik} detik.`);
-  }
-  s.komentar("#".repeat(64));
-  s.kosong();
 
   s.kode(`:put "MSCEK|${VERSI_LAPORAN}"`);
   s.kode(':put ("WAKTU|" . [:tostr [/system clock get date]] . " " . [:tostr [/system clock get time]])');
@@ -290,7 +282,80 @@ export function buatScriptCek(opsi: OpsiCek): string {
   }
 
   s.kode(':put "SELESAI"');
-  return s.toString();
+
+  return opsi.keluaran === "berkas"
+    ? bungkusKeBerkas(s.toString(), opsi)
+    : kepala(opsi, "layar") + s.toString();
+}
+
+/* ------------------------------------------------------------------ *
+ * Kepala & pembungkus
+ * ------------------------------------------------------------------ */
+
+function kepala(opsi: OpsiCek, mode: "berkas" | "layar"): string {
+  const detik = perkiraanDetik(opsi);
+  const baris = [
+    "#".repeat(64),
+    "SCRIPT PEMERIKSA MIKROTIK",
+    "Generator Script Mikrotik by Mikrosetting.com",
+    "",
+    "Script ini TIDAK MENGUBAH KONFIGURASI router: tidak ada perintah",
+    "add, set, enable, atau disable di dalamnya.",
+    "",
+    "CARA PAKAI",
+    "1. Buka Winbox/WebFig > New Terminal (atau SSH).",
+    "2. Paste seluruh isi ini sekaligus, lalu Enter.",
+  ];
+
+  if (mode === "berkas") {
+    baris.push(
+      `3. Tunggu sekitar ${detik} detik. Hasilnya TIDAK tampil di layar.`,
+      `4. Buka menu Files, cari berkas ${NAMA_BERKAS}.txt`,
+      "5. Seret berkas itu ke komputer Anda, lalu unggah di halaman",
+      "   Cek Mikrotik. Tidak perlu menyalin teks dari terminal.",
+      "",
+      `Satu-satunya yang dihapus adalah ${NAMA_BERKAS}.txt milik pemeriksaan`,
+      "sebelumnya, supaya hasil lama tidak tertukar dengan yang baru.",
+    );
+  } else {
+    baris.push(
+      `3. Tunggu sekitar ${detik} detik, sampai muncul baris SELESAI.`,
+      "4. Blok seluruh keluarannya, salin, lalu tempel kembali",
+      "   ke halaman Cek Mikrotik.",
+    );
+  }
+
+  baris.push("#".repeat(64));
+  return `${baris.map((l) => (l ? `# ${l}` : "#")).join("\n")}\n\n`;
+}
+
+/**
+ * Membungkus seluruh pemeriksaan ke dalam :execute yang menulis ke berkas.
+ *
+ * Ini jawaban untuk kendala nyata di lapangan: memblok ratusan baris di
+ * terminal Winbox sulit, mudah terpotong, dan dilakukan sambil ditunggu
+ * pelanggan. Dengan berkas, teknisi cukup menyeretnya dari menu Files.
+ *
+ * :execute berjalan di latar belakang, jadi terminal langsung bebas dan
+ * berkasnya baru muncul setelah pemeriksaan selesai — termasuk setelah ping
+ * yang memakan waktu. Karena itu kepalanya menyebut lama tunggunya, bukan
+ * menyuruh menunggu baris SELESAI yang memang tidak akan tampil.
+ */
+function bungkusKeBerkas(badan: string, opsi: OpsiCek): string {
+  /* Komentar dan baris kosong dibuang di dalam :execute: isinya diurai
+     sebagai satu blok script, dan penjelasannya sudah ada di kepala — di
+     luar blok ini, tempat teknisi benar-benar membacanya. */
+  const isi = badan
+    .split("\n")
+    .filter((l) => l.trim() && !l.trim().startsWith("#"))
+    .map((l) => `  ${l}`)
+    .join("\n");
+
+  return (
+    `${kepala(opsi, "berkas")}` +
+    `/file remove [find name="${NAMA_BERKAS}.txt"]\n` +
+    `:execute file=${NAMA_BERKAS} script={\n${isi}\n}\n`
+  );
 }
 
 /** Perkiraan lama script berjalan, untuk diberitahukan sebelum ditempel. */

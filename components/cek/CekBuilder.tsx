@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   AlertTriangle,
@@ -10,6 +10,7 @@ import {
   Copy,
   Cpu,
   Download,
+  Upload,
 } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button, CheckPill, EmptyState, Note } from "@/components/ui";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/kelas";
 import {
   BAGIAN_LABEL,
   buatScriptCek,
+  NAMA_BERKAS,
   OPSI_BAWAAN,
   perkiraanDetik,
   type Bagian,
@@ -61,7 +63,10 @@ export function CekBuilder() {
   const [bagian, setBagian] = useState<Bagian[]>(OPSI_BAWAAN.bagian);
   const [wanTeks, setWanTeks] = useState("");
   const [jumlahPing, setJumlahPing] = useState(4);
+  const [keluaran, setKeluaran] = useState<"berkas" | "layar">("berkas");
   const [mentah, setMentah] = useState("");
+  const [namaBerkas, setNamaBerkas] = useState("");
+  const berkasRef = useRef<HTMLInputElement>(null);
   const [tersalin, setTersalin] = useState(false);
 
   const wan = useMemo(
@@ -70,8 +75,8 @@ export function CekBuilder() {
   );
 
   const opsi = useMemo(
-    () => ({ ...OPSI_BAWAAN, bagian, wan, jumlahPing }),
-    [bagian, wan, jumlahPing],
+    () => ({ ...OPSI_BAWAAN, bagian, wan, jumlahPing, keluaran }),
+    [bagian, wan, jumlahPing, keluaran],
   );
   const script = useMemo(() => buatScriptCek(opsi), [opsi]);
 
@@ -82,6 +87,18 @@ export function CekBuilder() {
   const temuan = useMemo(() => (hasil?.ok ? analisa(hasil.laporan) : []), [hasil]);
   const hitung = useMemo(() => ringkas(temuan), [temuan]);
   const lewat = useMemo(() => (hasil?.ok ? tidakDiperiksa(hasil.laporan) : []), [hasil]);
+
+  /* Berkas dari router adalah teks biasa; dibaca di browser dan langsung
+     masuk ke kotak yang sama, jadi hanya ada satu jalur pembacaan. */
+  const muatBerkas = (f: File | undefined) => {
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setMentah(String(reader.result ?? ""));
+      setNamaBerkas(f.name);
+    };
+    reader.readAsText(f);
+  };
 
   const salin = async () => {
     try {
@@ -146,6 +163,25 @@ export function CekBuilder() {
                     {BAGIAN_LABEL[b]}
                   </CheckPill>
                 ))}
+              </div>
+
+              <div className="mt-5">
+                <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                  Hasil pemeriksaan
+                </span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <CheckPill active={keluaran === "berkas"} onClick={() => setKeluaran("berkas")}>
+                    Simpan ke berkas di router
+                  </CheckPill>
+                  <CheckPill active={keluaran === "layar"} onClick={() => setKeluaran("layar")}>
+                    Tampilkan di terminal
+                  </CheckPill>
+                </div>
+                <p className="mt-2 text-xs text-faint">
+                  {keluaran === "berkas"
+                    ? `Hasilnya ditulis ke ${NAMA_BERKAS}.txt di menu Files — tinggal diseret ke komputer, tanpa menyalin teks dari terminal.`
+                    : "Hasilnya tampil di terminal dan harus diblok lalu disalin sendiri."}
+                </p>
               </div>
 
               {bagian.includes("internet") && (
@@ -230,20 +266,55 @@ export function CekBuilder() {
                 </span>
                 <div>
                   <h2 className="text-[15px] font-semibold tracking-tight text-ink">
-                    Tempel hasilnya di sini
+                    Masukkan hasilnya
                   </h2>
                   <p className="mt-1 text-[13px] leading-relaxed text-muted">
-                    Blok seluruh keluaran terminal, salin, lalu tempel. Prompt dan perintah yang
-                    ikut tersalin diabaikan sendiri.
+                    {keluaran === "berkas"
+                      ? `Unggah ${NAMA_BERKAS}.txt yang Anda seret dari menu Files router.`
+                      : "Blok seluruh keluaran terminal, salin, lalu tempel di bawah."}{" "}
+                    Prompt dan perintah yang ikut tersalin diabaikan sendiri.
                   </p>
                 </div>
               </div>
             </header>
 
             <div className="px-5 py-5">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <input
+                  ref={berkasRef}
+                  type="file"
+                  accept=".txt,text/plain"
+                  className="hidden"
+                  onChange={(e) => muatBerkas(e.target.files?.[0])}
+                />
+                <Button onClick={() => berkasRef.current?.click()}>
+                  <Upload className="h-4 w-4" />
+                  Unggah berkas hasil
+                </Button>
+                {namaBerkas && (
+                  <span className="font-mono text-xs text-faint">{namaBerkas}</span>
+                )}
+                {mentah && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setMentah("");
+                      setNamaBerkas("");
+                    }}
+                  >
+                    Kosongkan
+                  </Button>
+                )}
+              </div>
+
               <textarea
                 value={mentah}
                 onChange={(e) => setMentah(e.target.value)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  muatBerkas(e.dataTransfer.files?.[0]);
+                }}
+                onDragOver={(e) => e.preventDefault()}
                 spellCheck={false}
                 placeholder={"MSCEK|1\nWAKTU|...\nIDENT|Router-Warnet\n..."}
                 className="h-40 w-full resize-y rounded-lg border border-line bg-canvas px-3 py-2 font-mono text-[12px] leading-relaxed text-ink outline-none focus:border-brand"

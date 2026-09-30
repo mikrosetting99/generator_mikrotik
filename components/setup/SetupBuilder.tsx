@@ -1,5 +1,6 @@
 "use client";
 
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -11,15 +12,18 @@ import {
   FileText,
   FolderOpen,
   Lock,
+  LogOut,
   Rotate,
   Save,
   Terminal,
+  Users,
   Wand,
 } from "@/components/icons";
 import { HandoverDialog } from "@/components/setup/HandoverDialog";
 import { PresetDialog } from "@/components/setup/PresetDialog";
 import { SaveLoadDialog } from "@/components/setup/SaveLoadDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { VersionBadge } from "@/components/VersionBadge";
 import { ScriptPreview } from "@/components/setup/ScriptPreview";
 import {
   AddressSection,
@@ -118,6 +122,7 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
 }
 
 export function SetupBuilder() {
+  const { data: session } = useSession();
   const [config, setConfig] = useState<SetupConfig>(createDefaultConfig);
   // Langkah dilacak lewat id, bukan indeks: daftar langkahnya berubah panjang
   // saat hotspot ditambah atau dihapus, dan indeks akan meleset karenanya.
@@ -213,6 +218,9 @@ export function SetupBuilder() {
               <Cpu className="h-4 w-4 text-brand" />
               <h1 className="truncate text-sm font-semibold text-ink">Setup Mikrotik Baru</h1>
               <span className="hidden text-xs text-faint lg:inline">by Mikrosetting.com</span>
+              <span className="hidden lg:inline-flex">
+                <VersionBadge />
+              </span>
               {loadedName && (
                 <span className="hidden max-w-[200px] items-center gap-1.5 truncate rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[11px] text-brand md:inline-flex">
                   <FolderOpen className="h-3 w-3" />
@@ -258,6 +266,32 @@ export function SetupBuilder() {
               <Rotate className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Reset</span>
             </Button>
+            <span className="h-5 w-px bg-line" />
+            {session?.user && (
+              <>
+                {session.user.role === "ADMIN" && (
+                  <Link
+                    href="/admin/users"
+                    title="Kelola pengguna"
+                    className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-line bg-raised text-muted transition-colors hover:border-brand/50 hover:text-brand"
+                  >
+                    <Users className="h-4 w-4" />
+                  </Link>
+                )}
+                <span className="hidden max-w-[120px] truncate font-mono text-xs text-faint md:inline">
+                  {session.user.username}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  title="Keluar"
+                  ariaLabel="Keluar"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
         {/* Bar progres wizard */}

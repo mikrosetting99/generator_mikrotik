@@ -1,65 +1,11 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { AlertCircle, ArrowRight, Check, Copy, Download, Terminal } from "@/components/icons";
 import { Button, Note } from "@/components/ui";
+import { downloadBlob } from "@/lib/download";
+import { highlightScriptLine } from "@/lib/script-highlight";
 import type { LbIssue, LbSectionId } from "@/lib/types-loadbalance";
-
-function download(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
-
-/**
- * Pewarnaan sintaks RouterOS: komentar, path menu (/ip firewall),
- * kata kerja (add/set), nama parameter, dan nilainya.
- */
-function highlight(line: string) {
-  const trimmed = line.trimStart();
-  if (!trimmed) return <span>&nbsp;</span>;
-  if (trimmed.startsWith("#")) return <span className="text-faint/80">{line}</span>;
-
-  const tokens = line.match(/(\S+)(\s*)/g) ?? [];
-  return (
-    <>
-      {tokens.map((token, i) => {
-        const word = token.trimEnd();
-        const space = token.slice(word.length);
-        let node = <span className="text-ink">{word}</span>;
-
-        if (word.startsWith("/")) {
-          node = <span className="text-brand">{word}</span>;
-        } else if (i === 0 && /^(add|set|print)$/.test(word)) {
-          node = <span className="font-medium text-accent">{word}</span>;
-        } else if (word.includes("=")) {
-          const at = word.indexOf("=");
-          const key = word.slice(0, at);
-          const value = word.slice(at + 1);
-          node = (
-            <>
-              <span className="text-muted">{key}</span>
-              <span className="text-faint">=</span>
-              <span className={value.startsWith('"') ? "text-warn/90" : "text-ink"}>{value}</span>
-            </>
-          );
-        }
-
-        return (
-          <Fragment key={i}>
-            {node}
-            {space}
-          </Fragment>
-        );
-      })}
-    </>
-  );
-}
 
 export function ScriptPreview({
   script,
@@ -119,7 +65,7 @@ export function ScriptPreview({
           {lines.map((line, i) => (
             <div key={i} className="flex gap-3 px-1 hover:bg-white/[0.03]">
               <span className="w-7 shrink-0 select-none text-right text-faint/40">{i + 1}</span>
-              <span className="whitespace-pre-wrap break-words">{highlight(line)}</span>
+              <span className="whitespace-pre-wrap break-words">{highlightScriptLine(line)}</span>
             </div>
           ))}
         </pre>
@@ -143,7 +89,7 @@ export function ScriptPreview({
           </Button>
           <Button
             onClick={() =>
-              download(new Blob([script], { type: "text/plain;charset=utf-8" }), filename)
+              downloadBlob(new Blob([script], { type: "text/plain;charset=utf-8" }), filename)
             }
             disabled={blocked}
             title="Unduh sebagai file .rsc"

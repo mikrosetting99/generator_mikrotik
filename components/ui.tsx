@@ -243,6 +243,7 @@ export function Button({
   className,
   title,
   ariaLabel,
+  type = "button",
 }: {
   onClick?: () => void;
   children: ReactNode;
@@ -252,6 +253,8 @@ export function Button({
   className?: string;
   title?: string;
   ariaLabel?: string;
+  /** "submit" untuk tombol utama di dalam <form>; bawaannya "button". */
+  type?: "button" | "submit";
 }) {
   const variants = {
     default:
@@ -265,7 +268,7 @@ export function Button({
   };
   return (
     <button
-      type="button"
+      type={type}
       title={title}
       aria-label={ariaLabel}
       onClick={onClick}

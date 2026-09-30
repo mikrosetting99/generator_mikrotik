@@ -40,19 +40,72 @@ Lewat Terminal aaPanel:
 cd /www/wwwroot
 git clone https://github.com/mikrosetting99/generator_mikrotik.git
 cd generator_mikrotik
-npm ci
-npm run build
-```
-
-Kalau `npm run build` gagal dengan error Turbopack, pakai builder lama:
-
-```bash
-npm run build:webpack
 ```
 
 ---
 
-## 3. Jalankan dengan PM2
+## 3. Database MySQL & environment (khusus Setup Mikrotik Baru)
+
+Menu **Setup Mikrotik Baru** kini wajib login, dan riwayat konfigurasinya
+disimpan di MySQL. Menu **Load Balance & Fail Over** dan **Halaman Login
+Hotspot** tetap 100% jalan di browser tanpa database.
+
+1. **Buat database di aaPanel** — menu **Database → Add database**, catat
+   nama database, username, dan password yang dibuat.
+2. **Buat file `.env`** di root proyek (tidak ikut ke Git):
+
+   ```bash
+   cp .env.example .env
+   nano .env
+   ```
+
+   Isi minimal:
+
+   ```env
+   DATABASE_URL="mysql://USER:PASSWORD@127.0.0.1:3306/NAMA_DATABASE"
+   NEXTAUTH_SECRET="hasil dari: openssl rand -base64 32"
+   NEXTAUTH_URL="https://generator.mikrosetting.com"
+   SEED_ADMIN_USERNAME="admin"
+   SEED_ADMIN_PASSWORD="password-kuat-untuk-admin-pertama"
+   ```
+
+3. **Pasang dependensi & jalankan migrasi:**
+
+   ```bash
+   npm ci
+   npx prisma migrate deploy
+   ```
+
+   `npm ci` otomatis menjalankan `prisma generate` (lewat script `postinstall`).
+   `prisma migrate deploy` membuat tabel `users` dan `saved_configs`.
+
+4. **Buat akun admin pertama** (sekali saja — aman dijalankan ulang, entri
+   yang sudah ada dilewati):
+
+   ```bash
+   npm run db:seed
+   ```
+
+   Login pertama pakai `SEED_ADMIN_USERNAME`/`SEED_ADMIN_PASSWORD` di atas,
+   lalu tambahkan akun teknisi lain lewat menu **Kelola Pengguna** (ikon di
+   header Setup Mikrotik Baru, khusus admin) — untuk saat ini hanya admin
+   yang bisa mendaftarkan akun baru.
+
+5. **Build:**
+
+   ```bash
+   npm run build
+   ```
+
+   Kalau `npm run build` gagal dengan error Turbopack, pakai builder lama:
+
+   ```bash
+   npm run build:webpack
+   ```
+
+---
+
+## 5. Jalankan dengan PM2
 
 Repo sudah menyertakan `ecosystem.config.js` (port **3001**, hostname
 `127.0.0.1` agar tidak bisa diakses langsung dari luar).
@@ -86,7 +139,7 @@ Hasilnya sama — aaPanel memakai PM2 di belakang layar.
 
 ---
 
-## 4. Domain & reverse proxy
+## 6. Domain & reverse proxy
 
 1. **Website → Add site**, isi domain (mis. `generator.mikrosetting.com`).
    Jangan pilih PHP; root direktorinya tidak dipakai.
@@ -117,26 +170,43 @@ Aset statis (`/_next/static/...`) sudah dikirim Next.js dengan header cache
 
 ---
 
-## 5. Update setelah ada perubahan kode
+## 7. Update setelah ada perubahan kode
 
 Push dari lokal seperti biasa, lalu di server:
 
 ```bash
 cd /www/wwwroot/generator_mikrotik
-bash deploy.sh
+bash update.sh
 ```
 
-`deploy.sh` melakukan: `git pull` → `npm ci` → `build` → `pm2 reload` → `pm2 save`,
-dan menampilkan status di akhir.
+`update.sh` melakukan: cek `.env` ada & git bersih → `git pull` → `npm ci` →
+`prisma migrate deploy` → `build` → `pm2 reload` → `pm2 save`, dan
+menampilkan status di akhir. Migrasi baru (file baru di
+`prisma/migrations/`) otomatis ikut diterapkan setiap update; tidak perlu
+langkah manual tambahan kecuali ada migrasi yang sengaja dibuat interaktif
+di lokal.
+
+Setiap jalan dicatat ke `update.log` di folder proyek (menumpuk seiring
+waktu) — cek `tail -n 50 update.log` kalau update gagal dan pesan di
+terminal sudah tergulung. Script berhenti (exit sebelum menyentuh apa pun)
+bila:
+- `.env` belum ada — isi dulu sesuai langkah 3 sebelum update pertama kali.
+- Ada perubahan lokal belum ter-commit di server (`git status` kotor) — ini
+  biasanya berarti ada yang mengedit file langsung di server, cek dulu
+  sebelum menimpa dengan `git stash` atau `git checkout .`.
 
 ---
 
 ## Catatan
 
-- **Tidak ada environment variable** yang perlu diisi. Aplikasi tidak memakai
-  database, API key, maupun layanan eksternal — semua generate script berjalan
-  di browser pengunjung.
-- **Firewall**: port 3001 tidak perlu dibuka ke publik. Cukup 80/443 untuk Nginx.
-- Aplikasi ini sebenarnya bisa juga di-*static export* (`output: "export"`) dan
-  dilayani Nginx tanpa Node sama sekali, karena tidak ada API route maupun server
-  action. Opsi itu lebih hemat resource bila suatu saat ingin dipindahkan.
+- **Environment variable wajib diisi** sejak menu Setup Mikrotik Baru memakai
+  MySQL + login: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`. Lihat
+  langkah 3. Menu Load Balance & Fail Over dan Halaman Login Hotspot tidak
+  butuh apa pun dari ini — keduanya tetap murni jalan di browser pengunjung.
+- **Firewall**: port 3001 tidak perlu dibuka ke publik. Cukup 80/443 untuk
+  Nginx. Port MySQL (3306) juga sebaiknya tidak dibuka ke publik bila hanya
+  diakses dari aplikasi ini di server yang sama (`127.0.0.1`).
+- **Backup database**: `saved_configs` menyimpan riwayat konfigurasi router
+  pelanggan (kadang termasuk password bila pengguna memilih "Sertakan
+  password"). Sertakan database ini dalam rutinitas backup aaPanel
+  (**Database → Backup**), bukan hanya kode di Git.

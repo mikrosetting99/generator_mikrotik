@@ -5,22 +5,13 @@ import { useState } from "react";
 import { ArrowLeft, Download, FileText } from "@/components/icons";
 import { LoginPageEditor } from "@/components/hotspot-login/LoginPageEditor";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { VersionBadge } from "@/components/VersionBadge";
 import { Button, Note, Panel } from "@/components/ui";
 import { createDefaultHotspotLoginConfig } from "@/lib/defaults-hotspot-login";
+import { downloadBlob } from "@/lib/download";
 import { buildHotspotPackage } from "@/lib/hotspot-page";
 import type { HotspotPageConfig } from "@/lib/types-hotspot-login";
 import { createZip } from "@/lib/zip";
-
-function download(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
 
 export function HotspotLoginBuilder() {
   const [page, setPageState] = useState<HotspotPageConfig>(createDefaultHotspotLoginConfig);
@@ -35,7 +26,7 @@ export function HotspotLoginBuilder() {
     setZipError("");
     try {
       const entries = await buildHotspotPackage(page);
-      download(createZip(entries), "hotspot.zip");
+      downloadBlob(createZip(entries), "hotspot.zip");
     } catch (error) {
       setZipError(error instanceof Error ? error.message : "Gagal menyiapkan paket halaman login.");
     } finally {
@@ -60,6 +51,9 @@ export function HotspotLoginBuilder() {
               <FileText className="h-4 w-4 text-brand" />
               <h1 className="truncate text-sm font-semibold text-ink">Halaman Login Hotspot</h1>
               <span className="hidden text-xs text-faint lg:inline">by Mikrosetting.com</span>
+              <span className="hidden lg:inline-flex">
+                <VersionBadge />
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2">

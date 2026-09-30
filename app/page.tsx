@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, Cpu, FileText, Lock, Route, Shield, Split, Terminal } from "@/components/icons";
+import { ArrowRight, Cpu, FileText, Lock, Shield, Split, Terminal } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { VersionBadge } from "@/components/VersionBadge";
 
 const MENUS = [
   {
     href: "/setup",
-    step: "01",
     icon: Cpu,
     title: "Setup Mikrotik Baru",
     description:
@@ -19,35 +19,19 @@ const MENUS = [
   },
   {
     href: "/loadbalance",
-    step: "02",
     icon: Split,
-    title: "Load Balance PCC",
+    title: "Load Balance & Fail Over",
     description:
-      "Gabungkan 2 ISP atau lebih agar beban trafik terbagi otomatis dengan metode Per Connection Classifier.",
+      "Gabungkan 2 ISP atau lebih agar beban trafik terbagi otomatis (Per Connection Classifier), sekaligus pindah ke ISP cadangan saat jalur utama terputus lewat Recursive Gateway — satu builder untuk keduanya.",
     points: [
       "Mangle mark-connection & mark-routing",
-      "Routing table per ISP",
-      "Bobot distribusi per ISP",
-    ],
-    ready: true,
-  },
-  {
-    href: "/loadbalance",
-    step: "03",
-    icon: Route,
-    title: "Fail Over",
-    description:
-      "Pindah otomatis ke ISP cadangan saat jalur utama terputus, lewat Recursive Gateway — satu builder yang sama dengan Load Balance PCC.",
-    points: [
-      "Recursive gateway berjenjang",
-      "Default route per routing-mark otomatis",
-      "Kompatibel dengan Load Balance PCC",
+      "Failover recursive gateway berjenjang",
+      "Bobot distribusi & routing table per ISP",
     ],
     ready: true,
   },
   {
     href: "/hotspot-login",
-    step: "04",
     icon: FileText,
     title: "Halaman Login Hotspot",
     description:
@@ -95,19 +79,9 @@ export default function Home() {
         {/* ---------------------------------------------------------- hero */}
         <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <header className="animate-rise">
-            <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1.5 font-mono text-xs text-brand backdrop-blur">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
-              </span>
-              RouterOS v6 &amp; v7
-            </span>
-
-            <h1 className="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-[3.25rem]">
+            <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-[3.25rem]">
               Generator Script
-              <span className="block bg-gradient-to-r from-brand via-brand to-accent bg-clip-text text-transparent">
-                Mikrotik
-              </span>
+              <span className="block text-brand">Mikrotik</span>
             </h1>
             <p className="mt-2.5 text-sm text-faint">
               by{" "}
@@ -123,7 +97,7 @@ export default function Home() {
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
               Isi form, salin script, tempel ke <span className="text-ink">New Terminal</span>{" "}
-              Mikrotik. Tidak perlu menghafal sintaks CLI.
+              Mikrotik — mendukung RouterOS v6 dan v7. Tidak perlu menghafal sintaks CLI.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -179,7 +153,7 @@ export default function Home() {
         <h2 className="mt-20 text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
           Pilih menu
         </h2>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {MENUS.map((menu) => {
             const Glyph = menu.icon;
             const card = (
@@ -211,10 +185,7 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="mt-5 flex items-baseline gap-2">
-                  <span className="font-mono text-[11px] text-faint">{menu.step}</span>
-                  <h3 className="text-lg font-semibold tracking-tight text-ink">{menu.title}</h3>
-                </div>
+                <h3 className="mt-5 text-lg font-semibold tracking-tight text-ink">{menu.title}</h3>
                 <p className="mt-2 flex-1 text-[13px] leading-relaxed text-muted">
                   {menu.description}
                 </p>
@@ -277,19 +248,22 @@ export default function Home() {
           })}
         </section>
 
-        <footer className="mt-14 flex flex-wrap items-center justify-between gap-2 border-t border-line-soft pt-6 text-xs text-faint">
+        <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-line-soft pt-6 text-xs text-faint">
           <span>Backup router sebelum menjalankan script apa pun.</span>
-          <span>
-            Generator Script Mikrotik by{" "}
-            <a
-              href="https://mikrosetting.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted transition-colors hover:text-brand"
-            >
-              Mikrosetting.com
-            </a>
-          </span>
+          <div className="flex items-center gap-3">
+            <span>
+              Generator Script Mikrotik by{" "}
+              <a
+                href="https://mikrosetting.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted transition-colors hover:text-brand"
+              >
+                Mikrosetting.com
+              </a>
+            </span>
+            <VersionBadge />
+          </div>
         </footer>
       </div>
     </main>

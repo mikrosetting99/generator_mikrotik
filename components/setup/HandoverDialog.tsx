@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Download, FileText } from "@/components/icons";
 import { Button, Field, Note, TextInput, Toggle } from "@/components/ui";
+import { downloadBlob } from "@/lib/download";
 import { buildHandoverDocument } from "@/lib/handover";
 import type { SetupConfig } from "@/lib/types";
 
@@ -85,17 +86,11 @@ export function HandoverDialog({
     const blob = new Blob([buildHandoverDocument(config)], {
       type: "text/html;charset=utf-8",
     });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `BAST-${(h.customerName.trim() || "pelanggan")
+    const filename = `BAST-${(h.customerName.trim() || "pelanggan")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "")}.html`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, filename);
   };
 
   const grid2 = "grid gap-4 sm:grid-cols-2";

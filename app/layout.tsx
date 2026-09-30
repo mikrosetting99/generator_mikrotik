@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { Providers } from "@/app/providers";
 import { themeBootScript } from "@/components/ThemeToggle";
 import "./globals.css";
 
@@ -18,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Generator Script Mikrotik — Mikrosetting.com",
   description:
-    "Buat script konfigurasi RouterOS siap copy-paste: Setup Mikrotik Baru, Load Balance PCC, dan Fail Over. By Mikrosetting.com",
+    "Buat script konfigurasi RouterOS siap copy-paste: Setup Mikrotik Baru, Load Balance & Fail Over, dan Halaman Login Hotspot. By Mikrosetting.com",
 };
 
 export default function RootLayout({
@@ -32,7 +33,9 @@ export default function RootLayout({
         {/* Menetapkan tema sebelum halaman digambar agar tidak berkedip. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>{children}</body>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

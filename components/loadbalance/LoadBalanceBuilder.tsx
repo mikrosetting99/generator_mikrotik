@@ -14,6 +14,7 @@ import {
 } from "@/components/loadbalance/sections";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui";
+import { VersionBadge } from "@/components/VersionBadge";
 import { createDefaultLoadBalanceConfig } from "@/lib/defaults-loadbalance";
 import { generateLoadBalanceScript } from "@/lib/generator/loadbalance";
 import type { LbSectionId, LoadBalanceConfig } from "@/lib/types-loadbalance";
@@ -121,6 +122,9 @@ export function LoadBalanceBuilder() {
                 Load Balance PCC + Failover
               </h1>
               <span className="hidden text-xs text-faint lg:inline">by Mikrosetting.com</span>
+              <span className="hidden lg:inline-flex">
+                <VersionBadge />
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2">

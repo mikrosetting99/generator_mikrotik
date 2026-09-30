@@ -86,51 +86,43 @@ tanpa database dan tanpa login.
    (lihat bagian **Dua folder yang diurus lewat File Manager aaPanel** di
    bawah); bawaannya `data/hasil` di dalam folder proyek.
 
-3. **Pasang dependensi & jalankan migrasi:**
+3. **Jalankan setup pertama kali** — satu skrip yang mengerjakan sisanya
+   (pasang dependensi, migrasi database, buat akun admin pertama, build,
+   dan menjalankan lewat PM2):
 
    ```bash
-   npm ci
-   npx prisma migrate deploy
+   bash first-setup.sh
    ```
 
-   `npm ci` otomatis menjalankan `prisma generate` (lewat script `postinstall`).
-   `prisma migrate deploy` membuat tabel `users` dan `saved_configs`.
+   Skrip ini berhenti dengan pesan jelas kalau `.env` belum ada/masih nilai
+   contoh (nomor 2 di atas belum benar diisi). Amannya, jalankan ulang
+   setelah membenarkan `.env` — setiap langkahnya aman diulang.
 
-4. **Buat akun admin pertama** (sekali saja — aman dijalankan ulang, entri
-   yang sudah ada dilewati):
+   Kalau memilih menjalankannya manual satu-satu (setara isi skrip di
+   atas):
 
    ```bash
-   npm run db:seed
+   npm ci                      # juga menjalankan `prisma generate`
+   npx prisma migrate deploy   # membuat tabel users, saved_configs, license_orders, dst
+   npm run db:seed             # buat akun admin dari SEED_ADMIN_USERNAME/PASSWORD
+   npm run build               # pakai `npm run build:webpack` kalau Turbopack gagal
+   pm2 start ecosystem.config.js
+   pm2 save
    ```
 
-   Login pertama pakai `SEED_ADMIN_USERNAME`/`SEED_ADMIN_PASSWORD` di atas,
-   lalu tambahkan akun teknisi lain lewat menu **Kelola Pengguna** (ikon di
-   header Setup Mikrotik Baru, khusus admin) — untuk saat ini hanya admin
-   yang bisa mendaftarkan akun baru.
-
-5. **Build:**
-
-   ```bash
-   npm run build
-   ```
-
-   Kalau `npm run build` gagal dengan error Turbopack, pakai builder lama:
-
-   ```bash
-   npm run build:webpack
-   ```
+   Login pertama ke `/login` pakai `SEED_ADMIN_USERNAME`/`SEED_ADMIN_PASSWORD`
+   dari `.env`, lalu tambahkan akun teknisi lain lewat menu **Kelola
+   Pengguna** (ikon di header Setup Mikrotik Baru, khusus admin) — untuk
+   saat ini hanya admin yang bisa mendaftarkan akun baru.
 
 ---
 
 ## 5. Jalankan dengan PM2
 
-Repo sudah menyertakan `ecosystem.config.js` (port **3001**, hostname
-`127.0.0.1` agar tidak bisa diakses langsung dari luar).
+`first-setup.sh` sudah menjalankan `pm2 start` dan `pm2 save`. Yang masih
+manual — sekali saja, per server:
 
 ```bash
-cd /www/wwwroot/generator_mikrotik
-pm2 start ecosystem.config.js
-pm2 save
 pm2 startup        # agar otomatis hidup lagi setelah server reboot
 ```
 

@@ -1,0 +1,402 @@
+===============================================================================
+  PANDUAN EDIT - LOGIN PAGE HOTSPOT MIKROTIK
+  MIKROSETTING  /  TEMA BATTLE ROYALE (gaya PUBG)
+===============================================================================
+
+  Semua tampilan diatur oleh SATU file saja: login.html
+  Halaman ini punya DUA tab:
+     VOUCHER  -> pengguna hanya isi kode voucher (username = password)
+     MEMBER   -> pengguna isi username dan password sendiri
+  Buka pakai Notepad++, atau VS Code.
+
+  ATURAN UTAMA: MUAT SATU LAYAR DI HP
+  -----------------------------------
+  Di HP semuanya - termasuk 5 kartu harga - langsung kelihatan tanpa
+  perlu di-scroll. Ukuran huruf, tinggi tombol, dan jarak antarbagian
+  otomatis mengikuti tinggi layar.
+
+  Yang SENGAJA disembunyikan di HP, muncul mulai tablet:
+     - strip SUPPORT 24/7 dan seterusnya
+     - kotak promo
+     - kaki halaman lengkap (FOLLOW US)
+     - tombol BELI SEKARANG di kartu (di HP seluruh kartu sudah bisa diklik)
+
+  PENTING SEBELUM MULAI
+  ---------------------
+  1. Simpan dengan encoding UTF-8.
+  2. Backup dulu: copy login.html jadi login-BACKUP.html
+  3. Setelah diedit, upload ulang, lalu hapus cache browser di HP.
+
+===============================================================================
+  1. ISI FOLDER
+===============================================================================
+
+  login.html      <-- SATU-SATUNYA file yang perlu diedit
+  preview.html    <-- HANYA UNTUK MENGETES DI KOMPUTER, JANGAN DIUPLOAD
+  md5.js          <-- WAJIB ADA, jangan dihapus (untuk login CHAP)
+  favicon.ico     <-- ikon kecil di tab browser
+  img/            <-- FOLDER GAMBAR, isinya:
+                      bg.jpg    <-- OPSIONAL, latar berupa foto
+                      logo.png  <-- OPSIONAL, logo berupa gambar
+                      bg.mp4    <-- OPSIONAL, latar video (lihat bagian 8)
+  style.css       <-- dipakai halaman status/logout saja, BUKAN login
+  error.html      alogin.html   logout.html   status.html
+  redirect.html   rlogin.html   radvert.html
+  errors.txt      errors-en.txt
+  font/           <-- ikon untuk halaman status/logout
+
+  Alat pembuat kunci lisensi ada DI LUAR folder ini:
+    ..\_LISENSI-MIKROSETTING\generator-lisensi.html   (rahasia, lihat bagian 10)
+
+===============================================================================
+  2. GANTI NOMOR WHATSAPP   (WAJIB DICEK)
+===============================================================================
+
+  Nomor muncul di 7 tempat: 1 tombol bantuan, 5 kartu paket, 1 ikon di kaki.
+
+  Notepad++ tekan Ctrl+H (Replace):
+    Langkah 1 - untuk LINK:
+      Find    : 6281112001036
+      Replace : 62xxxxxxxxxxx    <-- awali 62, tanpa 0, tanpa +
+    Langkah 2 - yang TERBACA di layar:
+      Find    : 0811-1200-1036
+      Replace : 08xx-xxxx-xxxx
+
+  PENTING: supaya link WhatsApp bisa diklik SEBELUM login, nomor harus
+  dibuka di Walled Garden. Lihat bagian 9.
+
+===============================================================================
+  3. GANTI LOGO / NAMA BRAND
+===============================================================================
+
+  PAKAI GAMBAR
+    Taruh file bernama  logo.png  di dalam folder  img/
+    Otomatis: GAMBAR emblem bawaan hilang, diganti logo Anda.
+    Tulisan MIKROSETTING di bawahnya TETAP TAMPIL.
+
+    Ukuran disarankan : 500 x 500 px (kotak) atau 900 x 300 px (melebar)
+    Format            : PNG latar transparan
+    Besar file        : di bawah 80 KB (kecilkan lewat tinypng.com)
+
+    Ukuran di layar diatur baris ini di dalam <style>:
+      .logo{...height:clamp(70px,13vh,160px)...}
+      Tablet : @media (min-width:600px)  -> .logo{height:clamp(80px,12.5vh,150px)}
+      Laptop : @media (min-width:1024px) -> .logo{height:clamp(92px,14vh,172px)}
+
+  PAKAI TULISAN SAJA
+    <div class="wm"><span class="a">MIKRO</span><span class="b">SETTING</span></div>
+    <div class="wmsub">INTERNET HOTSPOT VOUCHER</div>
+      class="a" = bagian PUTIH,  class="b" = bagian berwarna aksen
+
+  EMBLEM BAWAAN
+    Bentuknya peti suplai bertali parasut.
+    Gambar buatan sendiri, bukan lambang resmi milik siapa pun.
+    Besarnya: .emblem{...height:clamp(54px,10.5vh,116px)...}
+
+===============================================================================
+  4. GANTI WARNA
+===============================================================================
+
+  Semua warna ada di blok  :root{  paling atas bagian <style>
+
+    --acc     ORANYE PASIR, warna utama         (#f2a71b)
+    --acc2    cokelat tua, gradasi tombol       (#b3760c)
+    --acc3    hijau militer, aksen              (#8fa04a)
+    --bg      latar paling gelap
+    --panel   warna kotak / kartu
+    --ink     warna tulisan utama
+    --mute    warna tulisan redup
+    --glow    cahaya di sekeliling tombol
+
+  Ganti kode warnanya saja, seluruh halaman ikut berubah.
+  Warna tiap kartu paket ditulis TERPISAH di kartunya, lihat bagian 5.
+
+===============================================================================
+  5. GANTI PAKET  (harga, durasi, nama rank, warna)
+===============================================================================
+
+  Cari penanda:  PAKET  -  BAGIAN YANG BOLEH DIEDIT
+
+  Satu kartu bentuknya seperti ini:
+
+    <a class="pk" style="--pc:#xxxxxx" href="https://wa.me/62...?text=..." ...>
+      <span class="rank">MYTHIC</span>              <-- PITA NAMA RANK
+      <svg class="pkic" ...> ... </svg>             <-- ikon, biarkan saja
+      <span class="dur">1 BULAN</span>              <-- NAMA PAKET
+      <span class="price"><i>Rp</i>70.000</span>    <-- HARGA
+      <span class="meta">30 Hari<br>Akses 24 Jam</span>
+      <span class="buy">BELI SEKARANG ...</span>    <-- hanya tampil di laptop
+    </a>
+
+  ATURAN EMAS: ubah hanya tulisan DI ANTARA tanda  >  dan  <
+  Jangan mengubah, menghapus, atau menambah tanda < > " /
+
+  RANK BAWAAN tema ini:
+      CONQUEROR  1 Bulan    merah  #e04b2a
+      ACE        2 Minggu   oranye #f2a71b
+      CROWN      1 Minggu   ungu   #b98ce0
+      DIAMOND    1 Hari     biru   #5fc8e8
+      GOLD       6 Jam      emas   #c9a227
+
+  JAGA TULISANNYA PENDEK
+    Di HP lebar kartu hanya sekitar 60 piksel. Nama paket maksimal
+    9 huruf, harga maksimal 6 angka ("70.000"). Kalau kepanjangan,
+    tulisannya akan terpotong. Untuk jutaan tulis singkat: <i>Rp</i>1,2jt
+
+  MENAMBAH / MENGURANGI JUMLAH KARTU  -  BACA BAIK-BAIK
+    Kartu berjajar dalam SATU baris supaya muat satu layar. Jadi ada
+    DUA tempat yang harus diubah:
+
+    Langkah 1 - copy atau hapus satu blok kartu UTUH
+                (dari <a class="pk" sampai </a> penutupnya),
+                masih di dalam <div class="paket"> ... </div>
+
+    Langkah 2 - cari baris ini di dalam <style>:
+                  .paket{display:grid;grid-template-columns:repeat(5,1fr);
+                ganti angka 5 jadi jumlah kartu Anda sekarang.
+
+    KALAU LANGKAH 2 TERLUPA, kartu menumpuk turun dan halaman jadi
+    perlu di-scroll lagi.
+
+    3-4 kartu paling lega, 5 bawaan, 6 masih terbaca, 7 ke atas jangan.
+
+  JUDUL DAFTAR PAKET
+    <h2>PILIH LOADOUT</h2>
+
+===============================================================================
+  6. GANTI TULISAN LAIN
+===============================================================================
+
+  Judul tab browser        <title id="title">MIKROSETTING - Login Hotspot</title>
+  Judul kotak (VOUCHER)    <h1 class="m-voucher">MASUKKAN KODE VOUCHER</h1>
+  Judul kotak (MEMBER)     <h1 class="m-member">LOGIN MEMBER</h1>
+  Nama tab                 VOUCHER  dan  MEMBER
+  Tulisan di kotak isian   data-ph-voucher="..."  data-ph-member="..."
+                           placeholder="Masukkan password Anda"
+  Tombol                   <button class="btn" type="submit">LOGIN
+  Di bawah tombol          Aman, Cepat &amp; Terpercaya
+  Tombol WhatsApp          <span class="lbl">BUTUH BANTUAN? CHAT</span>
+  Kaki halaman (HP)        <div class="footMini">...</div>
+  Kaki halaman (laptop)    di dalam <div class="footFull">
+
+  Media sosial sudah terisi facebook.com/mikrosetting dan
+  instagram.com/mikrosetting. Ganti bagian sesudah .com/ kalau berbeda.
+
+===============================================================================
+  7. TAB VOUCHER DAN TAB MEMBER
+===============================================================================
+
+  Halaman terbuka di tab VOUCHER: pengguna isi satu kolom, password
+  diisi otomatis sama dengan kode voucher.
+  Tab MEMBER menampilkan kolom password untuk diisi sendiri.
+  Dua-duanya dikirim ke MikroTik lewat form yang sama.
+
+  KALAU TIDAK MENJUAL PAKET MEMBER
+    JANGAN hapus tombolnya (nanti <script> error). Cukup sembunyikan:
+    cari  #fPass{display:none}  lalu tambahkan baris di bawahnya:
+      #tabM{display:none}
+
+===============================================================================
+  8. LATAR BELAKANG
+===============================================================================
+
+  Bawaan: latar gelap bergaya, dibuat dari kode. Tidak butuh file gambar,
+  dan sudah bergerak sendiri (membesar perlahan + percikan melayang).
+
+  PAKAI FOTO
+    Taruh  bg.jpg  di dalam folder  img/
+    Ukuran pas   : 1080 x 1920 px (rasio 0,56, paling sedikit terpotong)
+    Besar file   : di bawah 150 KB
+    Hiasan bawaan otomatis dimatikan supaya tidak menumpuk foto Anda.
+
+    Tingkat gelap lapisan peneduh diatur di baris  .hasbg .bg{...}
+    Angka lebih kecil = foto lebih terang.
+
+  PAKAI VIDEO  (opsional, bawaannya MATI)
+    TIMBANG DULU: video diunduh pelanggan SEBELUM mereka punya internet.
+    Video 3 MB bisa membuat halaman login baru muncul 20-30 detik.
+    Pakai hanya untuk hotspot indoor bersinyal kuat.
+
+    Menyalakan:
+      1. Taruh  bg.mp4  di folder  img/
+      2. Cari  var PAKAI_VIDEO = false;  ubah jadi  true
+
+    Ukuran video: 720x1280, 8-12 detik, MP4/H.264, TANPA SUARA,
+    di bawah 1 MB. Contoh perintah ffmpeg:
+
+      ffmpeg -i asli.mp4 -t 10 -an -vf "scale=720:1280,fps=24" \
+             -c:v libx264 -profile:v baseline -crf 30 -movflags +faststart img/bg.mp4
+
+    Kalau video gagal / diblokir HP, halaman otomatis kembali ke bg.jpg.
+    Jadi bg.jpg WAJIB tetap ada walau memakai video.
+
+  MEMATIKAN GERAKAN
+    Cari  @keyframes bgGerak  lalu pada baris  .bg{...animation:bgGerak 46s...}
+    ganti isinya jadi  animation:none
+    Percikan: cari  .spark{position:fixed  tambahkan  display:none;
+
+===============================================================================
+  9. UPLOAD KE MIKROTIK
+===============================================================================
+
+  CARA DIANJURKAN - folder terpisah
+    1. Winbox > Files > buat folder baru, misalnya  gametema
+    2. Blok semua file di folder ini (JANGAN preview.html), drag ke situ
+       (sertakan folder img/ dan font/)
+    3. IP > Hotspot > Server Profiles > profile Anda
+    4. HTML Directory diisi:  gametema
+    5. Apply > OK
+
+  SETELAN PROFILE
+    IP > Hotspot > Server Profiles > tab Login
+      Centang HTTP CHAP dan HTTP PAP. md5.js wajib ikut terupload.
+
+  AGAR TOMBOL WHATSAPP BISA DIKLIK SEBELUM LOGIN
+    Tanpa ini, kartu paket dan tombol WhatsApp tidak akan terbuka.
+
+      /ip hotspot walled-garden
+      add dst-host=wa.me comment="WA MIKROSETTING"
+      add dst-host=*.wa.me comment="WA MIKROSETTING"
+      add dst-host=*.whatsapp.com comment="WA MIKROSETTING"
+      add dst-host=*.whatsapp.net comment="WA MIKROSETTING"
+      add dst-host=*.cdn.whatsapp.net comment="WA MIKROSETTING"
+
+      /ip hotspot walled-garden ip
+      add dst-host=*.whatsapp.com action=accept comment="WA MIKROSETTING"
+      add dst-host=*.whatsapp.net action=accept comment="WA MIKROSETTING"
+
+  MENGETES
+    Sambungkan HP ke wifi hotspot. Kalau halaman tidak muncul sendiri,
+    buka browser lalu ketik IP hotspot Anda, contoh http://192.168.88.1/login
+
+===============================================================================
+  10. LISENSI   (khusus MIKROSETTING, jangan dijelaskan ke pembeli)
+===============================================================================
+
+  Halaman hanya tampil kalau kunci lisensinya cocok dengan router tempat
+  dia dipasang. Kalau tidak cocok, muncul layar "LISENSI TIDAK AKTIF"
+  berisi ID ROUTER dan tombol minta lisensi.
+
+  Kunci berlaku SELAMANYA, tanpa masa berlaku. Yang dijaga satu hal:
+  satu kunci untuk satu router. Begitu foldernya dipindah atau dijual
+  ke MikroTik lain, halamannya terkunci.
+
+  SATU KUNCI UNTUK SEMUA TEMA
+    Keempat tema (Naruto, MOBA, PUBG, FF) memakai LIS_SALT yang sama,
+    jadi satu kunci berlaku untuk semuanya di router yang sama.
+    Kalau ingin tiap tema dijual terpisah, beri LIS_SALT berbeda per tema
+    dan simpan generator terpisah untuk masing-masing.
+
+  SAMPAI DI MANA LISENSI INI MELINDUNGI
+    BISA dicegah : folder disalin lalu dipakai di router lain
+    BISA dicegah : pembeli menjual ulang template ke orang lain
+    TIDAK bisa   : orang yang paham HTML membuka file lalu menghapus
+                   blok pemeriksa lisensi
+    Ini pagar, bukan brankas.
+
+  JANGAN SAMPAI TERTUKAR
+    var LIS_KEY   = KUNCI dari generator, bentuknya 4-4-4
+    var LIS_SALT  = RESEP RAHASIA, bukan nama router dan bukan kunci.
+                    Harus sama persis dengan generator-lisensi.html
+    Kesalahan paling sering: kedua baris diisi nama router. Akibatnya
+    halaman terkunci selamanya.
+
+  var LIS_MODE
+    "kunci" = blokir halaman kalau tidak cocok
+    "ingat" = tetap boleh login (darurat kalau pembeli terkunci)
+
+  ALUR PENJUALAN
+    1. Kirim folder dengan LIS_KEY dikosongkan.
+    2. Pembeli upload, buka halaman login, muncul ID ROUTER.
+    3. Pembeli kirim ID ROUTER (tombol WhatsApp sudah otomatis memuatnya).
+    4. Buka generator-lisensi.html, tempel ID, tekan BUAT KUNCI LISENSI.
+    5. Kirim satu baris hasilnya, pembeli timpa di login.html, upload ulang.
+
+  SALT saat ini: GANTI-DENGAN-SALT-RAHASIA-ANDA
+    GANTI dengan kalimat rahasia Anda sendiri sebelum berjualan, di
+    login.html SEMUA TEMA dan di generator-lisensi.html sekaligus.
+    Sesudah ada kunci terbit, jangan diubah lagi.
+
+  ID ROUTER dari mana
+    Dari $(identity), yaitu System > Identity di Winbox. Kalau versi
+    RouterOS tidak mengenalnya, otomatis memakai $(server-address).
+    Kalau pembeli mengganti Identity, lisensinya berhenti cocok dan
+    perlu kunci baru. Jangan pakai tanda kutip " pada Identity.
+
+  MENGUJI DI KOMPUTER
+    Buka preview.html. Karena tidak ada router yang menerjemahkan
+    $(identity), halaman masuk MODE UJI dan tidak pernah dikunci.
+
+===============================================================================
+  11. JANGAN DIUBAH
+===============================================================================
+
+  Semua tulisan $(...) adalah kode MikroTik:
+    $(link-login-only)  $(link-orig)  $(username)
+    $(chap-id)  $(chap-challenge)  $(error)  $(if ...)  $(endif)
+    $(identity)  $(server-address)
+  Jumlah $(if harus sama dengan jumlah $(endif), yaitu 2 dan 2.
+
+  JANGAN HAPUS:
+    - fungsi vSync() dan vSubmit() di bagian <head>
+    - onSubmit="return vSubmit()" pada tag form
+    - blok PEMERIKSA LISENSI dan <div id="lisBlok">
+    - fungsi fitOneScreen()
+    - satuan svh pada min-height:100svh di blok .app
+
+  Jangan mengubah nama file login.html dan md5.js, kata di dalam class="",
+  id="card" id="tabV" id="tabM" id="fUser" id="fPass" id="inUser" id="inPass"
+  id="lisBlok" id="lisId" id="lisWa" id="bgvid", serta name="username"
+  dan name="password".
+
+===============================================================================
+  12. TIGA TINGKAT UKURAN LAYAR
+===============================================================================
+
+  HP     : di bawah 600px  -> setelan dasar, ukuran ikut TINGGI layar
+           (+ @media max-width:340px dan max-height:460px)
+  Tablet : 600px - 1023px  -> @media (min-width:600px), lebar isi maks 760px
+  Laptop : 1024px ke atas  -> @media (min-width:1024px), lebar isi maks 900px
+
+  Semua tingkat memakai clamp(kecil, ...vh, besar) supaya tetap muat
+  satu layar. Penjaga fitOneScreen() berlaku di semua ukuran: kalau
+  isinya masih kelebihan, halaman dikecilkan sendiri maksimal 22%.
+
+  MENGETES: buka preview.html di Chrome, F12, Ctrl+Shift+M, ketik lebar
+  360 (HP), 768 (tablet), 1280 (laptop).
+
+===============================================================================
+  13. KALAU ADA MASALAH
+===============================================================================
+
+  Halaman berantakan / putih polos
+    Ada tanda < > " atau / yang terhapus. Kembalikan dari backup.
+
+  Selalu muncul LISENSI TIDAK AKTIF
+    - LIS_KEY masih kosong atau bukan bentuk 4-4-4
+    - LIS_SALT tidak sama dengan generator
+    - ID ROUTER yang dipakai membuat kunci beda dengan yang di layar
+      (huruf besar-kecil berpengaruh)
+
+  Voucher tidak bisa login padahal kodenya benar
+    - IP > Hotspot > Server Profiles > Login: HTTP CHAP dan PAP dicentang
+    - md5.js ada di folder
+    - fungsi vSync/vSubmit tidak terhapus
+    - pengguna ada di tab VOUCHER, bukan MEMBER
+
+  Kartu paket perlu di-scroll di HP
+    Jumlah kartu ditambah tapi repeat(5,1fr) lupa diubah. Lihat bagian 5.
+
+  Kartu menumpuk ke bawah
+    Angka repeat(...) tidak sama dengan jumlah kartu.
+
+  Tombol BELI SEKARANG tidak membuka WhatsApp
+    Walled Garden belum diisi. Lihat bagian 9.
+
+  Logo pecah / kabur
+    File logo.png terlalu kecil. Pakai 500 x 500 px.
+
+  Halaman berat di HP lama
+    Matikan gerakan latar, lihat bagian 8.
+
+===============================================================================

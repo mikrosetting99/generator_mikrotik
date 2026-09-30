@@ -44,11 +44,13 @@ cd generator_mikrotik
 
 ---
 
-## 3. Database MySQL & environment (khusus Setup Mikrotik Baru)
+## 3. Database MySQL & environment
 
-Menu **Setup Mikrotik Baru** kini wajib login, dan riwayat konfigurasinya
-disimpan di MySQL. Menu **Load Balance & Fail Over** dan **Halaman Login
-Hotspot** tetap 100% jalan di browser tanpa database.
+Menu **Setup Mikrotik Baru** dan **Login Page Hotspot** wajib login dan
+memakai database MySQL yang sama (riwayat konfigurasi, akun pengguna,
+pesanan lisensi). Menu **Load Balance & Fail Over**, **Halaman Login
+Hotspot** (yang gratis), dan **Cek Mikrotik** tetap 100% jalan di browser
+tanpa database dan tanpa login.
 
 1. **Buat database di aaPanel** — menu **Database → Add database**, catat
    nama database, username, dan password yang dibuat.
@@ -67,7 +69,22 @@ Hotspot** tetap 100% jalan di browser tanpa database.
    NEXTAUTH_URL="https://generator.mikrosetting.com"
    SEED_ADMIN_USERNAME="admin"
    SEED_ADMIN_PASSWORD="password-kuat-untuk-admin-pertama"
+
+   # Khusus menu Login Page Hotspot — lihat penjelasan di bawah
+   MSLP_LICENSE_SALT="resep-rahasia-panjang"
+   MSLP_LICENSOR_WA=6281112001036
    ```
+
+   **`MSLP_LICENSE_SALT` harus sama persis** dengan `LIS_SALT` di dalam
+   `login.html` yang sudah beredar di router pembeli. Kalau nilainya
+   berubah, semua kunci yang pernah diterbitkan langsung mati dan tidak
+   bisa ditarik kembali. Variabel ini hanya dibaca di sisi server dan
+   tidak pernah ikut ke browser — jangan pernah diberi awalan
+   `NEXT_PUBLIC_`.
+
+   Opsional: `MSLP_ARSIP_DIR` untuk memindahkan lokasi arsip hasil cetak
+   (lihat bagian **Dua folder yang diurus lewat File Manager aaPanel** di
+   bawah); bawaannya `data/hasil` di dalam folder proyek.
 
 3. **Pasang dependensi & jalankan migrasi:**
 
@@ -199,14 +216,61 @@ bila:
 
 ## Catatan
 
-- **Environment variable wajib diisi** sejak menu Setup Mikrotik Baru memakai
-  MySQL + login: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`. Lihat
-  langkah 3. Menu Load Balance & Fail Over dan Halaman Login Hotspot tidak
-  butuh apa pun dari ini — keduanya tetap murni jalan di browser pengunjung.
+- **Environment variable wajib diisi** sejak menu Setup Mikrotik Baru dan
+  Login Page Hotspot memakai MySQL + login: `DATABASE_URL`,
+  `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `MSLP_LICENSE_SALT`, `MSLP_LICENSOR_WA`.
+  Lihat langkah 3. Menu Load Balance & Fail Over, Halaman Login Hotspot
+  (gratis), dan Cek Mikrotik tidak butuh apa pun dari ini — tetap murni
+  jalan di browser pengunjung.
 - **Firewall**: port 3001 tidak perlu dibuka ke publik. Cukup 80/443 untuk
   Nginx. Port MySQL (3306) juga sebaiknya tidak dibuka ke publik bila hanya
   diakses dari aplikasi ini di server yang sama (`127.0.0.1`).
-- **Backup database**: `saved_configs` menyimpan riwayat konfigurasi router
-  pelanggan (kadang termasuk password bila pengguna memilih "Sertakan
-  password"). Sertakan database ini dalam rutinitas backup aaPanel
-  (**Database → Backup**), bukan hanya kode di Git.
+- **Backup database**: `saved_configs` (riwayat Setup) dan `license_orders`
+  (pesanan Login Page Hotspot) menyimpan data yang tidak ada duplikatnya di
+  tempat lain — nomor telepon pelanggan, kadang password (bila pengguna
+  memilih "Sertakan password"), dan kunci lisensi. Sertakan database ini
+  dalam rutinitas backup aaPanel (**Database → Backup**), bukan hanya kode
+  di Git.
+- **Static export sudah tidak bisa lagi.** Dulu aplikasi ini murni berjalan
+  di browser sehingga `output: "export"` masih mungkin. Sejak ada login dan
+  Login Page Hotspot, aplikasi memakai middleware, database, dan route
+  handler yang membaca folder `templates/` dari disk — semuanya menuntut
+  proses Node yang hidup.
+- `templates/` harus ikut ter-*deploy*. Route unduh membacanya saat diminta,
+  bukan saat build, jadi folder itu harus ada di samping aplikasi di server.
+
+---
+
+## Dua folder yang diurus lewat File Manager aaPanel
+
+**`templates/` — sumber login page.** Dibaca setiap kali ada permintaan cetak,
+bukan saat build. Jadi menyunting `templates/MSLP-NARUTO/login.html` langsung
+dari File Manager aaPanel akan langsung terpakai pada cetakan berikutnya —
+tanpa `npm run build`, tanpa `pm2 reload`. Mengganti `img/bg.jpg` sebuah tema
+juga cukup ditimpa di situ.
+
+Menambah tema yang benar-benar baru tetap perlu satu entri di
+`lib/license/templates.ts`, karena tiap tema punya slot warna dan ciri sendiri
+(punya pita tingkatan atau tidak, punya latar bawaan atau tidak).
+
+**`data/hasil/` — arsip hasil cetak.** Setiap kali tombol unduh ditekan,
+salinan zip-nya ditulis di sini dengan nama `0007-Nama-Usaha-MSLP-NARUTO.zip`.
+Satu pesanan satu berkas, ditimpa tiap unduhan — arsip yang beranak setiap
+penekanan tombol akan memenuhi disk, dan yang lama tidak berguna karena
+isinya selalu bisa dicetak ulang dari data pesanan.
+
+Dua hal yang perlu diketahui:
+
+- Folder ini **tidak punya alamat web**. Nginx aaPanel hanya meneruskan ke
+  Next.js (`location / { proxy_pass ... }`), tidak melayani berkas dari disk.
+  Jangan pernah memindahkannya ke dalam `public/`: isinya halaman berlisensi
+  lengkap dengan kuncinya, dan di `public/` siapa pun yang menebak namanya
+  bisa mengunduhnya.
+- Isinya **tidak ikut git** dan tidak ikut backup kode. Kalau arsipnya
+  dianggap penting, masukkan foldernya ke jadwal backup aaPanel. Kehilangannya
+  tidak fatal — pesanannya ada di database dan bisa dicetak ulang kapan saja.
+
+Kalau disk aplikasi sempit, arahkan ke tempat lain lewat `MSLP_ARSIP_DIR`,
+misalnya `/www/backup/lisensi`. Pastikan pengguna yang menjalankan PM2 punya
+izin tulis ke situ; kalau gagal menulis, unduhan tetap berhasil dan
+kegagalannya hanya dicatat di `pm2 logs generator-mikrotik`.

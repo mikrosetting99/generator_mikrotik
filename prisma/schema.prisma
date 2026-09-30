@@ -42,3 +42,81 @@ model SavedConfig {
   @@index([userId])
   @@map("saved_configs")
 }
+
+enum LicenseStatus {
+  draft
+  terkirim
+  aktif
+  batal
+}
+
+/// Satu baris = satu pesanan Login Page Hotspot (menu /login-page-hotspot).
+/// Dulu di Supabase (license_orders); dipindah ke sini bersama sistem login
+/// yang sama dengan Setup Mikrotik Baru, tanpa sistem koin/pembayaran lagi.
+model LicenseOrder {
+  id     String @id @default(cuid())
+  /// Nomor pendek untuk disebut di percakapan WhatsApp ("pesanan #14").
+  nomor  Int    @unique @default(autoincrement())
+
+  namaUsaha     String
+  kontakNama    String?
+  catatan       String?
+  templateSlug  String
+
+  // Logo teks dipecah dua supaya bisa dua warna, seperti MIKRO|SETTING.
+  merekA       String
+  merekB       String  @default("")
+  merekSpasi   Boolean @default(true)
+  tagline      String  @default("INTERNET HOTSPOT VOUCHER")
+  footerTagline String @default("Internet Hotspot Voucher")
+
+  // waNomor untuk tautan (62...), waTampil untuk yang terbaca di layar.
+  waNomor  String
+  waTampil String
+
+  /// Kunci slot warna -> #rrggbb; kosong berarti pakai bawaan tema.
+  warna Json?
+
+  bankNama     String?
+  bankNomor    String?
+  bankAtasNama String?
+
+  // Gambar disimpan sebagai data URI, lalu ditulis jadi berkas img/logo.png
+  // dan img/bg.jpg di dalam zip. Halaman login tidak boleh menunjuk ke alamat
+  // luar: pelanggan belum punya internet saat membukanya.
+  logoDataUrl String? @db.LongText
+  bgDataUrl   String? @db.LongText
+
+  // Diisi setelah pembeli melaporkan ID ROUTER dari layar "LISENSI TIDAK AKTIF".
+  routerIdentity    String?
+  lisensiKunci      String?
+  lisensiTerbitPada DateTime?
+
+  status LicenseStatus @default(draft)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  packages LicensePackage[]
+
+  @@index([status, createdAt])
+  @@map("license_orders")
+}
+
+model LicensePackage {
+  id      String       @id @default(cuid())
+  orderId String
+  order   LicenseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  posisi    Int     @default(0)
+  nama      String
+  harga     String
+  metaAtas  String  @default("Masa aktif")
+  metaBawah String  @default("")
+  warna     String  @default("#3ea6ff")
+  /// Pita tingkatan khas tema (KAGE, MYTHIC, ...). Kosong = pakai bawaan tema.
+  rank      String?
+
+  @@index([orderId, posisi])
+  @@map("license_packages")
+}

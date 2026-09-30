@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#f6f7fb">
+<title id="title">MIKROSETTING - Login Hotspot</title>
+<link rel="icon" href="favicon.ico">
+<script type="text/javascript">
+function addCls(c){var r=document.documentElement;if((' '+r.className+' ').indexOf(' '+c+' ')<0){r.className=(r.className?r.className+' ':'')+c;}}
+
+/* ===================================================================
+   PENGAMAN LOGIN.  JANGAN DIHAPUS.
+   Mode VOUCHER: password otomatis disamakan dengan kode voucher.
+   Mode MEMBER : password diisi sendiri oleh pengguna.
+   =================================================================== */
+var HN_MODE = 'voucher';
+function vSync(){
+	try{
+		var f = document.login;
+		if(f && f.username && f.password && HN_MODE === 'voucher'){
+			f.password.value = f.username.value;
+		}
+	}catch(e){}
+	return true;
+}
+function vSubmit(){
+	vSync();
+	if(typeof doLogin == 'function'){ return doLogin(); }
+	return true;
+}
+</script>
+<style>
+/* ===================================================================
+   1. WARNA
+   Seluruh tampilan hanya bergantung pada SATU warna aksen: --acc
+   Ganti satu baris itu, seluruh halaman ikut berubah nuansanya.
+   =================================================================== */
+:root{
+	--acc:#4b56d6;            /* WARNA UTAMA - ganti di sini saja */
+	--acc-lembut:rgba(75,86,214,.10);
+	--acc-tepi:rgba(75,86,214,.28);
+
+	--bg:#f6f7fb;
+	--ink:#171a20;            /* tulisan utama   */
+	--mute:#6d7480;           /* tulisan sekunder */
+	--samar:#9aa1ad;          /* tulisan paling redup */
+	--kaca:rgba(255,255,255,.76);
+	--kaca-pekat:rgba(255,255,255,.92);
+	--garis:rgba(23,26,32,.09);
+	--garis-tegas:rgba(23,26,32,.16);
+
+	--bayang-halus:0 1px 2px rgba(23,26,32,.05), 0 4px 12px rgba(23,26,32,.05);
+	--bayang-sedang:0 2px 4px rgba(23,26,32,.05), 0 10px 28px rgba(23,26,32,.08);
+	--bayang-aksen:0 6px 18px rgba(75,86,214,.28);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);
+	font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+	line-height:1.45;letter-spacing:-.005em;
+	-webkit-tap-highlight-color:rgba(75,86,214,.12);overflow-x:hidden;
+	-webkit-font-smoothing:antialiased}
+/* angka harga sejajar rapi */
+.angka{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ===================================================================
+   2. LATAR  -  gradasi lembut, tanpa file gambar
+   =================================================================== */
+.bg{position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;background:var(--bg);
+	background-image:
+		radial-gradient(760px 520px at 78% -6%,  rgba(120,132,255,.26) 0%, rgba(246,247,251,0) 62%),
+		radial-gradient(680px 520px at 6% 16%,   rgba(96,196,222,.20) 0%, rgba(246,247,251,0) 60%),
+		radial-gradient(720px 620px at 88% 88%,  rgba(233,150,205,.18) 0%, rgba(246,247,251,0) 64%),
+		radial-gradient(640px 520px at 12% 92%,  rgba(126,214,190,.18) 0%, rgba(246,247,251,0) 62%),
+		linear-gradient(180deg,#fbfbfe 0%,#f5f6fb 52%,#eef0f7 100%);
+	background-repeat:no-repeat;background-size:cover;background-position:center top}
+/* ---- KALAU ADA img/bg.jpg ----
+   Tema ini TERANG, jadi lapisan peneduhnya PUTIH.
+   Foto terlalu pudar? kecilkan angkanya. Tulisan susah dibaca? besarkan. */
+.hasbg .bg{background-image:
+		linear-gradient(180deg,rgba(250,250,253,.72) 0%,rgba(246,247,251,.60) 45%,rgba(238,240,247,.82) 100%),
+		url('img/bg.jpg')}
+.scene{position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;opacity:.55}
+.hasbg .scene{display:none}
+
+/* ---- latar video, OPSIONAL, bawaannya MATI ---- */
+.bgvid{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+	object-fit:cover;z-index:0;pointer-events:none;border:0}
+.bgdim{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
+	background:linear-gradient(180deg,rgba(250,250,253,.74) 0%,rgba(246,247,251,.62) 45%,rgba(238,240,247,.84) 100%)}
+html.hasvid .bgvid,html.hasvid .bgdim{display:block}
+html.hasvid .scene{display:none}
+
+/* ===================================================================
+   3. KERANGKA SATU LAYAR
+   =================================================================== */
+.app{position:relative;z-index:1;display:flex;flex-direction:column;
+	width:100%;max-width:520px;margin:0 auto;
+	min-height:100vh;min-height:100svh;
+	padding:calc(10px + env(safe-area-inset-top)) 16px calc(10px + env(safe-area-inset-bottom))}
+.app > *{flex:0 0 auto}
+.spacer{flex:1 1 auto;min-height:0}
+
+/* ===================================================================
+   4. KEPALA  -  emblem + nama
+   =================================================================== */
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;
+	margin-top:clamp(6px,1.6vh,20px)}
+.emblem{display:block;width:auto;height:clamp(46px,8.4vh,86px)}
+.logo{display:none;width:auto;max-width:100%;height:clamp(56px,10.5vh,120px);
+	object-fit:contain;margin:0 auto}
+.haslogo .logo{display:block}
+.haslogo .emblem{display:none}
+.wm{margin:clamp(7px,1.4vh,14px) 0 0;line-height:1.05;white-space:nowrap;
+	font-size:clamp(21px,4vh,34px);font-weight:700;letter-spacing:-.022em;color:var(--ink)}
+.wm .b{color:var(--acc)}
+.wmsub{margin:clamp(3px,.7vh,7px) 0 0;font-size:clamp(9px,1.3vh,11.5px);
+	font-weight:600;letter-spacing:.16em;color:var(--samar);text-transform:uppercase;white-space:nowrap}
+
+/* ===================================================================
+   5. TAB VOUCHER / MEMBER  -  bentuk pil
+   =================================================================== */
+.mid{margin-top:clamp(11px,2.2vh,22px)}
+.tabs{display:flex;padding:4px;border-radius:999px;
+	background:var(--kaca);border:1px solid var(--garis);box-shadow:var(--bayang-halus);
+	backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.tab{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;
+	height:clamp(34px,5vh,44px);border:0;border-radius:999px;background:transparent;cursor:pointer;
+	color:var(--mute);font-family:inherit;font-size:clamp(12px,1.85vh,14.5px);font-weight:600;
+	-webkit-appearance:none;appearance:none;
+	transition:background .18s,color .18s,box-shadow .18s}
+.tab svg{width:clamp(14px,2.1vh,17px);height:clamp(14px,2.1vh,17px);margin-right:7px;flex:0 0 auto}
+.tab[aria-selected="true"]{background:#fff;color:var(--acc);box-shadow:var(--bayang-halus)}
+
+/* ===================================================================
+   6. KARTU LOGIN
+   =================================================================== */
+.card{position:relative;margin-top:clamp(9px,1.7vh,16px);
+	background:var(--kaca-pekat);border:1px solid var(--garis);border-radius:20px;
+	padding:clamp(15px,2.8vh,26px) clamp(15px,4.4vw,24px) clamp(15px,2.6vh,24px);
+	box-shadow:var(--bayang-sedang);
+	backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.card h1{margin:0;text-align:center;font-size:clamp(15px,2.4vh,19px);
+	font-weight:650;letter-spacing:-.015em;color:var(--ink)}
+.card .say{margin:clamp(3px,.6vh,6px) 0 0;text-align:center;
+	font-size:clamp(11px,1.6vh,13px);color:var(--mute);line-height:1.4}
+.m-member{display:none}
+.mode-member .m-voucher{display:none}
+.mode-member .m-member{display:block}
+
+.notice{margin:clamp(9px,1.5vh,15px) 0 0;background:#fef2f2;color:#a4262c;
+	border:1px solid #f6cfcf;border-radius:12px;padding:clamp(7px,1.2vh,11px) 13px;
+	font-size:clamp(11px,1.6vh,13px);font-weight:500;text-align:center}
+
+form{margin:0}
+.field{position:relative;display:flex;align-items:center;margin-top:clamp(11px,2vh,18px);
+	background:#fff;border:1px solid var(--garis-tegas);border-radius:14px;
+	transition:border-color .18s,box-shadow .18s}
+.field:focus-within{border-color:var(--acc);box-shadow:0 0 0 4px var(--acc-lembut)}
+.field .fic{flex:0 0 auto;display:flex;align-items:center;padding:0 10px 0 14px;color:var(--samar)}
+.field .fic svg{width:clamp(16px,2.4vh,19px);height:clamp(16px,2.4vh,19px)}
+.fin{flex:1 1 auto;min-width:0;width:100%;height:clamp(44px,6.4vh,56px);border:0;outline:0;
+	background:transparent;color:var(--ink);font-family:inherit;font-weight:500;
+	font-size:16px;padding:0 14px 0 0;
+	-webkit-appearance:none;appearance:none;border-radius:14px}
+.fin::-webkit-input-placeholder{color:var(--samar);font-weight:400}
+.fin::-moz-placeholder{color:var(--samar);font-weight:400;opacity:1}
+.fin:-ms-input-placeholder{color:var(--samar);font-weight:400}
+.fin::placeholder{color:var(--samar);font-weight:400}
+#fPass{display:none}
+.mode-member #fPass{display:flex}
+
+.btn{position:relative;display:flex;align-items:center;justify-content:center;width:100%;
+	height:clamp(46px,6.8vh,58px);margin-top:clamp(11px,1.9vh,18px);
+	border:0;border-radius:14px;cursor:pointer;background:var(--acc);
+	color:#fff;font-family:inherit;font-size:clamp(14px,2.1vh,16.5px);font-weight:600;
+	-webkit-appearance:none;appearance:none;
+	box-shadow:var(--bayang-aksen);transition:transform .12s,box-shadow .18s}
+.btn:active{transform:translateY(1px);box-shadow:0 3px 10px rgba(75,86,214,.24)}
+.btn .arw{margin-left:9px;width:clamp(15px,2.2vh,18px);height:clamp(15px,2.2vh,18px)}
+.trust{display:flex;align-items:center;justify-content:center;margin:clamp(9px,1.5vh,15px) 0 0;
+	font-size:clamp(10.5px,1.5vh,12px);font-weight:500;color:var(--samar)}
+.trust svg{width:clamp(12px,1.7vh,14px);height:clamp(12px,1.7vh,14px);margin-right:6px}
+.nojs{margin:10px 0 0;text-align:center;font-size:12px;color:#a4262c}
+
+/* ===================================================================
+   7. TOMBOL BANTUAN WHATSAPP
+   =================================================================== */
+.waWrap{display:flex;justify-content:center;margin-top:clamp(10px,1.8vh,18px)}
+.wa{display:inline-flex;align-items:center;text-decoration:none;
+	background:var(--kaca);border:1px solid var(--garis);border-radius:999px;
+	padding:clamp(5px,.9vh,8px) clamp(14px,3.4vw,20px) clamp(5px,.9vh,8px) clamp(5px,.9vh,7px);
+	box-shadow:var(--bayang-halus);
+	backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.wa .waic{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+	width:clamp(26px,4vh,34px);height:clamp(26px,4vh,34px);border-radius:50%;
+	background:#25d366;margin-right:clamp(8px,2vw,11px)}
+.wa .waic svg{width:66%;height:66%}
+.wa .lbl{display:block;font-size:clamp(8.5px,1.15vh,10px);font-weight:600;
+	letter-spacing:.1em;color:var(--samar);text-transform:uppercase;line-height:1.3}
+.wa .num{display:block;font-size:clamp(12.5px,1.9vh,15px);font-weight:650;
+	color:var(--ink);line-height:1.25;white-space:nowrap}
+
+.stats{display:none}
+.st{display:flex;align-items:center;padding:13px 14px;background:var(--kaca)}
+.st svg{flex:0 0 auto;width:20px;height:20px;margin-right:10px;color:var(--acc)}
+.st .sh{display:block;font-size:12px;font-weight:600;color:var(--ink)}
+.st .sd{display:block;font-size:11px;color:var(--mute);line-height:1.35}
+
+/* ===================================================================
+   8. PAKET  -  5 kartu berjajar, muat satu layar
+   =================================================================== */
+.paketWrap{margin-top:clamp(11px,2vh,20px)}
+.secHead{display:flex;align-items:baseline;justify-content:space-between;
+	padding:0 2px clamp(7px,1.2vh,11px)}
+.secHead h2{margin:0;font-size:clamp(12px,1.85vh,14.5px);font-weight:650;color:var(--ink)}
+.secHead p{margin:0;font-size:clamp(9.5px,1.35vh,11.5px);color:var(--samar)}
+
+/* minmax(0,1fr) WAJIB: tanpa itu kolom menolak menyusut dan
+   seluruh halaman ikut melebar melewati layar HP */
+.paket{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(5px,1.5vw,10px)}
+.pk{position:relative;display:flex;flex-direction:column;align-items:center;
+	text-align:center;text-decoration:none;overflow:hidden;
+	background:var(--kaca-pekat);border:1px solid var(--garis);border-radius:15px;
+	padding:clamp(9px,1.7vh,15px) clamp(3px,1vw,8px) clamp(9px,1.6vh,14px);
+	box-shadow:var(--bayang-halus);
+	transition:transform .14s,box-shadow .18s}
+.pk::before{content:"";position:absolute;top:0;left:22%;right:22%;height:2.5px;
+	border-radius:0 0 3px 3px;background:var(--pc)}
+.pk:active{transform:translateY(1px)}
+.pk .dur{font-size:clamp(7.5px,2.2vw,11px);font-weight:600;letter-spacing:.04em;
+	color:var(--mute);text-transform:uppercase;white-space:nowrap}
+.pk .price{margin:clamp(3px,.6vh,7px) 0 0;font-size:clamp(11px,3.4vw,20px);font-weight:700;
+	color:var(--pc);line-height:1.1;letter-spacing:-.03em;white-space:nowrap}
+.pk .price i{font-style:normal;font-size:.58em;font-weight:600;color:var(--samar);margin-right:1.5px}
+.pk .meta{margin:clamp(4px,.7vh,8px) 0 0;padding-top:clamp(4px,.7vh,8px);
+	border-top:1px solid var(--garis);width:100%;
+	font-size:clamp(6.5px,1.8vw,10px);color:var(--samar);line-height:1.3;white-space:nowrap}
+.pk .buy{display:none;align-items:center;justify-content:center;margin:11px 0 0;
+	border-radius:9px;padding:7px 12px;background:var(--pc);color:#fff;font-size:11px;font-weight:600}
+.pk .buy svg{width:13px;height:13px;margin-left:6px}
+
+.promo{display:none}
+
+/* ===================================================================
+   9. KAKI HALAMAN
+   =================================================================== */
+.foot{margin-top:clamp(9px,1.6vh,18px);text-align:center}
+.footMini{font-size:clamp(8.5px,1.15vh,10.5px);color:var(--samar)}
+.footMini b{color:var(--mute);font-weight:600}
+.footFull{display:none}
+.social .t{font-size:10.5px;font-weight:600;letter-spacing:.1em;color:var(--samar);text-transform:uppercase}
+.social .ic{display:flex;justify-content:center;margin:9px 0 0}
+.social a{display:flex;align-items:center;justify-content:center;width:34px;height:34px;margin:0 4px;
+	border-radius:50%;background:var(--kaca);border:1px solid var(--garis);text-decoration:none;
+	color:var(--mute)}
+.social a svg{width:16px;height:16px}
+
+/* ===================================================================
+   10. LAYAR SEMPIT SEKALI  (lebar <= 340px)
+   =================================================================== */
+@media (max-width:340px){
+	.app{padding-left:11px;padding-right:11px}
+	.paket{gap:4px}
+	.pk{padding-left:2px;padding-right:2px;border-radius:12px}
+	.pk .meta{font-size:6.6px}
+	.pk .dur{letter-spacing:.02em}
+}
+
+/* ===================================================================
+   11. HP DIMIRINGKAN  (layar pendek)
+   =================================================================== */
+@media (max-height:460px){
+	.wmsub{display:none}
+	.card .say{display:none}
+	.pk .meta{display:none}
+	.secHead p{display:none}
+}
+
+/* ===================================================================
+   12. TABLET  (600px - 1023px)
+   =================================================================== */
+@media (min-width:600px){
+	.app{max-width:600px;padding:22px 26px 24px}
+	.emblem{height:clamp(66px,10vh,102px)}
+	.logo{height:clamp(76px,12vh,140px)}
+	.wm{font-size:clamp(28px,4.4vh,40px)}
+	.wmsub{font-size:clamp(10.5px,1.5vh,12.5px)}
+	.tab{height:clamp(42px,5.6vh,50px);font-size:clamp(14px,2vh,16px)}
+	.card{border-radius:24px;padding:clamp(22px,3.4vh,32px) clamp(22px,3.4vw,30px) clamp(20px,3vh,28px)}
+	.card h1{font-size:clamp(18px,2.7vh,22px)}
+	.card .say{font-size:clamp(12.5px,1.8vh,14px)}
+	.fin{height:clamp(50px,6.8vh,60px);font-size:17px}
+	.btn{height:clamp(52px,7.2vh,62px);font-size:clamp(15.5px,2.3vh,18px)}
+	.wa .num{font-size:clamp(14px,2.1vh,16.5px)}
+	.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+		margin:clamp(13px,2.1vh,22px) 0 0;background:var(--garis);
+		border:1px solid var(--garis);border-radius:16px;overflow:hidden;
+		box-shadow:var(--bayang-halus)}
+	.secHead h2{font-size:clamp(14px,2vh,16.5px)}
+	.paket{gap:clamp(8px,1.4vw,12px)}
+	.pk{padding:clamp(13px,2.1vh,18px) clamp(6px,1.2vw,11px) clamp(12px,2vh,17px);border-radius:17px}
+	.pk .dur{font-size:clamp(9px,1.7vw,12px)}
+	.pk .price{font-size:clamp(14px,2.9vw,20px)}
+	.pk .meta{font-size:clamp(8px,1.5vw,11px)}
+	.pk .buy{display:inline-flex}
+	.promo{display:flex;align-items:center;margin:clamp(13px,2.1vh,22px) 0 0;
+		background:var(--kaca);border:1px solid var(--garis);border-radius:16px;
+		padding:clamp(11px,1.8vh,16px) 17px;box-shadow:var(--bayang-halus)}
+	.promo .ico{flex:0 0 auto;width:22px;height:22px;margin-right:13px;color:var(--acc)}
+	.promo .h{display:block;font-size:13.5px;font-weight:600;color:var(--ink)}
+	.promo .d{display:block;font-size:12px;color:var(--mute);line-height:1.4}
+	.footMini{display:none}
+	.footFull{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;
+		text-align:left;margin-top:clamp(14px,2.2vh,24px);padding-top:clamp(12px,1.9vh,20px);
+		border-top:1px solid var(--garis)}
+	.footFull .fb1 .n{font-size:14px;font-weight:650;color:var(--ink)}
+	.footFull .fb1 .c{font-size:11px;color:var(--samar);line-height:1.5}
+	.footFull .social{text-align:right}
+	.footFull .social .ic{justify-content:flex-end}
+}
+
+/* ===================================================================
+   13. LAPTOP  (1024px ke atas)
+   =================================================================== */
+@media (min-width:1024px){
+	.app{max-width:660px;padding:30px 30px 28px}
+	.emblem{height:clamp(78px,11vh,120px)}
+	.logo{height:clamp(88px,13vh,160px)}
+	.wm{font-size:clamp(32px,5vh,46px)}
+	.card{padding:clamp(26px,3.8vh,36px) clamp(26px,3vw,34px) clamp(24px,3.4vh,32px)}
+	.card h1{font-size:clamp(19px,2.9vh,24px)}
+	.fin{height:clamp(52px,7vh,62px)}
+	.btn{height:clamp(54px,7.4vh,64px);font-size:clamp(16px,2.4vh,19px)}
+	.pk .price{font-size:clamp(16px,3vw,23px)}
+}
+
+/* ===================================================================
+   14. LAYAR LISENSI
+   =================================================================== */
+#lisBlok{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99;
+	background:rgba(246,247,251,.96);padding:26px 20px;overflow:auto;
+	-webkit-overflow-scrolling:touch}
+#lisBlok .kotak{max-width:420px;margin:0 auto;text-align:center;background:#fff;
+	color:var(--ink);border:1px solid var(--garis);border-radius:22px;
+	padding:30px 24px 26px;box-shadow:var(--bayang-sedang)}
+#lisBlok .gembok{width:46px;height:46px;margin:0 auto 14px;color:var(--acc)}
+#lisBlok h2{margin:0;font-size:17px;font-weight:650;color:var(--ink)}
+#lisBlok p{margin:9px 0 0;font-size:13px;line-height:1.55;color:var(--mute)}
+#lisBlok .kode{display:block;margin:16px 0 0;padding:11px 12px;border-radius:12px;
+	background:var(--bg);border:1px solid var(--garis);
+	font-family:Consolas,"Courier New",monospace;font-size:12.5px;
+	color:var(--ink);word-break:break-all}
+#lisBlok .kode b{display:block;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+	color:var(--samar);font-weight:600;margin-bottom:4px}
+#lisBlok .tombol{display:inline-flex;align-items:center;justify-content:center;
+	margin:18px 0 0;padding:12px 22px;border-radius:12px;text-decoration:none;
+	background:#25d366;color:#fff;font-size:14px;font-weight:600;
+	box-shadow:0 5px 16px rgba(37,211,102,.32)}
+#lisBlok .tombol svg{width:16px;height:16px;margin-right:8px}
+#lisBlok .cap{margin:14px 0 0;font-size:11px;color:var(--samar)}
+html.lis-tolak body > .app{display:none}
+html.lis-tolak #lisBlok{display:block}
+</style>
+</head>
+<body>
+
+<!-- ===================================================================
+     KODE MIKROTIK - JANGAN DIUBAH
+     =================================================================== -->
+$(if chap-id)
+<form name="sendin" action="$(link-login-only)" method="post">
+	<input type="hidden" name="username" />
+	<input type="hidden" name="password" />
+	<input type="hidden" name="dst" value="$(link-orig)" />
+	<input type="hidden" name="popup" value="true" />
+</form>
+<script type="text/javascript" src="md5.js"></script>
+<script type="text/javascript">
+function doLogin(){
+	document.sendin.username.value = document.login.username.value;
+	document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value + '$(chap-challenge)');
+	document.sendin.submit();
+	return false;
+}
+</script>
+$(endif)
+
+<div class="bg"></div>
+<video class="bgvid" id="bgvid" muted playsinline autoplay loop preload="none" poster="img/bg.jpg" aria-hidden="true"></video>
+<div class="bgdim"></div>
+
+<!-- garis lengkung tipis di sudut, hiasan halus. Hilang kalau ada img/bg.jpg -->
+<svg class="scene" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+	<g fill="none" stroke="#4b56d6" stroke-opacity=".13" stroke-width="1.2">
+		<circle cx="360" cy="96" r="60"/><circle cx="360" cy="96" r="98"/>
+		<circle cx="360" cy="96" r="140"/><circle cx="360" cy="96" r="188"/>
+		<circle cx="34" cy="700" r="52"/><circle cx="34" cy="700" r="88"/>
+		<circle cx="34" cy="700" r="128"/>
+	</g>
+</svg>
+
+<div class="app">
+
+	<!-- ============================== KEPALA ============================== -->
+	<div class="hero">
+		<img class="logo" src="img/logo.png" alt="MIKROSETTING" onload="addCls('haslogo');" />
+		<svg class="emblem" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+			<defs>
+				<linearGradient id="ga" x1="0" y1="0" x2="1" y2="1">
+					<stop offset="0%" stop-color="#6f79ee"/><stop offset="100%" stop-color="#3b45c4"/>
+				</linearGradient>
+			</defs>
+			<circle cx="48" cy="48" r="45" fill="#fff" stroke="rgba(23,26,32,.08)" stroke-width="1.5"/>
+			<circle cx="48" cy="48" r="45" fill="url(#ga)" fill-opacity=".07"/>
+			<g fill="none" stroke="url(#ga)" stroke-linecap="round">
+				<path d="M26 52a30 30 0 0 1 44 0" stroke-width="5.5"/>
+				<path d="M34 62a19 19 0 0 1 28 0" stroke-width="5.5"/>
+			</g>
+			<circle cx="48" cy="72" r="5" fill="url(#ga)"/>
+		</svg>
+		<div class="wm"><span class="a">MIKRO</span><span class="b">SETTING</span></div>
+		<div class="wmsub">Internet Hotspot Voucher</div>
+	</div>
+
+	<!-- ====================== TAB + KARTU LOGIN ====================== -->
+	<div class="mid">
+		<div class="tabs" role="tablist">
+			<button class="tab" type="button" id="tabV" role="tab" aria-selected="true" onclick="setMode('voucher')">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"/><path d="M9.5 11.5h5" stroke-linecap="round"/></svg>
+				Voucher
+			</button>
+			<button class="tab" type="button" id="tabM" role="tab" aria-selected="false" onclick="setMode('member')">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c.6-3.6 3.5-5.6 7-5.6s6.4 2 7 5.6"/></svg>
+				Member
+			</button>
+		</div>
+
+		<div class="card" id="card">
+			<h1 class="m-voucher">Masukkan kode voucher</h1>
+			<p class="say m-voucher">Ketik kode yang tertera pada voucher Anda</p>
+			<h1 class="m-member">Masuk sebagai member</h1>
+			<p class="say m-member">Gunakan username dan password akun Anda</p>
+
+			$(if error)<div class="notice">$(error)</div>$(endif)
+
+			<form name="login" action="$(link-login-only)" method="post" autocomplete="off" onSubmit="return vSubmit()">
+				<input type="hidden" name="dst" value="$(link-orig)" />
+				<input type="hidden" name="popup" value="true" />
+
+				<div class="field" id="fUser">
+					<span class="fic">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"/><path d="M9.5 11.5h5" stroke-linecap="round"/></svg>
+					</span>
+					<input class="fin" id="inUser" name="username" type="text" value="$(username)"
+					       data-ph-voucher="Kode voucher"
+					       data-ph-member="Username"
+					       placeholder="Kode voucher"
+					       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+					       enterkeyhint="go" />
+				</div>
+
+				<div class="field" id="fPass">
+					<span class="fic">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.5"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></svg>
+					</span>
+					<input class="fin" id="inPass" name="password" type="password"
+					       placeholder="Password"
+					       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+					       enterkeyhint="go" />
+				</div>
+
+				<button class="btn" type="submit">Masuk
+					<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+				</button>
+			</form>
+
+			<div class="trust">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 5.8v5.1c0 4.3 3 7.8 7 8.9 4-1.1 7-4.6 7-8.9V5.8z"/><path d="M9.3 12.1l2 2 3.6-3.9"/></svg>
+				Koneksi aman dan terenkripsi
+			</div>
+
+			<noscript><div class="nojs">Halaman ini membutuhkan JavaScript aktif.</div></noscript>
+		</div>
+	</div>
+
+	<!-- ======================= BANTUAN WHATSAPP ======================= -->
+	<div class="waWrap">
+		<!-- Ganti nomor di DUA tempat: href (pakai 62...) dan tulisan .num -->
+		<a class="wa" href="https://wa.me/6281112001036?text=Halo%2C%20saya%20butuh%20bantuan%20internet" target="_blank" rel="noopener">
+			<span class="waic">
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2.2A9.7 9.7 0 0 0 3.6 16.8L2.3 21.7l5-1.3A9.7 9.7 0 1 0 12 2.2zm0 17.6c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.1 8.1 0 1 1 12 19.8zm4.5-6c-.25-.13-1.45-.72-1.68-.8-.22-.08-.39-.12-.55.13-.16.25-.63.8-.77.96-.14.16-.28.18-.53.06-.25-.13-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.12-.15.16-.25.25-.42.08-.16.04-.31-.02-.44-.06-.13-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.42.06-.64.31-.22.25-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.1.16 1.52.1.46-.07 1.45-.59 1.65-1.17.2-.57.2-1.06.14-1.17-.06-.11-.22-.17-.47-.29z"/></svg>
+			</span>
+			<span>
+				<span class="lbl">Butuh bantuan</span>
+				<span class="num angka">0811-1200-1036</span>
+			</span>
+		</a>
+	</div>
+
+	<!-- ================= STRIP KEUNGGULAN (layar lebar) ================= -->
+	<div class="stats">
+		<div class="st">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4.5 13.5H11l-1 8.5 9-11.5h-6.5z"/></svg>
+			<span><span class="sh">Cepat</span><span class="sd">Tanpa buffering</span></span>
+		</div>
+		<div class="st">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 5.8v5.1c0 4.3 3 7.8 7 8.9 4-1.1 7-4.6 7-8.9V5.8z"/></svg>
+			<span><span class="sh">Aman</span><span class="sd">Data terlindungi</span></span>
+		</div>
+		<div class="st">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+			<span><span class="sh">24 Jam</span><span class="sd">Selalu aktif</span></span>
+		</div>
+		<div class="st">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18v-3a8 8 0 0 1 16 0v3"/><rect x="2.5" y="16" width="4.5" height="6" rx="1.8"/><rect x="17" y="16" width="4.5" height="6" rx="1.8"/></svg>
+			<span><span class="sh">Support</span><span class="sd">Siap membantu</span></span>
+		</div>
+	</div>
+
+	<div class="spacer"></div>
+
+	<!-- ===================================================================
+	     PAKET  -  BAGIAN YANG BOLEH DIEDIT
+	     Ubah hanya tulisan di antara tanda  >  dan  <
+	     --pc = warna garis aksen dan harga pada kartu itu
+	     PENTING: jumlah kartu harus sama dengan angka pada
+	              .paket{grid-template-columns:repeat(5,minmax(0,1fr))
+	     =================================================================== -->
+	<div class="paketWrap">
+		<div class="secHead">
+			<h2>Pilihan paket</h2>
+			<p>Sentuh untuk memesan</p>
+		</div>
+
+		<div class="paket">
+
+			<a class="pk" style="--pc:#4b56d6" href="https://wa.me/6281112001036?text=Halo%2C%20saya%20mau%20beli%20voucher%201%20Bulan" target="_blank" rel="noopener">
+				<span class="dur">1 Bulan</span>
+				<span class="price angka"><i>Rp</i>70.000</span>
+				<span class="meta">30 hari</span>
+				<span class="buy">Pesan</span>
+			</a>
+
+			<a class="pk" style="--pc:#5a7fd4" href="https://wa.me/6281112001036?text=Halo%2C%20saya%20mau%20beli%20voucher%202%20Minggu" target="_blank" rel="noopener">
+				<span class="dur">2 Minggu</span>
+				<span class="price angka"><i>Rp</i>40.000</span>
+				<span class="meta">14 hari</span>
+				<span class="buy">Pesan</span>
+			</a>
+
+			<a class="pk" style="--pc:#4f97c4" href="https://wa.me/6281112001036?text=Halo%2C%20saya%20mau%20beli%20voucher%201%20Minggu" target="_blank" rel="noopener">
+				<span class="dur">1 Minggu</span>
+				<span class="price angka"><i>Rp</i>25.000</span>
+				<span class="meta">7 hari</span>
+				<span class="buy">Pesan</span>
+			</a>
+
+			<a class="pk" style="--pc:#5aa8a0" href="https://wa.me/6281112001036?text=Halo%2C%20saya%20mau%20beli%20voucher%201%20Hari" target="_blank" rel="noopener">
+				<span class="dur">1 Hari</span>
+				<span class="price angka"><i>Rp</i>10.000</span>
+				<span class="meta">24 jam</span>
+				<span class="buy">Pesan</span>
+			</a>
+
+			<a class="pk" style="--pc:#7fa86a" href="https://wa.me/6281112001036?text=Halo%2C%20saya%20mau%20beli%20voucher%206%20Jam" target="_blank" rel="noopener">
+				<span class="dur">6 Jam</span>
+				<span class="price angka"><i>Rp</i>5.000</span>
+				<span class="meta">6 jam</span>
+				<span class="buy">Pesan</span>
+			</a>
+
+		</div>
+	</div>
+
+	<div class="promo">
+		<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 14.6 8l6 .9-4.3 4.2 1 6-5.3-2.8L6.7 19l1-6L3.4 8.9 9.4 8z"/></svg>
+		<span style="flex:1 1 auto;min-width:0">
+			<span class="h">Makin lama, makin hemat</span>
+			<span class="d">Paket bulanan hanya sekitar Rp2.300 per hari.</span>
+		</span>
+	</div>
+
+	<!-- ============================== KAKI ============================== -->
+	<div class="foot">
+		<div class="footMini">&copy; 2026 <b>MIKROSETTING</b> &middot; Internet Hotspot Voucher</div>
+		<div class="footFull">
+			<div class="fb1">
+				<div class="n">MIKROSETTING</div>
+				<div class="c">&copy; 2026 Internet Hotspot Voucher</div>
+			</div>
+			<div class="social">
+				<span class="t">Ikuti kami</span>
+				<span class="ic">
+					<a href="https://facebook.com/mikrosetting" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.6h2.6l.4-3h-3V8.5c0-.9.25-1.5 1.5-1.5H16.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21h3z"/></svg></a>
+					<a href="https://instagram.com/mikrosetting" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.4" y="3.4" width="17.2" height="17.2" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1.2" fill="currentColor" stroke="none"/></svg></a>
+					<a href="https://wa.me/6281112001036" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.6A9.4 9.4 0 0 0 3.9 16.7L2.6 21.4l4.8-1.3A9.4 9.4 0 1 0 12 2.6zm0 17.1c-1.5 0-2.9-.4-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A7.8 7.8 0 1 1 12 19.7z"/></svg></a>
+				</span>
+			</div>
+		</div>
+	</div>
+
+</div>
+
+<!-- ===================================================================
+     LAYAR LISENSI - hanya muncul kalau kunci lisensi tidak cocok
+     =================================================================== -->
+<div id="lisBlok">
+	<div class="kotak">
+		<svg class="gembok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<rect x="4.5" y="10.5" width="15" height="10" rx="3"/>
+			<path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/>
+			<circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none"/>
+		</svg>
+		<h2>Lisensi belum aktif</h2>
+		<p>Halaman login ini dilindungi lisensi <b>MIKROSETTING</b>.<br>
+		   Kunci lisensi tidak berlaku untuk router ini.</p>
+		<span class="kode"><b>ID Router</b><span id="lisId">-</span></span>
+		<a class="tombol" id="lisWa" href="https://wa.me/6281112001036" target="_blank" rel="noopener">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2.2A9.7 9.7 0 0 0 3.6 16.8L2.3 21.7l5-1.3A9.7 9.7 0 1 0 12 2.2zm0 17.6c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.1 8.1 0 1 1 12 19.8z"/></svg>
+			Minta lisensi
+		</a>
+		<div class="cap">Kirim ID Router di atas ke MIKROSETTING<br>untuk mendapatkan kunci lisensi.</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+/* ===================================================================
+   PEMERIKSA LISENSI  -  MIKROSETTING
+   Halaman hanya tampil kalau LIS_KEY cocok dengan identitas router
+   tempat dia dipasang. Kunci tidak punya masa berlaku.
+   =================================================================== */
+
+/* LIS_KEY  = KUNCI LISENSI, bentuknya 4-4-4, dari generator-lisensi.html */
+var LIS_KEY  = "65Y3-24M7-9W2F";
+
+/* LIS_SALT = RESEP RAHASIA. Bukan nama router, bukan kunci.
+              Harus sama persis dengan generator-lisensi.html */
+var LIS_SALT = "GANTI-DENGAN-SALT-RAHASIA-ANDA";
+
+var LIS_MODE = "kunci";         /* "kunci" = blokir, "ingat" = tetap boleh login */
+
+(function(){
+	var imul = Math.imul || function(a,b){
+		var aH=(a>>>16)&0xffff, aL=a&0xffff, bH=(b>>>16)&0xffff, bL=b&0xffff;
+		return ((aL*bL)+(((aH*bL+aL*bH)<<16)>>>0))|0;
+	};
+	function hsh(s){
+		var h1=0xdeadbeef, h2=0x41c6ce57, i, c;
+		for(i=0;i<s.length;i++){
+			c=s.charCodeAt(i);
+			h1=imul(h1^c,2654435761);
+			h2=imul(h2^c,1597334677);
+		}
+		h1=imul(h1^(h1>>>16),2246822507)^imul(h2^(h2>>>13),3266489909);
+		h2=imul(h2^(h2>>>16),2246822507)^imul(h1^(h1>>>13),3266489909);
+		return (4294967296*(2097151&h2)+(h1>>>0));
+	}
+	function buatKunci(id){
+		var a = hsh(id + "|" + LIS_SALT).toString(36).toUpperCase();
+		var b = hsh(LIS_SALT + "#" + id).toString(36).toUpperCase();
+		var g = (a + b).replace(/[^A-Z0-9]/g,"");
+		while(g.length < 12){ g += "0"; }
+		g = g.substr(0,12);
+		return g.substr(0,4) + "-" + g.substr(4,4) + "-" + g.substr(8,4);
+	}
+
+	var ident = "$(identity)";
+	if(ident.indexOf("$(") === 0 || ident === ""){ ident = "$(server-address)"; }
+	var modeUji = (ident.indexOf("$(") === 0);
+
+	var el = document.getElementById('lisId');
+	if(el){
+		while(el.firstChild){ el.removeChild(el.firstChild); }
+		el.appendChild(document.createTextNode(modeUji ? "MODE UJI (bukan dari router)" : ident));
+	}
+
+	if(modeUji || LIS_MODE !== "kunci"){ return; }
+
+	var cocok = (LIS_KEY !== "" && LIS_KEY === buatKunci(ident));
+
+	if(!cocok){
+		var r = document.documentElement;
+		r.className = (r.className ? r.className + ' ' : '') + 'lis-tolak';
+		var wa = document.getElementById('lisWa');
+		if(wa){
+			wa.href = wa.href + "?text=" + encodeURIComponent(
+				"Halo MIKROSETTING, saya minta lisensi login page. ID ROUTER: " + ident);
+		}
+	}
+})();
+</script>
+
+<script type="text/javascript">
+(function(){
+	var probe = new Image();
+	probe.onload = function(){ addCls('hasbg'); };
+	probe.src = 'img/bg.jpg';
+
+	var f  = document.login;
+	var u  = f.username, p = f.password;
+	var card = document.getElementById('card');
+	var tv = document.getElementById('tabV'), tm = document.getElementById('tabM');
+
+	function sync(){ if(HN_MODE === 'voucher'){ p.value = u.value; } }
+	u.onkeyup = sync; u.onchange = sync; u.oninput = sync;
+
+	window.setMode = function(m){
+		HN_MODE = (m === 'member') ? 'member' : 'voucher';
+		var member = (HN_MODE === 'member');
+		card.className = member ? 'card mode-member' : 'card';
+		if(tv){ tv.setAttribute('aria-selected', member ? 'false' : 'true'); }
+		if(tm){ tm.setAttribute('aria-selected', member ? 'true'  : 'false'); }
+		u.placeholder = u.getAttribute(member ? 'data-ph-member' : 'data-ph-voucher') || '';
+		if(member){ p.value = ''; } else { sync(); }
+	};
+
+	setMode('voucher');
+	if(u.value){ sync(); }
+
+	/* --- LATAR VIDEO (opsional). false = pakai gambar saja --- */
+	var PAKAI_VIDEO = false;
+	(function(){
+		if(!PAKAI_VIDEO){ return; }
+		var v = document.getElementById('bgvid');
+		if(!v){ return; }
+		if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){ return; }
+		if(window.addEventListener){
+			v.addEventListener('canplay', function(){ addCls('hasvid'); }, false);
+		}
+		v.src = 'img/bg.mp4';
+		v.load();
+		var pl = v.play();
+		if(pl && pl['catch']){ pl['catch'](function(){}); }
+	})();
+
+	/* --- PENJAGA SATU LAYAR --- */
+	var app = document.querySelector('.app');
+	function fitOneScreen(){
+		try{
+			if(!app){ return; }
+			app.style.zoom = '';
+			var layar = window.innerHeight;
+			var isi   = app.scrollHeight;
+			if(isi > layar + 2){
+				var z = layar / isi;
+				if(z < .78){ z = .78; }
+				app.style.zoom = String(z);
+			}
+		}catch(e){}
+	}
+	fitOneScreen();
+	if(window.addEventListener){
+		window.addEventListener('load', fitOneScreen, false);
+		window.addEventListener('orientationchange', function(){ setTimeout(fitOneScreen, 250); }, false);
+	}
+})();
+</script>
+</body>
+</html>

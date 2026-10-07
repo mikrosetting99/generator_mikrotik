@@ -52,68 +52,49 @@ pesanan lisensi). Menu **Load Balance & Fail Over**, **Halaman Login
 Hotspot** (yang gratis), dan **Cek Mikrotik** tetap 100% jalan di browser
 tanpa database dan tanpa login.
 
-1. **Buat database di aaPanel** — menu **Database → Add database**, catat
-   nama database, username, dan password yang dibuat.
-2. **Buat file `.env`** di root proyek (tidak ikut ke Git):
+Cukup jalankan satu skrip — **tidak perlu lagi** bikin `.env` atau
+`openssl rand` manual:
 
-   ```bash
-   cp .env.example .env
-   nano .env
-   ```
+```bash
+bash first-setup.sh
+```
 
-   Isi minimal:
+Kalau `.env` belum ada, skrip ini **menanyakannya interaktif**: host/nama
+database, domain situs, username+password admin pertama, dan nomor
+WhatsApp penerbit lisensi. `NEXTAUTH_SECRET` dan `MSLP_LICENSE_SALT`
+dibuat acak otomatis — tidak perlu diisi sendiri.
 
-   ```env
-   DATABASE_URL="mysql://USER:PASSWORD@127.0.0.1:3306/NAMA_DATABASE"
-   NEXTAUTH_SECRET="hasil dari: openssl rand -base64 32"
-   NEXTAUTH_URL="https://generator.mikrosetting.com"
-   SEED_ADMIN_USERNAME="admin"
-   SEED_ADMIN_PASSWORD="password-kuat-untuk-admin-pertama"
+Untuk database-nya sendiri, dua pilihan saat ditanya:
 
-   # Khusus menu Login Page Hotspot — lihat penjelasan di bawah
-   MSLP_LICENSE_SALT="resep-rahasia-panjang"
-   MSLP_LICENSOR_WA=6281112001036
-   ```
+- **Dibuatkan otomatis** (jawab `y`) — skrip minta username/password
+  **root/admin MySQL** lalu membuat database & user barunya sendiri lewat
+  `mysql` client. Password user barunya di-generate acak dan ditampilkan
+  sekali di akhir (tersimpan juga di `.env`).
+- **Sudah dibuat sendiri** (jawab `n`, atau jawab `y` tapi `mysql` client
+  tidak ada) — buat dulu lewat aaPanel: **Database → Add database**,
+  lalu masukkan nama/username/password yang sama saat ditanya skrip.
 
-   **`MSLP_LICENSE_SALT` harus sama persis** dengan `LIS_SALT` di dalam
-   `login.html` yang sudah beredar di router pembeli. Kalau nilainya
-   berubah, semua kunci yang pernah diterbitkan langsung mati dan tidak
-   bisa ditarik kembali. Variabel ini hanya dibaca di sisi server dan
-   tidak pernah ikut ke browser — jangan pernah diberi awalan
-   `NEXT_PUBLIC_`.
+Setelah `.env` terisi (baru atau sudah ada dari sebelumnya), skrip lanjut
+otomatis: pasang dependensi → migrasi database (bikin semua tabel) → buat
+akun admin pertama → build → jalankan lewat PM2. Aman dijalankan ulang
+kapan saja — langkah yang sudah beres dilewati/diulang tanpa efek samping.
 
-   Opsional: `MSLP_ARSIP_DIR` untuk memindahkan lokasi arsip hasil cetak
-   (lihat bagian **Dua folder yang diurus lewat File Manager aaPanel** di
-   bawah); bawaannya `data/hasil` di dalam folder proyek.
+> **`MSLP_LICENSE_SALT` harus sama persis** dengan `LIS_SALT` di dalam
+> `login.html` yang sudah beredar di router pembeli, bila sudah pernah ada
+> lisensi terbit sebelumnya. Kalau nilainya berubah, semua kunci yang
+> pernah diterbitkan langsung mati dan tidak bisa ditarik kembali. Kalau
+> ini benar-benar deploy pertama (belum ada lisensi terbit), nilai acak
+> yang dibuat skrip ini aman dipakai.
+>
+> Opsional: `MSLP_ARSIP_DIR` untuk memindahkan lokasi arsip hasil cetak
+> (lihat bagian **Dua folder yang diurus lewat File Manager aaPanel** di
+> bawah); bawaannya `data/hasil` di dalam folder proyek. Tambahkan manual
+> ke `.env` kalau perlu — skrip ini tidak menanyakannya.
 
-3. **Jalankan setup pertama kali** — satu skrip yang mengerjakan sisanya
-   (pasang dependensi, migrasi database, buat akun admin pertama, build,
-   dan menjalankan lewat PM2):
-
-   ```bash
-   bash first-setup.sh
-   ```
-
-   Skrip ini berhenti dengan pesan jelas kalau `.env` belum ada/masih nilai
-   contoh (nomor 2 di atas belum benar diisi). Amannya, jalankan ulang
-   setelah membenarkan `.env` — setiap langkahnya aman diulang.
-
-   Kalau memilih menjalankannya manual satu-satu (setara isi skrip di
-   atas):
-
-   ```bash
-   npm ci                      # juga menjalankan `prisma generate`
-   npx prisma migrate deploy   # membuat tabel users, saved_configs, license_orders, dst
-   npm run db:seed             # buat akun admin dari SEED_ADMIN_USERNAME/PASSWORD
-   npm run build               # pakai `npm run build:webpack` kalau Turbopack gagal
-   pm2 start ecosystem.config.js
-   pm2 save
-   ```
-
-   Login pertama ke `/login` pakai `SEED_ADMIN_USERNAME`/`SEED_ADMIN_PASSWORD`
-   dari `.env`, lalu tambahkan akun teknisi lain lewat menu **Kelola
-   Pengguna** (ikon di header Setup Mikrotik Baru, khusus admin) — untuk
-   saat ini hanya admin yang bisa mendaftarkan akun baru.
+Login pertama ke `/login` pakai username/password admin yang diisi saat
+setup, lalu tambahkan akun teknisi lain lewat menu **Kelola Pengguna**
+(ikon di header Setup Mikrotik Baru, khusus admin) — untuk saat ini hanya
+admin yang bisa mendaftarkan akun baru.
 
 ---
 

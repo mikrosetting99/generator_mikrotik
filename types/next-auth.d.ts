@@ -7,6 +7,8 @@ declare module "next-auth" {
   interface User extends DefaultUser {
     username: string;
     role: Role;
+    /** "Remember me" dicentang saat login — sesi pendek bila tidak. */
+    rememberMe: boolean;
   }
 
   interface Session {
@@ -23,5 +25,6 @@ declare module "next-auth/jwt" {
     id: string;
     username: string;
     role: Role;
+    rememberMe: boolean;
   }
 }

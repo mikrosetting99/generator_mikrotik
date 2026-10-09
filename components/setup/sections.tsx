@@ -436,6 +436,28 @@ export function DnsSection({ config, patch, issues }: SectionProps) {
           </Note>
         </div>
       )}
+
+      <div className="mt-4">
+        <Toggle
+          checked={config.dns.flushSchedule}
+          onChange={(flushSchedule) => patch({ dns: { ...config.dns, flushSchedule } })}
+          label="Scheduler flush DNS cache"
+          hint="Bersihkan cache DNS router secara berkala lewat /system scheduler — membantu saat cache DNS keliru atau kedaluwarsa menumpuk."
+        />
+      </div>
+
+      {config.dns.flushSchedule && (
+        <div className="mt-4">
+          <Field label="Interval" hint="Format durasi RouterOS, misal 1d atau 12h.">
+            <TextInput
+              mono
+              value={config.dns.flushInterval}
+              onChange={(flushInterval) => patch({ dns: { ...config.dns, flushInterval } })}
+              placeholder="1d"
+            />
+          </Field>
+        </div>
+      )}
       <IssueList issues={issues} />
     </Panel>
   );

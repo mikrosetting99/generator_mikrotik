@@ -266,6 +266,8 @@ export function normalizeConfig(raw: unknown): SetupConfig {
     dns: {
       servers: "servers" in dns ? asStringList(dns.servers) : base.dns.servers,
       allowRemoteRequests: asBool(dns.allowRemoteRequests, base.dns.allowRemoteRequests),
+      flushSchedule: asBool(dns.flushSchedule, base.dns.flushSchedule),
+      flushInterval: asString(dns.flushInterval, base.dns.flushInterval),
     },
     nat: {
       enabled: asBool(nat.enabled, base.nat.enabled),

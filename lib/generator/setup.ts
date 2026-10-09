@@ -401,6 +401,19 @@ export function generateSetupScript(config: SetupConfig): string {
     );
   }
 
+  if (config.dns.flushSchedule) {
+    s.addIfMissing(
+      "/system scheduler",
+      [["name", "flush-dns-cache"]],
+      args([
+        ["name", "flush-dns-cache"],
+        ["interval", config.dns.flushInterval.trim() || "1d"],
+        ["on-event", raw('"/ip dns cache flush"')],
+        ["comment", tag("Bersihkan cache DNS router secara berkala")],
+      ]),
+    );
+  }
+
   // ---------------------------------------------------------------- ip pool
   if (config.pools.length > 0) {
     section(

@@ -119,7 +119,12 @@ export function createDefaultConfig(): SetupConfig {
       ntp: true,
     },
     wans: [newWan()],
-    dns: { servers: ["8.8.8.8", "1.1.1.1"], allowRemoteRequests: true },
+    dns: {
+      servers: ["8.8.8.8", "1.1.1.1"],
+      allowRemoteRequests: true,
+      flushSchedule: false,
+      flushInterval: "1d",
+    },
     nat: { enabled: true, mode: "global", interfaces: [] },
     bridges: [],
     wireless: { country: "Indonesia", radios: [] },

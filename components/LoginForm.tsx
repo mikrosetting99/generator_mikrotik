@@ -10,6 +10,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,6 +21,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
     const result = await signIn("credentials", {
       username,
       password,
+      rememberMe: rememberMe ? "true" : "false",
       redirect: false,
     });
     setLoading(false);
@@ -40,6 +42,16 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       <Field label="Password" required>
         <TextInput type="password" value={password} onChange={setPassword} placeholder="••••••••" />
       </Field>
+
+      <label className="flex items-center gap-2 text-sm text-muted">
+        <input
+          type="checkbox"
+          checked={rememberMe}
+          onChange={(e) => setRememberMe(e.target.checked)}
+          className="h-4 w-4 accent-[color:var(--color-brand)]"
+        />
+        Ingat saya
+      </label>
 
       {error && <Note tone="bad">{error}</Note>}
 

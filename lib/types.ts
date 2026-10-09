@@ -153,6 +153,10 @@ export interface PppoeConfig {
 export interface DnsConfig {
   servers: string[];
   allowRemoteRequests: boolean;
+  /** Jadwalkan /ip dns cache flush secara berkala lewat /system scheduler. */
+  flushSchedule: boolean;
+  /** Format durasi RouterOS, misal 1d atau 12h. */
+  flushInterval: string;
 }
 
 export interface NatConfig {

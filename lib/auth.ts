@@ -12,6 +12,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
+        rememberMe: { label: "Remember me", type: "text" },
       },
       async authorize(credentials) {
         const username = credentials?.username?.trim();
@@ -24,7 +25,13 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
-        return { id: user.id, name: user.name ?? user.username, username: user.username, role: user.role };
+        return {
+          id: user.id,
+          name: user.name ?? user.username,
+          username: user.username,
+          role: user.role,
+          rememberMe: credentials?.rememberMe === "true",
+        };
       },
     }),
   ],
@@ -34,6 +41,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.username = user.username;
         token.role = user.role;
+        token.rememberMe = user.rememberMe;
       }
       return token;
     },

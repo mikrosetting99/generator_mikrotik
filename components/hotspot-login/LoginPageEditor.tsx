@@ -15,7 +15,7 @@ import {
 } from "@/lib/hotspot-page";
 import type { HotspotPageConfig, LoginMode } from "@/lib/types-hotspot-login";
 
-const grid2 = "grid gap-4 sm:grid-cols-2";
+const grid2 = "grid gap-4";
 
 const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
 const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
@@ -256,7 +256,7 @@ export function LoginPageEditor({
         })}
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[400px_minmax(0,1fr)]">
         <div className="space-y-4">
           <div className={grid2}>
             <Field
@@ -295,7 +295,7 @@ export function LoginPageEditor({
               Gambar
             </span>
 
-            <div className="mt-3.5 grid gap-5 sm:grid-cols-2">
+            <div className="mt-3.5 grid gap-5">
               {/* Logo */}
               <div>
                 <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
@@ -647,10 +647,10 @@ export function LoginPageEditor({
                 title="Pratinjau halaman login hotspot"
                 srcDoc={preview}
                 sandbox="allow-scripts"
-                className="block h-[calc(100vh-11rem)] min-h-[640px] w-full border-0 bg-white"
+                className="block h-[calc(100vh-8rem)] min-h-[720px] w-full border-0 bg-white"
               />
             ) : (
-              <div className="grid h-[calc(100vh-11rem)] min-h-[640px] place-items-center text-xs text-faint">
+              <div className="grid h-[calc(100vh-8rem)] min-h-[720px] place-items-center text-xs text-faint">
                 Memuat pratinjau…
               </div>
             )}

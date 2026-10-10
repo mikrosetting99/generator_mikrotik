@@ -50,6 +50,35 @@ function formatSize(bytes: number): string {
     : `${Math.round(bytes / 1024)} KB`;
 }
 
+/** Kelompok menu yang bisa dibuka-tutup (dropdown). */
+function Section({
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details open={defaultOpen} className="group rounded-xl border border-line-soft bg-raised/50">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 [&::-webkit-details-marker]:hidden">
+        <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">{title}</span>
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="h-4 w-4 text-muted transition-transform group-open:rotate-180"
+        >
+          <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </summary>
+      <div className="space-y-4 border-t border-line-soft p-4">{children}</div>
+    </details>
+  );
+}
+
 export function LoginPageEditor({
   page,
   setPage,
@@ -257,7 +286,8 @@ export function LoginPageEditor({
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[400px_minmax(0,1fr)]">
-        <div className="space-y-4">
+        <div className="space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
+          <Section title="Tampilan" defaultOpen>
           <div className={grid2}>
             <Field
               label="Nama hotspot"
@@ -289,13 +319,12 @@ export function LoginPageEditor({
             halaman tetap terbaca meski Anda memilih latar terang maupun gelap.
           </p>
 
-          {/* Logo & gambar latar */}
-          <div className="rounded-xl border border-line-soft bg-raised/50 p-4">
-            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">
-              Gambar
-            </span>
+          </Section>
 
-            <div className="mt-3.5 grid gap-5">
+          {/* Logo & gambar latar */}
+          <Section title="Gambar">
+          <div>
+            <div className="grid gap-5">
               {/* Logo */}
               <div>
                 <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
@@ -456,12 +485,11 @@ export function LoginPageEditor({
             </p>
           </div>
 
+          </Section>
+
           {/* Mode login */}
-          <div className="rounded-xl border border-line-soft bg-raised/50 p-4">
-            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">
-              Mode login
-            </span>
-            <div className={`mt-3.5 ${grid2}`}>
+          <Section title="Mode login">
+            <div className={grid2}>
               <Field
                 label="Mode saat halaman dibuka"
                 hint="Mode voucher menyembunyikan kolom password dan mengisinya otomatis dari kode."
@@ -491,8 +519,9 @@ export function LoginPageEditor({
                 />
               </div>
             </div>
-          </div>
+          </Section>
 
+          <Section title="Teks berjalan">
           <Field label="Teks berjalan" hint="Muncul sebagai marquee di atas form. Kosongkan bila tidak perlu.">
             <TextInput
               value={page.marquee}
@@ -501,12 +530,11 @@ export function LoginPageEditor({
             />
           </Field>
 
+          </Section>
+
           {/* Tabel paket */}
-          <div className="rounded-xl border border-line-soft bg-raised/50 p-4">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">
-                Tabel harga paket
-              </span>
+          <Section title="Tabel harga paket">
+            <div className="flex justify-end">
               <Button size="sm" onClick={() => setPage({ packages: [...page.packages, newPackage()] })}>
                 <Plus className="h-3.5 w-3.5" /> Tambah paket
               </Button>
@@ -516,8 +544,8 @@ export function LoginPageEditor({
             ) : (
               <div className="space-y-3">
                 {page.packages.map((pkg, index) => (
-                  <div key={pkg.id} className="flex items-end gap-2">
-                    <Field label={index === 0 ? "Nama paket" : ""} className="flex-1">
+                  <div key={pkg.id} className="grid grid-cols-2 items-end gap-2 rounded-lg border border-line-soft p-3">
+                    <Field label="Nama paket" className="flex-1">
                       <TextInput
                         value={pkg.name}
                         onChange={(name) =>
@@ -528,7 +556,7 @@ export function LoginPageEditor({
                         placeholder="2 Jam"
                       />
                     </Field>
-                    <Field label={index === 0 ? "Durasi" : ""} className="flex-1">
+                    <Field label="Durasi" className="flex-1">
                       <TextInput
                         value={pkg.duration}
                         onChange={(duration) =>
@@ -541,7 +569,7 @@ export function LoginPageEditor({
                         placeholder="2 jam"
                       />
                     </Field>
-                    <Field label={index === 0 ? "Masa aktif" : ""} className="flex-1">
+                    <Field label="Masa aktif" className="flex-1">
                       <TextInput
                         value={pkg.validity}
                         onChange={(validity) =>
@@ -554,7 +582,7 @@ export function LoginPageEditor({
                         placeholder="opsional"
                       />
                     </Field>
-                    <Field label={index === 0 ? "Harga" : ""} className="flex-1">
+                    <Field label="Harga" className="flex-1">
                       <TextInput
                         value={pkg.price}
                         onChange={(price) =>
@@ -567,7 +595,7 @@ export function LoginPageEditor({
                     </Field>
                     <Button
                       variant="danger"
-                      className="px-3"
+                      className="col-span-2 px-3"
                       ariaLabel={`Hapus paket ${index + 1}`}
                       title={`Hapus paket ${index + 1}`}
                       onClick={() =>
@@ -580,9 +608,9 @@ export function LoginPageEditor({
                 ))}
               </div>
             )}
-          </div>
+          </Section>
 
-          {/* WhatsApp & teks penutup */}
+          <Section title="WhatsApp & footer">
           <div className={grid2}>
             <Field
               label="Nomor WhatsApp"
@@ -629,10 +657,11 @@ export function LoginPageEditor({
               Mikrotik Baru → IP Hotspot.
             </Note>
           )}
+          </Section>
         </div>
 
         {/* Pratinjau */}
-        <div className="lg:sticky lg:top-24 lg:self-start">
+        <div className="lg:sticky lg:top-20 lg:self-start">
           <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
             Pratinjau
           </span>
@@ -647,10 +676,10 @@ export function LoginPageEditor({
                 title="Pratinjau halaman login hotspot"
                 srcDoc={preview}
                 sandbox="allow-scripts"
-                className="block h-[calc(100vh-8rem)] min-h-[720px] w-full border-0 bg-white"
+                className="block h-[calc(100vh-10.5rem)] min-h-[480px] w-full border-0 bg-white"
               />
             ) : (
-              <div className="grid h-[calc(100vh-8rem)] min-h-[720px] place-items-center text-xs text-faint">
+              <div className="grid h-[calc(100vh-10.5rem)] min-h-[480px] place-items-center text-xs text-faint">
                 Memuat pratinjau…
               </div>
             )}

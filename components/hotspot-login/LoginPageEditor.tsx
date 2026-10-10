@@ -335,12 +335,12 @@ export function LoginPageEditor({
                 Kepekatan form
               </span>
               <span className="font-mono text-[11px] text-brand">
-                {page.formBgOpacity ?? 100}%{(page.formBgOpacity ?? 100) < 100 ? " · transparan" : ""}
+                {page.formBgOpacity ?? 100}%{(page.formBgOpacity ?? 100) === 0 ? " · tembus pandang penuh" : (page.formBgOpacity ?? 100) < 100 ? " · transparan" : ""}
               </span>
             </div>
             <input
               type="range"
-              min={10}
+              min={0}
               max={100}
               step={5}
               value={page.formBgOpacity ?? 100}

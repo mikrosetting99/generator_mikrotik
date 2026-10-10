@@ -81,13 +81,24 @@ export function SaveLoadPage({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: overwrite ? loaded?.id : undefined, name, config: page }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setFlash({ tone: "bad", text: data.error ?? "Gagal menyimpan." });
+      // Penolakan dari proxy (mis. 413) berupa HTML, bukan JSON.
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.entry) {
+        setFlash({
+          tone: "bad",
+          text:
+            data?.error ??
+            (res.status === 413
+              ? "Ukuran desain terlalu besar untuk server (gambar). Perkecil gambar, atau naikkan client_max_body_size di nginx."
+              : `Gagal menyimpan (kode ${res.status}).`),
+        });
         return;
       }
-      onSaved({ id: data.entry.id, name: data.entry.name });
-      setFlash({ tone: "info", text: `"${data.entry.name}" tersimpan di database.` });
+      const saved: Entry = data.entry;
+      // Langsung tampil di daftar tanpa menunggu muat ulang dari server.
+      setEntries((prev) => [saved, ...(prev ?? []).filter((e) => e.id !== saved.id)]);
+      onSaved({ id: saved.id, name: saved.name });
+      setFlash({ tone: "info", text: `"${saved.name}" tersimpan di database.` });
       refresh();
     } catch {
       setFlash({ tone: "bad", text: "Gagal menghubungi server." });

@@ -200,7 +200,8 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
   // Kartu form: warna sendiri bila dipilih, dan teks/garis/kolomnya dihitung
   // ulang dari warna itu agar tetap terbaca di atas kartu terang maupun gelap.
   const formColor = isHexColor(page.formBgColor ?? "") ? page.formBgColor.trim() : "";
-  const formOpacity = Math.max(10, Math.min(100, Number(page.formBgOpacity) || 100));
+  const rawOpacity = Number(page.formBgOpacity);
+  const formOpacity = Number.isFinite(rawOpacity) ? Math.max(0, Math.min(100, rawOpacity)) : 100;
   const hasFormImage = Boolean(page.formImageDataUrl);
   const baseForm = formColor || palette.surface;
   // Yang terlihat di balik kartu menentukan terbaca-tidaknya teks: kartu

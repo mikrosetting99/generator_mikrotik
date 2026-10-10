@@ -332,6 +332,27 @@ export function LoginPageEditor({
           <div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                Lebar form
+              </span>
+              <span className="font-mono text-[11px] text-brand">{page.formWidth ?? 340} px</span>
+            </div>
+            <input
+              type="range"
+              min={300}
+              max={720}
+              step={10}
+              value={page.formWidth ?? 340}
+              aria-label="Lebar kartu form"
+              onChange={(e) => setPage({ formWidth: Number(e.target.value) })}
+              className="mt-2 w-full accent-[color:var(--color-brand)]"
+            />
+            <p className="mt-1 text-xs leading-relaxed text-faint">
+              Lebar maksimal kartu login. Di HP kartunya tetap menyesuaikan lebar layar.
+            </p>
+          </div>
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
                 Kepekatan form
               </span>
               <span className="font-mono text-[11px] text-brand">

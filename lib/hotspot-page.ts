@@ -263,6 +263,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     BG: palette.bg,
     SURFACE: palette.surface,
     FORM_BG: formOpacity < 100 ? rgba(baseForm, formOpacity / 100) : baseForm,
+    FORM_WIDTH: String(Math.round(Math.max(300, Math.min(720, Number(page.formWidth) || 340)))),
     FORM_IMAGE: hasFormImage ? formImageFileName(page.formImageDataUrl) : "",
     FORM_TEXT: formText,
     FORM_MUTED: customForm ? mutedOn(seen) : palette.muted,

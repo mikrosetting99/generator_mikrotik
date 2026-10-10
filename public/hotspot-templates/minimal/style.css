@@ -28,8 +28,6 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 14px;
   display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .main {
@@ -298,12 +296,10 @@ body {
   background-attachment: scroll;
 }
 
-/* Kartu tidak boleh melebihi layar. Bila isinya memang panjang — misalnya ada
-   tabel harga — yang menggulung cukup kartunya, bukan seluruh halaman. */
-.main {
-  max-height: calc(100dvh - clamp(20px, 6vw, 44px));
-  overflow-y: auto;
-}
+/* Bila isinya panjang — misalnya ada tabel harga — yang menggulung seluruh
+   halaman, bukan kartunya. Margin auto menengahkan kartu tanpa memotong bagian
+   atasnya saat isinya lebih tinggi dari layar. */
+.main { margin: auto; }
 
 /* Tinggi kontrol ikut tinggi layar tapi tidak pernah di bawah 40px agar tetap
    nyaman disentuh. Font kolom tetap 16px supaya iOS tidak memperbesar halaman

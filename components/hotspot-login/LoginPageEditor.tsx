@@ -16,6 +16,17 @@ import type { HotspotPageConfig, LoginMode } from "@/lib/types-hotspot-login";
 
 const grid2 = "grid gap-4";
 
+/**
+ * Ukuran perangkat untuk pratinjau. Iframe dirender pada ukuran aslinya lalu
+ * diperkecil secara visual, supaya media query halaman login bereaksi sama
+ * seperti di perangkat sungguhan.
+ */
+const DEVICES = [
+  { id: "hp", label: "HP", w: 390, h: 780 },
+  { id: "tablet", label: "Tablet", w: 768, h: 1024 },
+  { id: "laptop", label: "Laptop", w: 1280, h: 720 },
+] as const;
+
 const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
 const FORM_PRESETS = ["#ffffff", "#f1f5f9", "#fef3c7", "#e0f2fe", "#1e293b", "#0f172a"];
 const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
@@ -102,6 +113,20 @@ export function LoginPageEditor({
   const [bgInfo, setBgInfo] = useState<ImageInfo | null>(null);
   const [formInfo, setFormInfo] = useState<ImageInfo | null>(null);
   const [preview, setPreview] = useState("");
+  const [device, setDevice] = useState<(typeof DEVICES)[number]>(DEVICES[0]);
+  const stage = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const fit = () =>
+      setScale(Math.min(1, (el.clientWidth - 24) / device.w, (el.clientHeight - 24) / device.h));
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [device]);
 
   // Pratinjau: gabungkan login.html + style.css milik desain terpilih, lalu
   // ganti variabel RouterOS dengan contoh nilai supaya terbaca wajar.
@@ -725,30 +750,56 @@ export function LoginPageEditor({
 
         {/* Pratinjau */}
         <div className="lg:sticky lg:top-20 lg:self-start">
-          <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
-            Pratinjau
-          </span>
-          <div className="mt-2 overflow-hidden rounded-xl border border-line bg-canvas">
-            <div className="flex items-center gap-1.5 border-b border-line-soft px-3 py-2">
-              <span className="h-2 w-2 rounded-full bg-line" />
-              <span className="h-2 w-2 rounded-full bg-line" />
-              <span className="ml-1 font-mono text-[10px] text-faint">login.html</span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+              Pratinjau
+            </span>
+            <div className="flex gap-1 rounded-lg border border-line bg-canvas p-1">
+              {DEVICES.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  aria-pressed={d.id === device.id}
+                  onClick={() => setDevice(d)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                    d.id === device.id
+                      ? "bg-brand text-[color:var(--color-brand-ink)]"
+                      : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
             </div>
+          </div>
+          <div
+            ref={stage}
+            className="mt-2 grid h-[calc(100vh-10.5rem)] min-h-[480px] place-items-center overflow-hidden rounded-xl border border-line bg-raised/60"
+          >
             {preview ? (
-              <iframe
-                title="Pratinjau halaman login hotspot"
-                srcDoc={preview}
-                sandbox="allow-scripts"
-                className="block h-[calc(100vh-10.5rem)] min-h-[480px] w-full border-0 bg-white"
-              />
-            ) : (
-              <div className="grid h-[calc(100vh-10.5rem)] min-h-[480px] place-items-center text-xs text-faint">
-                Memuat pratinjau…
+              <div style={{ width: device.w * scale, height: device.h * scale }}>
+                <iframe
+                  key={device.id}
+                  title="Pratinjau halaman login hotspot"
+                  srcDoc={preview}
+                  sandbox="allow-scripts"
+                  className="block origin-top-left border-0 bg-white shadow-lg"
+                  style={{
+                    width: device.w,
+                    height: device.h,
+                    transform: `scale(${scale})`,
+                    borderRadius: device.id === "hp" ? 18 : device.id === "tablet" ? 12 : 6,
+                  }}
+                />
               </div>
+            ) : (
+              <span className="text-xs text-faint">Memuat pratinjau…</span>
             )}
           </div>
           <p className="mt-2 text-xs leading-relaxed text-faint">
-            Tombol Voucher/Member berfungsi di pratinjau ini. Kolom login tidak mengirim apa pun.
+            {device.label} · {device.w} × {device.h} px
+            {scale < 1 && ` · diperkecil ${Math.round(scale * 100)}% agar muat`}. Tombol Voucher/Member
+            berfungsi di pratinjau ini. Kolom login tidak mengirim apa pun.
           </p>
         </div>
       </div>

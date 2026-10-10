@@ -256,7 +256,7 @@ export function LoginPageEditor({
         })}
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-4">
           <div className={grid2}>
             <Field
@@ -647,10 +647,10 @@ export function LoginPageEditor({
                 title="Pratinjau halaman login hotspot"
                 srcDoc={preview}
                 sandbox="allow-scripts"
-                className="block h-[480px] w-full border-0 bg-white"
+                className="block h-[760px] w-full border-0 bg-white"
               />
             ) : (
-              <div className="grid h-[480px] place-items-center text-xs text-faint">
+              <div className="grid h-[760px] place-items-center text-xs text-faint">
                 Memuat pratinjau…
               </div>
             )}

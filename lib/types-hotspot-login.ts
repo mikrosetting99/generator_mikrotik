@@ -1,4 +1,4 @@
-export type HotspotTemplateId = "minimal" | "voucher" | "korporat" | "gelap" | "poster";
+export type HotspotTemplateId = "minimal" | "poster";
 export type LoginMode = "voucher" | "member";
 
 /** Satu baris pada tabel harga paket di halaman login. */
@@ -24,6 +24,8 @@ export interface HotspotPageConfig {
   primaryColor: string;
   /** Warna latar bebas; warna teks & garis diturunkan dari kecerahannya. */
   bgColor: string;
+  /** Warna latar kartu form. Kosong = diturunkan otomatis dari warna latar. */
+  formBgColor: string;
   /** Nama yang tampil di halaman login. Kosong = judul disembunyikan. */
   title: string;
   subtitle: string;

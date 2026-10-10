@@ -39,27 +39,6 @@ export const TEMPLATES: HotspotTemplate[] = [
     defaultBg: "#ffffff",
   },
   {
-    id: "voucher",
-    name: "Voucher",
-    description: "Bergaya tiket dengan kepala berwarna. Cocok untuk warnet dan RT/RW Net.",
-    defaultPrimary: "#f59e0b",
-    defaultBg: "#ffffff",
-  },
-  {
-    id: "korporat",
-    name: "Korporat",
-    description: "Dua kolom di layar lebar: identitas usaha di kiri, form login di kanan.",
-    defaultPrimary: "#2563eb",
-    defaultBg: "#ffffff",
-  },
-  {
-    id: "gelap",
-    name: "Gelap Modern",
-    description: "Kartu mengambang dengan cahaya ambien mengikuti warna tema.",
-    defaultPrimary: "#a78bfa",
-    defaultBg: "#07070d",
-  },
-  {
     id: "poster",
     name: "Poster",
     description:
@@ -214,6 +193,14 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     contrastRatio(cardLight, bgColor) >= contrastRatio(cardDark, bgColor) ? cardLight : cardDark;
   const title = page.title.trim();
 
+  // Kartu form: warna sendiri bila dipilih, dan teks/garis/kolomnya dihitung
+  // ulang dari warna itu agar tetap terbaca di atas kartu terang maupun gelap.
+  const formBg = isHexColor(page.formBgColor ?? "") ? page.formBgColor.trim() : "";
+  const formText = formBg ? readableOn(formBg) : palette.text;
+  const formIsDark = formBg ? formText !== readableOn("#ffffff") : palette.isDark;
+  const formBorder = formBg ? mix(formBg, formIsDark ? 0.18 : -0.14) : palette.border;
+  const formField = formBg ? mix(formBg, formIsDark ? 0.07 : -0.04) : palette.bg;
+
   const packages = page.packages.filter(
     (p) => p.name.trim() || p.duration.trim() || p.validity.trim() || p.price.trim(),
   );
@@ -262,6 +249,11 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     CARD_MUTED: mutedOn(card),
     BG: palette.bg,
     SURFACE: palette.surface,
+    FORM_BG: formBg || palette.surface,
+    FORM_TEXT: formText,
+    FORM_MUTED: formBg ? mutedOn(formBg) : palette.muted,
+    FORM_BORDER: formBorder,
+    FORM_FIELD: formField,
     TEXT: palette.text,
     MUTED: palette.muted,
     BORDER: palette.border,
@@ -309,12 +301,12 @@ async function fetchTemplateFile(path: string): Promise<string> {
  * dan menunda pratinjau tanpa alasan.
  */
 export function fetchLoginTemplate(id: HotspotTemplateId): Promise<string> {
-  return fetchTemplateFile(getTemplate(id).ownLogin ? `${id}/login.html` : "_shared/login.html");
+  return fetchTemplateFile(getTemplate(id).ownLogin ? `${getTemplate(id).id}/login.html` : "_shared/login.html");
 }
 
 /** Isi style.css sebuah desain — dipakai juga oleh pratinjau. */
 export function fetchStyle(id: HotspotTemplateId): Promise<string> {
-  return fetchTemplateFile(`${id}/style.css`);
+  return fetchTemplateFile(`${getTemplate(id).id}/style.css`);
 }
 
 function readmeText(page: HotspotPageConfig, logoFile: string, bgFile: string): string {

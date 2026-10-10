@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Plus, Trash, Upload } from "@/components/icons";
+import { Plus, Trash, Upload } from "@/components/icons";
 import { Button, EmptyState, Field, Note, Select, TextInput, Toggle } from "@/components/ui";
 import { newPackage } from "@/lib/defaults-hotspot-login";
 import {
@@ -10,7 +10,6 @@ import {
   isHexColor,
   renderTemplate,
   templateVars,
-  TEMPLATES,
   whatsappLink,
 } from "@/lib/hotspot-page";
 import type { HotspotPageConfig, LoginMode } from "@/lib/types-hotspot-login";
@@ -18,6 +17,7 @@ import type { HotspotPageConfig, LoginMode } from "@/lib/types-hotspot-login";
 const grid2 = "grid gap-4";
 
 const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
+const FORM_PRESETS = ["#ffffff", "#f1f5f9", "#fef3c7", "#e0f2fe", "#1e293b", "#0f172a"];
 const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
 /**
  * Batas ukuran berkas gambar. Penyimpanan flash router terbatas — hAP lite
@@ -247,44 +247,6 @@ export function LoginPageEditor({
         <span className="font-mono text-ink">errors.txt</span> berbahasa Indonesia.
       </p>
 
-      {/* Pilihan desain */}
-      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-        {TEMPLATES.map((template) => {
-          const active = page.template === template.id;
-          return (
-            <button
-              key={template.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() =>
-                setPage({
-                  template: template.id,
-                  primaryColor: template.defaultPrimary,
-                  bgColor: template.defaultBg,
-                })
-              }
-              className={`rounded-xl border p-3.5 text-left transition-all duration-200 ${
-                active ? "border-brand bg-brand/[0.08]" : "border-line-soft bg-canvas/50 hover:border-line"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <span
-                  className="h-3 w-3 shrink-0 rounded-full ring-2"
-                  style={{ background: template.defaultPrimary, color: template.defaultBg }}
-                />
-                <span className={`text-sm font-medium ${active ? "text-ink" : "text-muted"}`}>
-                  {template.name}
-                </span>
-                {active && <Check className="ml-auto h-3.5 w-3.5 text-brand" />}
-              </span>
-              <span className="mt-1.5 block text-xs leading-relaxed text-faint">
-                {template.description}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
       <div className="mt-5 grid gap-5 lg:grid-cols-[400px_minmax(0,1fr)]">
         <div className="space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
           <Section title="Tampilan" defaultOpen>
@@ -314,9 +276,19 @@ export function LoginPageEditor({
 
           {swatches(PRIMARY_PRESETS, page.primaryColor, (c) => setPage({ primaryColor: c }), "Warna tema")}
           {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar")}
+          {swatches(FORM_PRESETS, page.formBgColor ?? "", (c) => setPage({ formBgColor: c }), "Warna form")}
+          {page.formBgColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ formBgColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna form otomatis
+            </button>
+          )}
           <p className="-mt-1 text-xs leading-relaxed text-faint">
-            Warna teks, permukaan kartu, dan garis dihitung otomatis dari kecerahan latar, jadi
-            halaman tetap terbaca meski Anda memilih latar terang maupun gelap.
+            Warna teks dan garis dihitung otomatis dari warna latar maupun warna form, jadi
+            halaman tetap terbaca meski Anda memilih warna terang atau gelap.
           </p>
 
           </Section>

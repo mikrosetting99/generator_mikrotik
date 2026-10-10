@@ -33,9 +33,16 @@ body {
 }
 
 .main {
+  /* Warna kartu form bisa dipilih sendiri; teks, garis, dan kolom di dalamnya
+     mengikuti agar tetap terbaca. */
+  --text: {{FORM_TEXT}};
+  --muted: {{FORM_MUTED}};
+  --border: {{FORM_BORDER}};
+  --field: {{FORM_FIELD}};
+  color: var(--text);
   width: 100%;
   max-width: 340px;
-  background: var(--surface);
+  background: {{FORM_BG}};
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 28px 24px;
@@ -115,7 +122,7 @@ body {
   padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--bg);
+  background: var(--field);
   color: var(--text);
   font-size: 16px;
   text-align: center;

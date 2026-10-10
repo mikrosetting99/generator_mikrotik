@@ -10,6 +10,7 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     template: "minimal",
     primaryColor: "#38bdf8",
     bgColor: "#ffffff",
+    formBgColor: "",
     title: "",
     subtitle: "",
     logoDataUrl: "",

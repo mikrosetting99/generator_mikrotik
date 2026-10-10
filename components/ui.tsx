@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode, type SelectHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type ReactNode, type SelectHTMLAttributes } from "react";
 import { AlertCircle, AlertTriangle, ChevronDown, Trash, X } from "@/components/icons";
 import { cn, controlBase } from "@/lib/kelas";
 
@@ -146,6 +146,129 @@ export function Select({
           : (options ?? []).map(renderOption)}
       </select>
       <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
+    </span>
+  );
+}
+
+/**
+ * Pilihan dengan kolom cari — untuk daftar panjang seperti tipe Mikrotik.
+ * Mengetik menyaring berdasarkan nama maupun nama grup/serinya.
+ */
+export function SearchSelect({
+  value,
+  onChange,
+  groups,
+  placeholder = "— pilih —",
+  searchPlaceholder = "Cari…",
+  invalid,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  groups: Array<{ label: string; options: SelectOption[] }>;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  invalid?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const root = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const selected = groups.flatMap((g) => g.options).find((o) => o.value === value);
+  const q = query.trim().toLowerCase();
+  const visible = groups
+    .map((g) => ({
+      label: g.label,
+      options: g.options.filter(
+        (o) => !q || o.label.toLowerCase().includes(q) || g.label.toLowerCase().includes(q),
+      ),
+    }))
+    .filter((g) => g.options.length > 0);
+
+  const pick = (next: string) => {
+    onChange(next);
+    setOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <span ref={root} className="relative block">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          controlBase,
+          "h-11 pr-10 text-left sm:h-10",
+          !selected && "text-faint",
+          invalid && "border-bad",
+        )}
+      >
+        {selected ? selected.label : placeholder}
+      </button>
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
+          <div className="border-b border-line-soft p-2">
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setOpen(false);
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const first = visible[0]?.options.find((o) => !o.disabled);
+                  if (first) pick(first.value);
+                }
+              }}
+              placeholder={searchPlaceholder}
+              className={cn(controlBase, "h-9")}
+            />
+          </div>
+          <div role="listbox" className="max-h-72 overflow-y-auto py-1">
+            {visible.length === 0 && (
+              <p className="px-3 py-4 text-center text-xs text-faint">Tidak ada hasil untuk “{query}”.</p>
+            )}
+            {visible.map((g) => (
+              <div key={g.label}>
+                <p className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-[0.1em] text-faint">
+                  {g.label}
+                </p>
+                {g.options.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    role="option"
+                    aria-selected={o.value === value}
+                    disabled={o.disabled}
+                    onClick={() => pick(o.value)}
+                    className={cn(
+                      "block w-full px-3 py-2 text-left text-sm hover:bg-brand/10",
+                      o.value === value ? "text-brand" : "text-ink",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </span>
   );
 }

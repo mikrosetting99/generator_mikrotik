@@ -10,6 +10,7 @@ import {
   Panel,
   Row,
   Select,
+  SearchSelect,
   TextInput,
   Toggle,
 } from "@/components/ui";
@@ -136,7 +137,8 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
     >
       <div className={grid2}>
         <Field label="Type Mikrotik" required hint={model?.note}>
-          <Select
+          <SearchSelect
+            searchPlaceholder="Cari model, mis. hAP, RB750, CCR…"
             value={config.modelId}
             placeholder="— pilih model —"
             onChange={(modelId) => {

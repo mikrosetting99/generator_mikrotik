@@ -30,6 +30,12 @@ const IMAGE_LIMITS = {
     idealHeight: 160,
     hint: "Ideal 400 × 160 px (rasio 5:2), PNG latar transparan, maksimal 200 KB.",
   },
+  form: {
+    maxBytes: 300 * 1024,
+    idealWidth: 700,
+    idealHeight: 900,
+    hint: "Ideal sekitar 700 × 900 px, JPG, maksimal 300 KB. Tampil di dalam kartu form.",
+  },
   background: {
     maxBytes: 600 * 1024,
     idealWidth: 1600,
@@ -90,8 +96,11 @@ export function LoginPageEditor({
   const bgInput = useRef<HTMLInputElement>(null);
   const [logoError, setLogoError] = useState("");
   const [bgError, setBgError] = useState("");
+  const [formError, setFormError] = useState("");
+  const formInput = useRef<HTMLInputElement>(null);
   const [logoInfo, setLogoInfo] = useState<ImageInfo | null>(null);
   const [bgInfo, setBgInfo] = useState<ImageInfo | null>(null);
+  const [formInfo, setFormInfo] = useState<ImageInfo | null>(null);
   const [preview, setPreview] = useState("");
 
   // Pratinjau: gabungkan login.html + style.css milik desain terpilih, lalu
@@ -110,6 +119,7 @@ export function LoginPageEditor({
             ...templateVars(page),
             LOGO: page.logoDataUrl,
             BG_IMAGE: page.bgImageDataUrl,
+            FORM_IMAGE: page.formImageDataUrl,
           };
           const html = renderTemplate(source, vars)
             // Sisipkan CSS langsung, karena iframe tidak bisa memuat style.css.
@@ -155,11 +165,12 @@ export function LoginPageEditor({
     };
     read(page.logoDataUrl, setLogoInfo);
     read(page.bgImageDataUrl, setBgInfo);
-  }, [page.logoDataUrl, page.bgImageDataUrl]);
+    read(page.formImageDataUrl, setFormInfo);
+  }, [page.logoDataUrl, page.bgImageDataUrl, page.formImageDataUrl]);
 
   const pickImage = (
     file: File,
-    kind: "logo" | "background",
+    kind: "logo" | "background" | "form",
     onError: (message: string) => void,
   ) => {
     const limit = IMAGE_LIMITS[kind];
@@ -179,6 +190,13 @@ export function LoginPageEditor({
     reader.onload = () => {
       const dataUrl = String(reader.result);
       if (kind === "logo") setPage({ logoDataUrl: dataUrl, logoName: file.name });
+      // Gambar di dalam kartu baru terlihat bila kartunya agak tembus pandang.
+      else if (kind === "form")
+        setPage({
+          formImageDataUrl: dataUrl,
+          formImageName: file.name,
+          formBgOpacity: Math.min(page.formBgOpacity ?? 100, 80),
+        });
       else setPage({ bgImageDataUrl: dataUrl, bgImageName: file.name });
     };
     reader.onerror = () => onError("Gagal membaca berkas.");
@@ -186,7 +204,7 @@ export function LoginPageEditor({
   };
 
   /** Catatan bila dimensi gambar jauh dari ukuran yang disarankan. */
-  const dimensionNote = (info: ImageInfo | null, kind: "logo" | "background") => {
+  const dimensionNote = (info: ImageInfo | null, kind: "logo" | "background" | "form") => {
     if (!info) return null;
     const limit = IMAGE_LIMITS[kind];
     const tooBig = info.width > limit.idealWidth * 2 || info.height > limit.idealHeight * 2;
@@ -200,7 +218,7 @@ export function LoginPageEditor({
     );
   };
 
-  const totalImageBytes = (logoInfo?.bytes ?? 0) + (bgInfo?.bytes ?? 0);
+  const totalImageBytes = (logoInfo?.bytes ?? 0) + (bgInfo?.bytes ?? 0) + (formInfo?.bytes ?? 0);
 
   const swatches = (
     presets: string[],
@@ -286,6 +304,29 @@ export function LoginPageEditor({
               Kembali ke warna form otomatis
             </button>
           )}
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                Kepekatan form
+              </span>
+              <span className="font-mono text-[11px] text-brand">
+                {page.formBgOpacity ?? 100}%{(page.formBgOpacity ?? 100) < 100 ? " · transparan" : ""}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={10}
+              max={100}
+              step={5}
+              value={page.formBgOpacity ?? 100}
+              aria-label="Kepekatan latar kartu form"
+              onChange={(e) => setPage({ formBgOpacity: Number(e.target.value) })}
+              className="mt-2 w-full accent-[color:var(--color-brand)]"
+            />
+            <p className="mt-1 text-xs leading-relaxed text-faint">
+              100% penuh. Turunkan agar kartu form tembus pandang dan latar halaman terlihat di baliknya.
+            </p>
+          </div>
           <p className="-mt-1 text-xs leading-relaxed text-faint">
             Warna teks dan garis dihitung otomatis dari warna latar maupun warna form, jadi
             halaman tetap terbaca meski Anda memilih warna terang atau gelap.
@@ -417,6 +458,56 @@ export function LoginPageEditor({
                 </p>
                 {dimensionNote(bgInfo, "background")}
                 {bgError && <p className="mt-1.5 text-xs text-bad">{bgError}</p>}
+              </div>
+
+              {/* Gambar di dalam kartu form */}
+              <div>
+                <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                  Gambar form
+                </span>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Button size="sm" onClick={() => formInput.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    {page.formImageDataUrl ? "Ganti" : "Unggah gambar form"}
+                  </Button>
+                  {page.formImageDataUrl && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      className="px-2"
+                      ariaLabel="Hapus gambar form"
+                      title="Hapus gambar form"
+                      onClick={() => setPage({ formImageDataUrl: "", formImageName: "" })}
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <input
+                    ref={formInput}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (file) pickImage(file, "form", setFormError);
+                    }}
+                  />
+                </div>
+                {page.formImageDataUrl && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={page.formImageDataUrl}
+                    alt="Pratinjau gambar form"
+                    className="mt-3 h-16 w-full rounded-md border border-line-soft object-cover"
+                  />
+                )}
+                <p className="mt-2 text-xs leading-relaxed text-faint">
+                  {IMAGE_LIMITS.form.hint} Turunkan &ldquo;Kepekatan form&rdquo; di menu Tampilan
+                  agar gambarnya terlihat.
+                </p>
+                {dimensionNote(formInfo, "form")}
+                {formError && <p className="mt-1.5 text-xs text-bad">{formError}</p>}
               </div>
             </div>
 

@@ -1,4 +1,4 @@
-import { contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
+import { blend, contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
 import type { HotspotPageConfig, HotspotTemplateId, VoucherPackage } from "./types-hotspot-login";
 import type { ZipEntry } from "./zip";
 
@@ -122,6 +122,10 @@ export function bgFileName(dataUrl: string): string {
   return imageFileName(dataUrl, "background");
 }
 
+export function formImageFileName(dataUrl: string): string {
+  return imageFileName(dataUrl, "form-bg");
+}
+
 /**
  * Judul boleh dipecah dua warna dengan tanda "|", misalnya "PRO|NET".
  * Tandanya sendiri tidak pernah ikut tampil.
@@ -195,11 +199,19 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
 
   // Kartu form: warna sendiri bila dipilih, dan teks/garis/kolomnya dihitung
   // ulang dari warna itu agar tetap terbaca di atas kartu terang maupun gelap.
-  const formBg = isHexColor(page.formBgColor ?? "") ? page.formBgColor.trim() : "";
-  const formText = formBg ? readableOn(formBg) : palette.text;
-  const formIsDark = formBg ? formText !== readableOn("#ffffff") : palette.isDark;
-  const formBorder = formBg ? mix(formBg, formIsDark ? 0.18 : -0.14) : palette.border;
-  const formField = formBg ? mix(formBg, formIsDark ? 0.07 : -0.04) : palette.bg;
+  const formColor = isHexColor(page.formBgColor ?? "") ? page.formBgColor.trim() : "";
+  const formOpacity = Math.max(10, Math.min(100, Number(page.formBgOpacity) || 100));
+  const hasFormImage = Boolean(page.formImageDataUrl);
+  const baseForm = formColor || palette.surface;
+  // Yang terlihat di balik kartu menentukan terbaca-tidaknya teks: kartu
+  // tembus pandang menampilkan warna latar halaman, sedangkan bila ada gambar
+  // di dalam kartu, lapisan warna kartulah yang menjaga keterbacaan.
+  const seen = hasFormImage || formOpacity >= 100 ? baseForm : blend(bgColor, baseForm, formOpacity / 100);
+  const customForm = Boolean(formColor) || formOpacity < 100 || hasFormImage;
+  const formText = customForm ? readableOn(seen) : palette.text;
+  const formIsDark = customForm ? formText !== readableOn("#ffffff") : palette.isDark;
+  const formBorder = customForm ? mix(seen, formIsDark ? 0.18 : -0.14) : palette.border;
+  const formField = customForm ? rgba(mix(seen, formIsDark ? 0.07 : -0.04), Math.max(formOpacity, 55) / 100) : palette.bg;
 
   const packages = page.packages.filter(
     (p) => p.name.trim() || p.duration.trim() || p.validity.trim() || p.price.trim(),
@@ -249,9 +261,10 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     CARD_MUTED: mutedOn(card),
     BG: palette.bg,
     SURFACE: palette.surface,
-    FORM_BG: formBg || palette.surface,
+    FORM_BG: formOpacity < 100 ? rgba(baseForm, formOpacity / 100) : baseForm,
+    FORM_IMAGE: hasFormImage ? formImageFileName(page.formImageDataUrl) : "",
     FORM_TEXT: formText,
-    FORM_MUTED: formBg ? mutedOn(formBg) : palette.muted,
+    FORM_MUTED: customForm ? mutedOn(seen) : palette.muted,
     FORM_BORDER: formBorder,
     FORM_FIELD: formField,
     TEXT: palette.text,
@@ -309,7 +322,7 @@ export function fetchStyle(id: HotspotTemplateId): Promise<string> {
   return fetchTemplateFile(`${getTemplate(id).id}/style.css`);
 }
 
-function readmeText(page: HotspotPageConfig, logoFile: string, bgFile: string): string {
+function readmeText(page: HotspotPageConfig, logoFile: string, bgFile: string, formFile: string): string {
   const template = getTemplate(page.template);
   const link = whatsappLink(page.whatsapp);
 
@@ -332,7 +345,7 @@ ISI PAKET
   radvert.html   halaman advertisement
   errors.txt     teks pesan error berbahasa Indonesia
   style.css      seluruh tampilan & warna — cukup berkas ini yang diubah
-  md5.js         dipakai metode autentikasi http-chap${logoFile ? `\n  ${logoFile}       logo yang Anda unggah` : ""}${bgFile ? `\n  ${bgFile}  gambar latar yang Anda unggah` : ""}
+  md5.js         dipakai metode autentikasi http-chap${logoFile ? `\n  ${logoFile}       logo yang Anda unggah` : ""}${bgFile ? `\n  ${bgFile}  gambar latar yang Anda unggah` : ""}${formFile ? `\n  ${formFile}  gambar di dalam kartu form yang Anda unggah` : ""}
 
 CARA UPLOAD
 -----------
@@ -396,6 +409,11 @@ export async function buildHotspotPackage(page: HotspotPageConfig): Promise<ZipE
     entries.push({ name: bgFile, dataUrl: page.bgImageDataUrl });
   }
 
-  entries.push({ name: "PETUNJUK-UPLOAD.txt", content: readmeText(page, logoFile, bgFile) });
+  const formFile = page.formImageDataUrl ? formImageFileName(page.formImageDataUrl) : "";
+  if (formFile) {
+    entries.push({ name: formFile, dataUrl: page.formImageDataUrl });
+  }
+
+  entries.push({ name: "PETUNJUK-UPLOAD.txt", content: readmeText(page, logoFile, bgFile, formFile) });
   return entries;
 }

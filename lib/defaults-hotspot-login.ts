@@ -5,12 +5,36 @@ export function newPackage(): VoucherPackage {
   return { id: uid("pkg"), name: "", duration: "", validity: "", price: "" };
 }
 
+/** Melengkapi data tersimpan dengan bawaan — field baru tidak ada di simpanan lama. */
+export function normalizeHotspotPage(raw: unknown): HotspotPageConfig {
+  const base = createDefaultHotspotLoginConfig();
+  if (!raw || typeof raw !== "object") return base;
+  const input = raw as Record<string, unknown>;
+  const merged: Record<string, unknown> = { ...base };
+  for (const key of Object.keys(base) as (keyof HotspotPageConfig)[]) {
+    if (typeof input[key] === typeof base[key] && input[key] !== null) merged[key] = input[key];
+  }
+  merged.packages = Array.isArray(input.packages)
+    ? (input.packages as Partial<VoucherPackage>[]).map((p) => ({
+        id: typeof p.id === "string" && p.id ? p.id : uid("pkg"),
+        name: String(p.name ?? ""),
+        duration: String(p.duration ?? ""),
+        validity: String(p.validity ?? ""),
+        price: String(p.price ?? ""),
+      }))
+    : base.packages;
+  return merged as unknown as HotspotPageConfig;
+}
+
 export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
   return {
     template: "minimal",
     primaryColor: "#38bdf8",
     bgColor: "#ffffff",
     formBgColor: "",
+    formBgOpacity: 100,
+    formImageDataUrl: "",
+    formImageName: "",
     title: "",
     subtitle: "",
     logoDataUrl: "",

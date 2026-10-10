@@ -26,6 +26,11 @@ export interface HotspotPageConfig {
   bgColor: string;
   /** Warna latar kartu form. Kosong = diturunkan otomatis dari warna latar. */
   formBgColor: string;
+  /** Kepekatan kartu form, 10–100 persen. Di bawah 100 kartunya tembus pandang. */
+  formBgOpacity: number;
+  /** Gambar di dalam kartu form, juga ikut jadi berkas di dalam zip. */
+  formImageDataUrl: string;
+  formImageName: string;
   /** Nama yang tampil di halaman login. Kosong = judul disembunyikan. */
   title: string;
   subtitle: string;

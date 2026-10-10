@@ -37,7 +37,7 @@ const MENUS = [
     description:
       "Kustomisasi tampilan portal login hotspot: template, warna, logo, dan tabel harga paket voucher.",
     points: [
-      "5 template siap pakai",
+      "Desain minimal, mudah disesuaikan",
       "Upload logo & gambar latar sendiri",
       "Unduh langsung sebagai hotspot.zip",
     ],
@@ -55,23 +55,6 @@ const MENUS = [
       "Hasil beserta alasan dan perintah perbaikan",
     ],
     ready: true,
-  },
-  {
-    href: "/login-page-hotspot",
-    icon: Lock,
-    title: "Login Page Hotspot",
-    description:
-      "Cetak halaman login hotspot bertema lengkap dengan paket dan harga pembeli, lalu terbitkan kunci yang mengikat halaman itu ke router tujuan.",
-    points: [
-      "Enam tema, muat satu layar di HP",
-      "Paket, warna, logo, dan latar dari form",
-      "Kunci terikat ke identity router",
-    ],
-    ready: true,
-    /* Alat internal tim, bukan alat umum seperti menu lainnya. Ditandai
-       supaya pengunjung tahu sebelum menekan dan mendarat di layar login
-       — middleware yang menjaganya, bukan penandaan ini. */
-    privat: true,
   },
 ];
 
@@ -204,11 +187,8 @@ export default function Home() {
                   >
                     <Glyph className="h-5 w-5" />
                   </span>
-                  {menu.privat ? (
-                    <span className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
-                      khusus admin
-                    </span>
-                  ) : menu.ready ? (
+                  {menu.ready ? (
+
                     <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
                       siap
                     </span>
@@ -235,7 +215,7 @@ export default function Home() {
 
                 {menu.ready && (
                   <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand">
-                    {menu.privat ? "Buka generator" : "Mulai konfigurasi"}
+                    Mulai konfigurasi
                     <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
                   </span>
                 )}

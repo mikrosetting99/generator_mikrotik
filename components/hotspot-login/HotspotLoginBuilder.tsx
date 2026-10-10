@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, Download, FileText } from "@/components/icons";
+import { ArrowLeft, Database, Download, FileText } from "@/components/icons";
+import { SaveLoadPage } from "@/components/hotspot-login/SaveLoadPage";
 import { LoginPageEditor } from "@/components/hotspot-login/LoginPageEditor";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
-import { Button, Note, Panel } from "@/components/ui";
+import { Button, Modal, Note, Panel } from "@/components/ui";
 import { createDefaultHotspotLoginConfig } from "@/lib/defaults-hotspot-login";
 import { downloadBlob } from "@/lib/download";
 import { buildHotspotPackage } from "@/lib/hotspot-page";
@@ -17,6 +18,8 @@ export function HotspotLoginBuilder() {
   const [page, setPageState] = useState<HotspotPageConfig>(createDefaultHotspotLoginConfig);
   const [buildingZip, setBuildingZip] = useState(false);
   const [zipError, setZipError] = useState("");
+  const [storeOpen, setStoreOpen] = useState(false);
+  const [loaded, setLoaded] = useState<{ id: string; name: string } | null>(null);
 
   const setPage = (partial: Partial<HotspotPageConfig>) =>
     setPageState((prev) => ({ ...prev, ...partial }));
@@ -58,6 +61,10 @@ export function HotspotLoginBuilder() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Button onClick={() => setStoreOpen(true)}>
+              <Database className="h-4 w-4" />
+              <span className="hidden sm:inline">Simpan / Muat</span>
+            </Button>
             <Button variant="primary" onClick={downloadLoginPage} disabled={buildingZip}>
               <Download className="h-4 w-4" />
               {buildingZip ? "Menyiapkan…" : "Unduh hotspot.zip"}
@@ -75,6 +82,24 @@ export function HotspotLoginBuilder() {
           <LoginPageEditor page={page} setPage={setPage} />
         </Panel>
       </div>
+
+      <Modal
+        open={storeOpen}
+        onClose={() => setStoreOpen(false)}
+        title="Simpan / Muat Halaman Login"
+        description="Simpan desain ke database agar bisa dibuka lagi dan diedit kapan saja."
+      >
+        <SaveLoadPage
+          page={page}
+          loaded={loaded}
+          onLoad={(next, entry) => {
+            setPageState(next);
+            setLoaded(entry);
+          }}
+          onSaved={setLoaded}
+          onClose={() => setStoreOpen(false)}
+        />
+      </Modal>
     </main>
   );
 }

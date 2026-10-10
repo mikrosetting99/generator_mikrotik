@@ -43,6 +43,11 @@ body {
   width: 100%;
   max-width: 340px;
   background: {{FORM_BG}};
+{{#FORM_IMAGE}}
+  background-image: linear-gradient({{FORM_BG}}, {{FORM_BG}}), url('{{FORM_IMAGE}}');
+  background-size: cover;
+  background-position: center;
+{{/FORM_IMAGE}}
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 28px 24px;
@@ -174,26 +179,58 @@ body {
 
 .table, .table2 {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 16px;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 18px;
   font-size: 13px;
+  text-align: left;
+}
+
+/* Tabel harga: kepala berwarna, baris selang-seling, harga di kanan. */
+.table {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .table caption {
   font-weight: 700;
   font-size: 14px;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
+  letter-spacing: .01em;
 }
 
-.table th, .table td, .table2 td {
+.table th {
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 9px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.table td {
+  padding: 10px 11px;
+  border-top: 1px solid var(--border);
+  line-height: 1.35;
+}
+
+.table tr:first-child td { border-top: 0; }
+.table tr:nth-child(even) td { background: rgba(127, 127, 127, .08); }
+.table td:first-child { font-weight: 600; }
+.table th:last-child,
+.table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+.table td:last-child { font-weight: 700; }
+
+.table2 td {
   border: 1px solid var(--border);
   padding: 7px 9px;
 }
-
-.table th { background: var(--primary); color: var(--on-primary); }
-.table2 { text-align: left; }
 .table2 td:first-child { color: var(--muted); width: 45%; }
-
 .trial { margin-top: 12px; font-size: 13px; }
 a { color: var(--primary); }
 

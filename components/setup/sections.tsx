@@ -209,6 +209,33 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
         </div>
       )}
 
+      {model && (
+        <details className="mt-3">
+          <summary className="cursor-pointer text-xs text-muted hover:text-ink">
+            Komentar interface (opsional)
+          </summary>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {physicalInterfaces(config).map((name) => (
+              <div key={name} className="flex items-center gap-2">
+                <span className="w-16 shrink-0 rounded-md border border-line-soft bg-canvas px-2 py-2 text-center font-mono text-[11px] text-muted">
+                  {name}
+                </span>
+                <TextInput
+                  value={config.interfaceComments[name] ?? ""}
+                  onChange={(text) =>
+                    patch({ interfaceComments: { ...config.interfaceComments, [name]: text } })
+                  }
+                  placeholder="Komentar, mis. ISP Telkom / Uplink / AP Lantai 2"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs leading-relaxed text-faint">
+            Opsional. Komentar ditulis ke tiap port lewat script, jadi terbaca di Winbox.
+          </p>
+        </details>
+      )}
+
       <div className="mt-6 border-t border-line-soft pt-5">
         <h3 className="text-sm font-semibold text-ink">Identitas & waktu</h3>
         <div className={`mt-3 ${grid2}`}>

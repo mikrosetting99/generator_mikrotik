@@ -1,4 +1,4 @@
-import { addressOfInterface, lanInterfaces, wirelessKind } from "../interfaces";
+import { addressOfInterface, lanInterfaces, physicalInterfaces, wirelessKind } from "../interfaces";
 import { getModel } from "../models";
 import { addressPart, isCidr, networkOf } from "../net";
 import {
@@ -138,6 +138,22 @@ export function generateSetupScript(config: SetupConfig): string {
         v7
           ? "/system ntp client set enabled=yes servers=id.pool.ntp.org,pool.ntp.org"
           : "/system ntp client set enabled=yes server-dns-names=id.pool.ntp.org,pool.ntp.org",
+      );
+    }
+  }
+
+  // ------------------------------------------------------ komentar interface
+  const commented = physicalInterfaces(config).filter((name) =>
+    (config.interfaceComments[name] ?? "").trim(),
+  );
+  if (commented.length > 0) {
+    section(
+      "KOMENTAR INTERFACE",
+      "Label pada tiap port agar mudah dikenali di Winbox. Mengganti komentar yang sudah ada.",
+    );
+    for (const name of commented) {
+      s.line(
+        `/interface set [ find default-name=${ScriptBuilder.q(name)} ] ${args([["comment", config.interfaceComments[name].trim()]])}`,
       );
     }
   }

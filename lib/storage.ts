@@ -254,6 +254,11 @@ export function normalizeConfig(raw: unknown): SetupConfig {
   return {
     modelId: model ? modelId : "",
     customInterfaces: asString(input.customInterfaces),
+    interfaceComments: Object.fromEntries(
+      Object.entries(asRecord(input.interfaceComments))
+        .map(([name, text]) => [name, asString(text).trim()] as const)
+        .filter(([, text]) => text),
+    ),
     ros,
     system: {
       identity: asString(system.identity),

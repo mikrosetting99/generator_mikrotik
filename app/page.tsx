@@ -1,62 +1,13 @@
+import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { ArrowRight, Cpu, FileText, Lock, Shield, Split, Terminal } from "@/components/icons";
+import { redirect } from "next/navigation";
+import { ArrowRight, Lock, Shield, Terminal } from "@/components/icons";
+import { MenuIcon } from "@/components/MenuIcon";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
-
-const MENUS = [
-  {
-    href: "/setup",
-    icon: Cpu,
-    title: "Setup Mikrotik Baru",
-    description:
-      "Dari router kondisi default sampai siap dipakai: WAN, DNS, NAT, bridge, VLAN, IP address, pool, DHCP server, hotspot, PPPoE, dan firewall dasar.",
-    points: [
-      "Builder modular per section",
-      "Sintaks menyesuaikan RouterOS v6 / v7",
-      "Database model Mikrotik",
-    ],
-    ready: true,
-  },
-  {
-    href: "/loadbalance",
-    icon: Split,
-    title: "Load Balance & Fail Over",
-    description:
-      "Gabungkan 2 ISP atau lebih agar beban trafik terbagi otomatis (Per Connection Classifier), sekaligus pindah ke ISP cadangan saat jalur utama terputus lewat Recursive Gateway — satu builder untuk keduanya.",
-    points: [
-      "Mangle mark-connection & mark-routing",
-      "Failover recursive gateway berjenjang",
-      "Bobot distribusi & routing table per ISP",
-    ],
-    ready: true,
-  },
-  {
-    href: "/hotspot-login",
-    icon: FileText,
-    title: "Halaman Login Hotspot",
-    description:
-      "Kustomisasi tampilan portal login hotspot: template, warna, logo, dan tabel harga paket voucher.",
-    points: [
-      "Desain minimal, mudah disesuaikan",
-      "Upload logo & gambar latar sendiri",
-      "Unduh langsung sebagai hotspot.zip",
-    ],
-    ready: true,
-  },
-  {
-    href: "/cek",
-    icon: Shield,
-    title: "Cek Mikrotik",
-    description:
-      "Pemeriksaan router yang sedang bermasalah: internet, IP, DHCP & looping, hotspot, PPPoE, firewall, dan resource — lengkap dengan rekomendasi perbaikannya.",
-    points: [
-      "Script pemeriksa hanya membaca, tidak mengubah",
-      "Jalan lewat Winbox, WebFig, atau SSH",
-      "Hasil beserta alasan dan perintah perbaikan",
-    ],
-    ready: true,
-  },
-];
+import { authOptions } from "@/lib/auth";
+import { isExternalHref } from "@/lib/site-settings";
+import { getSiteSettings } from "@/lib/site-settings-server";
 
 const SAMPLE = [
   { text: "# NAT untuk semua WAN", kind: "comment" },
@@ -70,7 +21,16 @@ const SAMPLE = [
   { text: "    in-interface-list=WAN", kind: "cmd" },
 ];
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const [settings, session] = await Promise.all([getSiteSettings(), getServerSession(authOptions)]);
+  if (settings.homeRequiresLogin && !session?.user) redirect("/login?callbackUrl=%2F");
+
+  const menus = settings.menus.filter((m) => m.visible);
+  const isAdmin = session?.user?.role === "ADMIN";
+  const loggedIn = Boolean(session?.user);
+
   return (
     <main className="relative min-h-screen overflow-hidden">
       {/* Cahaya ambien di belakang hero */}
@@ -85,7 +45,16 @@ export default function Home() {
       <div aria-hidden className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-[560px]" />
 
       <div className="relative mx-auto w-full max-w-6xl px-5 py-14 sm:py-20">
-        <div className="mb-6 flex justify-end">
+        <div className="mb-6 flex items-center justify-end gap-2">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-muted transition-colors hover:border-brand/50 hover:text-ink"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Dashboard Admin
+            </Link>
+          )}
           <ThemeToggle />
         </div>
 
@@ -93,8 +62,8 @@ export default function Home() {
         <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <header className="animate-rise">
             <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-[3.25rem]">
-              Generator Script
-              <span className="block text-brand">Mikrotik</span>
+              {settings.heroTitle}
+              <span className="block text-brand">{settings.heroAccent}</span>
             </h1>
             <p className="mt-2.5 text-sm text-faint">
               by{" "}
@@ -109,8 +78,7 @@ export default function Home() {
             </p>
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-              Isi form, salin script, tempel ke <span className="text-ink">New Terminal</span>{" "}
-              Mikrotik — mendukung RouterOS v6 dan v7. Tidak perlu menghafal sintaks CLI.
+              {settings.heroText}
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -118,7 +86,7 @@ export default function Home() {
                 href="/setup"
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-5 text-sm font-semibold text-[color:var(--color-accent-ink)] shadow-[0_14px_40px_-16px_rgba(34,197,94,0.85)] transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
               >
-                Mulai Setup Mikrotik Baru
+                {settings.ctaLabel}
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <span className="inline-flex items-center gap-2 text-xs text-faint">
@@ -129,6 +97,7 @@ export default function Home() {
           </header>
 
           {/* Cuplikan hasil */}
+          {settings.showSample && (
           <div className="animate-rise edge-light overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_30px_80px_-50px_rgba(0,0,0,1)]">
             <div className="flex items-center gap-3 border-b border-line-soft bg-canvas/60 px-4 py-2.5">
               <span className="flex gap-1.5" aria-hidden>
@@ -160,79 +129,75 @@ export default function Home() {
               ))}
             </pre>
           </div>
+          )}
         </div>
 
         {/* --------------------------------------------------------- menu */}
         <h2 className="mt-20 text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
           Pilih menu
         </h2>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {MENUS.map((menu) => {
-            const Glyph = menu.icon;
-            const card = (
-              <div
-                className={`edge-light group flex h-full flex-col rounded-2xl border border-line bg-surface p-6 transition-all duration-300 ${
-                  menu.ready
-                    ? "hover:-translate-y-1 hover:border-brand/50 hover:shadow-[0_24px_60px_-36px_rgba(56,189,248,0.6)]"
-                    : "opacity-55"
-                }`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span
-                    className={`grid h-10 w-10 place-items-center rounded-xl border transition-colors duration-300 ${
-                      menu.ready
-                        ? "border-brand/25 bg-brand/10 text-brand group-hover:border-brand/50"
-                        : "border-line bg-raised text-faint"
-                    }`}
-                  >
-                    <Glyph className="h-5 w-5" />
-                  </span>
-                  {menu.ready ? (
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {menus.map((menu) => {
+            const external = isExternalHref(menu.href);
+            // Menu pengembangan hanya bisa dibuka admin; yang lain melihat kartu nonaktif.
+            const locked = menu.devMode && !isAdmin;
+            // Menu yang wajib login mengarahkan tamu ke halaman login dulu.
+            const href =
+              menu.requireLogin && !loggedIn
+                ? `/login?callbackUrl=${encodeURIComponent(external ? "/" : menu.href)}`
+                : menu.href;
 
-                    <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
-                      siap
-                    </span>
-                  ) : (
-                    <span className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-faint">
-                      segera
+            const body = (
+              <>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-brand/25 bg-brand/10 text-brand transition-colors group-hover:border-brand/50">
+                  <MenuIcon name={menu.icon} className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-ink">{menu.title}</span>
+                    {locked ? (
+                      <Lock className="h-3.5 w-3.5 shrink-0 text-faint" />
+                    ) : (
+                      <ArrowRight className="h-4 w-4 shrink-0 text-faint transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-brand" />
+                    )}
+                  </span>
+                  {menu.description && (
+                    <span className="mt-1 block text-xs leading-relaxed text-muted">
+                      {menu.description}
                     </span>
                   )}
-                </div>
-
-                <h3 className="mt-5 text-lg font-semibold tracking-tight text-ink">{menu.title}</h3>
-                <p className="mt-2 flex-1 text-[13px] leading-relaxed text-muted">
-                  {menu.description}
-                </p>
-
-                <ul className="mt-5 space-y-2 border-t border-line-soft pt-4">
-                  {menu.points.map((point) => (
-                    <li key={point} className="flex items-start gap-2 text-xs text-faint">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand/60" />
-                      {point}
-                    </li>
-                  ))}
-                </ul>
-
-                {menu.ready && (
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand">
-                    Mulai konfigurasi
-                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-                  </span>
-                )}
-              </div>
+                  {menu.devMode && (
+                    <span className="mt-2 inline-block rounded-full border border-warn/40 bg-warn/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warn">
+                      {locked ? "dalam pengembangan" : "pengembangan · hanya admin"}
+                    </span>
+                  )}
+                </span>
+              </>
             );
 
-            return menu.ready ? (
-              <Link key={menu.title} href={menu.href} className="block">
-                {card}
-              </Link>
+            const cardClass =
+              "edge-light group flex items-start gap-3.5 rounded-2xl border border-line bg-surface p-4 transition-all duration-200";
+
+            return locked ? (
+              <div key={menu.id} className={`${cardClass} opacity-60`}>
+                {body}
+              </div>
             ) : (
-              <div key={menu.title}>{card}</div>
+              <Link
+                key={menu.id}
+                href={href}
+                {...(external && href === menu.href
+                  ? { target: "_blank", rel: "noopener noreferrer" }
+                  : {})}
+                className={`${cardClass} hover:-translate-y-0.5 hover:border-brand/50`}
+              >
+                {body}
+              </Link>
             );
           })}
         </div>
-
         {/* ------------------------------------------------------ jaminan */}
+        {settings.showFeatures && (
         <section className="mt-16 grid gap-6 rounded-2xl border border-line bg-surface p-6 sm:grid-cols-3 sm:p-8">
           {[
             {
@@ -261,9 +226,10 @@ export default function Home() {
             );
           })}
         </section>
+        )}
 
         <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-line-soft pt-6 text-xs text-faint">
-          <span>Backup router sebelum menjalankan script apa pun.</span>
+          <span>{settings.footerNote}</span>
           <div className="flex items-center gap-3">
             <span>
               Generator Script Mikrotik by{" "}

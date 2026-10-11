@@ -59,6 +59,15 @@ model SavedLoginPage {
   @@map("saved_login_pages")
 }
 
+/// Pengaturan situs yang diubah admin lewat /admin (mis. tampilan halaman utama).
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
 enum LicenseStatus {
   draft
   terkirim

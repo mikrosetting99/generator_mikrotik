@@ -244,6 +244,8 @@ export interface SetupConfig {
   modelId: string;
   /** Dipakai saat model = custom: daftar interface dipisah koma/baris baru. */
   customInterfaces: string;
+  /** Komentar per interface fisik: nama bawaan (ether1) -> teks komentar. */
+  interfaceComments: Record<string, string>;
   ros: RosVersion | "";
   system: SystemConfig;
   wans: WanEntry[];

@@ -212,7 +212,6 @@ export function SearchSelect({
         className={cn(
           controlBase,
           "h-11 pr-10 text-left sm:h-10",
-          !selected && "text-faint",
           invalid && "border-bad",
         )}
       >

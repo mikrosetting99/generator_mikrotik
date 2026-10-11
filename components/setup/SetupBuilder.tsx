@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -21,6 +21,7 @@ import {
 } from "@/components/icons";
 import { HandoverDialog } from "@/components/setup/HandoverDialog";
 import { PresetDialog } from "@/components/setup/PresetDialog";
+import { fullSignOut } from "@/lib/sign-out";
 import { SaveLoadDialog } from "@/components/setup/SaveLoadDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
@@ -286,7 +287,7 @@ export function SetupBuilder() {
                   variant="ghost"
                   title="Keluar"
                   ariaLabel="Keluar"
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={() => void fullSignOut()}
                 >
                   <LogOut className="h-3.5 w-3.5" />
                 </Button>

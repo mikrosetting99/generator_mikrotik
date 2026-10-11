@@ -26,6 +26,48 @@ body {
 }
 
 {{#BG_IMAGE}}
+{{#BG_BLUR}}
+/* Mode "utuh + kabur": tiga lapisan tetap seukuran layar di belakang isi —
+   salinan gambar yang dikaburkan memenuhi layar (html::before), gambar utuh di
+   tengah tanpa terpotong (html::after), lalu lapisan warna di atas keduanya
+   (body::before) supaya tulisan tetap terbaca. */
+html::before,
+html::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('{{BG_IMAGE}}');
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+html::before {
+  z-index: -2;
+  background-size: cover;
+  filter: blur(26px);
+  transform: scale(1.12);
+}
+
+html::after {
+  z-index: -1;
+  background-size: contain;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: {{OVERLAY}};
+}
+{{/BG_BLUR}}
+{{^BG_BLUR}}
 /* Gambar latar di lapisan tetap seukuran layar, bukan background pada body:
    gambar selalu menutupi seluruh layar (HP tegak, mendatar, tablet, laptop)
    dan tidak ikut membesar atau tergeser saat isi halaman panjang dan digulung. */
@@ -42,6 +84,7 @@ body::before {
   background-position: {{BG_POSITION}};
   background-repeat: no-repeat;
 }
+{{/BG_BLUR}}
 {{/BG_IMAGE}}
 
 .main {

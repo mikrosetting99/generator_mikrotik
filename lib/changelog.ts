@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.6.3",
+    date: "2026-10-11",
+    title: "Latar tidak lagi terpotong di layar laptop",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Mode gambar \"Utuh + kabur\" (kini bawaan): seluruh gambar latar terlihat di tengah tanpa terpotong, dan sisi layar yang kosong diisi salinan gambar yang dikaburkan. Berlaku di desain Minimal dan Poster; mode Penuh, Utuh, dan Tarik tetap tersedia. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.6.2",
     date: "2026-10-11",
     title: "Perbaikan edit nama grup",

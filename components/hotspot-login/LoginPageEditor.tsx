@@ -646,10 +646,10 @@ export function LoginPageEditor({
                         key={f.value}
                         type="button"
                         title={f.hint}
-                        aria-pressed={(page.bgFit ?? "cover") === f.value}
+                        aria-pressed={(page.bgFit ?? "blur") === f.value}
                         onClick={() => setPage({ bgFit: f.value })}
                         className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
-                          (page.bgFit ?? "cover") === f.value
+                          (page.bgFit ?? "blur") === f.value
                             ? "border-brand bg-brand/10 text-ink"
                             : "border-line-soft text-muted hover:border-line hover:text-ink"
                         }`}
@@ -659,7 +659,7 @@ export function LoginPageEditor({
                     ))}
                   </div>
                   <p className="mt-1.5 text-xs leading-relaxed text-faint">
-                    {BG_FITS.find((f) => f.value === (page.bgFit ?? "cover"))?.hint}
+                    {BG_FITS.find((f) => f.value === (page.bgFit ?? "blur"))?.hint}
                   </p>
                 </div>
 

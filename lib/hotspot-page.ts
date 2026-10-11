@@ -247,6 +247,8 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
         ? "center top"
         : (BG_POSITIONS.find((p) => p.value === page.bgPosition)?.css ?? "center"),
     BG_SIZE: BG_FITS.find((f) => f.value === page.bgFit)?.css ?? "cover",
+    // Mode "utuh + kabur": gambar utuh di tengah, sisanya diisi salinan yang dikaburkan.
+    BG_BLUR: page.bgFit === "blur" || !page.bgFit ? "1" : "",
     OVERLAY: rgba(bgColor, Math.max(0, Math.min(90, page.bgOverlay)) / 100),
     WA_LINK: whatsappLink(page.whatsapp),
     WA_LABEL: escapeHtml(page.whatsappLabel.trim() || "Hubungi admin"),

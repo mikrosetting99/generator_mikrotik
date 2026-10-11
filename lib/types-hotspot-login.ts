@@ -1,8 +1,14 @@
 export type HotspotTemplateId = "minimal" | "poster";
-export type BgFit = "cover" | "contain" | "stretch";
+export type BgFit = "blur" | "cover" | "contain" | "stretch";
 
 /** Cara gambar latar menyesuaikan layar. */
 export const BG_FITS: { value: BgFit; label: string; hint: string; css: string }[] = [
+  {
+    value: "blur",
+    label: "Utuh + kabur",
+    hint: "Seluruh gambar terlihat di tengah; sisi layar yang kosong diisi gambar yang sama dalam keadaan kabur. Cocok untuk layar laptop.",
+    css: "contain",
+  },
   { value: "cover", label: "Penuh", hint: "Menutupi seluruh layar, tepi gambar bisa terpotong.", css: "cover" },
   { value: "contain", label: "Utuh", hint: "Seluruh gambar terlihat; sisa layar berwarna latar.", css: "contain" },
   { value: "stretch", label: "Tarik", hint: "Gambar ditarik memenuhi layar (bisa melar).", css: "100% 100%" },

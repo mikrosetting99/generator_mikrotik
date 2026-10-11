@@ -11,6 +11,7 @@ import {
 } from "@/components/icons";
 import { Button, Note } from "@/components/ui";
 import { downloadBlob } from "@/lib/download";
+import { restoreHeader } from "@/lib/generator/restore";
 import { highlightScriptLine } from "@/lib/script-highlight";
 import type { Issue, SetupConfig } from "@/lib/types";
 
@@ -109,10 +110,10 @@ export function ScriptPreview({
           </Button>
           <Button
             onClick={() =>
-              downloadBlob(new Blob([script], { type: "text/plain;charset=utf-8" }), filename)
+              downloadBlob(new Blob([restoreHeader(filename) + script], { type: "text/plain;charset=utf-8" }), filename)
             }
             disabled={blocked}
-            title="Unduh sebagai file .rsc"
+            title="Unduh file .rsc — siap di-restore lewat /import (cara ada di awal file)"
           >
             <Download className="h-4 w-4" />
             .rsc

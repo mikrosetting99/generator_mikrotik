@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.6.1",
+    date: "2026-10-11",
+    title: "File .rsc siap di-restore",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "File .rsc yang diunduh dari Setup Mikrotik Baru kini diawali petunjuk restore: upload ke Files lalu /import, atau restore total lewat /system reset-configuration run-after-reset, plus cara menyimpannya sebagai file .backup asli router. Tampilan script di layar tidak berubah.",
+        ],
+      },
+    ],
+  },  {
     version: "1.6.0",
     date: "2026-10-11",
     title: "Studio pratinjau, iPhone 13, dan konfirmasi logout",

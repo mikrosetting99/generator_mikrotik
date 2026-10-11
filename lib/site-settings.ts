@@ -47,6 +47,20 @@ export interface MenuSetting {
 }
 
 export interface SiteSettings {
+  /** Nama situs: tampil di pojok kiri atas beranda dan di footer. */
+  siteName: string;
+  /** Logo situs sebagai data URI (png/jpeg/webp/svg, maks ~200 KB). Kosong = tanpa logo. */
+  logoDataUrl: string;
+  /** Berubah tiap logo diganti, dipakai sebagai penanda cache pada alamat gambar. */
+  logoVersion: number;
+  /** Tombol WhatsApp di beranda. */
+  waEnabled: boolean;
+  waNumber: string;
+  waLabel: string;
+  /** Pesan awal yang terisi di WhatsApp pengunjung. */
+  waMessage: string;
+  /** Tambah tombol WhatsApp melayang di pojok kanan bawah. */
+  waFloating: boolean;
   heroTitle: string;
   heroAccent: string;
   heroText: string;
@@ -108,6 +122,14 @@ export const BUILTIN_MENUS: MenuSetting[] = [
 ];
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  siteName: "Generator Script Mikrotik",
+  logoDataUrl: "",
+  logoVersion: 0,
+  waEnabled: false,
+  waNumber: "",
+  waLabel: "Chat via WhatsApp",
+  waMessage: "Halo, saya ingin bertanya tentang Generator Script Mikrotik.",
+  waFloating: false,
   heroTitle: "Generator Script",
   heroAccent: "Mikrotik",
   heroText:
@@ -126,6 +148,27 @@ function str(value: unknown, fallback: string, max: number): string {
 function bool(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
+
+/** 08123… / +62812… / 62812… → 62812… (hanya digit). */
+export function normalizeWhatsapp(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("62")) return digits;
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+}
+
+/** Tautan wa.me lengkap dengan pesan awal; kosong bila nomor belum valid. */
+export function waLink(number: string, message: string): string {
+  const n = normalizeWhatsapp(number);
+  if (n.length < 8) return "";
+  return `https://wa.me/${n}${message.trim() ? `?text=${encodeURIComponent(message.trim())}` : ""}`;
+}
+
+/** Batas ukuran logo (panjang string data URI ≈ 1,37× ukuran berkas). */
+export const MAX_LOGO_BYTES = 200 * 1024;
+const LOGO_PATTERN = /^data:image\/(png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/;
 
 /** Hanya alamat dalam situs ("/…") atau http(s) — skema lain (javascript:) ditolak. */
 export function safeHref(value: string): string {
@@ -203,7 +246,18 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
   // Menu bawaan yang belum ada di simpanan lama tetap muncul, di urutan paling bawah.
   for (const def of BUILTIN_MENUS) if (!seen.has(def.id)) menus.push({ ...def });
 
+  const logo = typeof input.logoDataUrl === "string" ? input.logoDataUrl : "";
+  const logoOk = LOGO_PATTERN.test(logo) && logo.length <= Math.ceil(MAX_LOGO_BYTES * 1.4);
+
   return {
+    siteName: str(input.siteName, base.siteName, 60) || base.siteName,
+    logoDataUrl: logoOk ? logo : "",
+    logoVersion: logoOk && typeof input.logoVersion === "number" ? input.logoVersion : 0,
+    waEnabled: bool(input.waEnabled, base.waEnabled),
+    waNumber: str(input.waNumber, base.waNumber, 24),
+    waLabel: str(input.waLabel, base.waLabel, 40) || base.waLabel,
+    waMessage: str(input.waMessage, base.waMessage, 300),
+    waFloating: bool(input.waFloating, base.waFloating),
     heroTitle: str(input.heroTitle, base.heroTitle, 60),
     heroAccent: str(input.heroAccent, base.heroAccent, 40),
     heroText: str(input.heroText, base.heroText, 300),

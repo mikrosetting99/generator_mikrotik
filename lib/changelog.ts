@@ -27,6 +27,25 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.4.0",
+    date: "2026-10-11",
+    title: "Logo, nama situs, dan tombol WhatsApp dari admin",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Logo dan nama situs diatur dari Dashboard Admin; tampil di pojok kiri atas beranda dan di footer.",
+          "Tombol WhatsApp (CTA) di beranda dengan nomor, teks tombol, dan pesan awal yang diatur dari Dashboard Admin, plus pilihan tombol melayang di pojok kanan bawah.",
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          "Logout tampak tidak berfungsi karena nginx menyimpan cache halaman beranda; aplikasi kini meminta nginx tidak men-cache halaman dinamis, dan cookie sesi dihapus lewat jalur cadangan.",
+        ],
+      },
+    ],
+  },  {
     version: "1.3.0",
     date: "2026-10-11",
     title: "Galeri latar untuk Halaman Login Hotspot",

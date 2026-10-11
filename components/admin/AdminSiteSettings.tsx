@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, Check, ChevronDown, Plus, Save, Trash } from "@/components/icons";
+import { useRef, useState } from "react";
+import { ArrowRight, Check, ChevronDown, Plus, Save, Trash, Upload } from "@/components/icons";
 import { MenuIcon } from "@/components/MenuIcon";
-import { Button, CheckPill, Field, Note, Select, TextInput } from "@/components/ui";
+import { Button, CheckPill, Field, Note, Select, TextInput, Toggle } from "@/components/ui";
 import {
   MAX_CUSTOM_MENUS,
   MENU_ICON_LABEL,
+  MAX_LOGO_BYTES,
   MENU_ICONS,
   newCustomMenu,
+  waLink,
   safeHref,
   type MenuIconName,
   type MenuSetting,
@@ -63,6 +65,26 @@ export function AdminSiteSettings({
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<{ tone: "info" | "bad"; text: string } | null>(null);
 
+  const logoInput = useRef<HTMLInputElement>(null);
+  const [logoError, setLogoError] = useState("");
+
+  const pickLogo = (file: File) => {
+    setLogoError("");
+    if (!/^image\/(png|jpeg|webp|svg\+xml)$/.test(file.type)) {
+      setLogoError("Logo harus PNG, JPG, WEBP, atau SVG.");
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setLogoError(`Ukuran ${Math.round(file.size / 1024)} KB — maksimal ${MAX_LOGO_BYTES / 1024} KB.`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () =>
+      setSettings((s) => ({ ...s, logoDataUrl: String(reader.result), logoVersion: Date.now() }));
+    reader.onerror = () => setLogoError("Gagal membaca berkas.");
+    reader.readAsDataURL(file);
+  };
+
   const dirty = JSON.stringify(settings) !== JSON.stringify(saved);
   const patch = (partial: Partial<SiteSettings>) => setSettings((s) => ({ ...s, ...partial }));
   const customCount = settings.menus.filter((m) => !m.builtin).length;
@@ -100,6 +122,11 @@ export function AdminSiteSettings({
       return;
     }
 
+    if (settings.waEnabled && !waLink(settings.waNumber, "")) {
+      setFlash({ tone: "bad", text: "Nomor WhatsApp belum valid. Isi nomor yang benar atau matikan tombol WhatsApp." });
+      return;
+    }
+
     setBusy(true);
     setFlash(null);
     try {
@@ -126,6 +153,102 @@ export function AdminSiteSettings({
   return (
     <div className="space-y-5">
       {flash && <Note tone={flash.tone}>{flash.text}</Note>}
+
+      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <header className="border-b border-line-soft px-5 py-4">
+          <h2 className="text-[15px] font-semibold text-ink">Identitas situs</h2>
+          <p className="mt-0.5 text-xs text-muted">Logo dan nama tampil di pojok kiri atas beranda dan di footer.</p>
+        </header>
+        <div className="grid gap-4 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
+          <div className="flex items-center gap-3">
+            <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-canvas">
+              {settings.logoDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={settings.logoDataUrl} alt="Logo" className="h-full w-full object-contain p-1" />
+              ) : (
+                <span className="text-[10px] text-faint">tanpa logo</span>
+              )}
+            </span>
+            <div className="flex flex-col gap-1.5">
+              <Button size="sm" onClick={() => logoInput.current?.click()}>
+                <Upload className="h-3.5 w-3.5" />
+                {settings.logoDataUrl ? "Ganti logo" : "Unggah logo"}
+              </Button>
+              {settings.logoDataUrl && (
+                <Button size="sm" variant="danger" onClick={() => patch({ logoDataUrl: "", logoVersion: 0 })}>
+                  <Trash className="h-3.5 w-3.5" /> Hapus
+                </Button>
+              )}
+              <input
+                ref={logoInput}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) pickLogo(file);
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <Field label="Nama situs">
+              <TextInput value={settings.siteName} onChange={(siteName) => patch({ siteName })} />
+            </Field>
+            <p className="mt-1.5 text-xs text-faint">
+              Logo PNG/SVG berlatar transparan, maksimal {MAX_LOGO_BYTES / 1024} KB.
+            </p>
+            {logoError && <p className="mt-1 text-xs text-bad">{logoError}</p>}
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <header className="border-b border-line-soft px-5 py-4">
+          <h2 className="text-[15px] font-semibold text-ink">Tombol WhatsApp</h2>
+          <p className="mt-0.5 text-xs text-muted">Tombol ajakan (CTA) di beranda untuk menghubungi Anda.</p>
+        </header>
+        <div className="space-y-4 px-5 py-4">
+          <Toggle
+            checked={settings.waEnabled}
+            onChange={(waEnabled) => patch({ waEnabled })}
+            label="Tampilkan tombol WhatsApp"
+            hint="Muncul di samping tombol utama di bagian atas beranda."
+          />
+          {settings.waEnabled && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Nomor WhatsApp"
+                hint={waLink(settings.waNumber, "") || "Isi nomor, mis. 081234567890 — otomatis jadi 62…"}
+              >
+                <TextInput
+                  mono
+                  value={settings.waNumber}
+                  onChange={(waNumber) => patch({ waNumber })}
+                  placeholder="081234567890"
+                />
+              </Field>
+              <Field label="Teks tombol">
+                <TextInput value={settings.waLabel} onChange={(waLabel) => patch({ waLabel })} />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label="Pesan awal" hint="Sudah terisi di kolom chat pengunjung saat WhatsApp terbuka.">
+                  <TextInput value={settings.waMessage} onChange={(waMessage) => patch({ waMessage })} />
+                </Field>
+              </div>
+              <div className="sm:col-span-2">
+                <Toggle
+                  checked={settings.waFloating}
+                  onChange={(waFloating) => patch({ waFloating })}
+                  label="Tombol melayang"
+                  hint="Tambah tombol bulat WhatsApp di pojok kanan bawah yang selalu terlihat."
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       <section className="overflow-hidden rounded-2xl border border-line bg-surface">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">

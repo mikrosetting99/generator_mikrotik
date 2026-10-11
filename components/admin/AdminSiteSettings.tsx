@@ -51,7 +51,7 @@ function Switch({
 }
 
 /** Kolom pengaturan: label di atas saklar, supaya sejajar di semua baris. */
-const COLS = "sm:grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_3.5rem_5.5rem]";
+const COLS = "sm:grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_7.75rem]";
 
 /** Pengaturan umum (identitas, WhatsApp, teks beranda) dan menu beranda dengan grup. */
 export function AdminSiteSettings({
@@ -132,29 +132,39 @@ export function AdminSiteSettings({
   const patchMenu = (id: string, partial: Partial<MenuSetting>) =>
     patch({ menus: settings.menus.map((m) => (m.id === id ? { ...m, ...partial } : m)) });
 
-  /** Geser menu satu langkah di dalam grupnya (menukar dengan tetangga satu grup). */
+  /**
+   * Geser menu satu langkah. Di ujung sebuah grup, menu pindah ke grup
+   * tetangga (naik → ujung bawah grup di atasnya, turun → ujung atas grup
+   * di bawahnya), jadi satu pasang panah cukup untuk mengatur semuanya.
+   */
   const move = (id: string, delta: -1 | 1) => {
-    const index = settings.menus.findIndex((m) => m.id === id);
-    const group = settings.menus[index].group;
-    let target = index + delta;
-    while (target >= 0 && target < settings.menus.length && settings.menus[target].group !== group) {
-      target += delta;
+    const lists = sections.map((s) => ({ name: s.name, items: [...s.menus] }));
+    const si = lists.findIndex((l) => l.items.some((m) => m.id === id));
+    if (si < 0) return;
+    const pi = lists[si].items.findIndex((m) => m.id === id);
+    const target = pi + delta;
+
+    if (target >= 0 && target < lists[si].items.length) {
+      const items = lists[si].items;
+      [items[pi], items[target]] = [items[target], items[pi]];
+    } else {
+      const ni = si + delta;
+      if (ni < 0 || ni >= lists.length) return;
+      const [item] = lists[si].items.splice(pi, 1);
+      const moved = { ...item, group: lists[ni].name };
+      if (delta === -1) lists[ni].items.push(moved);
+      else lists[ni].items.unshift(moved);
     }
-    if (target < 0 || target >= settings.menus.length) return;
-    const menus = [...settings.menus];
-    [menus[index], menus[target]] = [menus[target], menus[index]];
-    patch({ menus });
+    patch({ menus: lists.flatMap((l) => l.items) });
   };
 
   const canMove = (id: string, delta: -1 | 1) => {
-    const index = settings.menus.findIndex((m) => m.id === id);
-    const group = settings.menus[index].group;
-    for (let i = index + delta; i >= 0 && i < settings.menus.length; i += delta) {
-      if (settings.menus[i].group === group) return true;
-    }
-    return false;
+    const si = sections.findIndex((s) => s.menus.some((m) => m.id === id));
+    if (si < 0) return false;
+    const pi = sections[si].menus.findIndex((m) => m.id === id);
+    const inside = pi + delta >= 0 && pi + delta < sections[si].menus.length;
+    return inside || (si + delta >= 0 && si + delta < sections.length);
   };
-
   const addMenu = (group = "") => {
     const menu = newCustomMenu(group);
     patch({ menus: [...settings.menus, menu] });
@@ -218,7 +228,7 @@ export function AdminSiteSettings({
     const expanded = open === menu.id;
     return (
       <li key={menu.id} className={menu.visible ? "" : "bg-canvas/40"}>
-        <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-5 py-3 ${COLS}`}>
+        <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-2.5 ${COLS}`}>
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-brand/25 bg-brand/10 text-brand">
               <MenuIcon name={menu.icon} className="h-4 w-4" />
@@ -227,7 +237,9 @@ export function AdminSiteSettings({
               <p className={`truncate text-sm font-medium ${menu.visible ? "text-ink" : "text-faint"}`}>
                 {menu.title}
               </p>
-              <p className="truncate font-mono text-[11px] text-faint">{menu.href}</p>
+              <p className="truncate font-mono text-[11px] text-faint">
+                {menu.href} · {(usage[menu.id] ?? 0).toLocaleString("id-ID")}× dipakai
+              </p>
             </div>
           </div>
 
@@ -256,15 +268,11 @@ export function AdminSiteSettings({
               <span className="sm:hidden">Login</span>
               <Switch label="Wajib login" checked={menu.requireLogin} onChange={(requireLogin) => patchMenu(menu.id, { requireLogin })} />
             </label>
-            <span className="font-mono text-xs text-muted sm:text-center">
-              {(usage[menu.id] ?? 0).toLocaleString("id-ID")}
-              <span className="sm:hidden">× dipakai</span>
-            </span>
           </div>
         </div>
 
         {expanded && (
-          <div className="grid gap-3 border-t border-line-soft bg-raised/40 px-5 py-4 sm:grid-cols-2">
+          <div className="grid gap-3 border-t border-line-soft bg-raised/40 px-4 py-4 sm:grid-cols-2">
             <Field label="Judul">
               <TextInput value={menu.title} onChange={(title) => patchMenu(menu.id, { title })} />
             </Field>
@@ -452,115 +460,89 @@ export function AdminSiteSettings({
       {/* -------------------------------------------------------- menu */}
       <AdminSection
         title="Menu & grup"
-        description="Tampil, mode pengembangan, wajib login, urutan, dan pengelompokan."
+        description="Atur grup dan menu di beranda: tampil, pengembangan, wajib login, urutan."
         defaultOpen
         badge={<span className="font-mono text-[11px] text-faint">{settings.menus.length} menu</span>}
       >
-        {/* Kelola grup */}
-        <div className="border-b border-line-soft px-5 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted">Grup:</span>
-            {settings.groups.map((g, i) => (
-              <span key={i} className="inline-flex items-center gap-0.5 rounded-lg border border-line bg-canvas pl-1 pr-0.5">
-                <button
-                  type="button"
-                  title="Geser ke kiri"
-                  disabled={i === 0}
-                  onClick={() => moveGroup(i, -1)}
-                  className="px-1 text-xs text-faint hover:text-ink disabled:opacity-30"
-                >
-                  ‹
-                </button>
-                <input
-                  value={g}
-                  onChange={(e) => renameGroup(i, e.target.value)}
-                  aria-label={`Nama grup ${i + 1}`}
-                  size={Math.max(6, g.length + 1)}
-                  className="bg-transparent py-1 text-xs text-ink outline-none"
-                />
-                <button
-                  type="button"
-                  title="Geser ke kanan"
-                  disabled={i === settings.groups.length - 1}
-                  onClick={() => moveGroup(i, 1)}
-                  className="px-1 text-xs text-faint hover:text-ink disabled:opacity-30"
-                >
-                  ›
-                </button>
-                <button
-                  type="button"
-                  title="Hapus grup"
-                  aria-label={`Hapus grup ${g}`}
-                  onClick={() => removeGroup(i)}
-                  className="rounded p-1 text-faint hover:bg-bad/10 hover:text-bad"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
+        <div className="space-y-3 p-4">
+          <p className="text-xs leading-relaxed text-muted">
+            Panah ↑↓ menggeser menu; di ujung grup, menu pindah ke grup tetangga. Ubah nama grup langsung di
+            judulnya. <b className="font-medium text-ink">Dev</b>: hanya admin yang bisa membuka.{" "}
+            <b className="font-medium text-ink">Login</b>: wajib masuk dulu (mati = bebas, yang sudah login selalu bisa).
+          </p>
+
+          {sections.map((section) => {
+            const gi = settings.groups.indexOf(section.name);
+            return (
+              <div key={section.name || "tanpa-grup"} className="overflow-hidden rounded-xl border border-line-soft">
+                <div className="flex flex-wrap items-center gap-2 border-b border-line-soft bg-raised/60 px-3 py-2">
+                  {section.name ? (
+                    <input
+                      value={section.name}
+                      onChange={(e) => renameGroup(gi, e.target.value)}
+                      aria-label={`Nama grup ${gi + 1}`}
+                      className="min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-sm font-semibold text-ink outline-none transition-colors hover:bg-canvas focus:bg-canvas focus:ring-1 focus:ring-brand/50"
+                    />
+                  ) : (
+                    <span className="flex-1 px-1.5 text-sm font-semibold text-muted">Tanpa grup</span>
+                  )}
+                  <span className="font-mono text-[11px] text-faint">{section.menus.length}</span>
+                  {section.name && (
+                    <>
+                      <Button size="sm" className="px-2" ariaLabel="Geser grup ke atas" title="Geser grup ke atas" onClick={() => moveGroup(gi, -1)} disabled={gi === 0}>
+                        ↑
+                      </Button>
+                      <Button size="sm" className="px-2" ariaLabel="Geser grup ke bawah" title="Geser grup ke bawah" onClick={() => moveGroup(gi, 1)} disabled={gi === settings.groups.length - 1}>
+                        ↓
+                      </Button>
+                      <Button size="sm" className="px-2" ariaLabel="Hapus grup" title="Hapus grup" onClick={() => removeGroup(gi)}>
+                        <Trash className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                  {section.name && (
+                    <Button size="sm" onClick={() => addMenu(section.name)} disabled={customCount >= MAX_CUSTOM_MENUS}>
+                      <Plus className="h-3.5 w-3.5" /> Menu
+                    </Button>
+                  )}
+                </div>
+
+                {/* judul kolom, sekali per grup */}
+                {section.menus.length > 0 && (
+                  <div
+                    className={`hidden items-end gap-2 border-b border-line-soft px-4 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.09em] text-faint sm:grid ${COLS}`}
+                  >
+                    <span className="text-left">Menu</span>
+                    <span>Tampil</span>
+                    <span>Dev</span>
+                    <span>Login</span>
+                    <span />
+                  </div>
+                )}
+
+                <ul className="divide-y divide-line-soft">
+                  {section.menus.length === 0 ? (
+                    <li className="px-4 py-3 text-xs text-faint">
+                      Grup kosong — tambah menu baru, atau geser menu dari grup lain dengan panah.
+                    </li>
+                  ) : (
+                    section.menus.map(renderMenuRow)
+                  )}
+                </ul>
+              </div>
+            );
+          })}
+
+          <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={addGroup} disabled={settings.groups.length >= MAX_GROUPS}>
-              <Plus className="h-3.5 w-3.5" /> Grup
+              <Plus className="h-3.5 w-3.5" /> Tambah grup
+            </Button>
+            <Button size="sm" onClick={() => addMenu("")} disabled={customCount >= MAX_CUSTOM_MENUS}>
+              <Plus className="h-3.5 w-3.5" /> Tambah menu
             </Button>
           </div>
         </div>
-
-        {/* Judul kolom */}
-        <div
-          className={`hidden items-end gap-2 border-b border-line-soft bg-canvas/40 px-5 py-2 text-center text-[10px] font-medium uppercase tracking-[0.09em] text-faint sm:grid ${COLS}`}
-        >
-          <span className="text-left">Menu</span>
-          <span title="Tampil di beranda">Tampil</span>
-          <span title="Mode pengembangan: hanya admin yang bisa membuka">Dev</span>
-          <span title="Wajib login. Mati = bebas diakses">Login</span>
-          <span title="Berapa kali dibuka">Dipakai</span>
-          <span />
-        </div>
-
-        {sections.map((section) => (
-          <div key={section.name || "tanpa-grup"}>
-            {(settings.groups.length > 0 || section.name) && (
-              <div className="flex items-center justify-between gap-2 border-b border-line-soft bg-raised/50 px-5 py-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-brand/80">
-                  {section.name || "Tanpa grup"}
-                </span>
-                {section.name && (
-                  <button
-                    type="button"
-                    onClick={() => addMenu(section.name)}
-                    disabled={customCount >= MAX_CUSTOM_MENUS}
-                    className="text-[11px] text-muted hover:text-brand disabled:opacity-40"
-                  >
-                    + menu di grup ini
-                  </button>
-                )}
-              </div>
-            )}
-            <ul className="divide-y divide-line-soft border-b border-line-soft last:border-b-0">
-              {section.menus.length === 0 ? (
-                <li className="px-5 py-3 text-xs text-faint">Belum ada menu di grup ini.</li>
-              ) : (
-                section.menus.map(renderMenuRow)
-              )}
-            </ul>
-          </div>
-        ))}
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-soft px-5 py-3">
-          <ul className="space-y-0.5 text-xs leading-relaxed text-faint">
-            <li>
-              <b className="font-medium text-muted">Login</b> mati = bebas dibuka siapa saja; yang sudah login selalu bisa.
-            </li>
-            <li>
-              <b className="font-medium text-muted">Dev</b> = hanya admin yang bisa membuka.
-            </li>
-            <li>Pada menu tambahan, aturan Dev/Login hanya berlaku di kartu beranda.</li>
-          </ul>
-          <Button size="sm" onClick={() => addMenu("")} disabled={customCount >= MAX_CUSTOM_MENUS}>
-            <Plus className="h-3.5 w-3.5" /> Tambah menu
-          </Button>
-        </div>
       </AdminSection>
-
       <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface/95 px-4 py-3 shadow-lg backdrop-blur">
         <span className="text-xs text-muted">
           {dirty ? "Ada perubahan yang belum disimpan." : "Semua perubahan sudah tersimpan."}

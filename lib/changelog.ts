@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.1",
+    date: "2026-10-11",
+    title: "Pengaturan menu & grup lebih mudah",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Menu & grup di dashboard admin kini berupa satu kartu per grup: nama grup bisa diedit langsung di judulnya, lengkap dengan panah geser dan tombol tambah menu.",
+          "Panah ↑↓ pada menu bergerak lintas grup — di ujung sebuah grup, menu pindah ke grup tetangga — jadi tidak perlu membuka pengaturan lain untuk memindahkan menu.",
+        ],
+      },
+    ],
+  },  {
     version: "1.5.0",
     date: "2026-10-11",
     title: "Kalkulator IP, grup menu, dan dashboard admin lebih ringkas",

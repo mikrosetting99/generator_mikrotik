@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.6.0] - 2026-10-11
+
+_Studio pratinjau, iPhone 13, dan konfirmasi logout_
+
+### Ditambahkan
+
+- Popup konfirmasi sebelum keluar dari akun (di beranda dan di Setup Mikrotik Baru).
+- Pilihan "Mode gambar" untuk latar halaman login: Penuh (menutupi layar), Utuh (seluruh gambar terlihat), atau Tarik (memenuhi layar).
+
+### Diubah
+
+- Pratinjau Halaman Login Hotspot dibuat seperti studio: panel pratinjau sejajar dan setinggi menu edit di kiri, memenuhi layar tanpa perlu menggulir halaman.
+- Ukuran pratinjau HP mengikuti iPhone 13 (390 × 844), dengan sudut layar yang lebih membulat.
+
 ## [1.5.3] - 2026-10-11
 
 _Judul dan ikon tab mengikuti identitas situs_

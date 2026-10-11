@@ -7,7 +7,7 @@ import { SaveLoadPage } from "@/components/hotspot-login/SaveLoadPage";
 import { LoginPageEditor } from "@/components/hotspot-login/LoginPageEditor";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
-import { Button, Modal, Note, Panel } from "@/components/ui";
+import { Button, Modal, Note } from "@/components/ui";
 import { createDefaultHotspotLoginConfig } from "@/lib/defaults-hotspot-login";
 import { downloadBlob } from "@/lib/download";
 import { buildHotspotPackage } from "@/lib/hotspot-page";
@@ -73,14 +73,14 @@ export function HotspotLoginBuilder() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[1400px] space-y-4 px-5 py-6">
+      <div className="mx-auto w-full max-w-[1400px] space-y-3 px-5 py-4">
         {zipError && <Note tone="bad">{zipError}</Note>}
-        <Panel
-          title="Halaman Login"
-          description="Pilih desain lalu sesuaikan. Hasilnya diunduh sebagai hotspot.zip, untuk di-upload ke folder hotspot pada menu Files Winbox — router perlu punya IP Hotspot yang sudah dikonfigurasi (menu Setup Mikrotik Baru)."
-        >
-          <LoginPageEditor page={page} setPage={setPage} />
-        </Panel>
+        <p className="text-xs leading-relaxed text-muted">
+          Atur tampilan lalu unduh <span className="font-mono text-ink">hotspot.zip</span> — upload isinya ke
+          folder <span className="font-mono text-ink">hotspot</span> lewat menu Files Winbox. Router perlu punya IP
+          Hotspot yang sudah dikonfigurasi (menu Setup Mikrotik Baru).
+        </p>
+        <LoginPageEditor page={page} setPage={setPage} />
       </div>
 
       <Modal

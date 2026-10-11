@@ -1,5 +1,5 @@
 import { blend, contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
-import { BG_POSITIONS, type HotspotPageConfig, type HotspotTemplateId, type VoucherPackage } from "./types-hotspot-login";
+import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type HotspotTemplateId, type VoucherPackage } from "./types-hotspot-login";
 import type { ZipEntry } from "./zip";
 
 /**
@@ -246,6 +246,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
       template.id === "poster" && page.bgPosition === "center"
         ? "center top"
         : (BG_POSITIONS.find((p) => p.value === page.bgPosition)?.css ?? "center"),
+    BG_SIZE: BG_FITS.find((f) => f.value === page.bgFit)?.css ?? "cover",
     OVERLAY: rgba(bgColor, Math.max(0, Math.min(90, page.bgOverlay)) / 100),
     WA_LINK: whatsappLink(page.whatsapp),
     WA_LABEL: escapeHtml(page.whatsappLabel.trim() || "Hubungi admin"),

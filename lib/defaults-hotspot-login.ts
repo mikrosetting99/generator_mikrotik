@@ -45,6 +45,7 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     bgImageName: "",
     bgOverlay: 55,
     bgPosition: "center",
+    bgFit: "cover",
     loginMode: "voucher",
     showModeSwitch: true,
     marquee: "Selamat datang di jaringan hotspot kami",

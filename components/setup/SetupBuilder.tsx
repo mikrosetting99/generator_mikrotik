@@ -21,7 +21,7 @@ import {
 } from "@/components/icons";
 import { HandoverDialog } from "@/components/setup/HandoverDialog";
 import { PresetDialog } from "@/components/setup/PresetDialog";
-import { fullSignOut } from "@/lib/sign-out";
+import { ConfirmSignOutModal } from "@/components/ConfirmSignOut";
 import { SaveLoadDialog } from "@/components/setup/SaveLoadDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
@@ -129,6 +129,7 @@ export function SetupBuilder() {
   // saat hotspot ditambah atau dihapus, dan indeks akan meleset karenanya.
   const [activeId, setActiveId] = useState<SectionId>("device");
   const [storeOpen, setStoreOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
   const [handoverOpen, setHandoverOpen] = useState(false);
   const [loadedName, setLoadedName] = useState<string | null>(null);
@@ -287,7 +288,7 @@ export function SetupBuilder() {
                   variant="ghost"
                   title="Keluar"
                   ariaLabel="Keluar"
-                  onClick={() => void fullSignOut()}
+                  onClick={() => setLogoutOpen(true)}
                 >
                   <LogOut className="h-3.5 w-3.5" />
                 </Button>
@@ -467,6 +468,8 @@ export function SetupBuilder() {
           }}
         />
       </Modal>
+
+      <ConfirmSignOutModal open={logoutOpen} onClose={() => setLogoutOpen(false)} />
 
       <Modal
         open={storeOpen}

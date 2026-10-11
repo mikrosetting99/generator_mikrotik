@@ -12,7 +12,7 @@ import {
   templateVars,
   whatsappLink,
 } from "@/lib/hotspot-page";
-import { BG_POSITIONS, type HotspotPageConfig, type LoginMode } from "@/lib/types-hotspot-login";
+import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type LoginMode } from "@/lib/types-hotspot-login";
 
 const grid2 = "grid gap-4";
 
@@ -22,9 +22,9 @@ const grid2 = "grid gap-4";
  * seperti di perangkat sungguhan.
  */
 const DEVICES = [
-  { id: "hp", label: "HP", w: 390, h: 780 },
-  { id: "tablet", label: "Tablet", w: 768, h: 1024 },
-  { id: "laptop", label: "Laptop", w: 1280, h: 720 },
+  { id: "hp", label: "HP", name: "iPhone 13", w: 390, h: 844 },
+  { id: "tablet", label: "Tablet", name: "iPad", w: 768, h: 1024 },
+  { id: "laptop", label: "Laptop", name: "Laptop", w: 1280, h: 720 },
 ] as const;
 
 const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
@@ -314,15 +314,9 @@ export function LoginPageEditor({
 
   return (
     <div>
-      <p className="text-[13px] leading-relaxed text-muted">
-        Paket berisi satu folder <span className="font-mono text-ink">hotspot</span> lengkap —
-        seluruh halaman, <span className="font-mono text-ink">style.css</span>,{" "}
-        <span className="font-mono text-ink">md5.js</span>, dan{" "}
-        <span className="font-mono text-ink">errors.txt</span> berbahasa Indonesia.
-      </p>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[400px_minmax(0,1fr)]">
-        <div className="space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
+      <div className="grid gap-5 lg:grid-cols-[400px_minmax(0,1fr)]">
+        <div className="space-y-3 lg:sticky lg:top-20 lg:h-[calc(100vh-10rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
           <Section title="Tampilan" defaultOpen>
           <div className={grid2}>
             <Field
@@ -644,6 +638,33 @@ export function LoginPageEditor({
 
                 <div className="mt-4">
                   <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                    Mode gambar
+                  </span>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {BG_FITS.map((f) => (
+                      <button
+                        key={f.value}
+                        type="button"
+                        title={f.hint}
+                        aria-pressed={(page.bgFit ?? "cover") === f.value}
+                        onClick={() => setPage({ bgFit: f.value })}
+                        className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                          (page.bgFit ?? "cover") === f.value
+                            ? "border-brand bg-brand/10 text-ink"
+                            : "border-line-soft text-muted hover:border-line hover:text-ink"
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-faint">
+                    {BG_FITS.find((f) => f.value === (page.bgFit ?? "cover"))?.hint}
+                  </p>
+                </div>
+
+                <div className="mt-4">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
                     Fokus gambar
                   </span>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -858,12 +879,16 @@ export function LoginPageEditor({
           </Section>
         </div>
 
-        {/* Pratinjau */}
-        <div className="lg:sticky lg:top-20 lg:self-start">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
-              Pratinjau
-            </span>
+        {/* Pratinjau — satu panel setinggi kolom menu di kiri, seperti studio */}
+        <div className="flex h-[75vh] min-h-[480px] flex-col overflow-hidden rounded-xl border border-line bg-surface lg:sticky lg:top-20 lg:h-[calc(100vh-10rem)] lg:self-start">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Pratinjau</span>
+              <span className="font-mono text-[10px] text-faint">
+                {device.name} · {device.w} × {device.h}
+                {scale < 1 && ` · ${Math.round(scale * 100)}%`}
+              </span>
+            </div>
             <div className="flex gap-1 rounded-lg border border-line bg-canvas p-1">
               {DEVICES.map((d) => (
                 <button
@@ -882,9 +907,10 @@ export function LoginPageEditor({
               ))}
             </div>
           </div>
+
           <div
             ref={stage}
-            className="mt-2 grid h-[calc(100vh-10.5rem)] min-h-[480px] place-items-center overflow-hidden rounded-xl border border-line bg-raised/60"
+            className="relative grid min-h-0 flex-1 place-items-center overflow-hidden bg-raised/60"
           >
             {preview ? (
               <div style={{ width: device.w * scale, height: device.h * scale }}>
@@ -898,7 +924,7 @@ export function LoginPageEditor({
                     width: device.w,
                     height: device.h,
                     transform: `scale(${scale})`,
-                    borderRadius: device.id === "hp" ? 18 : device.id === "tablet" ? 12 : 6,
+                    borderRadius: device.id === "hp" ? 32 : device.id === "tablet" ? 18 : 6,
                   }}
                 />
               </div>
@@ -906,13 +932,11 @@ export function LoginPageEditor({
               <span className="text-xs text-faint">Memuat pratinjau…</span>
             )}
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-faint">
-            {device.label} · {device.w} × {device.h} px
-            {scale < 1 && ` · diperkecil ${Math.round(scale * 100)}% agar muat`}. Tombol Voucher/Member
-            berfungsi di pratinjau ini. Kolom login tidak mengirim apa pun.
+
+          <p className="border-t border-line-soft px-3 py-1.5 text-[11px] leading-relaxed text-faint">
+            Tombol Voucher/Member berfungsi di pratinjau ini. Kolom login tidak mengirim apa pun.
           </p>
-        </div>
-      </div>
+        </div>      </div>
     </div>
   );
 }

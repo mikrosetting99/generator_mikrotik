@@ -46,7 +46,7 @@ body {
   background-image: url('{{BG_IMAGE}}');
   background-repeat: no-repeat;
   background-position: {{BG_POSITION}};
-  background-size: cover;
+  background-size: {{BG_SIZE}};
 {{/BG_IMAGE}}
 }
 

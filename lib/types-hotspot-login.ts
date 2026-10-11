@@ -1,4 +1,13 @@
 export type HotspotTemplateId = "minimal" | "poster";
+export type BgFit = "cover" | "contain" | "stretch";
+
+/** Cara gambar latar menyesuaikan layar. */
+export const BG_FITS: { value: BgFit; label: string; hint: string; css: string }[] = [
+  { value: "cover", label: "Penuh", hint: "Menutupi seluruh layar, tepi gambar bisa terpotong.", css: "cover" },
+  { value: "contain", label: "Utuh", hint: "Seluruh gambar terlihat; sisa layar berwarna latar.", css: "contain" },
+  { value: "stretch", label: "Tarik", hint: "Gambar ditarik memenuhi layar (bisa melar).", css: "100% 100%" },
+];
+
 export type BgPosition = "center" | "top" | "bottom" | "left" | "right";
 
 /** Pilihan titik fokus gambar latar, lengkap dengan nilai CSS-nya. */
@@ -58,6 +67,7 @@ export interface HotspotPageConfig {
   bgOverlay: number;
   /** Bagian gambar latar yang dipertahankan saat dipotong menyesuaikan layar. */
   bgPosition: BgPosition;
+  bgFit: BgFit;
   /** Mode yang aktif saat halaman login pertama kali dibuka. */
   loginMode: LoginMode;
   showModeSwitch: boolean;

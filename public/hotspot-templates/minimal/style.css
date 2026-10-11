@@ -38,7 +38,7 @@ body::before {
   height: 100%;
   z-index: -1;
   background-image: linear-gradient({{OVERLAY}}, {{OVERLAY}}), url('{{BG_IMAGE}}');
-  background-size: cover;
+  background-size: {{BG_SIZE}};
   background-position: {{BG_POSITION}};
   background-repeat: no-repeat;
 }

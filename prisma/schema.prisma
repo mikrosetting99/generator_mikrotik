@@ -77,6 +77,19 @@ model MenuUsage {
   @@map("menu_usage")
 }
 
+/// Galeri latar siap pakai yang diunggah admin untuk Halaman Login Hotspot.
+/// Pengguna tinggal memilih, atau tetap bisa mengunggah latar sendiri.
+model BackgroundPreset {
+  id        String   @id @default(cuid())
+  name      String
+  mime      String
+  size      Int
+  data      Bytes    @db.LongBlob
+  createdAt DateTime @default(now())
+
+  @@map("background_presets")
+}
+
 enum LicenseStatus {
   draft
   terkirim

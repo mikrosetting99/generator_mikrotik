@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.3.0",
+    date: "2026-10-11",
+    title: "Galeri latar untuk Halaman Login Hotspot",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Admin bisa mengunggah galeri latar siap pakai di Dashboard Admin; semua pengguna Halaman Login Hotspot bisa langsung memilihnya, dan tetap bisa mengunggah latar sendiri.",
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          "Daftar akun di Kelola Pengguna langsung bertambah setelah akun dibuat, dan tidak lagi bisa tertahan cache browser/proxy.",
+        ],
+      },
+    ],
+  },  {
     version: "1.2.0",
     date: "2026-10-11",
     title: "Dashboard admin, analitik menu, dan akses menu per pengaturan",

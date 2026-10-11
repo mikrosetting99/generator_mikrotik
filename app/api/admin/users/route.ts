@@ -4,6 +4,11 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
+/** Daftar akun harus selalu segar — jangan pernah di-cache browser maupun proxy. */
+const NO_STORE = { "Cache-Control": "no-store" };
+
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.role !== "ADMIN") return null;
@@ -27,16 +32,19 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({
-    users: users.map((u) => ({
-      id: u.id,
-      username: u.username,
-      name: u.name,
-      role: u.role,
-      createdAt: u.createdAt.toISOString(),
-      configCount: u._count.configs,
-    })),
-  });
+  return NextResponse.json(
+    {
+      users: users.map((u) => ({
+        id: u.id,
+        username: u.username,
+        name: u.name,
+        role: u.role,
+        createdAt: u.createdAt.toISOString(),
+        configCount: u._count.configs,
+      })),
+    },
+    { headers: NO_STORE },
+  );
 }
 
 export async function POST(request: Request) {

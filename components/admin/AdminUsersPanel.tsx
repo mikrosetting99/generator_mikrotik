@@ -33,7 +33,7 @@ export function AdminUsersPanel() {
 
   const load = () => {
     setLoadError("");
-    fetch("/api/admin/users")
+    fetch("/api/admin/users", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
       .then((data) => setUsers(data.users))
       .catch(() => setLoadError("Gagal memuat daftar pengguna."));
@@ -58,6 +58,10 @@ export function AdminUsersPanel() {
         return;
       }
       setCreated(`Akun "${username}" dibuat.`);
+      // Langsung tampil di daftar tanpa menunggu muat ulang dari server.
+      if (data.user) {
+        setUsers((prev) => [...(prev ?? []).filter((u) => u.id !== data.user.id), data.user]);
+      }
       setUsername("");
       setName("");
       setPassword("");

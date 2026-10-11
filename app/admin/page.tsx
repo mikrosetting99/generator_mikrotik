@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminBackgrounds } from "@/components/admin/AdminBackgrounds";
 import { AdminSiteSettings } from "@/components/admin/AdminSiteSettings";
 import { ArrowLeft, ArrowRight, Database, FileText, Shield, Users } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -89,6 +90,8 @@ export default async function AdminDashboardPage() {
         </Link>
 
         <AdminSiteSettings initial={settings} usage={usage} />
+
+        <AdminBackgrounds />
 
         <section className="overflow-hidden rounded-2xl border border-line bg-surface">
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">

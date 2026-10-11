@@ -108,6 +108,37 @@ export function LoginPageEditor({
   const [logoError, setLogoError] = useState("");
   const [bgError, setBgError] = useState("");
   const [formError, setFormError] = useState("");
+  const [gallery, setGallery] = useState<{ id: string; name: string }[]>([]);
+  const [galleryBusy, setGalleryBusy] = useState<string | null>(null);
+
+  // Galeri latar siap pakai dari admin.
+  useEffect(() => {
+    fetch("/api/background-presets")
+      .then((r) => r.json())
+      .then((d) => setGallery(d.presets ?? []))
+      .catch(() => setGallery([]));
+  }, []);
+
+  const pickGallery = async (preset: { id: string; name: string }) => {
+    setGalleryBusy(preset.id);
+    setBgError("");
+    try {
+      const res = await fetch(`/api/background-presets/${preset.id}/image`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error());
+        reader.readAsDataURL(blob);
+      });
+      setPage({ bgImageDataUrl: dataUrl, bgImageName: `galeri:${preset.id}` });
+    } catch {
+      setBgError("Gagal memuat latar dari galeri.");
+    } finally {
+      setGalleryBusy(null);
+    }
+  };
   const formInput = useRef<HTMLInputElement>(null);
   const [logoInfo, setLogoInfo] = useState<ImageInfo | null>(null);
   const [bgInfo, setBgInfo] = useState<ImageInfo | null>(null);
@@ -491,6 +522,37 @@ export function LoginPageEditor({
                     }}
                   />
                 </div>
+                {gallery.length > 0 && (
+                  <div className="mt-3">
+                    <span className="text-[11px] text-faint">Atau pilih dari galeri:</span>
+                    <div className="mt-1.5 grid grid-cols-3 gap-2">
+                      {gallery.map((g) => {
+                        const active = page.bgImageName === `galeri:${g.id}`;
+                        return (
+                          <button
+                            key={g.id}
+                            type="button"
+                            title={g.name}
+                            aria-pressed={active}
+                            disabled={galleryBusy !== null}
+                            onClick={() => pickGallery(g)}
+                            className={`overflow-hidden rounded-md border-2 transition-all ${
+                              active ? "border-brand" : "border-line-soft hover:border-line"
+                            } ${galleryBusy === g.id ? "opacity-50" : ""}`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={`/api/background-presets/${g.id}/image`}
+                              alt={g.name}
+                              loading="lazy"
+                              className="h-12 w-full object-cover"
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 {page.bgImageDataUrl && (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img

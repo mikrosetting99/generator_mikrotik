@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.3.0] - 2026-10-11
+
+_Galeri latar untuk Halaman Login Hotspot_
+
+### Ditambahkan
+
+- Admin bisa mengunggah galeri latar siap pakai di Dashboard Admin; semua pengguna Halaman Login Hotspot bisa langsung memilihnya, dan tetap bisa mengunggah latar sendiri.
+
+### Diperbaiki
+
+- Daftar akun di Kelola Pengguna langsung bertambah setelah akun dibuat, dan tidak lagi bisa tertahan cache browser/proxy.
+
 ## [1.2.0] - 2026-10-11
 
 _Dashboard admin, analitik menu, dan akses menu per pengaturan_

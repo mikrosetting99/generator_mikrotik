@@ -17,7 +17,7 @@
   </script>
 </head>
 
-<body onLoad="startRedirect()">
+<body>
   <div class="main">
     <div class="box brandbox">
       {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{PAGE_TITLE}}">{{/LOGO}}
@@ -37,6 +37,8 @@
     </div>
   </div>
 
+  <!-- Langsung dialihkan: tidak menunggu logo dan gambar latar selesai dimuat (onLoad). -->
+  <script type="text/javascript">startRedirect();</script>
 </body>
 
 </html>

@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.4.1",
+    date: "2026-10-11",
+    title: "Login hotspot terasa lebih cepat",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Tombol Login di halaman login hotspot langsung berputar dan menampilkan \"Memproses…\" saat ditekan, jadi tidak terlihat macet saat router memproses.",
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          "Halaman \"Berhasil masuk\" kini langsung mengalihkan, tidak lagi menunggu logo dan gambar latar selesai dimuat lebih dulu. Paket halaman login perlu di-upload ulang ke router agar berlaku.",
+        ],
+      },
+    ],
+  },  {
     version: "1.4.0",
     date: "2026-10-11",
     title: "Logo, nama situs, dan tombol WhatsApp dari admin",

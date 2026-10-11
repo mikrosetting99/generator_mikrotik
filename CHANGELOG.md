@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.4.1] - 2026-10-11
+
+_Login hotspot terasa lebih cepat_
+
+### Diubah
+
+- Tombol Login di halaman login hotspot langsung berputar dan menampilkan "Memproses…" saat ditekan, jadi tidak terlihat macet saat router memproses.
+
+### Diperbaiki
+
+- Halaman "Berhasil masuk" kini langsung mengalihkan, tidak lagi menunggu logo dan gambar latar selesai dimuat lebih dulu. Paket halaman login perlu di-upload ulang ke router agar berlaku.
+
 ## [1.4.0] - 2026-10-11
 
 _Logo, nama situs, dan tombol WhatsApp dari admin_

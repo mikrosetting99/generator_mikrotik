@@ -347,3 +347,27 @@ body {
   .table2 td { padding: 5px 7px; }
   .table caption { padding-bottom: 5px; }
 }
+
+/* --- umpan balik saat Login ditekan --- */
+
+.button.loading {
+  opacity: .85;
+  pointer-events: none;
+}
+
+.button.loading .icon svg { display: none; }
+
+.button.loading .icon::before {
+  content: "";
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

@@ -147,6 +147,15 @@
       if (btnVoucher) { btnVoucher.className = "small-button"; }
       username.focus();
     }
+    // Umpan balik instan saat Login ditekan: tombol berputar dan tidak bisa
+    // ditekan dua kali, jadi halaman tidak terlihat macet selama router memproses.
+    document.login.addEventListener("submit", function () {
+      var b = document.login.querySelector(".button");
+      if (b) {
+        b.className = "button loading";
+        b.lastChild.nodeValue = " Memproses…";
+      }
+    });
   </script>
 </body>
 

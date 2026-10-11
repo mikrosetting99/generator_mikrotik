@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.6.2",
+    date: "2026-10-11",
+    title: "Perbaikan edit nama grup",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Nama grup menu di dashboard admin bisa diketik dengan lancar; sebelumnya kursor terlepas di setiap huruf. Nama diterapkan saat Enter atau pindah kolom, dan nama kosong atau kembar dengan grup lain dibatalkan.",
+        ],
+      },
+    ],
+  },  {
     version: "1.6.1",
     date: "2026-10-11",
     title: "File .rsc siap di-restore",

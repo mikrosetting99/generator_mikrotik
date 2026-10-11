@@ -50,6 +50,53 @@ function Switch({
   );
 }
 
+/**
+ * Isian nama grup. Teks yang diketik disimpan sementara di sini dan baru
+ * diterapkan saat selesai (Enter / pindah fokus) — kalau tiap ketikan langsung
+ * mengubah daftar, elemennya dibuat ulang dan kursor terlepas.
+ */
+function GroupNameInput({
+  value,
+  others,
+  onCommit,
+  label,
+}: {
+  value: string;
+  others: string[];
+  onCommit: (name: string) => void;
+  label: string;
+}) {
+  const [draft, setDraft] = useState(value);
+
+  const commit = () => {
+    const name = draft.trim();
+    if (!name || others.includes(name)) {
+      setDraft(value); // kosong atau kembar dengan grup lain: batalkan
+      return;
+    }
+    if (name !== value) onCommit(name);
+    else setDraft(value);
+  };
+
+  return (
+    <input
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          setDraft(value);
+          e.currentTarget.blur();
+        }
+      }}
+      maxLength={30}
+      aria-label={label}
+      className="min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-sm font-semibold text-ink outline-none transition-colors hover:bg-canvas focus:bg-canvas focus:ring-1 focus:ring-brand/50"
+    />
+  );
+}
+
 /** Kolom pengaturan: label di atas saklar, supaya sejajar di semua baris. */
 const COLS = "sm:grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_7.75rem]";
 
@@ -178,9 +225,13 @@ export function AdminSiteSettings({
 
   /** Menu dikelompokkan sesuai grup; yang tanpa grup (atau grupnya sudah hilang) di akhir. */
   const sections = [
-    ...settings.groups.map((name) => ({ name, menus: settings.menus.filter((m) => m.group === name) })),
-    { name: "", menus: settings.menus.filter((m) => !settings.groups.includes(m.group)) },
-  ].filter((s) => s.menus.length > 0 || s.name);
+    ...settings.groups.map((name, index) => ({
+      index,
+      name,
+      menus: settings.menus.filter((m) => m.group === name),
+    })),
+    { index: -1, name: "", menus: settings.menus.filter((m) => !settings.groups.includes(m.group)) },
+  ].filter((s) => s.menus.length > 0 || s.index >= 0);
 
   const save = async () => {
     const badLink = settings.menus.find((m) => !m.builtin && !safeHref(m.href));
@@ -472,22 +523,22 @@ export function AdminSiteSettings({
           </p>
 
           {sections.map((section) => {
-            const gi = settings.groups.indexOf(section.name);
+            const gi = section.index;
             return (
-              <div key={section.name || "tanpa-grup"} className="overflow-hidden rounded-xl border border-line-soft">
+              <div key={gi >= 0 ? `grup-${gi}-${section.name}` : "tanpa-grup"} className="overflow-hidden rounded-xl border border-line-soft">
                 <div className="flex flex-wrap items-center gap-2 border-b border-line-soft bg-raised/60 px-3 py-2">
-                  {section.name ? (
-                    <input
+                  {gi >= 0 ? (
+                    <GroupNameInput
                       value={section.name}
-                      onChange={(e) => renameGroup(gi, e.target.value)}
-                      aria-label={`Nama grup ${gi + 1}`}
-                      className="min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-sm font-semibold text-ink outline-none transition-colors hover:bg-canvas focus:bg-canvas focus:ring-1 focus:ring-brand/50"
+                      others={settings.groups.filter((_, i) => i !== gi)}
+                      onCommit={(name) => renameGroup(gi, name)}
+                      label={`Nama grup ${gi + 1}`}
                     />
                   ) : (
                     <span className="flex-1 px-1.5 text-sm font-semibold text-muted">Tanpa grup</span>
                   )}
                   <span className="font-mono text-[11px] text-faint">{section.menus.length}</span>
-                  {section.name && (
+                  {gi >= 0 && (
                     <>
                       <Button size="sm" className="px-2" ariaLabel="Geser grup ke atas" title="Geser grup ke atas" onClick={() => moveGroup(gi, -1)} disabled={gi === 0}>
                         ↑
@@ -500,7 +551,7 @@ export function AdminSiteSettings({
                       </Button>
                     </>
                   )}
-                  {section.name && (
+                  {gi >= 0 && (
                     <Button size="sm" onClick={() => addMenu(section.name)} disabled={customCount >= MAX_CUSTOM_MENUS}>
                       <Plus className="h-3.5 w-3.5" /> Menu
                     </Button>

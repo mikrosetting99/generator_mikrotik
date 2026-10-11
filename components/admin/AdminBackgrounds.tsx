@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Trash, Upload } from "@/components/icons";
+import { AdminSection } from "@/components/admin/AdminSection";
 import { Button, EmptyState, Field, Note, TextInput } from "@/components/ui";
 
 interface Preset {
@@ -64,14 +65,14 @@ export function AdminBackgrounds() {
   };
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-      <header className="border-b border-line-soft px-5 py-4">
-        <h2 className="text-[15px] font-semibold text-ink">Galeri latar Halaman Login Hotspot</h2>
-        <p className="mt-0.5 text-xs text-muted">
-          Latar yang diunggah di sini bisa langsung dipilih semua pengguna. Mereka tetap bisa mengunggah latar sendiri.
-        </p>
-      </header>
-
+    <AdminSection
+      title="Galeri latar Halaman Login Hotspot"
+      description="Latar siap pakai yang bisa dipilih semua pengguna."
+      badge={presets && <span className="font-mono text-[11px] text-faint">{presets.length} latar</span>}
+    >
+      <p className="px-5 pt-4 text-xs text-muted">
+        Latar yang diunggah di sini bisa langsung dipilih semua pengguna. Mereka tetap bisa mengunggah latar sendiri.
+      </p>
       <div className="space-y-4 px-5 py-4">
         {flash && <Note tone={flash.tone}>{flash.text}</Note>}
 
@@ -132,6 +133,6 @@ export function AdminBackgrounds() {
           </div>
         )}
       </div>
-    </section>
+    </AdminSection>
   );
 }

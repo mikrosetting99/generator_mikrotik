@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminSection } from "@/components/admin/AdminSection";
 import { AdminBackgrounds } from "@/components/admin/AdminBackgrounds";
 import { AdminSiteSettings } from "@/components/admin/AdminSiteSettings";
 import { ArrowLeft, ArrowRight, Database, FileText, Shield, Users } from "@/components/icons";
@@ -60,14 +61,16 @@ export default async function AdminDashboardPage() {
       </header>
 
       <div className="mx-auto w-full max-w-4xl space-y-5 px-5 py-6">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-3">
           {stats.map((item) => {
             const Glyph = item.icon;
             return (
-              <div key={item.label} className="rounded-2xl border border-line bg-surface p-4">
-                <Glyph className="h-4 w-4 text-brand" />
-                <p className="mt-3 text-2xl font-semibold text-ink">{item.value}</p>
-                <p className="mt-0.5 text-xs text-muted">{item.label}</p>
+              <div key={item.label} className="rounded-2xl border border-line bg-surface px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-semibold text-ink">{item.value}</p>
+                  <Glyph className="h-4 w-4 text-brand" />
+                </div>
+                <p className="mt-0.5 text-[11px] leading-tight text-muted">{item.label}</p>
               </div>
             );
           })}
@@ -93,19 +96,15 @@ export default async function AdminDashboardPage() {
 
         <AdminBackgrounds />
 
-        <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
-            <div>
-              <h2 className="text-[15px] font-semibold text-ink">Versi aplikasi</h2>
-              <p className="mt-0.5 text-xs text-muted">
-                Mengikuti entri teratas di <span className="font-mono">lib/changelog.ts</span>.
-              </p>
-            </div>
-            <span className="rounded-lg border border-brand/30 bg-brand/10 px-3 py-1 font-mono text-sm font-medium text-brand">
+        <AdminSection
+          title="Versi aplikasi & changelog"
+          description="Mengikuti entri teratas di lib/changelog.ts."
+          badge={
+            <span className="rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-0.5 font-mono text-xs font-medium text-brand">
               v{APP_VERSION}
             </span>
-          </header>
-
+          }
+        >
           <div className="space-y-5 px-5 py-4">
             {CHANGELOG.slice(0, 2).map((release) => (
               <div key={release.version}>
@@ -141,7 +140,7 @@ export default async function AdminDashboardPage() {
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-        </section>
+        </AdminSection>
       </div>
     </main>
   );

@@ -33,6 +33,8 @@ export const MENU_ICON_LABEL: Record<MenuIconName, string> = {
 export interface MenuSetting {
   /** Menu bawaan memakai id tetap; menu tambahan berawalan "custom-". */
   id: string;
+  /** Nama grup (salah satu dari SiteSettings.groups); kosong = tanpa grup. */
+  group: string;
   builtin: boolean;
   title: string;
   description: string;
@@ -68,15 +70,20 @@ export interface SiteSettings {
   showSample: boolean;
   showFeatures: boolean;
   footerNote: string;
-  /** Urutan array = urutan tampil di halaman utama. */
+  /** Daftar grup menu, sesuai urutan tampil di halaman utama. */
+  groups: string[];
+  /** Urutan array = urutan tampil di halaman utama (di dalam tiap grup). */
   menus: MenuSetting[];
 }
 
 export const MAX_CUSTOM_MENUS = 12;
+export const MAX_GROUPS = 8;
+export const DEFAULT_GROUPS = ["Konfigurasi", "Alat"];
 
 export const BUILTIN_MENUS: MenuSetting[] = [
   {
     id: "setup",
+    group: "Konfigurasi",
     builtin: true,
     title: "Setup Mikrotik Baru",
     description: "Router default sampai siap pakai: WAN, NAT, DHCP, hotspot, PPPoE, firewall.",
@@ -88,6 +95,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
   },
   {
     id: "loadbalance",
+    group: "Konfigurasi",
     builtin: true,
     title: "Load Balance & Fail Over",
     description: "Gabungkan beberapa ISP, dengan jalur cadangan otomatis.",
@@ -99,6 +107,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
   },
   {
     id: "hotspot-login",
+    group: "Konfigurasi",
     builtin: true,
     title: "Halaman Login Hotspot",
     description: "Atur tampilan portal login dan tabel harga, unduh sebagai hotspot.zip.",
@@ -110,11 +119,24 @@ export const BUILTIN_MENUS: MenuSetting[] = [
   },
   {
     id: "cek",
+    group: "Alat",
     builtin: true,
     title: "Cek Mikrotik",
     description: "Periksa router bermasalah beserta saran perbaikannya.",
     href: "/cek",
     icon: "shield",
+    visible: true,
+    devMode: false,
+    requireLogin: false,
+  },
+  {
+    id: "ip-calc",
+    group: "Alat",
+    builtin: true,
+    title: "Kalkulator IP",
+    description: "Hitung subnet, rentang host, netmask, dan bagi jaringan jadi beberapa subnet.",
+    href: "/kalkulator-ip",
+    icon: "route",
     visible: true,
     devMode: false,
     requireLogin: false,
@@ -138,6 +160,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   showSample: true,
   showFeatures: true,
   footerNote: "Backup router sebelum menjalankan script apa pun.",
+  groups: DEFAULT_GROUPS,
   menus: BUILTIN_MENUS,
 };
 
@@ -182,8 +205,9 @@ export function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href);
 }
 
-export function newCustomMenu(): MenuSetting {
+export function newCustomMenu(group = ""): MenuSetting {
   return {
+    group,
     id: `custom-${Math.random().toString(36).slice(2, 8)}`,
     builtin: false,
     title: "Menu baru",
@@ -201,6 +225,18 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
   const base = DEFAULT_SITE_SETTINGS;
   const input = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
 
+  // Grup: nama unik, tidak kosong. Simpanan lama tanpa grup memakai bawaan.
+  const rawGroups = Array.isArray(input.groups) ? input.groups : base.groups;
+  const groups: string[] = [];
+  for (const g of rawGroups) {
+    const name = typeof g === "string" ? g.trim().slice(0, 30) : "";
+    if (name && !groups.includes(name) && groups.length < MAX_GROUPS) groups.push(name);
+  }
+  const pickGroup = (value: unknown, fallback: string) => {
+    const g = typeof value === "string" ? value.trim() : fallback;
+    return groups.includes(g) ? g : "";
+  };
+
   const saved = Array.isArray(input.menus) ? (input.menus as Record<string, unknown>[]) : [];
   const builtinById = new Map(BUILTIN_MENUS.map((m) => [m.id, m]));
   const seen = new Set<string>();
@@ -217,6 +253,7 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
       seen.add(id);
       menus.push({
         ...def,
+        group: pickGroup(item.group, def.group),
         title: str(item.title, def.title, 60) || def.title,
         description: str(item.description, def.description, 200),
         visible: bool(item.visible, true),
@@ -233,6 +270,7 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
     customCount += 1;
     menus.push({
       id,
+      group: pickGroup(item.group, ""),
       builtin: false,
       title: str(item.title, "Menu baru", 60) || "Menu baru",
       description: str(item.description, "", 200),
@@ -244,7 +282,9 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
     });
   }
   // Menu bawaan yang belum ada di simpanan lama tetap muncul, di urutan paling bawah.
-  for (const def of BUILTIN_MENUS) if (!seen.has(def.id)) menus.push({ ...def });
+  for (const def of BUILTIN_MENUS) {
+    if (!seen.has(def.id)) menus.push({ ...def, group: pickGroup(def.group, def.group) });
+  }
 
   const logo = typeof input.logoDataUrl === "string" ? input.logoDataUrl : "";
   const logoOk = LOGO_PATTERN.test(logo) && logo.length <= Math.ceil(MAX_LOGO_BYTES * 1.4);
@@ -265,6 +305,7 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
     showSample: bool(input.showSample, base.showSample),
     showFeatures: bool(input.showFeatures, base.showFeatures),
     footerNote: str(input.footerNote, base.footerNote, 160),
+    groups,
     menus,
   };
 }

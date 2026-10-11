@@ -1,17 +1,19 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowRight, Check, ChevronDown, Plus, Save, Trash, Upload } from "@/components/icons";
+import { AdminSection } from "@/components/admin/AdminSection";
+import { ArrowRight, Check, ChevronDown, Plus, Save, Trash, Upload, X } from "@/components/icons";
 import { MenuIcon } from "@/components/MenuIcon";
 import { Button, CheckPill, Field, Note, Select, TextInput, Toggle } from "@/components/ui";
 import {
   MAX_CUSTOM_MENUS,
-  MENU_ICON_LABEL,
+  MAX_GROUPS,
   MAX_LOGO_BYTES,
+  MENU_ICON_LABEL,
   MENU_ICONS,
   newCustomMenu,
-  waLink,
   safeHref,
+  waLink,
   type MenuIconName,
   type MenuSetting,
   type SiteSettings,
@@ -51,7 +53,7 @@ function Switch({
 /** Kolom pengaturan: label di atas saklar, supaya sejajar di semua baris. */
 const COLS = "sm:grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_3.5rem_5.5rem]";
 
-/** Atur halaman utama: menu (tampil, pengembangan, wajib login, urutan, tambah) dan teksnya. */
+/** Pengaturan umum (identitas, WhatsApp, teks beranda) dan menu beranda dengan grup. */
 export function AdminSiteSettings({
   initial,
   usage,
@@ -67,6 +69,10 @@ export function AdminSiteSettings({
 
   const logoInput = useRef<HTMLInputElement>(null);
   const [logoError, setLogoError] = useState("");
+
+  const dirty = JSON.stringify(settings) !== JSON.stringify(saved);
+  const patch = (partial: Partial<SiteSettings>) => setSettings((s) => ({ ...s, ...partial }));
+  const customCount = settings.menus.filter((m) => !m.builtin).length;
 
   const pickLogo = (file: File) => {
     setLogoError("");
@@ -85,23 +91,72 @@ export function AdminSiteSettings({
     reader.readAsDataURL(file);
   };
 
-  const dirty = JSON.stringify(settings) !== JSON.stringify(saved);
-  const patch = (partial: Partial<SiteSettings>) => setSettings((s) => ({ ...s, ...partial }));
-  const customCount = settings.menus.filter((m) => !m.builtin).length;
+  /* ------------------------------------------------------------- grup */
+
+  const addGroup = () => {
+    if (settings.groups.length >= MAX_GROUPS) return;
+    let n = settings.groups.length + 1;
+    while (settings.groups.includes(`Grup ${n}`)) n += 1;
+    patch({ groups: [...settings.groups, `Grup ${n}`] });
+  };
+
+  const renameGroup = (index: number, name: string) => {
+    const old = settings.groups[index];
+    setSettings((s) => ({
+      ...s,
+      groups: s.groups.map((g, i) => (i === index ? name : g)),
+      menus: s.menus.map((m) => (m.group === old ? { ...m, group: name } : m)),
+    }));
+  };
+
+  const removeGroup = (index: number) => {
+    const name = settings.groups[index];
+    if (!confirm(`Hapus grup "${name}"? Menu di dalamnya jadi tanpa grup.`)) return;
+    setSettings((s) => ({
+      ...s,
+      groups: s.groups.filter((_, i) => i !== index),
+      menus: s.menus.map((m) => (m.group === name ? { ...m, group: "" } : m)),
+    }));
+  };
+
+  const moveGroup = (index: number, delta: -1 | 1) => {
+    const target = index + delta;
+    if (target < 0 || target >= settings.groups.length) return;
+    const groups = [...settings.groups];
+    [groups[index], groups[target]] = [groups[target], groups[index]];
+    patch({ groups });
+  };
+
+  /* ------------------------------------------------------------- menu */
 
   const patchMenu = (id: string, partial: Partial<MenuSetting>) =>
     patch({ menus: settings.menus.map((m) => (m.id === id ? { ...m, ...partial } : m)) });
 
-  const move = (index: number, delta: -1 | 1) => {
-    const target = index + delta;
+  /** Geser menu satu langkah di dalam grupnya (menukar dengan tetangga satu grup). */
+  const move = (id: string, delta: -1 | 1) => {
+    const index = settings.menus.findIndex((m) => m.id === id);
+    const group = settings.menus[index].group;
+    let target = index + delta;
+    while (target >= 0 && target < settings.menus.length && settings.menus[target].group !== group) {
+      target += delta;
+    }
     if (target < 0 || target >= settings.menus.length) return;
     const menus = [...settings.menus];
     [menus[index], menus[target]] = [menus[target], menus[index]];
     patch({ menus });
   };
 
-  const addMenu = () => {
-    const menu = newCustomMenu();
+  const canMove = (id: string, delta: -1 | 1) => {
+    const index = settings.menus.findIndex((m) => m.id === id);
+    const group = settings.menus[index].group;
+    for (let i = index + delta; i >= 0 && i < settings.menus.length; i += delta) {
+      if (settings.menus[i].group === group) return true;
+    }
+    return false;
+  };
+
+  const addMenu = (group = "") => {
+    const menu = newCustomMenu(group);
     patch({ menus: [...settings.menus, menu] });
     setOpen(menu.id);
   };
@@ -110,6 +165,12 @@ export function AdminSiteSettings({
     if (!confirm(`Hapus menu "${menu.title}"?`)) return;
     patch({ menus: settings.menus.filter((m) => m.id !== menu.id) });
   };
+
+  /** Menu dikelompokkan sesuai grup; yang tanpa grup (atau grupnya sudah hilang) di akhir. */
+  const sections = [
+    ...settings.groups.map((name) => ({ name, menus: settings.menus.filter((m) => m.group === name) })),
+    { name: "", menus: settings.menus.filter((m) => !settings.groups.includes(m.group)) },
+  ].filter((s) => s.menus.length > 0 || s.name);
 
   const save = async () => {
     const badLink = settings.menus.find((m) => !m.builtin && !safeHref(m.href));
@@ -121,9 +182,12 @@ export function AdminSiteSettings({
       });
       return;
     }
-
     if (settings.waEnabled && !waLink(settings.waNumber, "")) {
       setFlash({ tone: "bad", text: "Nomor WhatsApp belum valid. Isi nomor yang benar atau matikan tombol WhatsApp." });
+      return;
+    }
+    if (settings.groups.some((g) => !g.trim())) {
+      setFlash({ tone: "bad", text: "Nama grup tidak boleh kosong." });
       return;
     }
 
@@ -150,115 +214,297 @@ export function AdminSiteSettings({
     }
   };
 
+  const renderMenuRow = (menu: MenuSetting) => {
+    const expanded = open === menu.id;
+    return (
+      <li key={menu.id} className={menu.visible ? "" : "bg-canvas/40"}>
+        <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-5 py-3 ${COLS}`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-brand/25 bg-brand/10 text-brand">
+              <MenuIcon name={menu.icon} className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className={`truncate text-sm font-medium ${menu.visible ? "text-ink" : "text-faint"}`}>
+                {menu.title}
+              </p>
+              <p className="truncate font-mono text-[11px] text-faint">{menu.href}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-1 sm:order-last">
+            <Button size="sm" className="px-2" ariaLabel="Naikkan" title="Naikkan" onClick={() => move(menu.id, -1)} disabled={!canMove(menu.id, -1)}>
+              ↑
+            </Button>
+            <Button size="sm" className="px-2" ariaLabel="Turunkan" title="Turunkan" onClick={() => move(menu.id, 1)} disabled={!canMove(menu.id, 1)}>
+              ↓
+            </Button>
+            <Button size="sm" className="px-2" ariaLabel="Edit" title="Edit menu" onClick={() => setOpen(expanded ? null : menu.id)}>
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+            </Button>
+          </div>
+
+          <div className="col-span-2 flex flex-wrap items-center gap-x-5 gap-y-2 sm:contents">
+            <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
+              <span className="sm:hidden">Tampil</span>
+              <Switch label="Tampil di beranda" checked={menu.visible} onChange={(visible) => patchMenu(menu.id, { visible })} />
+            </label>
+            <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
+              <span className="sm:hidden">Dev</span>
+              <Switch label="Mode pengembangan" checked={menu.devMode} onChange={(devMode) => patchMenu(menu.id, { devMode })} />
+            </label>
+            <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
+              <span className="sm:hidden">Login</span>
+              <Switch label="Wajib login" checked={menu.requireLogin} onChange={(requireLogin) => patchMenu(menu.id, { requireLogin })} />
+            </label>
+            <span className="font-mono text-xs text-muted sm:text-center">
+              {(usage[menu.id] ?? 0).toLocaleString("id-ID")}
+              <span className="sm:hidden">× dipakai</span>
+            </span>
+          </div>
+        </div>
+
+        {expanded && (
+          <div className="grid gap-3 border-t border-line-soft bg-raised/40 px-5 py-4 sm:grid-cols-2">
+            <Field label="Judul">
+              <TextInput value={menu.title} onChange={(title) => patchMenu(menu.id, { title })} />
+            </Field>
+            <Field label="Deskripsi singkat">
+              <TextInput value={menu.description} onChange={(description) => patchMenu(menu.id, { description })} />
+            </Field>
+            <Field label="Grup">
+              <Select
+                value={menu.group}
+                placeholder="— tanpa grup —"
+                onChange={(group) => patchMenu(menu.id, { group })}
+                options={settings.groups.map((g) => ({ value: g, label: g }))}
+              />
+            </Field>
+            {!menu.builtin && (
+              <>
+                <Field label="Ikon">
+                  <Select
+                    value={menu.icon}
+                    placeholder=""
+                    onChange={(icon) => patchMenu(menu.id, { icon: icon as MenuIconName })}
+                    options={MENU_ICONS.map((name) => ({ value: name, label: MENU_ICON_LABEL[name] }))}
+                  />
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="Alamat tujuan" hint='Halaman di situs ini ("/halaman") atau tautan luar ("https://…").'>
+                    <TextInput
+                      mono
+                      value={menu.href}
+                      invalid={!safeHref(menu.href)}
+                      onChange={(href) => patchMenu(menu.id, { href })}
+                      placeholder="/halaman atau https://contoh.com"
+                    />
+                  </Field>
+                </div>
+                <div className="sm:col-span-2">
+                  <Button size="sm" variant="danger" onClick={() => removeMenu(menu)}>
+                    <Trash className="h-3.5 w-3.5" /> Hapus menu ini
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </li>
+    );
+  };
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {flash && <Note tone={flash.tone}>{flash.text}</Note>}
 
-      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <header className="border-b border-line-soft px-5 py-4">
-          <h2 className="text-[15px] font-semibold text-ink">Identitas situs</h2>
-          <p className="mt-0.5 text-xs text-muted">Logo dan nama tampil di pojok kiri atas beranda dan di footer.</p>
-        </header>
-        <div className="grid gap-4 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
-          <div className="flex items-center gap-3">
-            <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-canvas">
-              {settings.logoDataUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={settings.logoDataUrl} alt="Logo" className="h-full w-full object-contain p-1" />
-              ) : (
-                <span className="text-[10px] text-faint">tanpa logo</span>
-              )}
+      {/* ------------------------------------------------ pengaturan umum */}
+      <AdminSection
+        title="Pengaturan umum"
+        description="Logo & nama situs, tombol WhatsApp, dan teks halaman utama."
+        badge={
+          settings.waEnabled ? (
+            <span className="rounded-full border border-[#25D366]/40 bg-[#25D366]/10 px-2 py-0.5 text-[10px] font-medium text-[#25D366]">
+              WhatsApp aktif
             </span>
-            <div className="flex flex-col gap-1.5">
-              <Button size="sm" onClick={() => logoInput.current?.click()}>
-                <Upload className="h-3.5 w-3.5" />
-                {settings.logoDataUrl ? "Ganti logo" : "Unggah logo"}
-              </Button>
-              {settings.logoDataUrl && (
-                <Button size="sm" variant="danger" onClick={() => patch({ logoDataUrl: "", logoVersion: 0 })}>
-                  <Trash className="h-3.5 w-3.5" /> Hapus
-                </Button>
-              )}
-              <input
-                ref={logoInput}
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = "";
-                  if (file) pickLogo(file);
-                }}
-              />
+          ) : null
+        }
+      >
+        <div className="divide-y divide-line-soft">
+          {/* Identitas situs */}
+          <div className="space-y-3 px-5 py-4">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.09em] text-muted">Identitas situs</h3>
+            <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
+              <div className="flex items-center gap-3">
+                <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-canvas">
+                  {settings.logoDataUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={settings.logoDataUrl} alt="Logo" className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <span className="text-[10px] text-faint">tanpa logo</span>
+                  )}
+                </span>
+                <div className="flex flex-col gap-1.5">
+                  <Button size="sm" onClick={() => logoInput.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    {settings.logoDataUrl ? "Ganti logo" : "Unggah logo"}
+                  </Button>
+                  {settings.logoDataUrl && (
+                    <Button size="sm" variant="danger" onClick={() => patch({ logoDataUrl: "", logoVersion: 0 })}>
+                      <Trash className="h-3.5 w-3.5" /> Hapus
+                    </Button>
+                  )}
+                  <input
+                    ref={logoInput}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (file) pickLogo(file);
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <Field label="Nama situs">
+                  <TextInput value={settings.siteName} onChange={(siteName) => patch({ siteName })} />
+                </Field>
+                <p className="mt-1.5 text-xs text-faint">
+                  Tampil di pojok kiri atas beranda dan footer. Logo PNG/SVG, maksimal {MAX_LOGO_BYTES / 1024} KB.
+                </p>
+                {logoError && <p className="mt-1 text-xs text-bad">{logoError}</p>}
+              </div>
             </div>
           </div>
-          <div>
-            <Field label="Nama situs">
-              <TextInput value={settings.siteName} onChange={(siteName) => patch({ siteName })} />
-            </Field>
-            <p className="mt-1.5 text-xs text-faint">
-              Logo PNG/SVG berlatar transparan, maksimal {MAX_LOGO_BYTES / 1024} KB.
-            </p>
-            {logoError && <p className="mt-1 text-xs text-bad">{logoError}</p>}
-          </div>
-        </div>
-      </section>
 
-      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <header className="border-b border-line-soft px-5 py-4">
-          <h2 className="text-[15px] font-semibold text-ink">Tombol WhatsApp</h2>
-          <p className="mt-0.5 text-xs text-muted">Tombol ajakan (CTA) di beranda untuk menghubungi Anda.</p>
-        </header>
-        <div className="space-y-4 px-5 py-4">
-          <Toggle
-            checked={settings.waEnabled}
-            onChange={(waEnabled) => patch({ waEnabled })}
-            label="Tampilkan tombol WhatsApp"
-            hint="Muncul di samping tombol utama di bagian atas beranda."
-          />
-          {settings.waEnabled && (
+          {/* WhatsApp */}
+          <div className="space-y-3 px-5 py-4">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.09em] text-muted">Tombol WhatsApp</h3>
+            <Toggle
+              checked={settings.waEnabled}
+              onChange={(waEnabled) => patch({ waEnabled })}
+              label="Tampilkan tombol WhatsApp"
+              hint="Muncul di samping tombol utama di bagian atas beranda."
+            />
+            {settings.waEnabled && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  label="Nomor WhatsApp"
+                  hint={waLink(settings.waNumber, "") || "Isi nomor, mis. 081234567890 — otomatis jadi 62…"}
+                >
+                  <TextInput mono value={settings.waNumber} onChange={(waNumber) => patch({ waNumber })} placeholder="081234567890" />
+                </Field>
+                <Field label="Teks tombol">
+                  <TextInput value={settings.waLabel} onChange={(waLabel) => patch({ waLabel })} />
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="Pesan awal" hint="Sudah terisi di kolom chat pengunjung saat WhatsApp terbuka.">
+                    <TextInput value={settings.waMessage} onChange={(waMessage) => patch({ waMessage })} />
+                  </Field>
+                </div>
+                <div className="sm:col-span-2">
+                  <Toggle
+                    checked={settings.waFloating}
+                    onChange={(waFloating) => patch({ waFloating })}
+                    label="Tombol melayang"
+                    hint="Tambah tombol bulat WhatsApp di pojok kanan bawah yang selalu terlihat."
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Teks halaman utama */}
+          <div className="space-y-3 px-5 py-4">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.09em] text-muted">Teks halaman utama</h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Nomor WhatsApp"
-                hint={waLink(settings.waNumber, "") || "Isi nomor, mis. 081234567890 — otomatis jadi 62…"}
-              >
-                <TextInput
-                  mono
-                  value={settings.waNumber}
-                  onChange={(waNumber) => patch({ waNumber })}
-                  placeholder="081234567890"
-                />
+              <Field label="Judul baris 1">
+                <TextInput value={settings.heroTitle} onChange={(heroTitle) => patch({ heroTitle })} />
               </Field>
-              <Field label="Teks tombol">
-                <TextInput value={settings.waLabel} onChange={(waLabel) => patch({ waLabel })} />
+              <Field label="Judul baris 2 (berwarna)">
+                <TextInput value={settings.heroAccent} onChange={(heroAccent) => patch({ heroAccent })} />
               </Field>
               <div className="sm:col-span-2">
-                <Field label="Pesan awal" hint="Sudah terisi di kolom chat pengunjung saat WhatsApp terbuka.">
-                  <TextInput value={settings.waMessage} onChange={(waMessage) => patch({ waMessage })} />
+                <Field label="Kalimat pembuka">
+                  <TextInput value={settings.heroText} onChange={(heroText) => patch({ heroText })} />
                 </Field>
               </div>
-              <div className="sm:col-span-2">
-                <Toggle
-                  checked={settings.waFloating}
-                  onChange={(waFloating) => patch({ waFloating })}
-                  label="Tombol melayang"
-                  hint="Tambah tombol bulat WhatsApp di pojok kanan bawah yang selalu terlihat."
-                />
-              </div>
+              <Field label="Teks tombol utama" hint="Mengarah ke Setup Mikrotik Baru.">
+                <TextInput value={settings.ctaLabel} onChange={(ctaLabel) => patch({ ctaLabel })} />
+              </Field>
+              <Field label="Catatan di footer">
+                <TextInput value={settings.footerNote} onChange={(footerNote) => patch({ footerNote })} />
+              </Field>
             </div>
-          )}
+            <div className="flex flex-wrap gap-1.5">
+              <CheckPill active={settings.showSample} onClick={() => patch({ showSample: !settings.showSample })}>
+                Cuplikan script
+              </CheckPill>
+              <CheckPill active={settings.showFeatures} onClick={() => patch({ showFeatures: !settings.showFeatures })}>
+                Tiga jaminan
+              </CheckPill>
+            </div>
+          </div>
         </div>
-      </section>
+      </AdminSection>
 
-      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
-          <h2 className="text-[15px] font-semibold text-ink">Menu</h2>
-          <Button size="sm" onClick={addMenu} disabled={customCount >= MAX_CUSTOM_MENUS}>
-            <Plus className="h-3.5 w-3.5" /> Tambah menu
-          </Button>
-        </header>
+      {/* -------------------------------------------------------- menu */}
+      <AdminSection
+        title="Menu & grup"
+        description="Tampil, mode pengembangan, wajib login, urutan, dan pengelompokan."
+        defaultOpen
+        badge={<span className="font-mono text-[11px] text-faint">{settings.menus.length} menu</span>}
+      >
+        {/* Kelola grup */}
+        <div className="border-b border-line-soft px-5 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted">Grup:</span>
+            {settings.groups.map((g, i) => (
+              <span key={i} className="inline-flex items-center gap-0.5 rounded-lg border border-line bg-canvas pl-1 pr-0.5">
+                <button
+                  type="button"
+                  title="Geser ke kiri"
+                  disabled={i === 0}
+                  onClick={() => moveGroup(i, -1)}
+                  className="px-1 text-xs text-faint hover:text-ink disabled:opacity-30"
+                >
+                  ‹
+                </button>
+                <input
+                  value={g}
+                  onChange={(e) => renameGroup(i, e.target.value)}
+                  aria-label={`Nama grup ${i + 1}`}
+                  size={Math.max(6, g.length + 1)}
+                  className="bg-transparent py-1 text-xs text-ink outline-none"
+                />
+                <button
+                  type="button"
+                  title="Geser ke kanan"
+                  disabled={i === settings.groups.length - 1}
+                  onClick={() => moveGroup(i, 1)}
+                  className="px-1 text-xs text-faint hover:text-ink disabled:opacity-30"
+                >
+                  ›
+                </button>
+                <button
+                  type="button"
+                  title="Hapus grup"
+                  aria-label={`Hapus grup ${g}`}
+                  onClick={() => removeGroup(i)}
+                  className="rounded p-1 text-faint hover:bg-bad/10 hover:text-bad"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+            <Button size="sm" onClick={addGroup} disabled={settings.groups.length >= MAX_GROUPS}>
+              <Plus className="h-3.5 w-3.5" /> Grup
+            </Button>
+          </div>
+        </div>
 
-        {/* Judul kolom — tersembunyi di layar sempit, tempatnya diganti label pada tiap saklar */}
+        {/* Judul kolom */}
         <div
           className={`hidden items-end gap-2 border-b border-line-soft bg-canvas/40 px-5 py-2 text-center text-[10px] font-medium uppercase tracking-[0.09em] text-faint sm:grid ${COLS}`}
         >
@@ -270,164 +516,50 @@ export function AdminSiteSettings({
           <span />
         </div>
 
-        <ul className="divide-y divide-line-soft">
-          {settings.menus.map((menu, index) => {
-            const expanded = open === menu.id;
-            return (
-              <li key={menu.id} className={menu.visible ? "" : "bg-canvas/40"}>
-                <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-5 py-3 ${COLS}`}>
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-brand/25 bg-brand/10 text-brand">
-                      <MenuIcon name={menu.icon} className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className={`truncate text-sm font-medium ${menu.visible ? "text-ink" : "text-faint"}`}>
-                        {menu.title}
-                      </p>
-                      <p className="truncate font-mono text-[11px] text-faint">{menu.href}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-1 sm:order-last">
-                    <Button size="sm" className="px-2" ariaLabel="Naikkan" title="Naikkan" onClick={() => move(index, -1)} disabled={index === 0}>
-                      ↑
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="px-2"
-                      ariaLabel="Turunkan"
-                      title="Turunkan"
-                      onClick={() => move(index, 1)}
-                      disabled={index === settings.menus.length - 1}
-                    >
-                      ↓
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="px-2"
-                      ariaLabel="Edit"
-                      title="Edit teks menu"
-                      onClick={() => setOpen(expanded ? null : menu.id)}
-                    >
-                      <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
-                    </Button>
-                  </div>
-
-                  {/* Saklar: sejajar kolom di layar lebar, baris sendiri di HP */}
-                  <div className="col-span-2 flex flex-wrap items-center gap-x-5 gap-y-2 sm:contents">
-                    <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
-                      <span className="sm:hidden">Tampil</span>
-                      <Switch label="Tampil di beranda" checked={menu.visible} onChange={(visible) => patchMenu(menu.id, { visible })} />
-                    </label>
-                    <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
-                      <span className="sm:hidden">Dev</span>
-                      <Switch label="Mode pengembangan" checked={menu.devMode} onChange={(devMode) => patchMenu(menu.id, { devMode })} />
-                    </label>
-                    <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
-                      <span className="sm:hidden">Login</span>
-                      <Switch label="Wajib login" checked={menu.requireLogin} onChange={(requireLogin) => patchMenu(menu.id, { requireLogin })} />
-                    </label>
-                    <span className="font-mono text-xs text-muted sm:text-center">
-                      {(usage[menu.id] ?? 0).toLocaleString("id-ID")}
-                      <span className="sm:hidden">× dipakai</span>
-                    </span>
-                  </div>
-                </div>
-
-                {expanded && (
-                  <div className="grid gap-3 border-t border-line-soft bg-raised/40 px-5 py-4 sm:grid-cols-2">
-                    <Field label="Judul">
-                      <TextInput value={menu.title} onChange={(title) => patchMenu(menu.id, { title })} />
-                    </Field>
-                    <Field label="Deskripsi singkat">
-                      <TextInput
-                        value={menu.description}
-                        onChange={(description) => patchMenu(menu.id, { description })}
-                      />
-                    </Field>
-                    {!menu.builtin && (
-                      <>
-                        <Field label="Alamat tujuan" hint='Halaman di situs ini ("/halaman") atau tautan luar ("https://…").'>
-                          <TextInput
-                            mono
-                            value={menu.href}
-                            invalid={!safeHref(menu.href)}
-                            onChange={(href) => patchMenu(menu.id, { href })}
-                            placeholder="/halaman atau https://contoh.com"
-                          />
-                        </Field>
-                        <Field label="Ikon">
-                          <Select
-                            value={menu.icon}
-                            placeholder=""
-                            onChange={(icon) => patchMenu(menu.id, { icon: icon as MenuIconName })}
-                            options={MENU_ICONS.map((name) => ({ value: name, label: MENU_ICON_LABEL[name] }))}
-                          />
-                        </Field>
-                        <div className="sm:col-span-2">
-                          <Button size="sm" variant="danger" onClick={() => removeMenu(menu)}>
-                            <Trash className="h-3.5 w-3.5" /> Hapus menu ini
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+        {sections.map((section) => (
+          <div key={section.name || "tanpa-grup"}>
+            {(settings.groups.length > 0 || section.name) && (
+              <div className="flex items-center justify-between gap-2 border-b border-line-soft bg-raised/50 px-5 py-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-brand/80">
+                  {section.name || "Tanpa grup"}
+                </span>
+                {section.name && (
+                  <button
+                    type="button"
+                    onClick={() => addMenu(section.name)}
+                    disabled={customCount >= MAX_CUSTOM_MENUS}
+                    className="text-[11px] text-muted hover:text-brand disabled:opacity-40"
+                  >
+                    + menu di grup ini
+                  </button>
                 )}
-              </li>
-            );
-          })}
-        </ul>
-
-        <ul className="space-y-1 border-t border-line-soft px-5 py-3 text-xs leading-relaxed text-faint">
-          <li>
-            <b className="font-medium text-muted">Login</b> mati = menu bebas dibuka siapa saja. Yang sudah login
-            selalu bisa membuka semua menu.
-          </li>
-          <li>
-            <b className="font-medium text-muted">Dev</b> = hanya admin yang bisa membuka; pengunjung lain melihat
-            &ldquo;dalam pengembangan&rdquo;.
-          </li>
-          <li>
-            Pada menu tambahan, aturan Dev dan Login hanya berlaku di kartu beranda — halaman tujuannya sendiri
-            tidak ikut dijaga.
-          </li>
-        </ul>
-      </section>
-
-      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <header className="border-b border-line-soft px-5 py-4">
-          <h2 className="text-[15px] font-semibold text-ink">Halaman utama</h2>
-        </header>
-        <div className="space-y-4 px-5 py-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Judul baris 1">
-              <TextInput value={settings.heroTitle} onChange={(heroTitle) => patch({ heroTitle })} />
-            </Field>
-            <Field label="Judul baris 2 (berwarna)">
-              <TextInput value={settings.heroAccent} onChange={(heroAccent) => patch({ heroAccent })} />
-            </Field>
-            <div className="sm:col-span-2">
-              <Field label="Kalimat pembuka">
-                <TextInput value={settings.heroText} onChange={(heroText) => patch({ heroText })} />
-              </Field>
-            </div>
-            <Field label="Teks tombol utama" hint="Mengarah ke Setup Mikrotik Baru.">
-              <TextInput value={settings.ctaLabel} onChange={(ctaLabel) => patch({ ctaLabel })} />
-            </Field>
-            <Field label="Catatan di footer">
-              <TextInput value={settings.footerNote} onChange={(footerNote) => patch({ footerNote })} />
-            </Field>
+              </div>
+            )}
+            <ul className="divide-y divide-line-soft border-b border-line-soft last:border-b-0">
+              {section.menus.length === 0 ? (
+                <li className="px-5 py-3 text-xs text-faint">Belum ada menu di grup ini.</li>
+              ) : (
+                section.menus.map(renderMenuRow)
+              )}
+            </ul>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            <CheckPill active={settings.showSample} onClick={() => patch({ showSample: !settings.showSample })}>
-              Cuplikan script
-            </CheckPill>
-            <CheckPill active={settings.showFeatures} onClick={() => patch({ showFeatures: !settings.showFeatures })}>
-              Tiga jaminan
-            </CheckPill>
-          </div>
+        ))}
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-soft px-5 py-3">
+          <ul className="space-y-0.5 text-xs leading-relaxed text-faint">
+            <li>
+              <b className="font-medium text-muted">Login</b> mati = bebas dibuka siapa saja; yang sudah login selalu bisa.
+            </li>
+            <li>
+              <b className="font-medium text-muted">Dev</b> = hanya admin yang bisa membuka.
+            </li>
+            <li>Pada menu tambahan, aturan Dev/Login hanya berlaku di kartu beranda.</li>
+          </ul>
+          <Button size="sm" onClick={() => addMenu("")} disabled={customCount >= MAX_CUSTOM_MENUS}>
+            <Plus className="h-3.5 w-3.5" /> Tambah menu
+          </Button>
         </div>
-      </section>
+      </AdminSection>
 
       <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface/95 px-4 py-3 shadow-lg backdrop-blur">
         <span className="text-xs text-muted">

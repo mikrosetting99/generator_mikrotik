@@ -40,6 +40,15 @@ export default async function Home() {
     getMenuUsage(),
   ]);
   const menus = settings.menus.filter((m) => m.visible);
+  // Kelompokkan menu sesuai grup; yang tidak punya grup masuk "Lainnya"
+  // (atau tanpa judul bila memang tidak ada grup sama sekali).
+  const sections = [
+    ...settings.groups.map((name) => ({ name, menus: menus.filter((m) => m.group === name) })),
+    {
+      name: settings.groups.length > 0 ? "Lainnya" : "",
+      menus: menus.filter((m) => !settings.groups.includes(m.group)),
+    },
+  ].filter((s) => s.menus.length > 0);
   const isAdmin = session?.user?.role === "ADMIN";
   const loggedIn = Boolean(session?.user);
   const username = session?.user?.username ?? session?.user?.name ?? "";
@@ -194,8 +203,14 @@ export default async function Home() {
         <h2 className="mt-20 text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
           Pilih menu
         </h2>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {menus.map((menu) => {
+        <div className="mt-5 space-y-7">
+          {sections.map((section) => (
+            <div key={section.name || "menu"}>
+              {section.name && (
+                <h3 className="mb-3 text-xs font-semibold text-muted">{section.name}</h3>
+              )}
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {section.menus.map((menu) => {
             const external = isExternalHref(menu.href);
             // Menu pengembangan hanya bisa dibuka admin; yang lain melihat kartu nonaktif.
             const locked = menu.devMode && !isAdmin;
@@ -265,6 +280,9 @@ export default async function Home() {
               })()
             );
           })}
+              </div>
+            </div>
+          ))}
         </div>
         {/* ------------------------------------------------------ jaminan */}
         {settings.showFeatures && (

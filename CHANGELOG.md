@@ -8,6 +8,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.5.0] - 2026-10-11
+
+_Kalkulator IP, grup menu, dan dashboard admin lebih ringkas_
+
+### Ditambahkan
+
+- Halaman Kalkulator IP (/kalkulator-ip): network, broadcast, rentang host, netmask, wildcard, jenis alamat, tampilan biner, pembagian subnet, dan perintah RouterOS siap salin. Tersedia sebagai menu yang bisa diatur dari dashboard admin.
+- Grup menu: menu di beranda dikelompokkan (bawaan "Konfigurasi" dan "Alat"); nama, urutan, dan isi grup diatur dari dashboard admin.
+
+### Diubah
+
+- Dashboard admin dibuat dropdown per bagian supaya tidak panjang digulir; identitas situs, tombol WhatsApp, dan teks beranda digabung di "Pengaturan umum".
+
 ## [1.4.1] - 2026-10-11
 
 _Login hotspot terasa lebih cepat_

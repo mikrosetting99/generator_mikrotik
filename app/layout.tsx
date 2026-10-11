@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/app/providers";
 import { themeBootScript } from "@/components/ThemeToggle";
+import { getSiteSettings } from "@/lib/site-settings-server";
 import "./globals.css";
 
 const inter = Inter({
@@ -16,12 +17,24 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Generator Script Mikrotik — Mikrosetting.com",
-  description:
-    "Buat script konfigurasi RouterOS siap copy-paste: Setup Mikrotik Baru, Load Balance & Fail Over, dan Halaman Login Hotspot. By Mikrosetting.com",
-};
+/**
+ * Judul tab dan ikon tab mengikuti nama & logo situs dari dashboard admin.
+ * Dinamis (bukan statis saat build) supaya perubahan admin langsung berlaku.
+ */
+export const dynamic = "force-dynamic";
 
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  const icon = settings.logoDataUrl ? `/api/site-logo?v=${settings.logoVersion}` : "/favicon.ico";
+
+  return {
+    // Halaman memberi judul pendek ("Cek Mikrotik"); nama situs ditambahkan di belakangnya.
+    title: { default: settings.siteName, template: `%s — ${settings.siteName}` },
+    description:
+      "Buat script konfigurasi RouterOS siap copy-paste: Setup Mikrotik Baru, Load Balance & Fail Over, dan Halaman Login Hotspot. By Mikrosetting.com",
+    icons: { icon, shortcut: icon, ...(settings.logoDataUrl ? { apple: icon } : {}) },
+  };
+}
 export default function RootLayout({
   children,
 }: Readonly<{

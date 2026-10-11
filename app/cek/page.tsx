@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CekBuilder } from "@/components/cek/CekBuilder";
 
 export const metadata: Metadata = {
-  title: "Cek Mikrotik — Generator Script Mikrotik",
+  title: "Cek Mikrotik",
   description:
     "Pemeriksaan router Mikrotik: koneksi internet, IP, DHCP, hotspot, PPPoE, firewall, dan resource — lengkap dengan rekomendasi perbaikan.",
 };

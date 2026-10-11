@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.5.3] - 2026-10-11
+
+_Judul dan ikon tab mengikuti identitas situs_
+
+### Diubah
+
+- Judul tab browser kini memakai nama situs dari dashboard admin (mis. "Cek Mikrotik — Nama Situs"), dan ikon tab (favicon) memakai logo yang diunggah di sana. Tanpa logo, ikon bawaan tetap dipakai.
+
 ## [1.5.2] - 2026-10-11
 
 _Latar halaman login menyesuaikan ukuran layar_

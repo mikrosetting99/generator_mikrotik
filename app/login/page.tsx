@@ -5,7 +5,7 @@ import { LoginForm } from "@/components/LoginForm";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Masuk — Generator Script Mikrotik",
+  title: "Masuk",
 };
 
 export default async function LoginPage({

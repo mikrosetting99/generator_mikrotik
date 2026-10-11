@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { HotspotLoginBuilder } from "@/components/hotspot-login/HotspotLoginBuilder";
 
 export const metadata: Metadata = {
-  title: "Halaman Login Hotspot — Generator Script Mikrotik",
+  title: "Halaman Login Hotspot",
   description:
     "Kustomisasi tampilan halaman login hotspot: template, warna, logo, dan paket voucher, lalu unduh sebagai hotspot.zip siap upload.",
 };

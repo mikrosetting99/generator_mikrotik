@@ -10,7 +10,7 @@ import { authOptions } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Kelola Pengguna — Generator Script Mikrotik",
+  title: "Kelola Pengguna",
 };
 
 export default async function AdminUsersPage() {

@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { APP_VERSION, CHANGE_TYPE_LABEL, CHANGELOG, type ChangeType } from "@/lib/changelog";
 
 export const metadata: Metadata = {
-  title: `Changelog v${APP_VERSION} — Generator Script Mikrotik`,
+  title: `Changelog v${APP_VERSION}`,
   description: "Riwayat perubahan Generator Script Mikrotik dari rilis ke rilis.",
 };
 

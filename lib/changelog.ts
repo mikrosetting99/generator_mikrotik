@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.3",
+    date: "2026-10-11",
+    title: "Judul dan ikon tab mengikuti identitas situs",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Judul tab browser kini memakai nama situs dari dashboard admin (mis. \"Cek Mikrotik — Nama Situs\"), dan ikon tab (favicon) memakai logo yang diunggah di sana. Tanpa logo, ikon bawaan tetap dipakai.",
+        ],
+      },
+    ],
+  },  {
     version: "1.5.2",
     date: "2026-10-11",
     title: "Latar halaman login menyesuaikan ukuran layar",

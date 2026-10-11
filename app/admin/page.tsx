@@ -15,7 +15,7 @@ import { getMenuUsage, getSiteSettings } from "@/lib/site-settings-server";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Dashboard Admin — Generator Script Mikrotik",
+  title: "Dashboard Admin",
 };
 
 export default async function AdminDashboardPage() {

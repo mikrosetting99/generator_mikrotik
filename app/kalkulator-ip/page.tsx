@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { IpCalculator } from "@/components/ip-calc/IpCalculator";
 
 export const metadata: Metadata = {
-  title: "Kalkulator IP — Generator Script Mikrotik",
+  title: "Kalkulator IP",
   description:
     "Hitung subnet IPv4: network, broadcast, rentang host, netmask, wildcard, dan bagi jaringan menjadi beberapa subnet. Lengkap dengan perintah RouterOS siap salin.",
 };

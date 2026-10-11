@@ -14,7 +14,7 @@ export default async function LoginPage({
   searchParams: Promise<{ callbackUrl?: string }>;
 }) {
   const params = await searchParams;
-  const callbackUrl = params.callbackUrl?.startsWith("/") ? params.callbackUrl : "/setup";
+  const callbackUrl = params.callbackUrl?.startsWith("/") ? params.callbackUrl : "/";
 
   return (
     <main className="grid min-h-screen place-items-center px-5">

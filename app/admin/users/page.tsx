@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default async function AdminUsersPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login?callbackUrl=/admin/users");
-  if (session.user.role !== "ADMIN") redirect("/setup");
+  if (session.user.role !== "ADMIN") redirect("/");
 
   return (
     <main className="min-h-screen">

@@ -1,4 +1,14 @@
 export type HotspotTemplateId = "minimal" | "poster";
+export type BgPosition = "center" | "top" | "bottom" | "left" | "right";
+
+/** Pilihan titik fokus gambar latar, lengkap dengan nilai CSS-nya. */
+export const BG_POSITIONS: { value: BgPosition; label: string; css: string }[] = [
+  { value: "center", label: "Tengah", css: "center" },
+  { value: "top", label: "Atas", css: "center top" },
+  { value: "bottom", label: "Bawah", css: "center bottom" },
+  { value: "left", label: "Kiri", css: "left center" },
+  { value: "right", label: "Kanan", css: "right center" },
+];
 export type LoginMode = "voucher" | "member";
 
 /** Satu baris pada tabel harga paket di halaman login. */
@@ -46,6 +56,8 @@ export interface HotspotPageConfig {
   bgImageName: string;
   /** Kepekatan lapisan gelap di atas gambar latar, 0–90 persen. */
   bgOverlay: number;
+  /** Bagian gambar latar yang dipertahankan saat dipotong menyesuaikan layar. */
+  bgPosition: BgPosition;
   /** Mode yang aktif saat halaman login pertama kali dibuka. */
   loginMode: LoginMode;
   showModeSwitch: boolean;

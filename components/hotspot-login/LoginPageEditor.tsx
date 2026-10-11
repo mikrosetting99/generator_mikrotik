@@ -12,7 +12,7 @@ import {
   templateVars,
   whatsappLink,
 } from "@/lib/hotspot-page";
-import type { HotspotPageConfig, LoginMode } from "@/lib/types-hotspot-login";
+import { BG_POSITIONS, type HotspotPageConfig, type LoginMode } from "@/lib/types-hotspot-login";
 
 const grid2 = "grid gap-4";
 
@@ -641,6 +641,33 @@ export function LoginPageEditor({
                   Lapisan warna latar di atas foto. Naikkan bila teks jadi sulit dibaca karena
                   fotonya ramai.
                 </p>
+
+                <div className="mt-4">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                    Fokus gambar
+                  </span>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {BG_POSITIONS.map((p) => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        aria-pressed={(page.bgPosition ?? "center") === p.value}
+                        onClick={() => setPage({ bgPosition: p.value })}
+                        className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                          (page.bgPosition ?? "center") === p.value
+                            ? "border-brand bg-brand/10 text-ink"
+                            : "border-line-soft text-muted hover:border-line hover:text-ink"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-faint">
+                    Gambar otomatis menutupi seluruh layar HP, tablet, maupun laptop. Bila ada bagian
+                    yang terpotong, pilih sisi gambar yang ingin tetap terlihat.
+                  </p>
+                </div>
               </div>
             )}
 

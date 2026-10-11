@@ -1,5 +1,5 @@
 import { blend, contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
-import type { HotspotPageConfig, HotspotTemplateId, VoucherPackage } from "./types-hotspot-login";
+import { BG_POSITIONS, type HotspotPageConfig, type HotspotTemplateId, type VoucherPackage } from "./types-hotspot-login";
 import type { ZipEntry } from "./zip";
 
 /**
@@ -241,6 +241,11 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     LOGO: page.logoDataUrl ? logoFileName(page.logoDataUrl) : "",
     LOGO_HEIGHT: String(Math.round(Math.max(40, Math.min(260, page.logoHeight || 130)))),
     BG_IMAGE: page.bgImageDataUrl ? bgFileName(page.bgImageDataUrl) : "",
+    // Desain Poster dulu selalu "center top" — itu tetap bawaannya.
+    BG_POSITION:
+      template.id === "poster" && page.bgPosition === "center"
+        ? "center top"
+        : (BG_POSITIONS.find((p) => p.value === page.bgPosition)?.css ?? "center"),
     OVERLAY: rgba(bgColor, Math.max(0, Math.min(90, page.bgOverlay)) / 100),
     WA_LINK: whatsappLink(page.whatsapp),
     WA_LABEL: escapeHtml(page.whatsappLabel.trim() || "Hubungi admin"),

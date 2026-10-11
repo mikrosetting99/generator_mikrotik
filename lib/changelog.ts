@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.2",
+    date: "2026-10-11",
+    title: "Latar halaman login menyesuaikan ukuran layar",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Gambar latar pada desain Minimal kini ditaruh di lapisan tetap seukuran layar, sehingga selalu menutupi seluruh layar HP (tegak maupun mendatar), tablet, dan laptop — tidak lagi melar atau membesar saat isi halaman panjang karena tabel paket. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+      {
+        type: "added",
+        items: [
+          "Pilihan \"Fokus gambar\" (tengah, atas, bawah, kiri, kanan) untuk menentukan sisi gambar latar yang tetap terlihat saat gambar dipotong menyesuaikan layar.",
+        ],
+      },
+    ],
+  },  {
     version: "1.5.1",
     date: "2026-10-11",
     title: "Pengaturan menu & grup lebih mudah",

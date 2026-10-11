@@ -17,18 +17,32 @@ body {
   min-height: 100vh;
   padding: 20px;
   background: var(--bg);
-{{#BG_IMAGE}}
-  background-image: linear-gradient({{OVERLAY}}, {{OVERLAY}}), url('{{BG_IMAGE}}');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-{{/BG_IMAGE}}
+  /* Membentuk lapisan sendiri agar gambar latar (body::before) tetap di belakang isi. */
+  isolation: isolate;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 14px;
   display: flex;
 }
+
+{{#BG_IMAGE}}
+/* Gambar latar di lapisan tetap seukuran layar, bukan background pada body:
+   gambar selalu menutupi seluruh layar (HP tegak, mendatar, tablet, laptop)
+   dan tidak ikut membesar atau tergeser saat isi halaman panjang dan digulung. */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-image: linear-gradient({{OVERLAY}}, {{OVERLAY}}), url('{{BG_IMAGE}}');
+  background-size: cover;
+  background-position: {{BG_POSITION}};
+  background-repeat: no-repeat;
+}
+{{/BG_IMAGE}}
 
 .main {
   /* Warna kartu form bisa dipilih sendiri; teks, garis, dan kolom di dalamnya
@@ -292,8 +306,6 @@ body {
      terlihat. Baris vh di atas tetap ada sebagai cadangan browser lama. */
   min-height: 100dvh;
   padding: clamp(10px, 3vw, 22px);
-  /* Latar tempel patah-patah di sebagian browser HP. */
-  background-attachment: scroll;
 }
 
 /* Bila isinya panjang — misalnya ada tabel harga — yang menggulung seluruh

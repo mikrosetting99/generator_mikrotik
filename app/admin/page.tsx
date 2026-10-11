@@ -7,7 +7,8 @@ import { ArrowLeft, ArrowRight, Database, FileText, Shield, Users } from "@/comp
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getSiteSettings } from "@/lib/site-settings-server";
+import { APP_VERSION, CHANGE_TYPE_LABEL, CHANGELOG } from "@/lib/changelog";
+import { getMenuUsage, getSiteSettings } from "@/lib/site-settings-server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +22,9 @@ export default async function AdminDashboardPage() {
   if (!session?.user) redirect("/login?callbackUrl=/admin");
   if (session.user.role !== "ADMIN") redirect("/");
 
-  const [settings, users, configs, loginPages] = await Promise.all([
+  const [settings, usage, users, configs, loginPages] = await Promise.all([
     getSiteSettings(),
+    getMenuUsage(),
     prisma.user.count(),
     prisma.savedConfig.count(),
     prisma.savedLoginPage.count(),
@@ -86,7 +88,57 @@ export default async function AdminDashboardPage() {
           <ArrowRight className="h-4 w-4 text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />
         </Link>
 
-        <AdminSiteSettings initial={settings} />
+        <AdminSiteSettings initial={settings} usage={usage} />
+
+        <section className="overflow-hidden rounded-2xl border border-line bg-surface">
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
+            <div>
+              <h2 className="text-[15px] font-semibold text-ink">Versi aplikasi</h2>
+              <p className="mt-0.5 text-xs text-muted">
+                Mengikuti entri teratas di <span className="font-mono">lib/changelog.ts</span>.
+              </p>
+            </div>
+            <span className="rounded-lg border border-brand/30 bg-brand/10 px-3 py-1 font-mono text-sm font-medium text-brand">
+              v{APP_VERSION}
+            </span>
+          </header>
+
+          <div className="space-y-5 px-5 py-4">
+            {CHANGELOG.slice(0, 2).map((release) => (
+              <div key={release.version}>
+                <p className="flex flex-wrap items-baseline gap-2">
+                  <span className="font-mono text-sm font-semibold text-ink">v{release.version}</span>
+                  <span className="text-sm text-ink">{release.title}</span>
+                  <span className="font-mono text-[11px] text-faint">{release.date}</span>
+                </p>
+                <div className="mt-2 space-y-2">
+                  {release.changes.map((group) => (
+                    <div key={group.type}>
+                      <p className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                        {CHANGE_TYPE_LABEL[group.type]}
+                      </p>
+                      <ul className="mt-1 space-y-1">
+                        {group.items.map((item) => (
+                          <li key={item} className="flex gap-2 text-xs leading-relaxed text-muted">
+                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand/60" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <Link
+              href="/changelog"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
+            >
+              Lihat seluruh changelog
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
       </div>
     </main>
   );

@@ -1,13 +1,14 @@
 import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { ArrowRight, Lock, Shield, Terminal } from "@/components/icons";
+import { ArrowRight, Lock, LogIn, Shield, Terminal, User } from "@/components/icons";
 import { MenuIcon } from "@/components/MenuIcon";
+import { SignOutButton } from "@/components/login-page-hotspot/SignOutButton";
+import { TrackedLink } from "@/components/TrackedLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
 import { authOptions } from "@/lib/auth";
 import { isExternalHref } from "@/lib/site-settings";
-import { getSiteSettings } from "@/lib/site-settings-server";
+import { getMenuUsage, getSiteSettings } from "@/lib/site-settings-server";
 
 const SAMPLE = [
   { text: "# NAT untuk semua WAN", kind: "comment" },
@@ -24,12 +25,15 @@ const SAMPLE = [
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [settings, session] = await Promise.all([getSiteSettings(), getServerSession(authOptions)]);
-  if (settings.homeRequiresLogin && !session?.user) redirect("/login?callbackUrl=%2F");
-
+  const [settings, session, usage] = await Promise.all([
+    getSiteSettings(),
+    getServerSession(authOptions),
+    getMenuUsage(),
+  ]);
   const menus = settings.menus.filter((m) => m.visible);
   const isAdmin = session?.user?.role === "ADMIN";
   const loggedIn = Boolean(session?.user);
+  const username = session?.user?.username ?? session?.user?.name ?? "";
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -53,6 +57,26 @@ export default async function Home() {
             >
               <Shield className="h-3.5 w-3.5" />
               Dashboard Admin
+            </Link>
+          )}
+          {loggedIn ? (
+            <span className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-line bg-surface pl-3 pr-1 text-xs text-muted">
+              <User className="h-3.5 w-3.5 text-brand" />
+              <span className="font-medium text-ink">{username}</span>
+              {isAdmin && (
+                <span className="rounded-full border border-brand/30 bg-brand/10 px-1.5 text-[10px] uppercase tracking-wide text-brand">
+                  admin
+                </span>
+              )}
+              <SignOutButton />
+            </span>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-muted transition-colors hover:border-brand/50 hover:text-ink"
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              Masuk
             </Link>
           )}
           <ThemeToggle />
@@ -166,8 +190,11 @@ export default async function Home() {
                       {menu.description}
                     </span>
                   )}
+                  <span className="mt-2 block font-mono text-[10px] text-faint">
+                    {(usage[menu.id] ?? 0).toLocaleString("id-ID")}× dipakai
+                  </span>
                   {menu.devMode && (
-                    <span className="mt-2 inline-block rounded-full border border-warn/40 bg-warn/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warn">
+                    <span className="mt-1.5 inline-block rounded-full border border-warn/40 bg-warn/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warn">
                       {locked ? "dalam pengembangan" : "pengembangan · hanya admin"}
                     </span>
                   )}
@@ -183,16 +210,25 @@ export default async function Home() {
                 {body}
               </div>
             ) : (
-              <Link
-                key={menu.id}
-                href={href}
-                {...(external && href === menu.href
-                  ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}
-                className={`${cardClass} hover:-translate-y-0.5 hover:border-brand/50`}
-              >
-                {body}
-              </Link>
+              (() => {
+                const props = {
+                  href,
+                  className: `${cardClass} hover:-translate-y-0.5 hover:border-brand/50`,
+                  ...(external && href === menu.href
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {}),
+                };
+                // Menu bawaan dihitung di halamannya sendiri; menu tambahan dihitung saat diklik.
+                return menu.builtin ? (
+                  <Link key={menu.id} {...props}>
+                    {body}
+                  </Link>
+                ) : (
+                  <TrackedLink key={menu.id} menuId={menu.id} {...props}>
+                    {body}
+                  </TrackedLink>
+                );
+              })()
             );
           })}
         </div>

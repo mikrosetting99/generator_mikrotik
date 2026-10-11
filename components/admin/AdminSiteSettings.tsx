@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowRight, Check, ChevronDown, Plus, Save, Trash } from "@/components/icons";
 import { MenuIcon } from "@/components/MenuIcon";
-import { Button, CheckPill, Field, Note, Select, TextInput, Toggle } from "@/components/ui";
+import { Button, CheckPill, Field, Note, Select, TextInput } from "@/components/ui";
 import {
   MAX_CUSTOM_MENUS,
   MENU_ICON_LABEL,
@@ -15,8 +15,48 @@ import {
   type SiteSettings,
 } from "@/lib/site-settings";
 
+/** Saklar kecil untuk satu kolom pengaturan menu. */
+function Switch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      title={label}
+      onClick={() => onChange(!checked)}
+      className={`flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ${
+        checked ? "bg-brand" : "bg-line"
+      }`}
+    >
+      <span
+        className={`h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+          checked ? "translate-x-4" : ""
+        }`}
+      />
+    </button>
+  );
+}
+
+/** Kolom pengaturan: label di atas saklar, supaya sejajar di semua baris. */
+const COLS = "sm:grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_3.5rem_5.5rem]";
+
 /** Atur halaman utama: menu (tampil, pengembangan, wajib login, urutan, tambah) dan teksnya. */
-export function AdminSiteSettings({ initial }: { initial: SiteSettings }) {
+export function AdminSiteSettings({
+  initial,
+  usage,
+}: {
+  initial: SiteSettings;
+  usage: Record<string, number>;
+}) {
   const [settings, setSettings] = useState<SiteSettings>(initial);
   const [saved, setSaved] = useState<SiteSettings>(initial);
   const [open, setOpen] = useState<string | null>(null);
@@ -89,51 +129,43 @@ export function AdminSiteSettings({ initial }: { initial: SiteSettings }) {
 
       <section className="overflow-hidden rounded-2xl border border-line bg-surface">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
-          <div>
-            <h2 className="text-[15px] font-semibold text-ink">Menu</h2>
-            <p className="mt-0.5 text-xs text-muted">
-              <b className="font-medium text-ink">Tampil</b> di beranda ·{" "}
-              <b className="font-medium text-ink">Dev</b> hanya admin yang bisa membuka ·{" "}
-              <b className="font-medium text-ink">Login</b> wajib masuk dulu.
-            </p>
-          </div>
+          <h2 className="text-[15px] font-semibold text-ink">Menu</h2>
           <Button size="sm" onClick={addMenu} disabled={customCount >= MAX_CUSTOM_MENUS}>
             <Plus className="h-3.5 w-3.5" /> Tambah menu
           </Button>
         </header>
+
+        {/* Judul kolom — tersembunyi di layar sempit, tempatnya diganti label pada tiap saklar */}
+        <div
+          className={`hidden items-end gap-2 border-b border-line-soft bg-canvas/40 px-5 py-2 text-center text-[10px] font-medium uppercase tracking-[0.09em] text-faint sm:grid ${COLS}`}
+        >
+          <span className="text-left">Menu</span>
+          <span title="Tampil di beranda">Tampil</span>
+          <span title="Mode pengembangan: hanya admin yang bisa membuka">Dev</span>
+          <span title="Wajib login. Mati = bebas diakses">Login</span>
+          <span title="Berapa kali dibuka">Dipakai</span>
+          <span />
+        </div>
 
         <ul className="divide-y divide-line-soft">
           {settings.menus.map((menu, index) => {
             const expanded = open === menu.id;
             return (
               <li key={menu.id} className={menu.visible ? "" : "bg-canvas/40"}>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-brand/25 bg-brand/10 text-brand">
-                    <MenuIcon name={menu.icon} className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1 basis-40">
-                    <p className={`truncate text-sm font-medium ${menu.visible ? "text-ink" : "text-faint"}`}>
-                      {menu.title}
-                    </p>
-                    <p className="truncate font-mono text-[11px] text-faint">{menu.href}</p>
+                <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-5 py-3 ${COLS}`}>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-brand/25 bg-brand/10 text-brand">
+                      <MenuIcon name={menu.icon} className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className={`truncate text-sm font-medium ${menu.visible ? "text-ink" : "text-faint"}`}>
+                        {menu.title}
+                      </p>
+                      <p className="truncate font-mono text-[11px] text-faint">{menu.href}</p>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <CheckPill active={menu.visible} onClick={() => patchMenu(menu.id, { visible: !menu.visible })}>
-                      Tampil
-                    </CheckPill>
-                    <CheckPill active={menu.devMode} onClick={() => patchMenu(menu.id, { devMode: !menu.devMode })}>
-                      Dev
-                    </CheckPill>
-                    <CheckPill
-                      active={menu.requireLogin}
-                      onClick={() => patchMenu(menu.id, { requireLogin: !menu.requireLogin })}
-                    >
-                      Login
-                    </CheckPill>
-                  </div>
-
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-end gap-1 sm:order-last">
                     <Button size="sm" className="px-2" ariaLabel="Naikkan" title="Naikkan" onClick={() => move(index, -1)} disabled={index === 0}>
                       ↑
                     </Button>
@@ -156,6 +188,26 @@ export function AdminSiteSettings({ initial }: { initial: SiteSettings }) {
                     >
                       <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
                     </Button>
+                  </div>
+
+                  {/* Saklar: sejajar kolom di layar lebar, baris sendiri di HP */}
+                  <div className="col-span-2 flex flex-wrap items-center gap-x-5 gap-y-2 sm:contents">
+                    <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
+                      <span className="sm:hidden">Tampil</span>
+                      <Switch label="Tampil di beranda" checked={menu.visible} onChange={(visible) => patchMenu(menu.id, { visible })} />
+                    </label>
+                    <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
+                      <span className="sm:hidden">Dev</span>
+                      <Switch label="Mode pengembangan" checked={menu.devMode} onChange={(devMode) => patchMenu(menu.id, { devMode })} />
+                    </label>
+                    <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
+                      <span className="sm:hidden">Login</span>
+                      <Switch label="Wajib login" checked={menu.requireLogin} onChange={(requireLogin) => patchMenu(menu.id, { requireLogin })} />
+                    </label>
+                    <span className="font-mono text-xs text-muted sm:text-center">
+                      {(usage[menu.id] ?? 0).toLocaleString("id-ID")}
+                      <span className="sm:hidden">× dipakai</span>
+                    </span>
                   </div>
                 </div>
 
@@ -203,11 +255,20 @@ export function AdminSiteSettings({ initial }: { initial: SiteSettings }) {
           })}
         </ul>
 
-        <p className="border-t border-line-soft px-5 py-3 text-xs leading-relaxed text-faint">
-          Pengaturan Dev dan Login berlaku juga bila halamannya dibuka langsung lewat alamat, untuk menu
-          bawaan. Pada menu tambahan, aturan ini hanya berlaku di kartu beranda — halaman tujuannya
-          sendiri tidak ikut dijaga.
-        </p>
+        <ul className="space-y-1 border-t border-line-soft px-5 py-3 text-xs leading-relaxed text-faint">
+          <li>
+            <b className="font-medium text-muted">Login</b> mati = menu bebas dibuka siapa saja. Yang sudah login
+            selalu bisa membuka semua menu.
+          </li>
+          <li>
+            <b className="font-medium text-muted">Dev</b> = hanya admin yang bisa membuka; pengunjung lain melihat
+            &ldquo;dalam pengembangan&rdquo;.
+          </li>
+          <li>
+            Pada menu tambahan, aturan Dev dan Login hanya berlaku di kartu beranda — halaman tujuannya sendiri
+            tidak ikut dijaga.
+          </li>
+        </ul>
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-line bg-surface">
@@ -215,12 +276,6 @@ export function AdminSiteSettings({ initial }: { initial: SiteSettings }) {
           <h2 className="text-[15px] font-semibold text-ink">Halaman utama</h2>
         </header>
         <div className="space-y-4 px-5 py-4">
-          <Toggle
-            checked={settings.homeRequiresLogin}
-            onChange={(homeRequiresLogin) => patch({ homeRequiresLogin })}
-            label="Beranda wajib login"
-            hint="Mati = beranda terbuka untuk umum, dan hanya menu bertanda Login yang meminta masuk."
-          />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Judul baris 1">
               <TextInput value={settings.heroTitle} onChange={(heroTitle) => patch({ heroTitle })} />

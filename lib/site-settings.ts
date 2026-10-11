@@ -42,7 +42,7 @@ export interface MenuSetting {
   visible: boolean;
   /** Mode pengembangan: hanya admin yang bisa membuka, yang lain melihat "dalam pengembangan". */
   devMode: boolean;
-  /** Wajib login untuk membuka menu ini. */
+  /** Wajib login untuk membuka menu ini. Mati = bebas diakses siapa saja; yang sudah login selalu lolos. */
   requireLogin: boolean;
 }
 
@@ -54,8 +54,6 @@ export interface SiteSettings {
   showSample: boolean;
   showFeatures: boolean;
   footerNote: string;
-  /** Halaman utama sendiri wajib login atau terbuka untuk umum. */
-  homeRequiresLogin: boolean;
   /** Urutan array = urutan tampil di halaman utama. */
   menus: MenuSetting[];
 }
@@ -118,7 +116,6 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   showSample: true,
   showFeatures: true,
   footerNote: "Backup router sebelum menjalankan script apa pun.",
-  homeRequiresLogin: true,
   menus: BUILTIN_MENUS,
 };
 
@@ -214,7 +211,6 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
     showSample: bool(input.showSample, base.showSample),
     showFeatures: bool(input.showFeatures, base.showFeatures),
     footerNote: str(input.footerNote, base.footerNote, 160),
-    homeRequiresLogin: bool(input.homeRequiresLogin, base.homeRequiresLogin),
     menus,
   };
 }

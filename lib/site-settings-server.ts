@@ -13,6 +13,16 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   }
 }
 
+/** Jumlah pemakaian per menu: { setup: 12, cek: 3, ... }. Kosong bila database bermasalah. */
+export async function getMenuUsage(): Promise<Record<string, number>> {
+  try {
+    const rows = await prisma.menuUsage.findMany();
+    return Object.fromEntries(rows.map((r) => [r.menuId, r.count]));
+  } catch {
+    return {};
+  }
+}
+
 export async function saveSiteSettings(raw: unknown): Promise<SiteSettings> {
   const settings = normalizeSiteSettings(raw);
   await prisma.siteSetting.upsert({

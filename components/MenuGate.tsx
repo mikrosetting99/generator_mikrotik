@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { Lock } from "@/components/icons";
+import { MenuHit } from "@/components/MenuHit";
 import { authOptions } from "@/lib/auth";
 import { getSiteSettings } from "@/lib/site-settings-server";
 
@@ -48,6 +49,7 @@ export async function MenuGate({ id, children }: { id: string; children: ReactNo
           Mode pengembangan — hanya admin yang bisa melihat halaman ini
         </div>
       )}
+      <MenuHit id={id} />
       {children}
     </>
   );

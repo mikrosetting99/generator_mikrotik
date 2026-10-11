@@ -27,6 +27,62 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.2.0",
+    date: "2026-10-11",
+    title: "Dashboard admin, analitik menu, dan akses menu per pengaturan",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Dashboard Admin (/admin), hanya bisa dibuka admin: ringkasan pengguna & data tersimpan, pengaturan menu beranda, versi aplikasi, dan changelog terbaru.",
+          "Pengaturan per menu: tampil/sembunyi, mode pengembangan (hanya admin yang bisa membuka), dan wajib login atau bebas diakses.",
+          "Tambah, hapus, dan urutkan menu beranda sendiri (alamat dalam situs atau tautan luar, dengan pilihan ikon).",
+          "Pengaturan teks beranda: judul, kalimat pembuka, tombol utama, bagian cuplikan/jaminan, dan footer.",
+          "Analitik: jumlah pemakaian tiap menu dihitung dan ditampilkan di kartu menu serta di dashboard admin. Tanpa data pribadi; satu browser dihitung sekali per menu dalam 30 menit.",
+          "Komentar interface pada Setup Mikrotik Baru (tertutup secara default), ditulis ke script lewat /interface set.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Logika login: beranda kini terbuka untuk umum dan menampilkan username saat sudah login. Menu hanya meminta login bila diatur begitu di dashboard admin; yang sudah login bisa membuka semua menu.",
+          "Menu beranda dibuat lebih ringkas: kartu kecil berisi ikon, judul, dan satu kalimat.",
+          "Pilihan Type Mikrotik di Setup kini punya kolom cari.",
+        ],
+      },
+    ],
+  },
+  {
+    version: "1.1.0",
+    date: "2026-10-10",
+    title: "Halaman Login Hotspot lebih lengkap",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Simpan dan muat desain halaman login hotspot ke database (butuh akun), termasuk logo dan gambar.",
+          "Pratinjau bisa dialihkan ke ukuran HP, tablet, dan laptop; pratinjau tetap di tempat saat menu edit di kiri digulir.",
+          "Warna form, kepekatan form sampai 0% (tembus pandang), lebar form yang bisa diatur, dan gambar di dalam form.",
+          "Menu edit dikelompokkan jadi bagian yang bisa dibuka-tutup.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Desain dipangkas menjadi Minimal (bawaan) dan Poster; pilihan Voucher, Korporat, dan Gelap Modern dihapus.",
+          "Tabel paket dirombak: kepala berwarna, baris selang-seling, harga rata kanan.",
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          "Kartu form tidak lagi punya scroll sendiri saat isinya panjang; yang menggulir seluruh halaman.",
+          "Daftar desain tersimpan langsung diperbarui setelah menyimpan, dengan pesan error yang jelas bila server menolak.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.0.0",
     date: "2026-09-30",
     title: "Login & riwayat konfigurasi di database",

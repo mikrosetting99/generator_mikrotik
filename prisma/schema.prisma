@@ -68,6 +68,15 @@ model SiteSetting {
   @@map("site_settings")
 }
 
+/// Penghitung berapa kali sebuah menu dibuka (analitik sederhana, tanpa data pribadi).
+model MenuUsage {
+  menuId    String   @id
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("menu_usage")
+}
+
 enum LicenseStatus {
   draft
   terkirim

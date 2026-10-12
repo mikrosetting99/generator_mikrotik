@@ -81,12 +81,15 @@ model MenuUsage {
 /// Pengguna tinggal memilih, atau tetap bisa mengunggah latar sendiri.
 model BackgroundPreset {
   id        String   @id @default(cuid())
+  /// "background" (latar) atau "logo" — satu galeri, dua jenis.
+  kind      String   @default("background")
   name      String
   mime      String
   size      Int
   data      Bytes    @db.LongBlob
   createdAt DateTime @default(now())
 
+  @@index([kind])
   @@map("background_presets")
 }
 

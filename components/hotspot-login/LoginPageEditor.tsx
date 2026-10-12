@@ -12,6 +12,7 @@ import {
   templateVars,
   whatsappLink,
 } from "@/lib/hotspot-page";
+import { PRESET_LIMITS, type PresetKind } from "@/lib/preset-kinds";
 import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type LoginMode } from "@/lib/types-hotspot-login";
 
 const grid2 = "grid gap-4";
@@ -44,13 +45,13 @@ const IMAGE_LIMITS = {
   form: {
     maxBytes: 300 * 1024,
     idealWidth: 700,
-    idealHeight: 900,
+    idealHeight: 1080,
     hint: "Ideal sekitar 700 × 900 px, JPG, maksimal 300 KB. Tampil di dalam kartu form.",
   },
   background: {
     maxBytes: 600 * 1024,
-    idealWidth: 1600,
-    idealHeight: 900,
+    idealWidth: 1920,
+    idealHeight: 1080,
     hint: "Ideal 1600 × 900 px (rasio 16:9), JPG, maksimal 600 KB.",
   },
 } as const;
@@ -109,19 +110,24 @@ export function LoginPageEditor({
   const [bgError, setBgError] = useState("");
   const [formError, setFormError] = useState("");
   const [gallery, setGallery] = useState<{ id: string; name: string }[]>([]);
+  const [logoGallery, setLogoGallery] = useState<{ id: string; name: string }[]>([]);
   const [galleryBusy, setGalleryBusy] = useState<string | null>(null);
 
-  // Galeri latar siap pakai dari admin.
+  // Galeri latar dan logo siap pakai dari admin.
   useEffect(() => {
-    fetch("/api/background-presets")
-      .then((r) => r.json())
-      .then((d) => setGallery(d.presets ?? []))
-      .catch(() => setGallery([]));
+    const load = (kind: PresetKind, set: (items: { id: string; name: string }[]) => void) =>
+      fetch(`/api/background-presets?kind=${kind}`)
+        .then((r) => r.json())
+        .then((d) => set(d.presets ?? []))
+        .catch(() => set([]));
+    void load("background", setGallery);
+    void load("logo", setLogoGallery);
   }, []);
 
-  const pickGallery = async (preset: { id: string; name: string }) => {
+  const pickGallery = async (kind: PresetKind, preset: { id: string; name: string }) => {
+    const setError = kind === "logo" ? setLogoError : setBgError;
     setGalleryBusy(preset.id);
-    setBgError("");
+    setError("");
     try {
       const res = await fetch(`/api/background-presets/${preset.id}/image`);
       if (!res.ok) throw new Error();
@@ -132,13 +138,59 @@ export function LoginPageEditor({
         reader.onerror = () => reject(new Error());
         reader.readAsDataURL(blob);
       });
-      setPage({ bgImageDataUrl: dataUrl, bgImageName: `galeri:${preset.id}` });
+      if (kind === "logo") setPage({ logoDataUrl: dataUrl, logoName: `galeri:${preset.id}` });
+      else setPage({ bgImageDataUrl: dataUrl, bgImageName: `galeri:${preset.id}` });
     } catch {
-      setBgError("Gagal memuat latar dari galeri.");
+      setError(`Gagal memuat ${PRESET_LIMITS[kind].label} dari galeri.`);
     } finally {
       setGalleryBusy(null);
     }
   };
+
+  /** Deretan gambar siap pakai dari admin; mengklik salah satu langsung memakainya. */
+  const galleryPicker = (
+    kind: PresetKind,
+    items: { id: string; name: string }[],
+    selectedName: string,
+  ) =>
+    items.length > 0 && (
+      <div className="mt-3">
+        <span className="text-[11px] text-faint">Atau pilih dari galeri:</span>
+        <div className="mt-1.5 grid grid-cols-3 gap-2">
+          {items.map((g) => {
+            const active = selectedName === `galeri:${g.id}`;
+            return (
+              <button
+                key={g.id}
+                type="button"
+                title={g.name}
+                aria-pressed={active}
+                disabled={galleryBusy !== null}
+                onClick={() => pickGallery(kind, g)}
+                className={`overflow-hidden rounded-md border-2 transition-all ${
+                  active ? "border-brand" : "border-line-soft hover:border-line"
+                } ${galleryBusy === g.id ? "opacity-50" : ""}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/api/background-presets/${g.id}/image`}
+                  alt={g.name}
+                  loading="lazy"
+                  className={`h-12 w-full ${kind === "logo" ? "bg-canvas object-contain p-1" : "object-cover"}`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+
+  /** Kotak rekomendasi ukuran, supaya hasilnya tajam tapi tetap ringan di router. */
+  const recommendBox = (kind: PresetKind) => (
+    <p className="mt-2.5 rounded-lg border border-brand/20 bg-brand/[0.06] px-2.5 py-2 text-xs leading-relaxed text-muted">
+      <b className="font-medium text-ink">Rekomendasi:</b> {PRESET_LIMITS[kind].recommend}
+    </p>
+  );
   const formInput = useRef<HTMLInputElement>(null);
   const [logoInfo, setLogoInfo] = useState<ImageInfo | null>(null);
   const [bgInfo, setBgInfo] = useState<ImageInfo | null>(null);
@@ -443,6 +495,7 @@ export function LoginPageEditor({
                     }}
                   />
                 </div>
+                {galleryPicker("logo", logoGallery, page.logoName)}
                 {page.logoDataUrl && (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -477,7 +530,7 @@ export function LoginPageEditor({
                     </div>
                   </>
                 )}
-                <p className="mt-2 text-xs leading-relaxed text-faint">{IMAGE_LIMITS.logo.hint}</p>
+                {recommendBox("logo")}
                 {dimensionNote(logoInfo, "logo")}
                 {logoError && <p className="mt-1.5 text-xs text-bad">{logoError}</p>}
               </div>
@@ -516,37 +569,7 @@ export function LoginPageEditor({
                     }}
                   />
                 </div>
-                {gallery.length > 0 && (
-                  <div className="mt-3">
-                    <span className="text-[11px] text-faint">Atau pilih dari galeri:</span>
-                    <div className="mt-1.5 grid grid-cols-3 gap-2">
-                      {gallery.map((g) => {
-                        const active = page.bgImageName === `galeri:${g.id}`;
-                        return (
-                          <button
-                            key={g.id}
-                            type="button"
-                            title={g.name}
-                            aria-pressed={active}
-                            disabled={galleryBusy !== null}
-                            onClick={() => pickGallery(g)}
-                            className={`overflow-hidden rounded-md border-2 transition-all ${
-                              active ? "border-brand" : "border-line-soft hover:border-line"
-                            } ${galleryBusy === g.id ? "opacity-50" : ""}`}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={`/api/background-presets/${g.id}/image`}
-                              alt={g.name}
-                              loading="lazy"
-                              className="h-12 w-full object-cover"
-                            />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                {galleryPicker("background", gallery, page.bgImageName)}
                 {page.bgImageDataUrl && (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
@@ -555,9 +578,7 @@ export function LoginPageEditor({
                     className="mt-3 h-16 w-full rounded-md border border-line-soft object-cover"
                   />
                 )}
-                <p className="mt-2 text-xs leading-relaxed text-faint">
-                  {IMAGE_LIMITS.background.hint}
-                </p>
+                {recommendBox("background")}
                 {dimensionNote(bgInfo, "background")}
                 {bgError && <p className="mt-1.5 text-xs text-bad">{bgError}</p>}
               </div>

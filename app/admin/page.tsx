@@ -94,7 +94,8 @@ export default async function AdminDashboardPage() {
 
         <AdminSiteSettings initial={settings} usage={usage} />
 
-        <AdminBackgrounds />
+        <AdminBackgrounds kind="logo" />
+        <AdminBackgrounds kind="background" />
 
         <AdminSection
           title="Versi aplikasi & changelog"

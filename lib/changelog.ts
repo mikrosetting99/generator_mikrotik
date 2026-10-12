@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.0",
+    date: "2026-10-12",
+    title: "Galeri logo dan rekomendasi ukuran gambar",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Galeri logo siap pakai: admin mengunggahnya di Dashboard Admin (PNG, JPG, WEBP, atau SVG, maks 200 KB), dan semua pengguna Halaman Login Hotspot bisa langsung memilihnya. Pengguna tetap bisa mengunggah logo sendiri.",
+          "Kotak rekomendasi ukuran di editor dan di dashboard admin: logo 400 × 160 px (rasio 5:2, PNG/SVG transparan), latar 1920 × 1080 px (16:9, JPG) atau 1080 × 1920 px untuk HP tegak.",
+        ],
+      },
+    ],
+  },  {
     version: "1.6.4",
     date: "2026-10-12",
     title: "Model baru: hEX refresh (E50UG)",

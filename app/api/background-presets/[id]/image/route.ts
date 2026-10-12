@@ -14,6 +14,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     headers: {
       "Content-Type": row.mime,
       "Cache-Control": "public, max-age=86400, immutable",
+      // SVG tidak boleh menjalankan skrip bila dibuka langsung.
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     },
   });
 }

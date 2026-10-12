@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.11.0",
+    date: "2026-10-12",
+    title: "Teks berjalan bisa dimatikan dan dipindah, pengaturan tampilan dipisah",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Teks berjalan di Halaman Login Hotspot kini punya saklar tampil/sembunyi (teksnya tidak terhapus) dan pilihan letak: di atas atau di bawah form. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Bagian \"Tampilan\" di editor dipecah jadi tiga bagian terpisah yang bisa dibuka-tutup: \"Nama & sambutan\", \"Warna\", dan \"Kartu form\".",
+        ],
+      },
+    ],
+  },  {
     version: "1.10.0",
     date: "2026-10-12",
     title: "Warna nama hotspot dan tombol Login",

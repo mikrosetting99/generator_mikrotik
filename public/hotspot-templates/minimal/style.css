@@ -337,6 +337,9 @@ a:focus-visible {
 .logo { object-fit: contain; }
 marquee { display: block; }
 
+/* Teks berjalan di bawah form: jarak ke atas, bukan ke bawah. */
+.info.info-bottom { margin: 14px 0 0; }
+
 /* Sembunyikan kolom password yang disembunyikan mode voucher, termasuk marginnya. */
 .password[type="hidden"] { display: none; }
 

@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.11.0] - 2026-10-12
+
+_Teks berjalan bisa dimatikan dan dipindah, pengaturan tampilan dipisah_
+
+### Ditambahkan
+
+- Teks berjalan di Halaman Login Hotspot kini punya saklar tampil/sembunyi (teksnya tidak terhapus) dan pilihan letak: di atas atau di bawah form. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.
+
+### Diubah
+
+- Bagian "Tampilan" di editor dipecah jadi tiga bagian terpisah yang bisa dibuka-tutup: "Nama & sambutan", "Warna", dan "Kartu form".
+
 ## [1.10.0] - 2026-10-12
 
 _Warna nama hotspot dan tombol Login_

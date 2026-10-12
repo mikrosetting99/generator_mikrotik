@@ -372,7 +372,7 @@ export function LoginPageEditor({
 
       <div className="grid gap-5 lg:grid-cols-[400px_minmax(0,1fr)]">
         <div className="space-y-3 lg:sticky lg:top-20 lg:h-[calc(100vh-10rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
-          <Section title="Tampilan" defaultOpen>
+          <Section title="Nama & sambutan" defaultOpen>
           <div className={grid2}>
             <Field
               label="Nama hotspot"
@@ -397,6 +397,19 @@ export function LoginPageEditor({
             </Field>
           </div>
 
+          {swatches(TITLE_PRESETS, page.titleColor ?? "", (c) => setPage({ titleColor: c }), "Warna nama hotspot")}
+          {page.titleColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ titleColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna nama otomatis
+            </button>
+          )}
+          </Section>
+
+          <Section title="Warna">
           {swatches(PRIMARY_PRESETS, page.primaryColor, (c) => setPage({ primaryColor: c }), "Warna tema")}
           <div>
             <div className="flex items-center justify-between gap-3">
@@ -436,16 +449,6 @@ export function LoginPageEditor({
               <span>Lebih terang</span>
             </div>
           </div>
-          {swatches(TITLE_PRESETS, page.titleColor ?? "", (c) => setPage({ titleColor: c }), "Warna nama hotspot")}
-          {page.titleColor && (
-            <button
-              type="button"
-              onClick={() => setPage({ titleColor: "" })}
-              className="-mt-1 text-xs text-brand hover:underline"
-            >
-              Kembali ke warna nama otomatis
-            </button>
-          )}
           {swatches(PRIMARY_PRESETS, page.buttonColor ?? "", (c) => setPage({ buttonColor: c }), "Warna tombol Login")}
           {page.buttonColor && (
             <button
@@ -457,6 +460,9 @@ export function LoginPageEditor({
             </button>
           )}
           {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar")}
+          </Section>
+
+          <Section title="Kartu form">
           {swatches(FORM_PRESETS, page.formBgColor ?? "", (c) => setPage({ formBgColor: c }), "Warna form")}
           {page.formBgColor && (
             <button
@@ -724,7 +730,7 @@ export function LoginPageEditor({
                   />
                 )}
                 <p className="mt-2 text-xs leading-relaxed text-faint">
-                  {IMAGE_LIMITS.form.hint} Turunkan &ldquo;Kepekatan form&rdquo; di menu Tampilan
+                  {IMAGE_LIMITS.form.hint} Turunkan &ldquo;Kepekatan form&rdquo; di bagian Kartu form
                   agar gambarnya terlihat.
                 </p>
                 {dimensionNote(formInfo, "form")}
@@ -860,14 +866,48 @@ export function LoginPageEditor({
           </Section>
 
           <Section title="Teks berjalan">
-          <Field label="Teks berjalan" hint="Muncul sebagai marquee di atas form. Kosongkan bila tidak perlu.">
-            <TextInput
-              value={page.marquee}
-              onChange={(marquee) => setPage({ marquee })}
-              placeholder="Selamat datang di jaringan hotspot kami"
-            />
-          </Field>
-
+          <Toggle
+            checked={page.marqueeEnabled !== false}
+            onChange={(marqueeEnabled) => setPage({ marqueeEnabled })}
+            label="Tampilkan teks berjalan"
+            hint="Matikan untuk menyembunyikannya tanpa menghapus teksnya."
+          />
+          {page.marqueeEnabled !== false && (
+            <>
+              <Field label="Teks" hint="Muncul sebagai teks bergerak (marquee). Kosongkan bila tidak perlu.">
+                <TextInput
+                  value={page.marquee}
+                  onChange={(marquee) => setPage({ marquee })}
+                  placeholder="Selamat datang di jaringan hotspot kami"
+                />
+              </Field>
+              <div>
+                <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Letak</span>
+                <div className="mt-2 flex gap-1.5">
+                  {(
+                    [
+                      { value: "top", label: "Di atas form" },
+                      { value: "bottom", label: "Di bawah form" },
+                    ] as const
+                  ).map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      aria-pressed={(page.marqueePosition ?? "top") === o.value}
+                      onClick={() => setPage({ marqueePosition: o.value })}
+                      className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                        (page.marqueePosition ?? "top") === o.value
+                          ? "border-brand bg-brand/10 text-ink"
+                          : "border-line-soft text-muted hover:border-line hover:text-ink"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
           </Section>
 
           {/* Tabel paket */}

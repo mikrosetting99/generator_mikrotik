@@ -89,6 +89,10 @@ export interface HotspotPageConfig {
   showModeSwitch: boolean;
   /** Teks berjalan di atas form login. */
   marquee: string;
+  /** Teks berjalan tampil atau disembunyikan, tanpa menghapus teksnya. */
+  marqueeEnabled: boolean;
+  /** Letak teks berjalan: di atas form (bawaan) atau di bawah form. */
+  marqueePosition: "top" | "bottom";
   showTrial: boolean;
   packages: VoucherPackage[];
   terms: string;

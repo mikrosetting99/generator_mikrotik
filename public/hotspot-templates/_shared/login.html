@@ -37,9 +37,9 @@
       {{#SUBTITLE}}<p class="subtitle">{{SUBTITLE}}</p>{{/SUBTITLE}}
     </div>
 
-    {{#MARQUEE}}
+    {{#MARQUEE_TOP}}
     <div class="info"><marquee scrollamount="4">{{MARQUEE}}</marquee></div>
-    {{/MARQUEE}}
+    {{/MARQUEE_TOP}}
 
     {{#MODE_SWITCH}}
     <div class="box modes">
@@ -80,6 +80,10 @@
       </span>{{WA_LABEL}}
     </a>
     {{/WA_LINK}}
+
+    {{#MARQUEE_BOTTOM}}
+    <div class="info info-bottom"><marquee scrollamount="4">{{MARQUEE}}</marquee></div>
+    {{/MARQUEE_BOTTOM}}
 
     {{#TRIAL}}
     $(if trial == 'yes')

@@ -242,6 +242,9 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     PAGE_TITLE: escapeHtml(plainTitle(title) || "Hotspot"),
     SUBTITLE: escapeHtml(page.subtitle.trim()),
     MARQUEE: escapeHtml(page.marquee.trim()),
+    // Teks berjalan hanya tampil bila diaktifkan dan ada isinya; letaknya di atas atau di bawah form.
+    MARQUEE_TOP: page.marqueeEnabled !== false && page.marquee.trim() && page.marqueePosition !== "bottom" ? "1" : "",
+    MARQUEE_BOTTOM: page.marqueeEnabled !== false && page.marquee.trim() && page.marqueePosition === "bottom" ? "1" : "",
     TERMS: escapeHtml(page.terms.trim()),
     FOOTER: escapeHtml(page.footer.trim()),
     LOGO: page.logoDataUrl ? logoFileName(page.logoDataUrl) : "",

@@ -54,6 +54,8 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     loginMode: "voucher",
     showModeSwitch: true,
     marquee: "Selamat datang di jaringan hotspot kami",
+    marqueeEnabled: true,
+    marqueePosition: "top",
     showTrial: false,
     packages: [],
     terms: "",

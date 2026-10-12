@@ -411,14 +411,14 @@ export function LoginPageEditor({
               <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
                 Lebar form
               </span>
-              <span className="font-mono text-[11px] text-brand">{page.formWidth ?? 340} px</span>
+              <span className="font-mono text-[11px] text-brand">{page.formWidth ?? 390} px</span>
             </div>
             <input
               type="range"
               min={300}
               max={720}
               step={10}
-              value={page.formWidth ?? 340}
+              value={page.formWidth ?? 390}
               aria-label="Lebar kartu form"
               onChange={(e) => setPage({ formWidth: Number(e.target.value) })}
               className="mt-2 w-full accent-[color:var(--color-brand)]"
@@ -667,10 +667,10 @@ export function LoginPageEditor({
                         key={f.value}
                         type="button"
                         title={f.hint}
-                        aria-pressed={(page.bgFit ?? "blur") === f.value}
+                        aria-pressed={(page.bgFit ?? "cover") === f.value}
                         onClick={() => setPage({ bgFit: f.value })}
                         className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
-                          (page.bgFit ?? "blur") === f.value
+                          (page.bgFit ?? "cover") === f.value
                             ? "border-brand bg-brand/10 text-ink"
                             : "border-line-soft text-muted hover:border-line hover:text-ink"
                         }`}
@@ -680,7 +680,7 @@ export function LoginPageEditor({
                     ))}
                   </div>
                   <p className="mt-1.5 text-xs leading-relaxed text-faint">
-                    {BG_FITS.find((f) => f.value === (page.bgFit ?? "blur"))?.hint}
+                    {BG_FITS.find((f) => f.value === (page.bgFit ?? "cover"))?.hint}
                   </p>
                 </div>
 

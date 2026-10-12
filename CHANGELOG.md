@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.7.1] - 2026-10-12
+
+_Bawaan baru Halaman Login Hotspot_
+
+### Diubah
+
+- Nilai bawaan desain baru: lebar form 390 px, kepekatan lapisan gelap latar 0%, dan mode gambar latar "Penuh". Desain yang sudah tersimpan tetap memakai nilainya sendiri.
+
 ## [1.7.0] - 2026-10-12
 
 _Galeri logo dan rekomendasi ukuran gambar_

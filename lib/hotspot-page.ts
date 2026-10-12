@@ -248,7 +248,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
         : (BG_POSITIONS.find((p) => p.value === page.bgPosition)?.css ?? "center"),
     BG_SIZE: BG_FITS.find((f) => f.value === page.bgFit)?.css ?? "cover",
     // Mode "utuh + kabur": gambar utuh di tengah, sisanya diisi salinan yang dikaburkan.
-    BG_BLUR: page.bgFit === "blur" || !page.bgFit ? "1" : "",
+    BG_BLUR: page.bgFit === "blur" ? "1" : "",
     OVERLAY: rgba(bgColor, Math.max(0, Math.min(90, page.bgOverlay)) / 100),
     WA_LINK: whatsappLink(page.whatsapp),
     WA_LABEL: escapeHtml(page.whatsappLabel.trim() || "Hubungi admin"),
@@ -271,7 +271,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     BG: palette.bg,
     SURFACE: palette.surface,
     FORM_BG: formOpacity < 100 ? rgba(baseForm, formOpacity / 100) : baseForm,
-    FORM_WIDTH: String(Math.round(Math.max(300, Math.min(720, Number(page.formWidth) || 340)))),
+    FORM_WIDTH: String(Math.round(Math.max(300, Math.min(720, Number(page.formWidth) || 390)))),
     FORM_IMAGE: hasFormImage ? formImageFileName(page.formImageDataUrl) : "",
     FORM_TEXT: formText,
     FORM_MUTED: customForm ? mutedOn(seen) : palette.muted,

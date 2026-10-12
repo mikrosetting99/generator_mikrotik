@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.1",
+    date: "2026-10-12",
+    title: "Bawaan baru Halaman Login Hotspot",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Nilai bawaan desain baru: lebar form 390 px, kepekatan lapisan gelap latar 0%, dan mode gambar latar \"Penuh\". Desain yang sudah tersimpan tetap memakai nilainya sendiri.",
+        ],
+      },
+    ],
+  },  {
     version: "1.7.0",
     date: "2026-10-12",
     title: "Galeri logo dan rekomendasi ukuran gambar",

@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.14.1] - 2026-10-12
+
+_Warna font tombol bisa diatur_
+
+### Ditambahkan
+
+- Warna font di dalam tombol berwarna (tombol Login dan tombol Voucher/Member yang aktif) bisa dipilih sendiri, atau dikembalikan ke otomatis (hitam/putih sesuai warna tombol). Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.
+
 ## [1.14.0] - 2026-10-12
 
 _Warna tabel harga, teks berjalan tanpa latar_

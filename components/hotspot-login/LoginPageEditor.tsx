@@ -32,6 +32,7 @@ const DEVICES = [
 const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
 const TITLE_PRESETS = ["#0f172a", "#ffffff", "#2563eb", "#dc2626", "#16a34a", "#f59e0b", "#7c3aed"];
 const MARQUEE_PRESETS = ["#1e293b", "#0f172a", "#dc2626", "#16a34a", "#f59e0b", "#7c3aed", "#2563eb"];
+const BUTTON_TEXT_PRESETS = ["#ffffff", "#0f172a", "#fef08a", "#dc2626", "#16a34a", "#2563eb"];
 const BORDER_PRESETS = ["#e2e8f0", "#94a3b8", "#334155", "#0f172a", "#ffffff"];
 const FORM_PRESETS = ["#ffffff", "#f1f5f9", "#fef3c7", "#e0f2fe", "#1e293b", "#0f172a"];
 const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
@@ -458,6 +459,16 @@ export function LoginPageEditor({
               className="-mt-1 text-xs text-brand hover:underline"
             >
               Kembali ke warna tombol otomatis (sama dengan tombol Voucher)
+            </button>
+          )}
+          {swatches(BUTTON_TEXT_PRESETS, page.buttonTextColor ?? "", (c) => setPage({ buttonTextColor: c }), "Warna font tombol")}
+          {page.buttonTextColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ buttonTextColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna font otomatis (hitam/putih sesuai warna tombol)
             </button>
           )}
           {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar")}

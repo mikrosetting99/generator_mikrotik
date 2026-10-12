@@ -218,6 +218,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const formField = customForm ? rgba(mix(seen, formIsDark ? 0.07 : -0.04), Math.max(formOpacity, 55) / 100) : palette.bg;
 
   const titleCustom = isHexColor(page.titleColor ?? "") ? page.titleColor.trim() : "";
+  const buttonTextCustom = isHexColor(page.buttonTextColor ?? "") ? page.buttonTextColor.trim() : "";
   const buttonBg = isHexColor(page.buttonColor ?? "") ? page.buttonColor.trim() : primary;
 
   const marqueeBg = isHexColor(page.marqueeBgColor ?? "") ? page.marqueeBgColor.trim() : "#1e293b";
@@ -317,7 +318,9 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     TITLE_T2: titleCustom || "var(--primary)",
     BUTTON_BG: buttonBg,
     BUTTON_BG_DARK: mix(buttonBg, -0.34),
-    BUTTON_TEXT: readableOn(buttonBg),
+    // Font di dalam tombol: pilihan sendiri, atau otomatis hitam/putih menurut warna tombol.
+    BUTTON_TEXT: buttonTextCustom || readableOn(buttonBg),
+    VOUCHER_TEXT: buttonTextCustom || palette.onPrimary,
     // Garis tepi kartu form: tebal 0–8 px (0 = tanpa garis); warna sendiri bila dipilih.
     FORM_BORDER_WIDTH: String(
       Number.isFinite(Number(page.formBorderWidth))

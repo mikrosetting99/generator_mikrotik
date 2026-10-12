@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.14.1",
+    date: "2026-10-12",
+    title: "Warna font tombol bisa diatur",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Warna font di dalam tombol berwarna (tombol Login dan tombol Voucher/Member yang aktif) bisa dipilih sendiri, atau dikembalikan ke otomatis (hitam/putih sesuai warna tombol). Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.14.0",
     date: "2026-10-12",
     title: "Warna tabel harga, teks berjalan tanpa latar",

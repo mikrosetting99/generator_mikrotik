@@ -169,7 +169,7 @@ body::before {
 .small-button.active {
   border-color: var(--primary);
   background: var(--primary);
-  color: var(--on-primary);
+  color: {{VOUCHER_TEXT}};
 }
 
 #infologin {

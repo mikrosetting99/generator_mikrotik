@@ -53,6 +53,8 @@ export interface HotspotPageConfig {
   titleColor: string;
   /** Warna tombol Login. Kosong = ikut warna tema. */
   buttonColor: string;
+  /** Warna font di dalam tombol berwarna (Login dan Voucher/Member aktif). Kosong = otomatis. */
+  buttonTextColor: string;
   /** Warna latar bebas; warna teks & garis diturunkan dari kecerahannya. */
   bgColor: string;
   /** Warna latar kartu form. Kosong = diturunkan otomatis dari warna latar. */

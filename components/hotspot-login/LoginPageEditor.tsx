@@ -30,6 +30,7 @@ const DEVICES = [
 ] as const;
 
 const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
+const TITLE_PRESETS = ["#0f172a", "#ffffff", "#2563eb", "#dc2626", "#16a34a", "#f59e0b", "#7c3aed"];
 const BORDER_PRESETS = ["#e2e8f0", "#94a3b8", "#334155", "#0f172a", "#ffffff"];
 const FORM_PRESETS = ["#ffffff", "#f1f5f9", "#fef3c7", "#e0f2fe", "#1e293b", "#0f172a"];
 const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
@@ -435,6 +436,26 @@ export function LoginPageEditor({
               <span>Lebih terang</span>
             </div>
           </div>
+          {swatches(TITLE_PRESETS, page.titleColor ?? "", (c) => setPage({ titleColor: c }), "Warna nama hotspot")}
+          {page.titleColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ titleColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna nama otomatis
+            </button>
+          )}
+          {swatches(PRIMARY_PRESETS, page.buttonColor ?? "", (c) => setPage({ buttonColor: c }), "Warna tombol Login")}
+          {page.buttonColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ buttonColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna tombol otomatis (ikut warna tema)
+            </button>
+          )}
           {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar")}
           {swatches(FORM_PRESETS, page.formBgColor ?? "", (c) => setPage({ formBgColor: c }), "Warna form")}
           {page.formBgColor && (

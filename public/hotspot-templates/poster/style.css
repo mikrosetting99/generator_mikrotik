@@ -167,9 +167,9 @@ body {
   overflow-wrap: normal;
 }
 
-.brand .t1 { color: var(--text); }
+.brand .t1 { color: {{TITLE_T1}}; }
 /* Kata sesudah tanda "|" pada nama, misalnya PRO|NET. */
-.brand .t2 { color: var(--primary); }
+.brand .t2 { color: {{TITLE_T2}}; }
 
 .subtitle {
   margin: 10px 0 0;
@@ -373,8 +373,8 @@ form { margin: 0; }
 }
 
 .button {
-  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-  color: var(--on-primary);
+  background: linear-gradient(180deg, {{BUTTON_BG}}, {{BUTTON_BG_DARK}});
+  color: {{BUTTON_TEXT}};
 }
 
 .button2 {

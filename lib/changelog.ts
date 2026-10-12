@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.10.0",
+    date: "2026-10-12",
+    title: "Warna nama hotspot dan tombol Login",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Warna tulisan nama hotspot dan warna tombol Login bisa dipilih sendiri di Halaman Login Hotspot (warna siap pakai atau bebas), atau dikembalikan ke otomatis. Warna tulisan di dalam tombol menyesuaikan sendiri agar terbaca. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.9.0",
     date: "2026-10-12",
     title: "Garis tepi form login bisa diatur",

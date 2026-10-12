@@ -31,6 +31,8 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     template: "minimal",
     primaryColor: "#38bdf8",
     primaryBrightness: 100,
+    titleColor: "",
+    buttonColor: "",
     bgColor: "#ffffff",
     formBgColor: "",
     formBgOpacity: 100,

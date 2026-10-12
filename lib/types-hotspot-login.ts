@@ -49,6 +49,10 @@ export interface HotspotPageConfig {
   primaryColor: string;
   /** Kecerahan warna tema dalam persen, 50–150. 100 = warna apa adanya. */
   primaryBrightness: number;
+  /** Warna tulisan nama hotspot. Kosong = otomatis (warna tema yang aman dibaca). */
+  titleColor: string;
+  /** Warna tombol Login. Kosong = ikut warna tema. */
+  buttonColor: string;
   /** Warna latar bebas; warna teks & garis diturunkan dari kecerahannya. */
   bgColor: string;
   /** Warna latar kartu form. Kosong = diturunkan otomatis dari warna latar. */

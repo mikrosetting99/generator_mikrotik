@@ -217,6 +217,9 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const formBorder = customForm ? mix(seen, formIsDark ? 0.18 : -0.14) : palette.border;
   const formField = customForm ? rgba(mix(seen, formIsDark ? 0.07 : -0.04), Math.max(formOpacity, 55) / 100) : palette.bg;
 
+  const titleCustom = isHexColor(page.titleColor ?? "") ? page.titleColor.trim() : "";
+  const buttonBg = isHexColor(page.buttonColor ?? "") ? page.buttonColor.trim() : primary;
+
   const packages = page.packages.filter(
     (p) => p.name.trim() || p.duration.trim() || p.validity.trim() || p.price.trim(),
   );
@@ -283,6 +286,13 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     // dan garis kartu yang diberi semburat warna tema.
     PRIMARY_TEXT: accentOn(seen, primary),
     PRIMARY_LINE: blend(formBorder, primary, 0.55),
+    // Warna nama hotspot dan tombol Login: pilihan sendiri, atau otomatis mengikuti tema.
+    TITLE_COLOR: titleCustom || accentOn(seen, primary),
+    TITLE_T1: titleCustom || "var(--text)",
+    TITLE_T2: titleCustom || "var(--primary)",
+    BUTTON_BG: buttonBg,
+    BUTTON_BG_DARK: mix(buttonBg, -0.34),
+    BUTTON_TEXT: readableOn(buttonBg),
     // Garis tepi kartu form: tebal 0–8 px (0 = tanpa garis); warna sendiri bila dipilih.
     FORM_BORDER_WIDTH: String(
       Number.isFinite(Number(page.formBorderWidth))

@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.2",
+    date: "2026-10-12",
+    title: "Halaman login tanpa alamat IP",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Tulisan \"IP Anda …\" di bawah form login dihapus dari desain Minimal dan Poster. Teks footer tetap tampil bila diisi. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.7.1",
     date: "2026-10-12",
     title: "Bawaan baru Halaman Login Hotspot",

@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.7.2] - 2026-10-12
+
+_Halaman login tanpa alamat IP_
+
+### Diubah
+
+- Tulisan "IP Anda …" di bawah form login dihapus dari desain Minimal dan Poster. Teks footer tetap tampil bila diisi. Paket halaman login perlu di-upload ulang ke router.
+
 ## [1.7.1] - 2026-10-12
 
 _Bawaan baru Halaman Login Hotspot_

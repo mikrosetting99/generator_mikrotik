@@ -1,4 +1,4 @@
-import { blend, contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
+import { accentOn, blend, contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
 import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type HotspotTemplateId, type VoucherPackage } from "./types-hotspot-login";
 import type { ZipEntry } from "./zip";
 
@@ -276,6 +276,10 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     FORM_TEXT: formText,
     FORM_MUTED: customForm ? mutedOn(seen) : palette.muted,
     FORM_BORDER: formBorder,
+    // Warna tema yang terbaca sebagai teks di atas kartu (judul, tautan, harga),
+    // dan garis kartu yang diberi semburat warna tema.
+    PRIMARY_TEXT: accentOn(seen, primary),
+    PRIMARY_LINE: blend(formBorder, primary, 0.55),
     FORM_FIELD: formField,
     TEXT: palette.text,
     MUTED: palette.muted,

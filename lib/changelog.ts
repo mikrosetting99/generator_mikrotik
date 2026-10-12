@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.3",
+    date: "2026-10-12",
+    title: "Warna tema lebih menyatu di halaman login",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Desain Minimal: warna tema kini juga dipakai di judul, tautan, judul tabel, garis bingkai kartu (dengan aksen tebal di atas kartu), dan garis tombol Voucher/Member — bukan hanya tombol dan tabel. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          "Warna tema yang terang (kuning, biru langit) tidak lagi membuat judul dan tautan sulit dibaca di atas kartu putih: untuk teks, warna otomatis digelapkan secukupnya sampai kontrasnya cukup. Footer tidak lagi dipudarkan.",
+        ],
+      },
+    ],
+  },  {
     version: "1.7.2",
     date: "2026-10-12",
     title: "Halaman login tanpa alamat IP",

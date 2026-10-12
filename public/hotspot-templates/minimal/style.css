@@ -94,16 +94,20 @@ body::before {
   --muted: {{FORM_MUTED}};
   --border: {{FORM_BORDER}};
   --field: {{FORM_FIELD}};
+  --accent-text: {{PRIMARY_TEXT}};
+  --line-accent: {{PRIMARY_LINE}};
   color: var(--text);
   width: 100%;
   max-width: {{FORM_WIDTH}}px;
   background: {{FORM_BG}};
+  /* Warna tema juga di bingkai kartu: garis tipis bersemburat tema, dan aksen tebal di atas. */
 {{#FORM_IMAGE}}
   background-image: linear-gradient({{FORM_BG}}, {{FORM_BG}}), url('{{FORM_IMAGE}}');
   background-size: cover;
   background-position: center;
 {{/FORM_IMAGE}}
-  border: 1px solid var(--border);
+  border: 1px solid var(--line-accent);
+  border-top: 4px solid var(--primary);
   border-radius: 16px;
   padding: 28px 24px;
   text-align: center;
@@ -121,6 +125,7 @@ body::before {
 }
 
 .brand {
+  color: var(--accent-text);
   margin: 0;
   font-size: 21px;
   font-weight: 700;
@@ -149,7 +154,7 @@ body::before {
 .small-button {
   flex: 1;
   height: 34px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line-accent);
   border-radius: 10px;
   background: transparent;
   color: var(--muted);
@@ -243,12 +248,13 @@ body::before {
 
 /* Tabel harga: kepala berwarna, baris selang-seling, harga di kanan. */
 .table {
-  border: 1px solid var(--border);
+  border: 1px solid var(--line-accent);
   border-radius: 12px;
   overflow: hidden;
 }
 
 .table caption {
+  color: var(--accent-text);
   font-weight: 700;
   font-size: 14px;
   padding-bottom: 10px;
@@ -287,7 +293,7 @@ body::before {
 }
 .table2 td:first-child { color: var(--muted); width: 45%; }
 .trial { margin-top: 12px; font-size: 13px; }
-a { color: var(--primary); }
+a { color: var(--accent-text); }
 
 .terms {
   margin-top: 14px;
@@ -301,7 +307,6 @@ a { color: var(--primary); }
   font-size: 11px;
   color: var(--muted);
   line-height: 1.7;
-  opacity: .85;
 }
 
 @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }

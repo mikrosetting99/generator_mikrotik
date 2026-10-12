@@ -105,6 +105,21 @@ export function mutedOn(bg: string): string {
   return dimmed(readableOn(bg), bg);
 }
 
+/**
+ * Warna tema yang aman dipakai sebagai TEKS di atas sebuah latar: warna tema
+ * dipakai apa adanya bila kontrasnya cukup, bila tidak digeser pelan-pelan ke
+ * arah warna teks sampai terbaca. Warna tema terang (kuning, biru langit) di
+ * atas kartu putih adalah kasus yang paling sering gagal.
+ */
+export function accentOn(bg: string, accent: string, minRatio = 4.5): string {
+  const target = readableOn(bg);
+  let result = accent;
+  for (let t = 0; t <= 1.0001 && contrastRatio(result, bg) < minRatio; t += 0.08) {
+    result = blend(accent, target, t);
+  }
+  return result;
+}
+
 /** Menurunkan seluruh palet dari satu warna latar. */
 export function derivePalette(bg: string, primary: string): DerivedPalette {
   const safeBg = isHexColor(bg) ? bg.trim() : "#0b1220";

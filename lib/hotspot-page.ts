@@ -283,6 +283,15 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     // dan garis kartu yang diberi semburat warna tema.
     PRIMARY_TEXT: accentOn(seen, primary),
     PRIMARY_LINE: blend(formBorder, primary, 0.55),
+    // Garis tepi kartu form: tebal 0–8 px (0 = tanpa garis); warna sendiri bila dipilih.
+    FORM_BORDER_WIDTH: String(
+      Number.isFinite(Number(page.formBorderWidth))
+        ? Math.max(0, Math.min(8, Math.round(Number(page.formBorderWidth))))
+        : 1,
+    ),
+    FORM_BORDER_LINE: isHexColor(page.formBorderColor ?? "")
+      ? page.formBorderColor.trim()
+      : blend(formBorder, primary, 0.55),
     FORM_FIELD: formField,
     TEXT: palette.text,
     MUTED: palette.muted,

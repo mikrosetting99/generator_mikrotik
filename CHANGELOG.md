@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.9.0] - 2026-10-12
+
+_Garis tepi form login bisa diatur_
+
+### Ditambahkan
+
+- Pengaturan "Garis tepi form" di Halaman Login Hotspot: tebal 0–8 px (0 = tanpa garis) dan warna garis sendiri, atau otomatis mengikuti warna tema. Berlaku di desain Minimal; paket halaman login perlu di-upload ulang ke router.
+
 ## [1.8.1] - 2026-10-12
 
 _Kartu login tanpa garis tebal di atas_

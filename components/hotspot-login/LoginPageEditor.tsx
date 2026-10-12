@@ -30,6 +30,7 @@ const DEVICES = [
 ] as const;
 
 const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
+const BORDER_PRESETS = ["#e2e8f0", "#94a3b8", "#334155", "#0f172a", "#ffffff"];
 const FORM_PRESETS = ["#ffffff", "#f1f5f9", "#fef3c7", "#e0f2fe", "#1e293b", "#0f172a"];
 const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
 /**
@@ -465,6 +466,43 @@ export function LoginPageEditor({
             <p className="mt-1 text-xs leading-relaxed text-faint">
               Lebar maksimal kartu login. Di HP kartunya tetap menyesuaikan lebar layar.
             </p>
+          </div>
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                Garis tepi form
+              </span>
+              <span className="font-mono text-[11px] text-brand">
+                {(page.formBorderWidth ?? 1) === 0 ? "tanpa garis" : `${page.formBorderWidth ?? 1} px`}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={8}
+              step={1}
+              value={page.formBorderWidth ?? 1}
+              aria-label="Tebal garis tepi form"
+              onChange={(e) => setPage({ formBorderWidth: Number(e.target.value) })}
+              className="mt-2 w-full accent-[color:var(--color-brand)]"
+            />
+            <p className="mt-1 text-xs leading-relaxed text-faint">
+              Geser ke 0 untuk menghilangkan garis tepi kartu form.
+            </p>
+            {(page.formBorderWidth ?? 1) > 0 && (
+              <div className="mt-3 space-y-2">
+                {swatches(BORDER_PRESETS, page.formBorderColor ?? "", (c) => setPage({ formBorderColor: c }), "Warna garis")}
+                {page.formBorderColor && (
+                  <button
+                    type="button"
+                    onClick={() => setPage({ formBorderColor: "" })}
+                    className="text-xs text-brand hover:underline"
+                  >
+                    Kembali ke warna garis otomatis
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <div className="flex items-center justify-between gap-3">

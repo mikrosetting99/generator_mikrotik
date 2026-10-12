@@ -57,6 +57,10 @@ export interface HotspotPageConfig {
   formBgOpacity: number;
   /** Lebar maksimal kartu form dalam piksel, 300–720. Di layar sempit tetap mengecil sendiri. */
   formWidth: number;
+  /** Tebal garis tepi kartu form dalam piksel, 0–8. 0 = tanpa garis. */
+  formBorderWidth: number;
+  /** Warna garis tepi kartu form. Kosong = otomatis (semburat warna tema). */
+  formBorderColor: string;
   /** Gambar di dalam kartu form, juga ikut jadi berkas di dalam zip. */
   formImageDataUrl: string;
   formImageName: string;

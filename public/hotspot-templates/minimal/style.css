@@ -106,7 +106,7 @@ body::before {
   background-size: cover;
   background-position: center;
 {{/FORM_IMAGE}}
-  border: 1px solid var(--line-accent);
+  border: {{FORM_BORDER_WIDTH}}px solid {{FORM_BORDER_LINE}};
   border-radius: 16px;
   padding: 28px 24px;
   text-align: center;

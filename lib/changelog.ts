@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.9.0",
+    date: "2026-10-12",
+    title: "Garis tepi form login bisa diatur",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Pengaturan \"Garis tepi form\" di Halaman Login Hotspot: tebal 0–8 px (0 = tanpa garis) dan warna garis sendiri, atau otomatis mengikuti warna tema. Berlaku di desain Minimal; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.8.1",
     date: "2026-10-12",
     title: "Kartu login tanpa garis tebal di atas",

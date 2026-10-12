@@ -29,10 +29,14 @@
   </script>
   $(endif)
 
+  <div class="stack">
+
+  {{#LOGO_ABOVE}}<img class="logo logo-above" src="{{LOGO}}" alt="{{PAGE_TITLE}}">{{/LOGO_ABOVE}}
+
   <div id="main" class="main">
 
     <div class="box brandbox">
-      {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{PAGE_TITLE}}">{{/LOGO}}
+      {{#LOGO_INSIDE}}<img class="logo" src="{{LOGO}}" alt="{{PAGE_TITLE}}">{{/LOGO_INSIDE}}
       {{#TITLE}}<h3 class="brand">{{TITLE_HTML}}</h3>{{/TITLE}}
       {{#SUBTITLE}}<p class="subtitle">{{SUBTITLE}}</p>{{/SUBTITLE}}
     </div>
@@ -108,9 +112,15 @@
 
     {{#TERMS}}<div class="terms">{{TERMS}}</div>{{/TERMS}}
 
-    {{#FOOTER}}
+    {{#FOOTER_INSIDE}}
     <div class="foot">{{FOOTER}}</div>
-    {{/FOOTER}}
+    {{/FOOTER_INSIDE}}
+  </div>
+
+  {{#FOOTER_OUTSIDE}}
+  <div class="foot foot-outside">{{FOOTER}}</div>
+  {{/FOOTER_OUTSIDE}}
+
   </div>
 
   <script type="text/javascript">

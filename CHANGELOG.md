@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.13.0] - 2026-10-12
+
+_Letak logo dan footer, saklar WhatsApp_
+
+### Ditambahkan
+
+- Logo bisa diletakkan di dalam kartu form atau di atas kartu (di luar form).
+- Teks footer bisa diletakkan di dalam kartu form atau di bawah kartu (di luar form); di atas gambar latar footer diberi alas gelap tipis agar terbaca.
+- Tombol WhatsApp punya saklar tampil/sembunyi tanpa menghapus nomornya. Pengaturan WhatsApp dan "Catatan & footer" kini dipisah menjadi dua bagian. Letak logo dan footer berlaku di desain Minimal; paket halaman login perlu di-upload ulang ke router.
+
+### Diubah
+
+- Bagian "Gambar" di editor diganti namanya menjadi "Background & Logo".
+
 ## [1.12.0] - 2026-10-12
 
 _Warna teks berjalan sendiri, warna tombol Voucher, latar bawaan baru_

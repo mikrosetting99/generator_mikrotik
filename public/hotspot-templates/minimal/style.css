@@ -340,6 +340,39 @@ marquee { display: block; }
 /* Teks berjalan di bawah form: jarak ke atas, bukan ke bawah. */
 .info.info-bottom { margin: 14px 0 0; }
 
+/* Pembungkus halaman login: logo (bila di atas form), kartu form, dan footer
+   (bila di bawah form) tersusun ke bawah dan selebar kartu. */
+.stack {
+  width: 100%;
+  max-width: {{FORM_WIDTH}}px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Logo di luar kartu, di atas form. */
+.logo-above {
+  display: block;
+  margin: 0 auto 16px;
+}
+
+/* Footer di luar kartu, di bawah form. */
+.foot-outside {
+  margin: 14px 0 0;
+  text-align: center;
+}
+{{#BG_IMAGE}}
+/* Di atas gambar latar, footer diberi alas gelap tipis agar tetap terbaca. */
+.foot-outside {
+  align-self: center;
+  color: #fff;
+  background: rgba(0, 0, 0, .45);
+  padding: 6px 12px;
+  border-radius: 10px;
+  opacity: 1;
+}
+{{/BG_IMAGE}}
+
 /* Sembunyikan kolom password yang disembunyikan mode voucher, termasuk marginnya. */
 .password[type="hidden"] { display: none; }
 

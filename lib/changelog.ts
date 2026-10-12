@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.13.0",
+    date: "2026-10-12",
+    title: "Letak logo dan footer, saklar WhatsApp",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Logo bisa diletakkan di dalam kartu form atau di atas kartu (di luar form).",
+          "Teks footer bisa diletakkan di dalam kartu form atau di bawah kartu (di luar form); di atas gambar latar footer diberi alas gelap tipis agar terbaca.",
+          "Tombol WhatsApp punya saklar tampil/sembunyi tanpa menghapus nomornya. Pengaturan WhatsApp dan \"Catatan & footer\" kini dipisah menjadi dua bagian. Letak logo dan footer berlaku di desain Minimal; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+      {
+        type: "changed",
+        items: ["Bagian \"Gambar\" di editor diganti namanya menjadi \"Background & Logo\"."],
+      },
+    ],
+  },  {
     version: "1.12.0",
     date: "2026-10-12",
     title: "Warna teks berjalan sendiri, warna tombol Voucher, latar bawaan baru",

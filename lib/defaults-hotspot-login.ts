@@ -46,6 +46,7 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     logoDataUrl: "",
     logoName: "",
     logoHeight: 130,
+    logoPosition: "inside",
     bgImageDataUrl: "",
     bgImageName: "",
     bgOverlay: 0,
@@ -63,6 +64,8 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     terms: "",
     whatsapp: "",
     whatsappLabel: "Beli voucher via WhatsApp",
+    whatsappEnabled: true,
     footer: "",
+    footerPosition: "inside",
   };
 }

@@ -253,7 +253,13 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     MARQUEE_BOTTOM: page.marqueeEnabled !== false && page.marquee.trim() && page.marqueePosition === "bottom" ? "1" : "",
     TERMS: escapeHtml(page.terms.trim()),
     FOOTER: escapeHtml(page.footer.trim()),
+    // Footer di dalam kartu form (bawaan) atau di bawah kartu, di luar form.
+    FOOTER_INSIDE: page.footer.trim() && page.footerPosition !== "outside" ? "1" : "",
+    FOOTER_OUTSIDE: page.footer.trim() && page.footerPosition === "outside" ? "1" : "",
     LOGO: page.logoDataUrl ? logoFileName(page.logoDataUrl) : "",
+    // Logo di dalam kartu form (bawaan) atau di atas kartu, di luar form.
+    LOGO_INSIDE: page.logoDataUrl && page.logoPosition !== "above" ? "1" : "",
+    LOGO_ABOVE: page.logoDataUrl && page.logoPosition === "above" ? "1" : "",
     LOGO_HEIGHT: String(Math.round(Math.max(40, Math.min(260, page.logoHeight || 130)))),
     BG_IMAGE: page.bgImageDataUrl ? bgFileName(page.bgImageDataUrl) : "",
     // Desain Poster dulu selalu "center top" — itu tetap bawaannya.
@@ -265,7 +271,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     // Mode "utuh + kabur": gambar utuh di tengah, sisanya diisi salinan yang dikaburkan.
     BG_BLUR: page.bgFit === "blur" ? "1" : "",
     OVERLAY: rgba(bgColor, Math.max(0, Math.min(90, page.bgOverlay)) / 100),
-    WA_LINK: whatsappLink(page.whatsapp),
+    WA_LINK: page.whatsappEnabled === false ? "" : whatsappLink(page.whatsapp),
     WA_LABEL: escapeHtml(page.whatsappLabel.trim() || "Hubungi admin"),
     START_MODE: page.loginMode === "member" ? "member" : "voucher",
     MODE_SWITCH: page.showModeSwitch ? "1" : "",
@@ -369,7 +375,7 @@ export function fetchStyle(id: HotspotTemplateId): Promise<string> {
 
 function readmeText(page: HotspotPageConfig, logoFile: string, bgFile: string, formFile: string): string {
   const template = getTemplate(page.template);
-  const link = whatsappLink(page.whatsapp);
+  const link = page.whatsappEnabled === false ? "" : whatsappLink(page.whatsapp);
 
   return `PAKET HALAMAN LOGIN HOTSPOT MIKROTIK
 ====================================

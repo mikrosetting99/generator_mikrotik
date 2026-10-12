@@ -76,6 +76,8 @@ export interface HotspotPageConfig {
   logoName: string;
   /** Tinggi tampil logo dalam piksel, 40–260. Lebarnya menyesuaikan sendiri. */
   logoHeight: number;
+  /** Letak logo: di dalam kartu form (bawaan) atau di atas kartu, di luar form. */
+  logoPosition: "inside" | "above";
   /** Gambar latar, juga ikut jadi berkas di dalam zip. */
   bgImageDataUrl: string;
   bgImageName: string;
@@ -102,5 +104,9 @@ export interface HotspotPageConfig {
   terms: string;
   whatsapp: string;
   whatsappLabel: string;
+  /** Tombol WhatsApp tampil atau disembunyikan, tanpa menghapus nomornya. */
+  whatsappEnabled: boolean;
   footer: string;
+  /** Letak teks footer: di dalam kartu form (bawaan) atau di bawah kartu, di luar form. */
+  footerPosition: "inside" | "outside";
 }

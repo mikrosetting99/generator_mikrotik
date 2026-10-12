@@ -563,7 +563,7 @@ export function LoginPageEditor({
           </Section>
 
           {/* Logo & gambar latar */}
-          <Section title="Gambar">
+          <Section title="Background & Logo">
           <div>
             <div className="grid gap-5">
               {/* Logo */}
@@ -601,6 +601,34 @@ export function LoginPageEditor({
                   />
                 </div>
                 {galleryPicker("logo", logoGallery, page.logoName)}
+                <div className="mt-3">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Letak logo</span>
+                  <div className="mt-2 flex gap-1.5">
+                    {(
+                      [
+                        { value: "inside", label: "Di dalam form" },
+                        { value: "above", label: "Di atas form" },
+                      ] as const
+                    ).map((o) => (
+                      <button
+                        key={o.value}
+                        type="button"
+                        aria-pressed={(page.logoPosition ?? "inside") === o.value}
+                        onClick={() => setPage({ logoPosition: o.value })}
+                        className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                          (page.logoPosition ?? "inside") === o.value
+                            ? "border-brand bg-brand/10 text-ink"
+                            : "border-line-soft text-muted hover:border-line hover:text-ink"
+                        }`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                  {page.template === "poster" && (
+                    <p className="mt-1.5 text-xs text-faint">Desain Poster tidak punya kartu form, jadi pilihan ini hanya berlaku di desain Minimal.</p>
+                  )}
+                </div>
                 {page.logoDataUrl && (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1005,30 +1033,53 @@ export function LoginPageEditor({
             )}
           </Section>
 
-          <Section title="WhatsApp & footer">
+          <Section title="WhatsApp">
+          <Toggle
+            checked={page.whatsappEnabled !== false}
+            onChange={(whatsappEnabled) => setPage({ whatsappEnabled })}
+            label="Tampilkan tombol WhatsApp"
+            hint="Matikan untuk menyembunyikannya tanpa menghapus nomornya."
+          />
+          {page.whatsappEnabled !== false && (
+            <>
+              <div className={grid2}>
+                <Field
+                  label="Nomor WhatsApp"
+                  hint={
+                    whatsappLink(page.whatsapp)
+                      ? whatsappLink(page.whatsapp)
+                      : "Kosongkan bila tidak perlu tombol WhatsApp."
+                  }
+                >
+                  <TextInput
+                    mono
+                    value={page.whatsapp}
+                    onChange={(whatsapp) => setPage({ whatsapp })}
+                    placeholder="081234567890"
+                  />
+                </Field>
+                <Field label="Teks tombol WhatsApp">
+                  <TextInput
+                    value={page.whatsappLabel}
+                    onChange={(whatsappLabel) => setPage({ whatsappLabel })}
+                    placeholder="Beli voucher via WhatsApp"
+                  />
+                </Field>
+              </div>
+
+              {whatsappLink(page.whatsapp) && (
+                <Note>
+                  Supaya tombol WhatsApp bisa dibuka sebelum klien login, aktifkan toggle{" "}
+                  &ldquo;Walled-garden WhatsApp (wa.me)&rdquo; pada hotspot terkait di menu Setup
+                  Mikrotik Baru → IP Hotspot.
+                </Note>
+              )}
+            </>
+          )}
+          </Section>
+
+          <Section title="Catatan & footer">
           <div className={grid2}>
-            <Field
-              label="Nomor WhatsApp"
-              hint={
-                whatsappLink(page.whatsapp)
-                  ? whatsappLink(page.whatsapp)
-                  : "Kosongkan bila tidak perlu tombol WhatsApp."
-              }
-            >
-              <TextInput
-                mono
-                value={page.whatsapp}
-                onChange={(whatsapp) => setPage({ whatsapp })}
-                placeholder="081234567890"
-              />
-            </Field>
-            <Field label="Teks tombol WhatsApp">
-              <TextInput
-                value={page.whatsappLabel}
-                onChange={(whatsappLabel) => setPage({ whatsappLabel })}
-                placeholder="Beli voucher via WhatsApp"
-              />
-            </Field>
             <Field label="Catatan / syarat pemakaian">
               <TextInput
                 value={page.terms}
@@ -1044,14 +1095,34 @@ export function LoginPageEditor({
               />
             </Field>
           </div>
-
-          {whatsappLink(page.whatsapp) && (
-            <Note>
-              Supaya tombol WhatsApp bisa dibuka sebelum klien login, aktifkan toggle{" "}
-              &ldquo;Walled-garden WhatsApp (wa.me)&rdquo; pada hotspot terkait di menu Setup
-              Mikrotik Baru → IP Hotspot.
-            </Note>
-          )}
+          <div>
+            <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Letak footer</span>
+            <div className="mt-2 flex gap-1.5">
+              {(
+                [
+                  { value: "inside", label: "Di dalam form" },
+                  { value: "outside", label: "Di bawah form (di luar)" },
+                ] as const
+              ).map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  aria-pressed={(page.footerPosition ?? "inside") === o.value}
+                  onClick={() => setPage({ footerPosition: o.value })}
+                  className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                    (page.footerPosition ?? "inside") === o.value
+                      ? "border-brand bg-brand/10 text-ink"
+                      : "border-line-soft text-muted hover:border-line hover:text-ink"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            {page.template === "poster" && (
+              <p className="mt-1.5 text-xs text-faint">Pada desain Poster footer selalu di bawah halaman; pilihan ini berlaku di desain Minimal.</p>
+            )}
+          </div>
           </Section>
         </div>
 

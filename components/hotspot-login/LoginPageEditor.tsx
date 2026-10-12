@@ -409,6 +409,16 @@ export function LoginPageEditor({
               Kembali ke warna nama otomatis
             </button>
           )}
+          {swatches(TITLE_PRESETS, page.subtitleColor ?? "", (c) => setPage({ subtitleColor: c }), "Warna teks sambutan")}
+          {page.subtitleColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ subtitleColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna sambutan otomatis
+            </button>
+          )}
           </Section>
 
           <Section title="Warna">
@@ -471,6 +481,20 @@ export function LoginPageEditor({
               Kembali ke warna font otomatis (hitam/putih sesuai warna tombol)
             </button>
           )}
+          {swatches(TITLE_PRESETS, page.textColor ?? "", (c) => setPage({ textColor: c }), "Warna font")}
+          {page.textColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ textColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna font otomatis
+            </button>
+          )}
+          <p className="-mt-1 text-xs leading-relaxed text-faint">
+            Warna font berlaku untuk seluruh tulisan di halaman login, kecuali nama hotspot dan teks sambutan
+            (diatur di bagian &ldquo;Nama &amp; sambutan&rdquo;), teks berjalan, serta tulisan di dalam tombol berwarna.
+          </p>
           {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar")}
           </Section>
 

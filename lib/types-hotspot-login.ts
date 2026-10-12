@@ -51,6 +51,10 @@ export interface HotspotPageConfig {
   primaryBrightness: number;
   /** Warna tulisan nama hotspot. Kosong = otomatis (warna tema yang aman dibaca). */
   titleColor: string;
+  /** Warna teks sambutan (di bawah nama hotspot). Kosong = otomatis (warna teks redup). */
+  subtitleColor: string;
+  /** Warna font umum di halaman login — kecuali nama dan sambutan, yang punya pengaturan sendiri. Kosong = otomatis. */
+  textColor: string;
   /** Warna tombol Login. Kosong = ikut warna tema. */
   buttonColor: string;
   /** Warna font di dalam tombol berwarna (Login dan Voucher/Member aktif). Kosong = otomatis. */

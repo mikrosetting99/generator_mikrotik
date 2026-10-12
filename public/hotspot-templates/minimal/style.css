@@ -134,7 +134,7 @@ body::before {
 .subtitle {
   margin: 6px 0 0;
   font-size: 13px;
-  color: var(--muted);
+  color: {{SUBTITLE_COLOR}};
   line-height: 1.6;
 }
 

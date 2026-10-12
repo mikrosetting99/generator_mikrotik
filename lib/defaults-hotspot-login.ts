@@ -32,6 +32,8 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     primaryColor: "#38bdf8",
     primaryBrightness: 100,
     titleColor: "",
+    subtitleColor: "",
+    textColor: "",
     buttonColor: "",
     buttonTextColor: "",
     bgColor: "#eef2f7",

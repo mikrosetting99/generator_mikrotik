@@ -218,6 +218,8 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const formField = customForm ? rgba(mix(seen, formIsDark ? 0.07 : -0.04), Math.max(formOpacity, 55) / 100) : palette.bg;
 
   const titleCustom = isHexColor(page.titleColor ?? "") ? page.titleColor.trim() : "";
+  const subtitleCustom = isHexColor(page.subtitleColor ?? "") ? page.subtitleColor.trim() : "";
+  const fontCustom = isHexColor(page.textColor ?? "") ? page.textColor.trim() : "";
   const buttonTextCustom = isHexColor(page.buttonTextColor ?? "") ? page.buttonTextColor.trim() : "";
   const buttonBg = isHexColor(page.buttonColor ?? "") ? page.buttonColor.trim() : primary;
 
@@ -305,8 +307,11 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     FORM_BG: formOpacity < 100 ? rgba(baseForm, formOpacity / 100) : baseForm,
     FORM_WIDTH: String(Math.round(Math.max(300, Math.min(720, Number(page.formWidth) || 390)))),
     FORM_IMAGE: hasFormImage ? formImageFileName(page.formImageDataUrl) : "",
-    FORM_TEXT: formText,
-    FORM_MUTED: customForm ? mutedOn(seen) : palette.muted,
+    FORM_TEXT: fontCustom || formText,
+    FORM_MUTED: fontCustom ? blend(fontCustom, seen, 0.35) : customForm ? mutedOn(seen) : palette.muted,
+    // Teks sambutan punya warna sendiri, tidak ikut warna font umum.
+    SUBTITLE_COLOR: subtitleCustom || (customForm ? mutedOn(seen) : palette.muted),
+    SUBTITLE_COLOR_P: subtitleCustom || palette.text,
     FORM_BORDER: formBorder,
     // Warna tema yang terbaca sebagai teks di atas kartu (judul, tautan, harga),
     // dan garis kartu yang diberi semburat warna tema.
@@ -314,7 +319,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     PRIMARY_LINE: blend(formBorder, primary, 0.55),
     // Warna nama hotspot dan tombol Login: pilihan sendiri, atau otomatis mengikuti tema.
     TITLE_COLOR: titleCustom || accentOn(seen, primary),
-    TITLE_T1: titleCustom || "var(--text)",
+    TITLE_T1: titleCustom || palette.text,
     TITLE_T2: titleCustom || "var(--primary)",
     BUTTON_BG: buttonBg,
     BUTTON_BG_DARK: mix(buttonBg, -0.34),
@@ -331,7 +336,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
       ? page.formBorderColor.trim()
       : blend(formBorder, primary, 0.55),
     FORM_FIELD: formField,
-    TEXT: palette.text,
+    TEXT: fontCustom || palette.text,
     MUTED: palette.muted,
     BORDER: palette.border,
   };

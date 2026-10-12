@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.15.0",
+    date: "2026-10-12",
+    title: "Warna font umum dan warna teks sambutan",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "\"Warna font\" untuk seluruh tulisan di halaman login (label, tabel, catatan, footer, kolom isian, dan tombol outline), terpisah dari nama hotspot, teks sambutan, teks berjalan, dan tulisan di dalam tombol berwarna yang masing-masing punya pengaturan sendiri.",
+          "\"Warna teks sambutan\" di bagian Nama & sambutan. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.14.1",
     date: "2026-10-12",
     title: "Warna font tombol bisa diatur",

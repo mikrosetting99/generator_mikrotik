@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.15.0] - 2026-10-12
+
+_Warna font umum dan warna teks sambutan_
+
+### Ditambahkan
+
+- "Warna font" untuk seluruh tulisan di halaman login (label, tabel, catatan, footer, kolom isian, dan tombol outline), terpisah dari nama hotspot, teks sambutan, teks berjalan, dan tulisan di dalam tombol berwarna yang masing-masing punya pengaturan sendiri.
+- "Warna teks sambutan" di bagian Nama & sambutan. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.
+
 ## [1.14.1] - 2026-10-12
 
 _Warna font tombol bisa diatur_

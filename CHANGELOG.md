@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.15.1] - 2026-10-12
+
+_Tombol Voucher dan Member satu warna_
+
+### Diubah
+
+- Tombol Voucher dan Member kini sama-sama berwarna tombol Voucher. Yang dipilih tampil penuh, bercincin, tulisan tebal, dan bertanda centang; yang tidak dipilih dipudarkan. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.
+
 ## [1.15.0] - 2026-10-12
 
 _Warna font umum dan warna teks sambutan_

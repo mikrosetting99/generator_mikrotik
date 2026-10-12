@@ -153,10 +153,13 @@ body::before {
 .small-button {
   flex: 1;
   height: 34px;
-  border: 1px solid var(--line-accent);
+  border: 1px solid var(--primary);
   border-radius: 10px;
-  background: transparent;
-  color: var(--muted);
+  /* Voucher dan Member sama-sama berwarna tombol Voucher; yang tidak dipilih
+     dipudarkan, yang dipilih penuh, bercincin, dan bertanda centang. */
+  background: var(--primary);
+  color: {{VOUCHER_TEXT}};
+  opacity: .5;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -167,9 +170,14 @@ body::before {
 }
 
 .small-button.active {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: {{VOUCHER_TEXT}};
+  opacity: 1;
+  font-weight: 800;
+  box-shadow: 0 0 0 3px {{FOCUS_RING}};
+}
+
+.small-button.active::before {
+  content: "\2713";
+  font-weight: 800;
 }
 
 #infologin {

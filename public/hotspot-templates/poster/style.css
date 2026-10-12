@@ -290,8 +290,11 @@ body {
   height: 38px;
   border: 1px solid rgba(255, 255, 255, .45);
   border-radius: 19px;
-  background: rgba(0, 0, 0, .22);
-  color: var(--text);
+  /* Voucher dan Member sama-sama berwarna tombol Voucher; yang tidak dipilih
+     dipudarkan, yang dipilih penuh, bercincin, dan bertanda centang. */
+  background: var(--primary);
+  color: {{VOUCHER_TEXT}};
+  opacity: .6;
   font-family: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -303,9 +306,14 @@ body {
 }
 
 .small-button.active {
-  background: var(--primary);
-  border-color: rgba(255, 255, 255, .9);
-  color: {{VOUCHER_TEXT}};
+  opacity: 1;
+  border-color: rgba(255, 255, 255, .95);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .35);
+}
+
+.small-button.active::before {
+  content: "\2713";
+  font-weight: 800;
 }
 
 /* ------------------------------------------------------------------ form */

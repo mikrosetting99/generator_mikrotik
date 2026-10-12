@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.15.1",
+    date: "2026-10-12",
+    title: "Tombol Voucher dan Member satu warna",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Tombol Voucher dan Member kini sama-sama berwarna tombol Voucher. Yang dipilih tampil penuh, bercincin, tulisan tebal, dan bertanda centang; yang tidak dipilih dipudarkan. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.15.0",
     date: "2026-10-12",
     title: "Warna font umum dan warna teks sambutan",

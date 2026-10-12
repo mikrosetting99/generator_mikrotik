@@ -97,10 +97,14 @@ export interface HotspotPageConfig {
   marqueePosition: "top" | "bottom";
   /** Warna latar bar teks berjalan — sendiri, tidak ikut warna tombol Voucher. */
   marqueeBgColor: string;
+  /** Teks berjalan tanpa warna latar (hanya tulisan di atas kartu). */
+  marqueeNoBg: boolean;
   /** Warna tulisan teks berjalan. Kosong = otomatis (hitam/putih sesuai latar bar). */
   marqueeTextColor: string;
   showTrial: boolean;
   packages: VoucherPackage[];
+  /** Warna tabel harga (kepala tabel / kartu harga). Kosong = ikut warna tombol Voucher. */
+  tableColor: string;
   terms: string;
   whatsapp: string;
   whatsappLabel: string;

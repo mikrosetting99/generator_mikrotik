@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.14.0",
+    date: "2026-10-12",
+    title: "Warna tabel harga, teks berjalan tanpa latar",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Warna tabel harga bisa dipilih sendiri (kepala tabel di desain Minimal, kartu harga di desain Poster); tulisannya menyesuaikan otomatis agar terbaca. Bila tidak dipilih, ikut warna tombol Voucher.",
+          "Teks berjalan bisa dibuat tanpa warna latar (hanya tulisan, otomatis mengikuti warna teks kartu), dan warna font-nya bisa dipilih sendiri. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.13.1",
     date: "2026-10-12",
     title: "Form tidak lagi terdorong ke bawah oleh logo",

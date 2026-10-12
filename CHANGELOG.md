@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.14.0] - 2026-10-12
+
+_Warna tabel harga, teks berjalan tanpa latar_
+
+### Ditambahkan
+
+- Warna tabel harga bisa dipilih sendiri (kepala tabel di desain Minimal, kartu harga di desain Poster); tulisannya menyesuaikan otomatis agar terbaca. Bila tidak dipilih, ikut warna tombol Voucher.
+- Teks berjalan bisa dibuat tanpa warna latar (hanya tulisan, otomatis mengikuti warna teks kartu), dan warna font-nya bisa dipilih sendiri. Paket halaman login perlu di-upload ulang ke router.
+
 ## [1.13.1] - 2026-10-12
 
 _Form tidak lagi terdorong ke bawah oleh logo_

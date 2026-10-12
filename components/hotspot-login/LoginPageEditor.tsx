@@ -936,15 +936,22 @@ export function LoginPageEditor({
                 </div>
               </div>
               <div className="space-y-2">
-                {swatches(MARQUEE_PRESETS, page.marqueeBgColor ?? "", (c) => setPage({ marqueeBgColor: c }), "Warna bar teks berjalan")}
-                {swatches(TITLE_PRESETS, page.marqueeTextColor ?? "", (c) => setPage({ marqueeTextColor: c }), "Warna tulisan")}
+                <Toggle
+                  checked={page.marqueeNoBg === true}
+                  onChange={(marqueeNoBg) => setPage({ marqueeNoBg })}
+                  label="Tanpa warna latar"
+                  hint="Hanya tulisan yang bergerak, tanpa bar berwarna di belakangnya."
+                />
+                {page.marqueeNoBg !== true &&
+                  swatches(MARQUEE_PRESETS, page.marqueeBgColor ?? "", (c) => setPage({ marqueeBgColor: c }), "Warna latar bar")}
+                {swatches(TITLE_PRESETS, page.marqueeTextColor ?? "", (c) => setPage({ marqueeTextColor: c }), "Warna font")}
                 {page.marqueeTextColor && (
                   <button
                     type="button"
                     onClick={() => setPage({ marqueeTextColor: "" })}
                     className="text-xs text-brand hover:underline"
                   >
-                    Kembali ke warna tulisan otomatis
+                    Kembali ke warna font otomatis
                   </button>
                 )}
                 <p className="text-xs leading-relaxed text-faint">
@@ -957,6 +964,21 @@ export function LoginPageEditor({
 
           {/* Tabel paket */}
           <Section title="Tabel harga paket">
+          <div className="space-y-2">
+            {swatches(PRIMARY_PRESETS, page.tableColor ?? "", (c) => setPage({ tableColor: c }), "Warna tabel harga")}
+            {page.tableColor && (
+              <button
+                type="button"
+                onClick={() => setPage({ tableColor: "" })}
+                className="text-xs text-brand hover:underline"
+              >
+                Kembali ke warna tabel otomatis (sama dengan tombol Voucher)
+              </button>
+            )}
+            <p className="text-xs leading-relaxed text-faint">
+              Warna kepala tabel (desain Minimal) atau kartu harga (desain Poster). Tulisannya menyesuaikan otomatis.
+            </p>
+          </div>
             <div className="flex justify-end">
               <Button size="sm" onClick={() => setPage({ packages: [...page.packages, newPackage()] })}>
                 <Plus className="h-3.5 w-3.5" /> Tambah paket

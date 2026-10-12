@@ -247,7 +247,7 @@ body::before {
 
 /* Tabel harga: kepala berwarna, baris selang-seling, harga di kanan. */
 .table {
-  border: 1px solid var(--line-accent);
+  border: 1px solid {{TABLE_LINE}};
   border-radius: 12px;
   overflow: hidden;
 }
@@ -261,8 +261,8 @@ body::before {
 }
 
 .table th {
-  background: var(--primary);
-  color: var(--on-primary);
+  background: {{TABLE_BG}};
+  color: {{TABLE_TEXT}};
   padding: 9px 11px;
   font-size: 11px;
   font-weight: 700;

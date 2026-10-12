@@ -221,7 +221,14 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const buttonBg = isHexColor(page.buttonColor ?? "") ? page.buttonColor.trim() : primary;
 
   const marqueeBg = isHexColor(page.marqueeBgColor ?? "") ? page.marqueeBgColor.trim() : "#1e293b";
-  const marqueeFg = isHexColor(page.marqueeTextColor ?? "") ? page.marqueeTextColor.trim() : readableOn(marqueeBg);
+  // Tanpa latar, tulisan berada di atas kartu: ikut warna teks kartu, bukan hitam/putih menurut warna bar.
+  const marqueeFg = isHexColor(page.marqueeTextColor ?? "")
+    ? page.marqueeTextColor.trim()
+    : page.marqueeNoBg
+      ? "var(--text)"
+      : readableOn(marqueeBg);
+  const tableCustom = isHexColor(page.tableColor ?? "") ? page.tableColor.trim() : "";
+  const tableBg = tableCustom || primary;
 
   const packages = page.packages.filter(
     (p) => p.name.trim() || p.duration.trim() || p.validity.trim() || p.price.trim(),
@@ -246,8 +253,11 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     SUBTITLE: escapeHtml(page.subtitle.trim()),
     MARQUEE: escapeHtml(page.marquee.trim()),
     // Teks berjalan hanya tampil bila diaktifkan dan ada isinya; letaknya di atas atau di bawah form.
-    MARQUEE_BG: marqueeBg,
+    MARQUEE_BG: page.marqueeNoBg ? "transparent" : marqueeBg,
     MARQUEE_FG: marqueeFg,
+    TABLE_BG: tableBg,
+    TABLE_TEXT: readableOn(tableBg),
+    TABLE_LINE: blend(formBorder, tableBg, 0.55),
     MARQUEE_FG_POSTER: isHexColor(page.marqueeTextColor ?? "") ? page.marqueeTextColor.trim() : "var(--text)",
     MARQUEE_TOP: page.marqueeEnabled !== false && page.marquee.trim() && page.marqueePosition !== "bottom" ? "1" : "",
     MARQUEE_BOTTOM: page.marqueeEnabled !== false && page.marquee.trim() && page.marqueePosition === "bottom" ? "1" : "",
@@ -286,9 +296,9 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     FOCUS_RING: rgba(primary, 0.28),
     // Kartu harga desain Poster sengaja melawan arah latar supaya menonjol di
     // atas foto — latar gelap mendapat kartu terang, dan sebaliknya.
-    CARD: card,
-    ON_CARD: readableOn(card),
-    CARD_MUTED: mutedOn(card),
+    CARD: tableCustom || card,
+    ON_CARD: readableOn(tableCustom || card),
+    CARD_MUTED: mutedOn(tableCustom || card),
     BG: palette.bg,
     SURFACE: palette.surface,
     FORM_BG: formOpacity < 100 ? rgba(baseForm, formOpacity / 100) : baseForm,

@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.8.1] - 2026-10-12
+
+_Kartu login tanpa garis tebal di atas_
+
+### Diubah
+
+- Garis aksen tebal di sisi atas kartu form login dihapus; kartu kembali berbingkai tipis rata di semua sisi. Paket halaman login perlu di-upload ulang ke router.
+
 ## [1.8.0] - 2026-10-12
 
 _Kecerahan warna tema bisa diatur_

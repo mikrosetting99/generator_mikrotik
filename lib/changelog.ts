@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.8.1",
+    date: "2026-10-12",
+    title: "Kartu login tanpa garis tebal di atas",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Garis aksen tebal di sisi atas kartu form login dihapus; kartu kembali berbingkai tipis rata di semua sisi. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.8.0",
     date: "2026-10-12",
     title: "Kecerahan warna tema bisa diatur",

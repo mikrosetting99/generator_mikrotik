@@ -72,6 +72,16 @@ export const MIKROTIK_MODELS: MikrotikModel[] = [
     wireless: "none",
   },
   {
+    id: "e50ug",
+    name: "hEX refresh (E50UG)",
+    series: "hEX & PowerBox",
+    arch: "arm",
+    supports: V7,
+    interfaces: seq(5),
+    wireless: "none",
+    note: "Hanya RouterOS v7 (ARM). 5 port Gigabit Ethernet + 1 USB.",
+  },
+  {
     id: "rb960pgs",
     name: "hEX PoE (RB960PGS)",
     series: "hEX & PowerBox",

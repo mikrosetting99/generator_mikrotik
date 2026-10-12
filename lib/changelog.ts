@@ -27,6 +27,16 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.6.4",
+    date: "2026-10-12",
+    title: "Model baru: hEX refresh (E50UG)",
+    changes: [
+      {
+        type: "added",
+        items: ["Model Mikrotik hEX refresh (E50UG) di pilihan Type Mikrotik: 5 port Gigabit Ethernet, hanya RouterOS v7."],
+      },
+    ],
+  },  {
     version: "1.6.3",
     date: "2026-10-11",
     title: "Latar tidak lagi terpotong di layar laptop",

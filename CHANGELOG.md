@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.6.4] - 2026-10-12
+
+_Model baru: hEX refresh (E50UG)_
+
+### Ditambahkan
+
+- Model Mikrotik hEX refresh (E50UG) di pilihan Type Mikrotik: 5 port Gigabit Ethernet, hanya RouterOS v7.
+
 ## [1.6.3] - 2026-10-11
 
 _Latar tidak lagi terpotong di layar laptop_

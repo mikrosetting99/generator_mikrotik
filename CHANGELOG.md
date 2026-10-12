@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.13.1] - 2026-10-12
+
+_Form tidak lagi terdorong ke bawah oleh logo_
+
+### Diperbaiki
+
+- Saat logo diletakkan di atas form, kartu form tetap tepat di tengah layar: logo menempati ruang kosong di atasnya (dan footer di luar form di ruang kosong bawahnya) sehingga tidak mendorong form ke bawah. Paket halaman login perlu di-upload ulang ke router.
+
 ## [1.13.0] - 2026-10-12
 
 _Letak logo dan footer, saklar WhatsApp_

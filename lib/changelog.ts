@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.13.1",
+    date: "2026-10-12",
+    title: "Form tidak lagi terdorong ke bawah oleh logo",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Saat logo diletakkan di atas form, kartu form tetap tepat di tengah layar: logo menempati ruang kosong di atasnya (dan footer di luar form di ruang kosong bawahnya) sehingga tidak mendorong form ke bawah. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.13.0",
     date: "2026-10-12",
     title: "Letak logo dan footer, saklar WhatsApp",

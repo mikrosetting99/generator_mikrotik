@@ -341,30 +341,41 @@ marquee { display: block; }
 .info.info-bottom { margin: 14px 0 0; }
 
 /* Pembungkus halaman login: logo (bila di atas form), kartu form, dan footer
-   (bila di bawah form) tersusun ke bawah dan selebar kartu. */
+   (bila di bawah form). Tiga baris: baris atas dan bawah sama tinggi, jadi kartu
+   form tetap tepat di tengah layar — logo tinggal di ruang kosong atasnya dan
+   footer di ruang kosong bawahnya, tidak mendorong kartu ke bawah. Bila layar
+   terlalu pendek, barisnya menyesuaikan isi dan halaman bisa digulir. */
 .stack {
   width: 100%;
   max-width: {{FORM_WIDTH}}px;
-  margin: auto;
-  display: flex;
-  flex-direction: column;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(auto, 1fr) auto minmax(auto, 1fr);
 }
+
+.stack .main { grid-row: 2; margin: 0 auto; }
 
 /* Logo di luar kartu, di atas form. */
 .logo-above {
+  grid-row: 1;
+  align-self: end;
+  justify-self: center;
   display: block;
   margin: 0 auto 16px;
 }
 
 /* Footer di luar kartu, di bawah form. */
 .foot-outside {
+  grid-row: 3;
+  align-self: start;
+  justify-self: center;
   margin: 14px 0 0;
   text-align: center;
 }
 {{#BG_IMAGE}}
 /* Di atas gambar latar, footer diberi alas gelap tipis agar tetap terbaca. */
 .foot-outside {
-  align-self: center;
   color: #fff;
   background: rgba(0, 0, 0, .45);
   padding: 6px 12px;

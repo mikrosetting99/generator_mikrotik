@@ -8,6 +8,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.12.0] - 2026-10-12
+
+_Warna teks berjalan sendiri, warna tombol Voucher, latar bawaan baru_
+
+### Ditambahkan
+
+- Teks berjalan punya warna sendiri: warna bar (bawaan abu kebiruan gelap #1e293b) dan warna tulisan (otomatis terbaca, atau pilih sendiri), tidak lagi mengikuti warna tema.
+
+### Diubah
+
+- Pengaturan "Warna tema" diganti "Warna tombol Voucher" (beserta kecerahannya). Warna ini dipakai tombol Voucher/Member yang aktif, dan tetap menjadi dasar warna judul tabel, tautan, serta tombol Login bila warna tombol Login tidak dipilih sendiri.
+- Warna latar halaman bawaan kini #eef2f7.
+
 ## [1.11.0] - 2026-10-12
 
 _Teks berjalan bisa dimatikan dan dipindah, pengaturan tampilan dipisah_

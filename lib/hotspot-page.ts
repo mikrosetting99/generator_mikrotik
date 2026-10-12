@@ -36,7 +36,7 @@ export const TEMPLATES: HotspotTemplate[] = [
     name: "Minimal",
     description: "Kartu login sederhana di tengah layar. Cocok untuk hampir semua kebutuhan.",
     defaultPrimary: "#2563eb",
-    defaultBg: "#ffffff",
+    defaultBg: "#eef2f7",
   },
   {
     id: "poster",
@@ -220,6 +220,9 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const titleCustom = isHexColor(page.titleColor ?? "") ? page.titleColor.trim() : "";
   const buttonBg = isHexColor(page.buttonColor ?? "") ? page.buttonColor.trim() : primary;
 
+  const marqueeBg = isHexColor(page.marqueeBgColor ?? "") ? page.marqueeBgColor.trim() : "#1e293b";
+  const marqueeFg = isHexColor(page.marqueeTextColor ?? "") ? page.marqueeTextColor.trim() : readableOn(marqueeBg);
+
   const packages = page.packages.filter(
     (p) => p.name.trim() || p.duration.trim() || p.validity.trim() || p.price.trim(),
   );
@@ -243,6 +246,9 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     SUBTITLE: escapeHtml(page.subtitle.trim()),
     MARQUEE: escapeHtml(page.marquee.trim()),
     // Teks berjalan hanya tampil bila diaktifkan dan ada isinya; letaknya di atas atau di bawah form.
+    MARQUEE_BG: marqueeBg,
+    MARQUEE_FG: marqueeFg,
+    MARQUEE_FG_POSTER: isHexColor(page.marqueeTextColor ?? "") ? page.marqueeTextColor.trim() : "var(--text)",
     MARQUEE_TOP: page.marqueeEnabled !== false && page.marquee.trim() && page.marqueePosition !== "bottom" ? "1" : "",
     MARQUEE_BOTTOM: page.marqueeEnabled !== false && page.marquee.trim() && page.marqueePosition === "bottom" ? "1" : "",
     TERMS: escapeHtml(page.terms.trim()),

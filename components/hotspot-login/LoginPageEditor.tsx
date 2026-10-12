@@ -31,6 +31,7 @@ const DEVICES = [
 
 const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", "#f43f5e", "#14b8a6"];
 const TITLE_PRESETS = ["#0f172a", "#ffffff", "#2563eb", "#dc2626", "#16a34a", "#f59e0b", "#7c3aed"];
+const MARQUEE_PRESETS = ["#1e293b", "#0f172a", "#dc2626", "#16a34a", "#f59e0b", "#7c3aed", "#2563eb"];
 const BORDER_PRESETS = ["#e2e8f0", "#94a3b8", "#334155", "#0f172a", "#ffffff"];
 const FORM_PRESETS = ["#ffffff", "#f1f5f9", "#fef3c7", "#e0f2fe", "#1e293b", "#0f172a"];
 const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
@@ -410,11 +411,11 @@ export function LoginPageEditor({
           </Section>
 
           <Section title="Warna">
-          {swatches(PRIMARY_PRESETS, page.primaryColor, (c) => setPage({ primaryColor: c }), "Warna tema")}
+          {swatches(PRIMARY_PRESETS, page.primaryColor, (c) => setPage({ primaryColor: c }), "Warna tombol Voucher")}
           <div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
-                Kecerahan warna tema
+                Kecerahan warna tombol Voucher
               </span>
               <span className="flex items-center gap-2 font-mono text-[11px] text-brand">
                 <span
@@ -431,7 +432,7 @@ export function LoginPageEditor({
               max={150}
               step={5}
               value={page.primaryBrightness ?? 100}
-              aria-label="Kecerahan warna tema"
+              aria-label="Kecerahan warna tombol Voucher"
               onChange={(e) => setPage({ primaryBrightness: Number(e.target.value) })}
               className="mt-2 w-full accent-[color:var(--color-brand)]"
             />
@@ -456,7 +457,7 @@ export function LoginPageEditor({
               onClick={() => setPage({ buttonColor: "" })}
               className="-mt-1 text-xs text-brand hover:underline"
             >
-              Kembali ke warna tombol otomatis (ikut warna tema)
+              Kembali ke warna tombol otomatis (sama dengan tombol Voucher)
             </button>
           )}
           {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar")}
@@ -905,6 +906,22 @@ export function LoginPageEditor({
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className="space-y-2">
+                {swatches(MARQUEE_PRESETS, page.marqueeBgColor ?? "", (c) => setPage({ marqueeBgColor: c }), "Warna bar teks berjalan")}
+                {swatches(TITLE_PRESETS, page.marqueeTextColor ?? "", (c) => setPage({ marqueeTextColor: c }), "Warna tulisan")}
+                {page.marqueeTextColor && (
+                  <button
+                    type="button"
+                    onClick={() => setPage({ marqueeTextColor: "" })}
+                    className="text-xs text-brand hover:underline"
+                  >
+                    Kembali ke warna tulisan otomatis
+                  </button>
+                )}
+                <p className="text-xs leading-relaxed text-faint">
+                  Warna teks berjalan berdiri sendiri — tidak ikut warna tombol Voucher.
+                </p>
               </div>
             </>
           )}

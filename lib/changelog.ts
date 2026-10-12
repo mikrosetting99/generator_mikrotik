@@ -27,6 +27,25 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.12.0",
+    date: "2026-10-12",
+    title: "Warna teks berjalan sendiri, warna tombol Voucher, latar bawaan baru",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Teks berjalan punya warna sendiri: warna bar (bawaan abu kebiruan gelap #1e293b) dan warna tulisan (otomatis terbaca, atau pilih sendiri), tidak lagi mengikuti warna tema.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Pengaturan \"Warna tema\" diganti \"Warna tombol Voucher\" (beserta kecerahannya). Warna ini dipakai tombol Voucher/Member yang aktif, dan tetap menjadi dasar warna judul tabel, tautan, serta tombol Login bila warna tombol Login tidak dipilih sendiri.",
+          "Warna latar halaman bawaan kini #eef2f7.",
+        ],
+      },
+    ],
+  },  {
     version: "1.11.0",
     date: "2026-10-12",
     title: "Teks berjalan bisa dimatikan dan dipindah, pengaturan tampilan dipisah",

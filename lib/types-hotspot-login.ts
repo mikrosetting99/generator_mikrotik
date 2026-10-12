@@ -93,6 +93,10 @@ export interface HotspotPageConfig {
   marqueeEnabled: boolean;
   /** Letak teks berjalan: di atas form (bawaan) atau di bawah form. */
   marqueePosition: "top" | "bottom";
+  /** Warna latar bar teks berjalan — sendiri, tidak ikut warna tombol Voucher. */
+  marqueeBgColor: string;
+  /** Warna tulisan teks berjalan. Kosong = otomatis (hitam/putih sesuai latar bar). */
+  marqueeTextColor: string;
   showTrial: boolean;
   packages: VoucherPackage[];
   terms: string;

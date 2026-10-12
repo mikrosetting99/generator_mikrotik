@@ -184,7 +184,7 @@ body {
 .info {
   margin: 12px 0 0;
   font-size: 13px;
-  color: var(--text);
+  color: {{MARQUEE_FG_POSTER}};
   text-shadow: 0 1px 4px rgba(0, 0, 0, .6);
   overflow: hidden;
 }

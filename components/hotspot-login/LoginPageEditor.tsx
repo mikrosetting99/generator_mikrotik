@@ -12,6 +12,7 @@ import {
   templateVars,
   whatsappLink,
 } from "@/lib/hotspot-page";
+import { adjustBrightness } from "@/lib/color";
 import { PRESET_LIMITS, type PresetKind } from "@/lib/preset-kinds";
 import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type LoginMode } from "@/lib/types-hotspot-login";
 
@@ -395,6 +396,44 @@ export function LoginPageEditor({
           </div>
 
           {swatches(PRIMARY_PRESETS, page.primaryColor, (c) => setPage({ primaryColor: c }), "Warna tema")}
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                Kecerahan warna tema
+              </span>
+              <span className="flex items-center gap-2 font-mono text-[11px] text-brand">
+                <span
+                  aria-hidden
+                  className="h-3.5 w-3.5 rounded border border-line"
+                  style={{ background: adjustBrightness(page.primaryColor, page.primaryBrightness ?? 100) }}
+                />
+                {page.primaryBrightness ?? 100}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min={50}
+              max={150}
+              step={5}
+              value={page.primaryBrightness ?? 100}
+              aria-label="Kecerahan warna tema"
+              onChange={(e) => setPage({ primaryBrightness: Number(e.target.value) })}
+              className="mt-2 w-full accent-[color:var(--color-brand)]"
+            />
+            <div className="mt-1 flex items-center justify-between text-xs text-faint">
+              <span>Lebih gelap</span>
+              {(page.primaryBrightness ?? 100) !== 100 && (
+                <button
+                  type="button"
+                  onClick={() => setPage({ primaryBrightness: 100 })}
+                  className="text-brand hover:underline"
+                >
+                  Atur ulang 100%
+                </button>
+              )}
+              <span>Lebih terang</span>
+            </div>
+          </div>
           {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar")}
           {swatches(FORM_PRESETS, page.formBgColor ?? "", (c) => setPage({ formBgColor: c }), "Warna form")}
           {page.formBgColor && (

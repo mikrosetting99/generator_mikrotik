@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.8.0",
+    date: "2026-10-12",
+    title: "Kecerahan warna tema bisa diatur",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Slider \"Kecerahan warna tema\" (50–150%) di Halaman Login Hotspot: menggelapkan atau menerangkan warna tema yang dipilih tanpa mengganti warnanya, lengkap dengan contoh warna hasil dan tombol atur ulang 100%. Warna teks di atas tombol dan tabel menyesuaikan otomatis agar tetap terbaca.",
+        ],
+      },
+    ],
+  },  {
     version: "1.7.3",
     date: "2026-10-12",
     title: "Warna tema lebih menyatu di halaman login",

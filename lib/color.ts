@@ -52,6 +52,16 @@ export function mix(hex: string, amount: number): string {
   return toHex(r + (target - r) * t, g + (target - g) * t, b + (target - b) * t);
 }
 
+/**
+ * Atur kecerahan sebuah warna dalam persen: 100 = apa adanya, di bawah 100
+ * makin gelap (menuju hitam), di atas 100 makin terang (menuju putih).
+ */
+export function adjustBrightness(hex: string, percent: number): string {
+  if (!isHexColor(hex)) return hex;
+  const p = Math.max(0, Math.min(200, Number.isFinite(percent) ? percent : 100));
+  return p === 100 ? hex.trim() : mix(hex, (p - 100) / 100);
+}
+
 /** Bentuk rgba() dari sebuah warna hex, untuk lapisan transparan. */
 export function rgba(hex: string, alpha: number): string {
   const [r, g, b] = toRgb(isHexColor(hex) ? hex : "#000000");

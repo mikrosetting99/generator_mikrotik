@@ -47,6 +47,8 @@ export interface VoucherPackage {
 export interface HotspotPageConfig {
   template: HotspotTemplateId;
   primaryColor: string;
+  /** Kecerahan warna tema dalam persen, 50–150. 100 = warna apa adanya. */
+  primaryBrightness: number;
   /** Warna latar bebas; warna teks & garis diturunkan dari kecerahannya. */
   bgColor: string;
   /** Warna latar kartu form. Kosong = diturunkan otomatis dari warna latar. */

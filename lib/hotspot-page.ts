@@ -1,4 +1,4 @@
-import { accentOn, blend, contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
+import { accentOn, adjustBrightness, blend, contrastRatio, derivePalette, isHexColor, mix, mutedOn, readableOn, rgba } from "./color";
 import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type HotspotTemplateId, type VoucherPackage } from "./types-hotspot-login";
 import type { ZipEntry } from "./zip";
 
@@ -185,7 +185,10 @@ function packageCard(pkg: VoucherPackage): string {
 
 export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const template = getTemplate(page.template);
-  const primary = isHexColor(page.primaryColor) ? page.primaryColor.trim() : template.defaultPrimary;
+  const primary = adjustBrightness(
+    isHexColor(page.primaryColor) ? page.primaryColor.trim() : template.defaultPrimary,
+    Math.max(50, Math.min(150, Number(page.primaryBrightness) || 100)),
+  );
   const bgColor = isHexColor(page.bgColor) ? page.bgColor.trim() : template.defaultBg;
   const palette = derivePalette(bgColor, primary);
   // Kartu dipilih dari arah yang paling menjauh dari latar. Menebak lewat

@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.8.0] - 2026-10-12
+
+_Kecerahan warna tema bisa diatur_
+
+### Ditambahkan
+
+- Slider "Kecerahan warna tema" (50–150%) di Halaman Login Hotspot: menggelapkan atau menerangkan warna tema yang dipilih tanpa mengganti warnanya, lengkap dengan contoh warna hasil dan tombol atur ulang 100%. Warna teks di atas tombol dan tabel menyesuaikan otomatis agar tetap terbaca.
+
 ## [1.7.3] - 2026-10-12
 
 _Warna tema lebih menyatu di halaman login_

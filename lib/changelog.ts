@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.16.0",
+    date: "2026-10-13",
+    title: "Template Halaman Login Hotspot siap pakai",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Template siap pakai: admin merancang desain di editor lalu menerbitkannya lewat tombol Template (seluruh pengaturan, termasuk logo dan latar, ikut tersimpan). Siapa pun, juga tanpa login, bisa memuat template itu ke editor lalu menyesuaikannya.",
+          "Admin bisa menimpa isi template dengan desain yang sedang dibuka, atau menghapusnya, dari tombol Template maupun dari bagian \"Template Halaman Login Hotspot\" di Dashboard Admin.",
+        ],
+      },
+    ],
+  },  {
     version: "1.15.1",
     date: "2026-10-12",
     title: "Tombol Voucher dan Member satu warna",

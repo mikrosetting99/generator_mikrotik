@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.16.0] - 2026-10-13
+
+_Template Halaman Login Hotspot siap pakai_
+
+### Ditambahkan
+
+- Template siap pakai: admin merancang desain di editor lalu menerbitkannya lewat tombol Template (seluruh pengaturan, termasuk logo dan latar, ikut tersimpan). Siapa pun, juga tanpa login, bisa memuat template itu ke editor lalu menyesuaikannya.
+- Admin bisa menimpa isi template dengan desain yang sedang dibuka, atau menghapusnya, dari tombol Template maupun dari bagian "Template Halaman Login Hotspot" di Dashboard Admin.
+
 ## [1.15.1] - 2026-10-12
 
 _Tombol Voucher dan Member satu warna_

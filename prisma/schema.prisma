@@ -77,6 +77,23 @@ model MenuUsage {
   @@map("menu_usage")
 }
 
+/// Template Halaman Login Hotspot yang sudah jadi: dibuat admin, bisa dimuat siapa saja.
+/// Config memuat seluruh pengaturan desain, termasuk gambar (data URI).
+model HotspotTemplate {
+  id           String   @id @default(cuid())
+  name         String
+  description  String   @default("")
+  /// Ringkasan untuk daftar (tanpa memuat config besar): jenis desain dan dua warna utama.
+  design       String   @default("minimal")
+  primaryColor String   @default("#38bdf8")
+  bgColor      String   @default("#eef2f7")
+  config       Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("hotspot_templates")
+}
+
 /// Galeri latar siap pakai yang diunggah admin untuk Halaman Login Hotspot.
 /// Pengguna tinggal memilih, atau tetap bisa mengunggah latar sendiri.
 model BackgroundPreset {

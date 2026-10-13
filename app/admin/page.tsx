@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminTemplates } from "@/components/admin/AdminTemplates";
 import { AdminSection } from "@/components/admin/AdminSection";
 import { AdminBackgrounds } from "@/components/admin/AdminBackgrounds";
 import { AdminSiteSettings } from "@/components/admin/AdminSiteSettings";
@@ -94,6 +95,7 @@ export default async function AdminDashboardPage() {
 
         <AdminSiteSettings initial={settings} usage={usage} />
 
+        <AdminTemplates />
         <AdminBackgrounds kind="logo" />
         <AdminBackgrounds kind="background" />
 

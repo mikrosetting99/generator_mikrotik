@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, Database, Download, FileText } from "@/components/icons";
+import { ArrowLeft, Database, Download, FileText, Wand } from "@/components/icons";
+import { TemplateGallery } from "@/components/hotspot-login/TemplateGallery";
 import { SaveLoadPage } from "@/components/hotspot-login/SaveLoadPage";
 import { LoginPageEditor } from "@/components/hotspot-login/LoginPageEditor";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -19,6 +20,7 @@ export function HotspotLoginBuilder() {
   const [buildingZip, setBuildingZip] = useState(false);
   const [zipError, setZipError] = useState("");
   const [storeOpen, setStoreOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [loaded, setLoaded] = useState<{ id: string; name: string } | null>(null);
 
   const setPage = (partial: Partial<HotspotPageConfig>) =>
@@ -61,6 +63,10 @@ export function HotspotLoginBuilder() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Button onClick={() => setTemplatesOpen(true)}>
+              <Wand className="h-4 w-4" />
+              <span className="hidden sm:inline">Template</span>
+            </Button>
             <Button onClick={() => setStoreOpen(true)}>
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">Simpan / Muat</span>
@@ -82,6 +88,22 @@ export function HotspotLoginBuilder() {
         </p>
         <LoginPageEditor page={page} setPage={setPage} />
       </div>
+
+      <Modal
+        open={templatesOpen}
+        onClose={() => setTemplatesOpen(false)}
+        title="Template siap pakai"
+        description="Pilih desain yang sudah jadi, lalu sesuaikan sesukanya. Logo dan latar Anda sendiri tetap bisa diunggah."
+      >
+        <TemplateGallery
+          page={page}
+          onClose={() => setTemplatesOpen(false)}
+          onLoad={(next) => {
+            setPageState(next);
+            setLoaded(null);
+          }}
+        />
+      </Modal>
 
       <Modal
         open={storeOpen}

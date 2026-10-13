@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.17.0] - 2026-10-13
+
+_Thumbnail dan pratinjau template_
+
+### Ditambahkan
+
+- Daftar template menampilkan thumbnail halaman login sungguhan (dimuat saat kartunya terlihat), lengkap dengan nama, keterangan, dan warna utama.
+- Tombol Pratinjau membuka pratinjau besar yang bisa dicoba (HP iPhone 13 atau Laptop), dengan tombol "Pakai template ini".
+
 ## [1.16.1] - 2026-10-13
 
 _Jadikan desain tersimpan sebagai template_

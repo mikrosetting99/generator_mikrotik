@@ -5,11 +5,8 @@ import { Plus, Trash, Upload } from "@/components/icons";
 import { Button, EmptyState, Field, Note, Select, TextInput, Toggle } from "@/components/ui";
 import { newPackage } from "@/lib/defaults-hotspot-login";
 import {
-  fetchLoginTemplate,
-  fetchStyle,
+  buildPreviewHtml,
   isHexColor,
-  renderTemplate,
-  templateVars,
   whatsappLink,
 } from "@/lib/hotspot-page";
 import { adjustBrightness } from "@/lib/color";
@@ -224,34 +221,8 @@ export function LoginPageEditor({
   useEffect(() => {
     let active = true;
     const timer = setTimeout(() => {
-      Promise.all([fetchLoginTemplate(page.template), fetchStyle(page.template)])
-        .then(([source, style]) => {
-          if (!active) return;
-          // Di pratinjau, berkas gambar diganti data URI-nya langsung.
-          const vars = {
-            ...templateVars(page),
-            LOGO: page.logoDataUrl,
-            BG_IMAGE: page.bgImageDataUrl,
-            FORM_IMAGE: page.formImageDataUrl,
-          };
-          const html = renderTemplate(source, vars)
-            // Sisipkan CSS langsung, karena iframe tidak bisa memuat style.css.
-            .replace(
-              /<link rel="stylesheet" href="style\.css">/,
-              `<style>${renderTemplate(style, vars)}</style>`,
-            )
-            // Halaman asli memindahkan kursor ke kolom username saat dimuat.
-            // Di dalam iframe, fokus itu membuat browser menggulung halaman ke
-            // posisi pratinjau — form di atasnya jadi tersentak setiap render.
-            .replace(/^\s*username\.focus\(\);\s*$/gm, "")
-            .replace(/\$\(if error\)[\s\S]*?\$\(endif\)/g, "")
-            .replace(/\$\(if chap-id\)[\s\S]*?\$\(endif\)/g, "")
-            .replace(/\$\(if trial == 'yes'\)/g, "")
-            .replace(/\$\(endif\)/g, "")
-            .replace(/\$\(ip-address\)/g, "192.168.20.25")
-            .replace(/\$\([^)]*\)/g, "");
-          setPreview(html);
-        })
+      buildPreviewHtml(page)
+        .then((html) => active && setPreview(html))
         .catch(() => active && setPreview(""));
     }, 300);
 

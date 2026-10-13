@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.17.0",
+    date: "2026-10-13",
+    title: "Thumbnail dan pratinjau template",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Daftar template menampilkan thumbnail halaman login sungguhan (dimuat saat kartunya terlihat), lengkap dengan nama, keterangan, dan warna utama.",
+          "Tombol Pratinjau membuka pratinjau besar yang bisa dicoba (HP iPhone 13 atau Laptop), dengan tombol \"Pakai template ini\".",
+        ],
+      },
+    ],
+  },  {
     version: "1.16.1",
     date: "2026-10-13",
     title: "Jadikan desain tersimpan sebagai template",

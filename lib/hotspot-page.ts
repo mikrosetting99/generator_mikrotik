@@ -391,6 +391,35 @@ export function fetchStyle(id: HotspotTemplateId): Promise<string> {
   return fetchTemplateFile(`${getTemplate(id).id}/style.css`);
 }
 
+/**
+ * HTML satu halaman login yang berdiri sendiri, untuk pratinjau (editor maupun
+ * daftar template): login.html + style.css digabung dan variabel RouterOS
+ * diganti contoh nilai supaya terbaca wajar.
+ */
+export async function buildPreviewHtml(page: HotspotPageConfig): Promise<string> {
+  const [source, style] = await Promise.all([fetchLoginTemplate(page.template), fetchStyle(page.template)]);
+  // Di pratinjau, berkas gambar diganti data URI-nya langsung.
+  const vars = {
+    ...templateVars(page),
+    LOGO: page.logoDataUrl,
+    BG_IMAGE: page.bgImageDataUrl,
+    FORM_IMAGE: page.formImageDataUrl,
+  };
+  return (
+    renderTemplate(source, vars)
+      // Sisipkan CSS langsung, karena iframe tidak bisa memuat style.css.
+      .replace(/<link rel="stylesheet" href="style\.css">/, `<style>${renderTemplate(style, vars)}</style>`)
+      // Halaman asli memindahkan kursor ke kolom username saat dimuat. Di dalam
+      // iframe, fokus itu membuat browser menggulung halaman ke posisi pratinjau.
+      .replace(/^\s*username\.focus\(\);\s*$/gm, "")
+      .replace(/\$\(if error\)[\s\S]*?\$\(endif\)/g, "")
+      .replace(/\$\(if chap-id\)[\s\S]*?\$\(endif\)/g, "")
+      .replace(/\$\(if trial == 'yes'\)/g, "")
+      .replace(/\$\(endif\)/g, "")
+      .replace(/\$\(ip-address\)/g, "192.168.20.25")
+      .replace(/\$\([^)]*\)/g, "")
+  );
+}
 function readmeText(page: HotspotPageConfig, logoFile: string, bgFile: string, formFile: string): string {
   const template = getTemplate(page.template);
   const link = page.whatsappEnabled === false ? "" : whatsappLink(page.whatsapp);

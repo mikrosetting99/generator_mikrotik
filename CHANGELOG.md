@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.20.0] - 2026-10-13
+
+_Menu Autoflush DNS_
+
+### Ditambahkan
+
+- Menu baru Autoflush DNS (/autoflush-dns): membuat scheduler Mikrotik yang menjalankan /ip dns cache flush secara berkala. Interval (menit/jam/hari/minggu) dan jam mulai bisa diatur, ada pilihan cepat (tiap 6 jam, 12 jam, harian 03:00, mingguan), opsi menimpa scheduler lama, dan opsi mencatat setiap flush ke log. Hasilnya script siap tempel (v6 dan v7) atau file .rsc.
+- Menu ini masuk ke grup Mikrotik bila grup itu ada, dan ke grup Konfigurasi bila belum; urutan dan grupnya tetap bisa diatur dari Dashboard Admin.
+
 ## [1.19.0] - 2026-10-13
 
 _Batas gambar 300 KB, daftar template dirapikan, pengaturan warna berurutan_

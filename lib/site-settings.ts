@@ -76,6 +76,15 @@ export interface SiteSettings {
   menus: MenuSetting[];
 }
 
+/**
+ * Grup tujuan menu bawaan yang baru ditambahkan ke simpanan lama: grup pertama
+ * yang memang ada di pengaturan, jadi tidak jatuh ke "Lainnya" bila admin sudah
+ * mengganti nama grup bawaan.
+ */
+const GROUP_CANDIDATES: Record<string, string[]> = {
+  "dns-flush": ["Mikrotik", "Konfigurasi"],
+};
+
 export const MAX_CUSTOM_MENUS = 12;
 export const MAX_GROUPS = 8;
 export const DEFAULT_GROUPS = ["Konfigurasi", "Alat"];
@@ -125,6 +134,18 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     description: "Periksa router bermasalah beserta saran perbaikannya.",
     href: "/cek",
     icon: "shield",
+    visible: true,
+    devMode: false,
+    requireLogin: false,
+  },
+  {
+    id: "dns-flush",
+    group: "Konfigurasi",
+    builtin: true,
+    title: "Autoflush DNS",
+    description: "Bersihkan cache DNS router otomatis lewat scheduler.",
+    href: "/autoflush-dns",
+    icon: "terminal",
     visible: true,
     devMode: false,
     requireLogin: false,
@@ -283,7 +304,10 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
   }
   // Menu bawaan yang belum ada di simpanan lama tetap muncul, di urutan paling bawah.
   for (const def of BUILTIN_MENUS) {
-    if (!seen.has(def.id)) menus.push({ ...def, group: pickGroup(def.group, def.group) });
+    if (seen.has(def.id)) continue;
+    const candidates = GROUP_CANDIDATES[def.id] ?? [def.group];
+    const group = candidates.find((g) => groups.includes(g)) ?? "";
+    menus.push({ ...def, group });
   }
 
   const logo = typeof input.logoDataUrl === "string" ? input.logoDataUrl : "";

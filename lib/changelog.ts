@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.20.0",
+    date: "2026-10-13",
+    title: "Menu Autoflush DNS",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Menu baru Autoflush DNS (/autoflush-dns): membuat scheduler Mikrotik yang menjalankan /ip dns cache flush secara berkala. Interval (menit/jam/hari/minggu) dan jam mulai bisa diatur, ada pilihan cepat (tiap 6 jam, 12 jam, harian 03:00, mingguan), opsi menimpa scheduler lama, dan opsi mencatat setiap flush ke log. Hasilnya script siap tempel (v6 dan v7) atau file .rsc.",
+          "Menu ini masuk ke grup Mikrotik bila grup itu ada, dan ke grup Konfigurasi bila belum; urutan dan grupnya tetap bisa diatur dari Dashboard Admin.",
+        ],
+      },
+    ],
+  },  {
     version: "1.19.0",
     date: "2026-10-13",
     title: "Batas gambar 300 KB, daftar template dirapikan, pengaturan warna berurutan",

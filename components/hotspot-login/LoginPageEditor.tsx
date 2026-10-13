@@ -10,6 +10,7 @@ import {
   whatsappLink,
 } from "@/lib/hotspot-page";
 import { adjustBrightness } from "@/lib/color";
+import { compressImage, MAX_INPUT_BYTES } from "@/lib/image-compress";
 import { PRESET_LIMITS, type PresetKind } from "@/lib/preset-kinds";
 import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type LoginMode } from "@/lib/types-hotspot-login";
 
@@ -51,10 +52,10 @@ const IMAGE_LIMITS = {
     hint: "Ideal sekitar 700 × 900 px, JPG, maksimal 300 KB. Tampil di dalam kartu form.",
   },
   background: {
-    maxBytes: 600 * 1024,
+    maxBytes: 200 * 1024,
     idealWidth: 1920,
     idealHeight: 1080,
-    hint: "Ideal 1600 × 900 px (rasio 16:9), JPG, maksimal 600 KB.",
+    hint: "Ideal 1920 × 1080 px (rasio 16:9), JPG, maksimal 200 KB. Gambar lebih besar dikompres otomatis.",
   },
 } as const;
 
@@ -110,6 +111,8 @@ export function LoginPageEditor({
   const bgInput = useRef<HTMLInputElement>(null);
   const [logoError, setLogoError] = useState("");
   const [bgError, setBgError] = useState("");
+  const [bgNote, setBgNote] = useState("");
+  const [bgBusy, setBgBusy] = useState(false);
   const [formError, setFormError] = useState("");
   const [gallery, setGallery] = useState<{ id: string; name: string }[]>([]);
   const [logoGallery, setLogoGallery] = useState<{ id: string; name: string }[]>([]);
@@ -263,6 +266,37 @@ export function LoginPageEditor({
       onError("Berkas harus berupa gambar (PNG, JPG, WEBP, atau SVG).");
       return;
     }
+
+    // Latar: gambar besar dikompres otomatis supaya masuk batas, bukan ditolak.
+    if (kind === "background") {
+      if (file.type === "image/svg+xml") {
+        onError("Latar harus berupa foto (JPG, PNG, atau WEBP), bukan SVG.");
+        return;
+      }
+      if (file.size > MAX_INPUT_BYTES) {
+        onError(`Berkas ${formatSize(file.size)} terlalu besar untuk diproses — maksimal ${formatSize(MAX_INPUT_BYTES)}.`);
+        return;
+      }
+      setBgBusy(true);
+      setBgNote("");
+      compressImage(file, { maxBytes: limit.maxBytes, maxEdge: 1920 })
+        .then((r) => {
+          if (r.bytes > limit.maxBytes) {
+            onError(`Gambar masih ${formatSize(r.bytes)} setelah dikompres — maksimal ${formatSize(limit.maxBytes)}. Coba gambar yang lebih sederhana.`);
+            return;
+          }
+          setPage({ bgImageDataUrl: r.dataUrl, bgImageName: file.name });
+          setBgNote(
+            r.compressed
+              ? `Dikompres otomatis: ${formatSize(r.originalBytes)} → ${formatSize(r.bytes)} (${r.width} × ${r.height} px).`
+              : `Gambar sudah cukup kecil (${formatSize(r.bytes)}), dipakai apa adanya.`,
+          );
+        })
+        .catch((e: unknown) => onError(e instanceof Error ? e.message : "Gagal memproses gambar."))
+        .finally(() => setBgBusy(false));
+      return;
+    }
+
     if (file.size > limit.maxBytes) {
       onError(
         `Ukuran berkas ${formatSize(file.size)} — maksimal ${formatSize(limit.maxBytes)}. ` +
@@ -682,7 +716,7 @@ export function LoginPageEditor({
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Button size="sm" onClick={() => bgInput.current?.click()}>
                     <Upload className="h-3.5 w-3.5" />
-                    {page.bgImageDataUrl ? "Ganti" : "Unggah latar"}
+                    {bgBusy ? "Mengompres…" : page.bgImageDataUrl ? "Ganti" : "Unggah latar"}
                   </Button>
                   {page.bgImageDataUrl && (
                     <Button
@@ -691,7 +725,10 @@ export function LoginPageEditor({
                       className="px-2"
                       ariaLabel="Hapus gambar latar"
                       title="Hapus gambar latar"
-                      onClick={() => setPage({ bgImageDataUrl: "", bgImageName: "" })}
+                      onClick={() => {
+                        setPage({ bgImageDataUrl: "", bgImageName: "" });
+                        setBgNote("");
+                      }}
                     >
                       <Trash className="h-3.5 w-3.5" />
                     </Button>
@@ -718,6 +755,7 @@ export function LoginPageEditor({
                   />
                 )}
                 {recommendBox("background")}
+                {bgNote && <p className="mt-1.5 text-xs text-accent">{bgNote}</p>}
                 {dimensionNote(bgInfo, "background")}
                 {bgError && <p className="mt-1.5 text-xs text-bad">{bgError}</p>}
               </div>

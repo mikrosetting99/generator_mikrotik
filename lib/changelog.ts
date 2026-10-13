@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.18.0",
+    date: "2026-10-13",
+    title: "Kompres otomatis gambar latar, batas 200 KB",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Gambar latar yang diunggah dikompres otomatis di browser: diperkecil (sisi terpanjang maks 1920 px) dan disimpan ulang sebagai JPEG sampai maksimal 200 KB, lalu ditampilkan catatan hasilnya (mis. 2,6 MB → 141 KB). Gambar yang sudah di bawah 200 KB dipakai apa adanya. Berlaku juga untuk unggahan latar oleh admin ke galeri.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Batas ukuran gambar latar kini 200 KB (sebelumnya 600 KB), termasuk untuk galeri latar admin. Berkas asli yang diterima hingga 25 MB.",
+        ],
+      },
+    ],
+  },  {
     version: "1.17.0",
     date: "2026-10-13",
     title: "Thumbnail dan pratinjau template",

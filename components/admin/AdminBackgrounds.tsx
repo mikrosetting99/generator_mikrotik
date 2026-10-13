@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Trash, Upload } from "@/components/icons";
 import { AdminSection } from "@/components/admin/AdminSection";
 import { Button, EmptyState, Field, Note, TextInput } from "@/components/ui";
+import { compressImage, MAX_INPUT_BYTES } from "@/lib/image-compress";
 import { PRESET_LIMITS, type PresetKind } from "@/lib/preset-kinds";
 
 interface Preset {
@@ -34,8 +35,21 @@ export function AdminBackgrounds({ kind = "background" }: { kind?: PresetKind })
     setBusy(true);
     setFlash(null);
     try {
+      // Latar: gambar besar dikompres otomatis di browser supaya masuk batas ukuran.
+      let upload = file;
+      if (kind === "background" && file.type !== "image/svg+xml") {
+        if (file.size > MAX_INPUT_BYTES) {
+          setFlash({ tone: "bad", text: `Berkas terlalu besar untuk diproses (maksimal ${MAX_INPUT_BYTES / 1024 / 1024} MB).` });
+          return;
+        }
+        const r = await compressImage(file, { maxBytes: limit.maxBytes, maxEdge: 1920 });
+        if (r.compressed) {
+          const blob = await (await fetch(r.dataUrl)).blob();
+          upload = new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+        }
+      }
       const form = new FormData();
-      form.set("file", file);
+      form.set("file", upload);
       form.set("name", name);
       form.set("kind", kind);
       const res = await fetch("/api/admin/background-presets", { method: "POST", body: form });

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
-import { Check, Database, Save, Trash } from "@/components/icons";
+import { Check, Database, Save, Trash, Wand } from "@/components/icons";
 import { Button, EmptyState, Field, Note, TextInput } from "@/components/ui";
 import { normalizeHotspotPage } from "@/lib/defaults-hotspot-login";
 import type { HotspotPageConfig } from "@/lib/types-hotspot-login";
@@ -41,7 +41,12 @@ export function SaveLoadPage({
   onSaved: (entry: { id: string; name: string }) => void;
   onClose: () => void;
 }) {
-  const { status } = useSession();
+  const { status, data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+  // Admin: desain tersimpan yang sedang diisi nama/keterangan untuk dijadikan template.
+  const [publishing, setPublishing] = useState<Entry | null>(null);
+  const [tplName, setTplName] = useState("");
+  const [tplDesc, setTplDesc] = useState("");
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [name, setName] = useState(loaded?.name ?? "");
   const [busy, setBusy] = useState<string | null>(null);
@@ -125,6 +130,33 @@ export function SaveLoadPage({
     }
   };
 
+  const publishTemplate = async () => {
+    if (!publishing) return;
+    setBusy(publishing.id);
+    setFlash(null);
+    try {
+      const res = await fetch("/api/admin/hotspot-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ savedId: publishing.id, name: tplName, description: tplDesc }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.template) {
+        setFlash({ tone: "bad", text: data?.error ?? `Gagal menjadikan template (kode ${res.status}).` });
+        return;
+      }
+      setFlash({
+        tone: "info",
+        text: `"${data.template.name}" sekarang jadi template — bisa dipakai semua pengguna lewat tombol Template.`,
+      });
+      setPublishing(null);
+    } catch {
+      setFlash({ tone: "bad", text: "Gagal menghubungi server." });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const remove = async (entry: Entry) => {
     if (!confirm(`Hapus desain "${entry.name}" dari server?`)) return;
     setBusy(entry.id);
@@ -194,6 +226,21 @@ export function SaveLoadPage({
                   <Check className="h-3.5 w-3.5" />
                   Muat
                 </Button>
+                {isAdmin && (
+                  <Button
+                    size="sm"
+                    title="Jadikan template untuk semua pengguna"
+                    disabled={busy === entry.id}
+                    onClick={() => {
+                      setPublishing(entry);
+                      setTplName(entry.name);
+                      setTplDesc("");
+                    }}
+                  >
+                    <Wand className="h-3.5 w-3.5" />
+                    Template
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="danger"
@@ -209,7 +256,28 @@ export function SaveLoadPage({
             ))
           )}
         </div>
-      </section>
+        {isAdmin && publishing && (
+          <div className="mt-3 space-y-3 rounded-xl border border-brand/30 bg-brand/[0.06] p-3.5">
+            <p className="text-sm font-medium text-ink">Jadikan template: &ldquo;{publishing.name}&rdquo;</p>
+            <p className="text-xs leading-relaxed text-muted">
+              Isi desain tersimpan ini disalin menjadi template yang bisa dimuat semua pengguna. Desain tersimpan Anda
+              sendiri tidak berubah.
+            </p>
+            <Field label="Nama template">
+              <TextInput value={tplName} onChange={setTplName} />
+            </Field>
+            <Field label="Keterangan singkat (opsional)">
+              <TextInput value={tplDesc} onChange={setTplDesc} placeholder="Cocok untuk warnet dan RT/RW Net" />
+            </Field>
+            <div className="flex gap-2">
+              <Button variant="primary" onClick={publishTemplate} disabled={!tplName.trim() || busy === publishing.id}>
+                <Wand className="h-4 w-4" />
+                {busy === publishing.id ? "Menerbitkan…" : "Terbitkan template"}
+              </Button>
+              <Button onClick={() => setPublishing(null)}>Batal</Button>
+            </div>
+          </div>
+        )}      </section>
     </div>
   );
 }

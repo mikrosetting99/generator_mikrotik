@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.16.1] - 2026-10-13
+
+_Jadikan desain tersimpan sebagai template_
+
+### Ditambahkan
+
+- Alur membuat template: rancang halaman login, simpan ke database lewat Simpan / Muat, lalu admin menekan tombol "Template" pada desain tersimpan itu untuk menjadikannya template bagi semua pengguna. Hanya admin yang melihat tombol ini; desain tersimpan aslinya tidak berubah.
+
 ## [1.16.0] - 2026-10-13
 
 _Template Halaman Login Hotspot siap pakai_

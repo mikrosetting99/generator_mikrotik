@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.16.1",
+    date: "2026-10-13",
+    title: "Jadikan desain tersimpan sebagai template",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Alur membuat template: rancang halaman login, simpan ke database lewat Simpan / Muat, lalu admin menekan tombol \"Template\" pada desain tersimpan itu untuk menjadikannya template bagi semua pengguna. Hanya admin yang melihat tombol ini; desain tersimpan aslinya tidak berubah.",
+        ],
+      },
+    ],
+  },  {
     version: "1.16.0",
     date: "2026-10-13",
     title: "Template Halaman Login Hotspot siap pakai",

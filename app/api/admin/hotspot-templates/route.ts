@@ -24,10 +24,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Payload tidak valid." }, { status: 400 });
   }
 
-  const name = (typeof body.name === "string" ? body.name.trim() : "").slice(0, 80);
+  const session = await getServerSession(authOptions);
+
+  // Sumber desain: salah satu desain tersimpan milik admin sendiri (savedId), atau isi editor saat ini (config).
+  let source: unknown = body.config;
+  let defaultName = "";
+  if (typeof body.savedId === "string" && body.savedId) {
+    const saved = await prisma.savedLoginPage.findUnique({ where: { id: body.savedId } });
+    if (!saved || saved.userId !== session?.user?.id) {
+      return NextResponse.json({ error: "Desain tersimpan tidak ditemukan." }, { status: 404 });
+    }
+    source = saved.config;
+    defaultName = saved.name;
+  }
+
+  const name = ((typeof body.name === "string" ? body.name.trim() : "") || defaultName).slice(0, 80);
   if (!name) return NextResponse.json({ error: "Beri nama template dulu." }, { status: 400 });
   const description = (typeof body.description === "string" ? body.description.trim() : "").slice(0, 180);
-  const page = normalizeHotspotPage(body.config);
+  const page = normalizeHotspotPage(source);
 
   const data = {
     name,

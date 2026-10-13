@@ -287,68 +287,77 @@ export function TemplateGallery({
           {isAdmin ? " Terbitkan desain Anda di bawah." : " Admin belum menerbitkan template."}
         </EmptyState>
       ) : (
-        <div className="grid gap-2.5">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {templates.map((t) => (
-            <div key={t.id} className="flex gap-3 rounded-xl border border-line-soft bg-raised/50 p-3">
+            <div
+              key={t.id}
+              className="group flex flex-col overflow-hidden rounded-xl border border-line-soft bg-raised/50 transition-colors hover:border-line"
+            >
               <button
                 type="button"
                 onClick={() => setViewing(t)}
                 title="Lihat pratinjau besar"
-                className="shrink-0 rounded-lg transition-transform hover:scale-[1.02]"
+                className="grid place-items-center bg-canvas/60 px-3 py-4 transition-colors group-hover:bg-canvas"
               >
-                <Thumb id={t.id} width={84} height={182} device={VIEWS[0]} />
+                <Thumb id={t.id} width={104} height={225} device={VIEWS[0]} />
               </button>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="flex shrink-0 overflow-hidden rounded-md border border-line">
+
+              <div className="flex flex-1 flex-col gap-2 p-3">
+                <div className="flex items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-ink">{t.name}</p>
+                    <p className="text-[10px] uppercase tracking-[0.09em] text-faint">
+                      {t.design === "poster" ? "Poster" : "Minimal"}
+                    </p>
+                  </div>
+                  <span className="mt-0.5 flex shrink-0 overflow-hidden rounded-md border border-line" title="Warna latar dan tombol">
                     <span className="h-4 w-4" style={{ background: t.bgColor }} />
                     <span className="h-4 w-4" style={{ background: t.primaryColor }} />
                   </span>
-                  <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{t.name}</p>
                 </div>
-                <p className="mt-1.5 line-clamp-3 flex-1 text-xs leading-relaxed text-muted">
-                  {t.description || (t.design === "poster" ? "Desain Poster" : "Desain Minimal")}
+
+                <p className="line-clamp-2 min-h-8 text-xs leading-relaxed text-muted">
+                  {t.description || "Tanpa keterangan."}
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <Button size="sm" onClick={() => setViewing(t)}>
+
+                <div className="mt-auto flex items-center gap-1.5">
+                  <Button size="sm" className="flex-1" onClick={() => setViewing(t)}>
                     Pratinjau
                   </Button>
-                  <Button size="sm" variant="primary" disabled={busy === t.id} onClick={() => use(t)}>
+                  <Button size="sm" variant="primary" className="flex-1" disabled={busy === t.id} onClick={() => use(t)}>
                     <Check className="h-3.5 w-3.5" /> Pakai
                   </Button>
-                  {isAdmin && (
-                    <>
-                      <Button
-                        size="sm"
-                        className="px-2"
-                        ariaLabel={`Timpa ${t.name}`}
-                        title="Timpa isi template dengan desain yang sedang dibuka"
-                        disabled={busy !== null}
-                        onClick={() => {
-                          if (confirm(`Timpa template "${t.name}" dengan desain yang sedang dibuka?`)) void publish(t);
-                        }}
-                      >
-                        <Upload className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        className="px-2"
-                        ariaLabel={`Hapus ${t.name}`}
-                        title="Hapus template"
-                        disabled={busy !== null}
-                        onClick={() => remove(t)}
-                      >
-                        <Trash className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
-                  )}
                 </div>
+
+                {isAdmin && (
+                  <div className="flex items-center justify-end gap-1.5 border-t border-line-soft pt-2">
+                    <Button
+                      size="sm"
+                      title="Timpa isi template dengan desain yang sedang dibuka"
+                      disabled={busy !== null}
+                      onClick={() => {
+                        if (confirm(`Timpa template "${t.name}" dengan desain yang sedang dibuka?`)) void publish(t);
+                      }}
+                    >
+                      <Upload className="h-3.5 w-3.5" /> Timpa
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      className="px-2"
+                      ariaLabel={`Hapus ${t.name}`}
+                      title="Hapus template"
+                      disabled={busy !== null}
+                      onClick={() => remove(t)}
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
-        </div>
-      )}
+        </div>      )}
 
       {isAdmin && (
         <section className="space-y-3 border-t border-line-soft pt-5">

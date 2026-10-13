@@ -90,6 +90,7 @@ export function HotspotLoginBuilder() {
       </div>
 
       <Modal
+        wide
         open={templatesOpen}
         onClose={() => setTemplatesOpen(false)}
         title="Template siap pakai"

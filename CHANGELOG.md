@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.19.0] - 2026-10-13
+
+_Batas gambar 300 KB, daftar template dirapikan, pengaturan warna berurutan_
+
+### Diubah
+
+- Fitur kompres otomatis gambar latar dihapus. Batas ukuran semua gambar yang diunggah (latar, logo, gambar form, dan galeri admin) kini 300 KB; gambar yang lebih besar ditolak dengan pesan ukuran.
+- Daftar template dirapikan: jendela lebih lebar dengan kartu tiga kolom yang seragam — thumbnail besar di atas, lalu nama, jenis desain, contoh warna, keterangan, tombol Pratinjau dan Pakai, dan baris aksi admin (Timpa, Hapus) di bawahnya.
+- Pengaturan di editor diurutkan agar tiap warna tepat di bawah pengaturan yang diwarnainya: Nama hotspot → Warna nama hotspot → Teks sambutan → Warna teks sambutan; Mode login → Warna tombol Voucher → Kecerahan → Warna tombol Login → Warna font tombol; Warna latar halaman di bagian Background & Logo; dan Warna font umum di bagian terakhir.
+
 ## [1.18.0] - 2026-10-13
 
 _Kompres otomatis gambar latar, batas 200 KB_

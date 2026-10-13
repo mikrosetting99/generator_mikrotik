@@ -10,7 +10,6 @@ import {
   whatsappLink,
 } from "@/lib/hotspot-page";
 import { adjustBrightness } from "@/lib/color";
-import { compressImage, MAX_INPUT_BYTES } from "@/lib/image-compress";
 import { PRESET_LIMITS, type PresetKind } from "@/lib/preset-kinds";
 import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type LoginMode } from "@/lib/types-hotspot-login";
 
@@ -40,10 +39,10 @@ const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#fff
  */
 const IMAGE_LIMITS = {
   logo: {
-    maxBytes: 200 * 1024,
+    maxBytes: 300 * 1024,
     idealWidth: 400,
     idealHeight: 160,
-    hint: "Ideal 400 × 160 px (rasio 5:2), PNG latar transparan, maksimal 200 KB.",
+    hint: "Ideal 400 × 160 px (rasio 5:2), PNG latar transparan, maksimal 300 KB.",
   },
   form: {
     maxBytes: 300 * 1024,
@@ -52,10 +51,10 @@ const IMAGE_LIMITS = {
     hint: "Ideal sekitar 700 × 900 px, JPG, maksimal 300 KB. Tampil di dalam kartu form.",
   },
   background: {
-    maxBytes: 200 * 1024,
+    maxBytes: 300 * 1024,
     idealWidth: 1920,
     idealHeight: 1080,
-    hint: "Ideal 1920 × 1080 px (rasio 16:9), JPG, maksimal 200 KB. Gambar lebih besar dikompres otomatis.",
+    hint: "Ideal 1920 × 1080 px (rasio 16:9), JPG, maksimal 300 KB.",
   },
 } as const;
 
@@ -111,8 +110,6 @@ export function LoginPageEditor({
   const bgInput = useRef<HTMLInputElement>(null);
   const [logoError, setLogoError] = useState("");
   const [bgError, setBgError] = useState("");
-  const [bgNote, setBgNote] = useState("");
-  const [bgBusy, setBgBusy] = useState(false);
   const [formError, setFormError] = useState("");
   const [gallery, setGallery] = useState<{ id: string; name: string }[]>([]);
   const [logoGallery, setLogoGallery] = useState<{ id: string; name: string }[]>([]);
@@ -267,36 +264,6 @@ export function LoginPageEditor({
       return;
     }
 
-    // Latar: gambar besar dikompres otomatis supaya masuk batas, bukan ditolak.
-    if (kind === "background") {
-      if (file.type === "image/svg+xml") {
-        onError("Latar harus berupa foto (JPG, PNG, atau WEBP), bukan SVG.");
-        return;
-      }
-      if (file.size > MAX_INPUT_BYTES) {
-        onError(`Berkas ${formatSize(file.size)} terlalu besar untuk diproses — maksimal ${formatSize(MAX_INPUT_BYTES)}.`);
-        return;
-      }
-      setBgBusy(true);
-      setBgNote("");
-      compressImage(file, { maxBytes: limit.maxBytes, maxEdge: 1920 })
-        .then((r) => {
-          if (r.bytes > limit.maxBytes) {
-            onError(`Gambar masih ${formatSize(r.bytes)} setelah dikompres — maksimal ${formatSize(limit.maxBytes)}. Coba gambar yang lebih sederhana.`);
-            return;
-          }
-          setPage({ bgImageDataUrl: r.dataUrl, bgImageName: file.name });
-          setBgNote(
-            r.compressed
-              ? `Dikompres otomatis: ${formatSize(r.originalBytes)} → ${formatSize(r.bytes)} (${r.width} × ${r.height} px).`
-              : `Gambar sudah cukup kecil (${formatSize(r.bytes)}), dipakai apa adanya.`,
-          );
-        })
-        .catch((e: unknown) => onError(e instanceof Error ? e.message : "Gagal memproses gambar."))
-        .finally(() => setBgBusy(false));
-      return;
-    }
-
     if (file.size > limit.maxBytes) {
       onError(
         `Ukuran berkas ${formatSize(file.size)} — maksimal ${formatSize(limit.maxBytes)}. ` +
@@ -380,7 +347,6 @@ export function LoginPageEditor({
       <div className="grid gap-5 lg:grid-cols-[400px_minmax(0,1fr)]">
         <div className="space-y-3 lg:sticky lg:top-20 lg:h-[calc(100vh-10rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
           <Section title="Nama & sambutan" defaultOpen>
-          <div className={grid2}>
             <Field
               label="Nama hotspot"
               hint={
@@ -395,15 +361,6 @@ export function LoginPageEditor({
                 placeholder={page.template === "poster" ? "PRO|NET" : "Warnet Kita"}
               />
             </Field>
-            <Field label="Teks sambutan" hint="Tampil di bawah nama hotspot.">
-              <TextInput
-                value={page.subtitle}
-                onChange={(subtitle) => setPage({ subtitle })}
-                placeholder="Internet cepat untuk semua"
-              />
-            </Field>
-          </div>
-
           {swatches(TITLE_PRESETS, page.titleColor ?? "", (c) => setPage({ titleColor: c }), "Warna nama hotspot")}
           {page.titleColor && (
             <button
@@ -414,6 +371,13 @@ export function LoginPageEditor({
               Kembali ke warna nama otomatis
             </button>
           )}
+            <Field label="Teks sambutan" hint="Tampil di bawah nama hotspot.">
+              <TextInput
+                value={page.subtitle}
+                onChange={(subtitle) => setPage({ subtitle })}
+                placeholder="Internet cepat untuk semua"
+              />
+            </Field>
           {swatches(TITLE_PRESETS, page.subtitleColor ?? "", (c) => setPage({ subtitleColor: c }), "Warna teks sambutan")}
           {page.subtitleColor && (
             <button
@@ -424,83 +388,7 @@ export function LoginPageEditor({
               Kembali ke warna sambutan otomatis
             </button>
           )}
-          </Section>
 
-          <Section title="Warna">
-          {swatches(PRIMARY_PRESETS, page.primaryColor, (c) => setPage({ primaryColor: c }), "Warna tombol Voucher")}
-          <div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
-                Kecerahan warna tombol Voucher
-              </span>
-              <span className="flex items-center gap-2 font-mono text-[11px] text-brand">
-                <span
-                  aria-hidden
-                  className="h-3.5 w-3.5 rounded border border-line"
-                  style={{ background: adjustBrightness(page.primaryColor, page.primaryBrightness ?? 100) }}
-                />
-                {page.primaryBrightness ?? 100}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min={50}
-              max={150}
-              step={5}
-              value={page.primaryBrightness ?? 100}
-              aria-label="Kecerahan warna tombol Voucher"
-              onChange={(e) => setPage({ primaryBrightness: Number(e.target.value) })}
-              className="mt-2 w-full accent-[color:var(--color-brand)]"
-            />
-            <div className="mt-1 flex items-center justify-between text-xs text-faint">
-              <span>Lebih gelap</span>
-              {(page.primaryBrightness ?? 100) !== 100 && (
-                <button
-                  type="button"
-                  onClick={() => setPage({ primaryBrightness: 100 })}
-                  className="text-brand hover:underline"
-                >
-                  Atur ulang 100%
-                </button>
-              )}
-              <span>Lebih terang</span>
-            </div>
-          </div>
-          {swatches(PRIMARY_PRESETS, page.buttonColor ?? "", (c) => setPage({ buttonColor: c }), "Warna tombol Login")}
-          {page.buttonColor && (
-            <button
-              type="button"
-              onClick={() => setPage({ buttonColor: "" })}
-              className="-mt-1 text-xs text-brand hover:underline"
-            >
-              Kembali ke warna tombol otomatis (sama dengan tombol Voucher)
-            </button>
-          )}
-          {swatches(BUTTON_TEXT_PRESETS, page.buttonTextColor ?? "", (c) => setPage({ buttonTextColor: c }), "Warna font tombol")}
-          {page.buttonTextColor && (
-            <button
-              type="button"
-              onClick={() => setPage({ buttonTextColor: "" })}
-              className="-mt-1 text-xs text-brand hover:underline"
-            >
-              Kembali ke warna font otomatis (hitam/putih sesuai warna tombol)
-            </button>
-          )}
-          {swatches(TITLE_PRESETS, page.textColor ?? "", (c) => setPage({ textColor: c }), "Warna font")}
-          {page.textColor && (
-            <button
-              type="button"
-              onClick={() => setPage({ textColor: "" })}
-              className="-mt-1 text-xs text-brand hover:underline"
-            >
-              Kembali ke warna font otomatis
-            </button>
-          )}
-          <p className="-mt-1 text-xs leading-relaxed text-faint">
-            Warna font berlaku untuk seluruh tulisan di halaman login, kecuali nama hotspot dan teks sambutan
-            (diatur di bagian &ldquo;Nama &amp; sambutan&rdquo;), teks berjalan, serta tulisan di dalam tombol berwarna.
-          </p>
-          {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar")}
           </Section>
 
           <Section title="Kartu form">
@@ -604,6 +492,7 @@ export function LoginPageEditor({
 
           {/* Logo & gambar latar */}
           <Section title="Background & Logo">
+          {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar halaman")}
           <div>
             <div className="grid gap-5">
               {/* Logo */}
@@ -716,7 +605,7 @@ export function LoginPageEditor({
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Button size="sm" onClick={() => bgInput.current?.click()}>
                     <Upload className="h-3.5 w-3.5" />
-                    {bgBusy ? "Mengompres…" : page.bgImageDataUrl ? "Ganti" : "Unggah latar"}
+                    {page.bgImageDataUrl ? "Ganti" : "Unggah latar"}
                   </Button>
                   {page.bgImageDataUrl && (
                     <Button
@@ -725,10 +614,7 @@ export function LoginPageEditor({
                       className="px-2"
                       ariaLabel="Hapus gambar latar"
                       title="Hapus gambar latar"
-                      onClick={() => {
-                        setPage({ bgImageDataUrl: "", bgImageName: "" });
-                        setBgNote("");
-                      }}
+                      onClick={() => setPage({ bgImageDataUrl: "", bgImageName: "" })}
                     >
                       <Trash className="h-3.5 w-3.5" />
                     </Button>
@@ -755,7 +641,6 @@ export function LoginPageEditor({
                   />
                 )}
                 {recommendBox("background")}
-                {bgNote && <p className="mt-1.5 text-xs text-accent">{bgNote}</p>}
                 {dimensionNote(bgInfo, "background")}
                 {bgError && <p className="mt-1.5 text-xs text-bad">{bgError}</p>}
               </div>
@@ -905,7 +790,7 @@ export function LoginPageEditor({
           </Section>
 
           {/* Mode login */}
-          <Section title="Mode login">
+          <Section title="Mode login & tombol">
             <div className={grid2}>
               <Field
                 label="Mode saat halaman dibuka"
@@ -936,6 +821,65 @@ export function LoginPageEditor({
                 />
               </div>
             </div>
+          {swatches(PRIMARY_PRESETS, page.primaryColor, (c) => setPage({ primaryColor: c }), "Warna tombol Voucher")}
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                Kecerahan warna tombol Voucher
+              </span>
+              <span className="flex items-center gap-2 font-mono text-[11px] text-brand">
+                <span
+                  aria-hidden
+                  className="h-3.5 w-3.5 rounded border border-line"
+                  style={{ background: adjustBrightness(page.primaryColor, page.primaryBrightness ?? 100) }}
+                />
+                {page.primaryBrightness ?? 100}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min={50}
+              max={150}
+              step={5}
+              value={page.primaryBrightness ?? 100}
+              aria-label="Kecerahan warna tombol Voucher"
+              onChange={(e) => setPage({ primaryBrightness: Number(e.target.value) })}
+              className="mt-2 w-full accent-[color:var(--color-brand)]"
+            />
+            <div className="mt-1 flex items-center justify-between text-xs text-faint">
+              <span>Lebih gelap</span>
+              {(page.primaryBrightness ?? 100) !== 100 && (
+                <button
+                  type="button"
+                  onClick={() => setPage({ primaryBrightness: 100 })}
+                  className="text-brand hover:underline"
+                >
+                  Atur ulang 100%
+                </button>
+              )}
+              <span>Lebih terang</span>
+            </div>
+          </div>
+          {swatches(PRIMARY_PRESETS, page.buttonColor ?? "", (c) => setPage({ buttonColor: c }), "Warna tombol Login")}
+          {page.buttonColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ buttonColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna tombol otomatis (sama dengan tombol Voucher)
+            </button>
+          )}
+          {swatches(BUTTON_TEXT_PRESETS, page.buttonTextColor ?? "", (c) => setPage({ buttonTextColor: c }), "Warna font tombol")}
+          {page.buttonTextColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ buttonTextColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna font otomatis (hitam/putih sesuai warna tombol)
+            </button>
+          )}
           </Section>
 
           <Section title="Teks berjalan">
@@ -1189,6 +1133,23 @@ export function LoginPageEditor({
               <p className="mt-1.5 text-xs text-faint">Pada desain Poster footer selalu di bawah halaman; pilihan ini berlaku di desain Minimal.</p>
             )}
           </div>
+          </Section>
+
+          <Section title="Warna font">
+          {swatches(TITLE_PRESETS, page.textColor ?? "", (c) => setPage({ textColor: c }), "Warna font")}
+          {page.textColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ textColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna font otomatis
+            </button>
+          )}
+          <p className="-mt-1 text-xs leading-relaxed text-faint">
+            Warna font berlaku untuk seluruh tulisan di halaman login, kecuali nama hotspot dan teks sambutan
+            (diatur di bagian &ldquo;Nama &amp; sambutan&rdquo;), teks berjalan, serta tulisan di dalam tombol berwarna.
+          </p>
           </Section>
         </div>
 

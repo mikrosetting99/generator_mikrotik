@@ -506,12 +506,15 @@ export function Modal({
   title,
   description,
   children,
+  wide,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   description?: string;
   children: ReactNode;
+  /** Jendela lebih lebar (untuk daftar berkartu). */
+  wide?: boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -549,7 +552,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="edge-light relative flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-line bg-surface shadow-[0_40px_100px_-40px_rgba(0,0,0,1)] sm:rounded-2xl"
+        className={`edge-light relative flex max-h-[88vh] w-full ${wide ? "max-w-3xl" : "max-w-lg"} flex-col overflow-hidden rounded-t-2xl border border-line bg-surface shadow-[0_40px_100px_-40px_rgba(0,0,0,1)] sm:rounded-2xl`}
       >
         <header className="flex items-start justify-between gap-3 border-b border-line-soft px-5 py-4">
           <div className="min-w-0">

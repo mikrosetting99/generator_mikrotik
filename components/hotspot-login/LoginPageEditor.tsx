@@ -463,6 +463,28 @@ export function LoginPageEditor({
           <div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                Sudut form (border radius)
+              </span>
+              <span className="font-mono text-[11px] text-brand">
+                {(page.formRadius ?? 16) === 0 ? "siku-siku" : `${page.formRadius ?? 16} px`}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={40}
+              step={2}
+              value={page.formRadius ?? 16}
+              aria-label="Kelengkungan sudut kartu form"
+              onChange={(e) => setPage({ formRadius: Number(e.target.value) })}
+              className="mt-2 w-full accent-[color:var(--color-brand)]"
+            />
+            <p className="mt-1 text-xs leading-relaxed text-faint">
+              0 membuat sudut kartu siku-siku; makin besar makin membulat.
+            </p>
+          </div>          <div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
                 Kepekatan form
               </span>
               <span className="font-mono text-[11px] text-brand">
@@ -483,6 +505,57 @@ export function LoginPageEditor({
               100% penuh. Turunkan agar kartu form tembus pandang dan latar halaman terlihat di baliknya.
             </p>
           </div>
+          <div>
+              {/* Gambar di dalam kartu form */}
+              <div>
+                <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                  Gambar form
+                </span>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Button size="sm" onClick={() => formInput.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    {page.formImageDataUrl ? "Ganti" : "Unggah gambar form"}
+                  </Button>
+                  {page.formImageDataUrl && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      className="px-2"
+                      ariaLabel="Hapus gambar form"
+                      title="Hapus gambar form"
+                      onClick={() => setPage({ formImageDataUrl: "", formImageName: "" })}
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <input
+                    ref={formInput}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (file) pickImage(file, "form", setFormError);
+                    }}
+                  />
+                </div>
+                {page.formImageDataUrl && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={page.formImageDataUrl}
+                    alt="Pratinjau gambar form"
+                    className="mt-3 h-16 w-full rounded-md border border-line-soft object-cover"
+                  />
+                )}
+                <p className="mt-2 text-xs leading-relaxed text-faint">
+                  {IMAGE_LIMITS.form.hint} Turunkan &ldquo;Kepekatan form&rdquo; di bagian ini
+                  agar gambarnya terlihat.
+                </p>
+                {dimensionNote(formInfo, "form")}
+                {formError && <p className="mt-1.5 text-xs text-bad">{formError}</p>}
+              </div>
+          </div>
           <p className="-mt-1 text-xs leading-relaxed text-faint">
             Warna teks dan garis dihitung otomatis dari warna latar maupun warna form, jadi
             halaman tetap terbaca meski Anda memilih warna terang atau gelap.
@@ -490,11 +563,9 @@ export function LoginPageEditor({
 
           </Section>
 
-          {/* Logo & gambar latar */}
-          <Section title="Background & Logo">
-          {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar halaman")}
+          {/* Logo */}
+          <Section title="Logo">
           <div>
-            <div className="grid gap-5">
               {/* Logo */}
               <div>
                 <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
@@ -597,6 +668,13 @@ export function LoginPageEditor({
                 {logoError && <p className="mt-1.5 text-xs text-bad">{logoError}</p>}
               </div>
 
+          </div>
+          </Section>
+
+          {/* Background */}
+          <Section title="Background">
+          {swatches(BG_PRESETS, page.bgColor, (c) => setPage({ bgColor: c }), "Warna latar halaman")}
+          <div>
               {/* Gambar latar */}
               <div>
                 <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
@@ -645,56 +723,6 @@ export function LoginPageEditor({
                 {bgError && <p className="mt-1.5 text-xs text-bad">{bgError}</p>}
               </div>
 
-              {/* Gambar di dalam kartu form */}
-              <div>
-                <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
-                  Gambar form
-                </span>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Button size="sm" onClick={() => formInput.current?.click()}>
-                    <Upload className="h-3.5 w-3.5" />
-                    {page.formImageDataUrl ? "Ganti" : "Unggah gambar form"}
-                  </Button>
-                  {page.formImageDataUrl && (
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      className="px-2"
-                      ariaLabel="Hapus gambar form"
-                      title="Hapus gambar form"
-                      onClick={() => setPage({ formImageDataUrl: "", formImageName: "" })}
-                    >
-                      <Trash className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                  <input
-                    ref={formInput}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="hidden"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      event.target.value = "";
-                      if (file) pickImage(file, "form", setFormError);
-                    }}
-                  />
-                </div>
-                {page.formImageDataUrl && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={page.formImageDataUrl}
-                    alt="Pratinjau gambar form"
-                    className="mt-3 h-16 w-full rounded-md border border-line-soft object-cover"
-                  />
-                )}
-                <p className="mt-2 text-xs leading-relaxed text-faint">
-                  {IMAGE_LIMITS.form.hint} Turunkan &ldquo;Kepekatan form&rdquo; di bagian Kartu form
-                  agar gambarnya terlihat.
-                </p>
-                {dimensionNote(formInfo, "form")}
-                {formError && <p className="mt-1.5 text-xs text-bad">{formError}</p>}
-              </div>
-            </div>
 
             {page.bgImageDataUrl && (
               <div className="mt-4 border-t border-line-soft pt-4">
@@ -776,7 +804,7 @@ export function LoginPageEditor({
             )}
 
             <p className="mt-4 text-xs leading-relaxed text-faint">
-              Kedua gambar ikut masuk ke paket dan di-upload ke router — tidak boleh diambil dari
+              Semua gambar ikut masuk ke paket dan di-upload ke router — tidak boleh diambil dari
               internet, karena klien belum punya akses sebelum login.
               {totalImageBytes > 0 && (
                 <>
@@ -786,7 +814,6 @@ export function LoginPageEditor({
               )}
             </p>
           </div>
-
           </Section>
 
           {/* Mode login */}

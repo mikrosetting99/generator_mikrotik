@@ -327,6 +327,9 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     BUTTON_TEXT: buttonTextCustom || readableOn(buttonBg),
     VOUCHER_TEXT: buttonTextCustom || palette.onPrimary,
     // Garis tepi kartu form: tebal 0–8 px (0 = tanpa garis); warna sendiri bila dipilih.
+    FORM_RADIUS: String(
+      Number.isFinite(Number(page.formRadius)) ? Math.max(0, Math.min(40, Math.round(Number(page.formRadius)))) : 16,
+    ),
     FORM_BORDER_WIDTH: String(
       Number.isFinite(Number(page.formBorderWidth))
         ? Math.max(0, Math.min(8, Math.round(Number(page.formBorderWidth))))

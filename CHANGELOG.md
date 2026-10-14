@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.23.0] - 2026-10-14
+
+_Logo dan Background terpisah, sudut form bisa diatur_
+
+### Ditambahkan
+
+- Pengaturan "Sudut form (border radius)" 0–40 px di bagian Kartu form: 0 membuat kartu siku-siku, makin besar makin membulat. Berlaku di desain Minimal; paket halaman login perlu di-upload ulang ke router.
+
+### Diubah
+
+- Bagian "Background & Logo" dipecah menjadi dua menu: "Logo" (unggah, galeri admin, letak, tinggi) dan "Background" (warna latar halaman, gambar latar, kepekatan lapisan, mode, dan fokus gambar). Pengaturan gambar di dalam form dipindah ke bagian Kartu form.
+
 ## [1.22.1] - 2026-10-14
 
 _IP cek berurutan 1.1.1.1 – 1.1.1.8_

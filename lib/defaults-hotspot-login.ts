@@ -41,6 +41,7 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     formBgOpacity: 100,
     formWidth: 390,
     formBorderWidth: 1,
+    formRadius: 16,
     formBorderColor: "",
     formImageDataUrl: "",
     formImageName: "",

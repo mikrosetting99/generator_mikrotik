@@ -69,6 +69,8 @@ export interface HotspotPageConfig {
   formWidth: number;
   /** Tebal garis tepi kartu form dalam piksel, 0–8. 0 = tanpa garis. */
   formBorderWidth: number;
+  /** Kelengkungan sudut kartu form dalam piksel, 0–40. 0 = siku-siku. */
+  formRadius: number;
   /** Warna garis tepi kartu form. Kosong = otomatis (semburat warna tema). */
   formBorderColor: string;
   /** Gambar di dalam kartu form, juga ikut jadi berkas di dalam zip. */

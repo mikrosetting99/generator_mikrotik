@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.23.0",
+    date: "2026-10-14",
+    title: "Logo dan Background terpisah, sudut form bisa diatur",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Pengaturan \"Sudut form (border radius)\" 0–40 px di bagian Kartu form: 0 membuat kartu siku-siku, makin besar makin membulat. Berlaku di desain Minimal; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Bagian \"Background & Logo\" dipecah menjadi dua menu: \"Logo\" (unggah, galeri admin, letak, tinggi) dan \"Background\" (warna latar halaman, gambar latar, kepekatan lapisan, mode, dan fokus gambar). Pengaturan gambar di dalam form dipindah ke bagian Kartu form.",
+        ],
+      },
+    ],
+  },  {
     version: "1.22.1",
     date: "2026-10-14",
     title: "IP cek berurutan 1.1.1.1 – 1.1.1.8",

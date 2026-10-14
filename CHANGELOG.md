@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.20.1] - 2026-10-14
+
+_Keterangan perlu login di kartu menu_
+
+### Ditambahkan
+
+- Kartu menu di beranda yang diatur wajib login kini diberi keterangan "perlu login" (dengan ikon gembok), sehingga pengunjung tahu sebelum menekannya. Pengunjung yang sudah login melihat keterangan yang lebih redup.
+
 ## [1.20.0] - 2026-10-13
 
 _Menu Autoflush DNS_

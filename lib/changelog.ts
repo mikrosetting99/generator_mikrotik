@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.20.1",
+    date: "2026-10-14",
+    title: "Keterangan perlu login di kartu menu",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Kartu menu di beranda yang diatur wajib login kini diberi keterangan \"perlu login\" (dengan ikon gembok), sehingga pengunjung tahu sebelum menekannya. Pengunjung yang sudah login melihat keterangan yang lebih redup.",
+        ],
+      },
+    ],
+  },  {
     version: "1.20.0",
     date: "2026-10-13",
     title: "Menu Autoflush DNS",

@@ -239,8 +239,23 @@ export default async function Home() {
                       {menu.description}
                     </span>
                   )}
-                  <span className="mt-2 block font-mono text-[10px] text-faint">
-                    {(usage[menu.id] ?? 0).toLocaleString("id-ID")}× dipakai
+                  <span className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                    <span className="font-mono text-[10px] text-faint">
+                      {(usage[menu.id] ?? 0).toLocaleString("id-ID")}× dipakai
+                    </span>
+                    {menu.requireLogin && (
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                          loggedIn
+                            ? "border-line text-faint"
+                            : "border-brand/40 bg-brand/10 text-brand"
+                        }`}
+                        title={loggedIn ? "Menu ini perlu login — Anda sudah masuk" : "Menu ini perlu login"}
+                      >
+                        <Lock className="h-2.5 w-2.5" />
+                        perlu login
+                      </span>
+                    )}
                   </span>
                   {menu.devMode && (
                     <span className="mt-1.5 inline-block rounded-full border border-warn/40 bg-warn/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warn">

@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.22.1] - 2026-10-14
+
+_IP cek berurutan 1.1.1.1 – 1.1.1.8_
+
+### Diubah
+
+- IP/DNS cek jalur di Load Balance kini berurutan penuh: 1.1.1.1, 1.1.1.2, 1.1.1.3, … sampai 1.1.1.8 untuk ISP ke-1 sampai ke-8 (sebelumnya ISP ke-4 dst. memakai resolver publik lain).
+
 ## [1.22.0] - 2026-10-14
 
 _Load Balance: Interface List, isian berurutan, target cek 1.1.1.x_

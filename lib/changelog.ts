@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.22.1",
+    date: "2026-10-14",
+    title: "IP cek berurutan 1.1.1.1 – 1.1.1.8",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "IP/DNS cek jalur di Load Balance kini berurutan penuh: 1.1.1.1, 1.1.1.2, 1.1.1.3, … sampai 1.1.1.8 untuk ISP ke-1 sampai ke-8 (sebelumnya ISP ke-4 dst. memakai resolver publik lain).",
+        ],
+      },
+    ],
+  },  {
     version: "1.22.0",
     date: "2026-10-14",
     title: "Load Balance: Interface List, isian berurutan, target cek 1.1.1.x",

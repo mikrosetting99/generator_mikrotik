@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.25.0] - 2026-10-14
+
+_Pratinjau HP berbentuk iPhone_
+
+### Diubah
+
+- Pratinjau mode HP di editor Halaman Login Hotspot kini berbentuk iPhone sungguhan: bodi logam dengan sudut membulat, notch dengan speaker dan kamera, status bar (jam, sinyal, Wi-Fi, baterai), tombol samping, dan indikator home di bawah. Ukuran layar tetap 390 × 844 dan otomatis menyesuaikan area pratinjau; Tablet dan Laptop tidak berubah.
+
 ## [1.24.0] - 2026-10-14
 
 _Template default, placeholder, dan petunjuk login bisa diatur_

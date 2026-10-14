@@ -867,6 +867,25 @@ export function generateSetupScript(config: SetupConfig): string {
     }
   }
 
+  // ------------------------------------------------------ ganti nama interface
+  // Dijalankan paling akhir: seluruh pengaturan di atas memakai nama bawaan
+  // (ether1, dst), dan RouterOS memperbarui rujukannya sendiri saat diganti nama.
+  const renamed = physicalInterfaces(config).filter(
+    (name) => (config.interfaceNames[name] ?? "").trim() && config.interfaceNames[name].trim() !== name,
+  );
+  if (renamed.length > 0) {
+    section(
+      "GANTI NAMA INTERFACE",
+      "Dijalankan paling akhir supaya semua pengaturan di atas memakai nama bawaan.\nRouterOS otomatis memperbarui rujukan (bridge port, IP, DHCP, firewall) ke nama baru.",
+    );
+    for (const name of renamed) {
+      s.line(
+        `/interface set [ find default-name=${ScriptBuilder.q(name)} ] ${args([["name", config.interfaceNames[name].trim()]])}`,
+      );
+    }
+    s.comment("Nama bawaan tetap tersimpan di default-name, jadi script ini aman dijalankan ulang.");
+  }
+
   // ----------------------------------------------------------------- footer
   s.section("SELESAI — CARA MEMERIKSA HASIL");
   s.comment("Jalankan perintah berikut satu per satu untuk verifikasi:");

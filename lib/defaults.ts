@@ -111,6 +111,7 @@ export function createDefaultConfig(): SetupConfig {
     modelId: "",
     customInterfaces: "",
     interfaceComments: {},
+    interfaceNames: {},
     ros: "",
     system: {
       identity: "",

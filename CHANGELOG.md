@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.29.0] - 2026-10-14
+
+_Setup Mikrotik Baru: ganti nama interface_
+
+### Ditambahkan
+
+- Di bagian Type Mikrotik, "Komentar interface" menjadi "Nama & komentar interface": tabel per port dengan kolom Nama baru dan Komentar, label peran (WAN 1, Bridge ...), saran nama, dan pemeriksaan langsung bila nama kembar atau memuat karakter terlarang. Spasi otomatis diganti strip.
+- Seluruh form dan isi script tetap memakai nama bawaan (ether1, dst). Perintah ganti nama ditulis di bagian paling akhir script, sebelum catatan penutup, sehingga semua setting sebelumnya tidak terlewat; RouterOS memperbarui rujukannya sendiri. Validasi juga menolak nama yang bentrok dengan interface lain atau dengan nama bridge/VLAN di script.
+
 ## [1.28.0] - 2026-10-14
 
 _Tombol WhatsApp didesain ulang, widget jam dihapus_

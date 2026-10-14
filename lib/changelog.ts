@@ -27,6 +27,20 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.29.0",
+    date: "2026-10-14",
+    title: "Setup Mikrotik Baru: ganti nama interface",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Di bagian Type Mikrotik, \"Komentar interface\" menjadi \"Nama & komentar interface\": tabel per port dengan kolom Nama baru dan Komentar, label peran (WAN 1, Bridge ...), saran nama, dan pemeriksaan langsung bila nama kembar atau memuat karakter terlarang. Spasi otomatis diganti strip.",
+          "Seluruh form dan isi script tetap memakai nama bawaan (ether1, dst). Perintah ganti nama ditulis di bagian paling akhir script, sebelum catatan penutup, sehingga semua setting sebelumnya tidak terlewat; RouterOS memperbarui rujukannya sendiri. Validasi juga menolak nama yang bentrok dengan interface lain atau dengan nama bridge/VLAN di script.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.28.0",
     date: "2026-10-14",
     title: "Tombol WhatsApp didesain ulang, widget jam dihapus",

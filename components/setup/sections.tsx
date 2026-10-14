@@ -209,32 +209,87 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
         </div>
       )}
 
-      {model && (
-        <details className="mt-3">
-          <summary className="cursor-pointer text-xs text-muted hover:text-ink">
-            Komentar interface (opsional)
-          </summary>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {physicalInterfaces(config).map((name) => (
-              <div key={name} className="flex items-center gap-2">
-                <span className="w-16 shrink-0 rounded-md border border-line-soft bg-canvas px-2 py-2 text-center font-mono text-[11px] text-muted">
-                  {name}
+      {model && (() => {
+        const ports = physicalInterfaces(config);
+        const roleOf = (name: string) => {
+          const wanIndex = config.wans.findIndex((w) => w.iface === name);
+          if (wanIndex >= 0) return { label: `WAN ${wanIndex + 1}`, hint: `WAN${wanIndex + 1}` };
+          const bridge = config.bridges.find((b) => b.ports.includes(name));
+          if (bridge) return { label: `Bridge ${bridge.name}`, hint: `LAN-${name}` };
+          return null;
+        };
+        const names = ports.map((n) => (config.interfaceNames[n] ?? "").trim());
+        const filled = ports.filter((n, i) => names[i] || (config.interfaceComments[n] ?? "").trim()).length;
+        const setName = (name: string, text: string) =>
+          patch({ interfaceNames: { ...config.interfaceNames, [name]: text } });
+        const problem = (name: string, i: number): string => {
+          const next = names[i];
+          if (!next || next === name) return "";
+          if (!/^[A-Za-z0-9_.-]+$/.test(next)) return "Hanya huruf, angka, titik, strip, underscore.";
+          if (names.some((other, j) => j !== i && other.toLowerCase() === next.toLowerCase()))
+            return "Nama ini dipakai port lain.";
+          return "";
+        };
+        return (
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-muted hover:text-ink">
+              Nama & komentar interface (opsional)
+              {filled > 0 && (
+                <span className="ml-2 rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">
+                  {filled} port diatur
                 </span>
-                <TextInput
-                  value={config.interfaceComments[name] ?? ""}
-                  onChange={(text) =>
-                    patch({ interfaceComments: { ...config.interfaceComments, [name]: text } })
-                  }
-                  placeholder="Komentar, mis. ISP Telkom / Uplink / AP Lantai 2"
-                />
+              )}
+            </summary>
+            <div className="mt-2 overflow-hidden rounded-lg border border-line-soft">
+              <div className="hidden grid-cols-[88px_1fr_1.4fr] gap-2 border-b border-line-soft bg-canvas px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.09em] text-muted sm:grid">
+                <span>Port</span>
+                <span>Nama baru</span>
+                <span>Komentar</span>
               </div>
-            ))}
-          </div>
-          <p className="mt-1.5 text-xs leading-relaxed text-faint">
-            Opsional. Komentar ditulis ke tiap port lewat script, jadi terbaca di Winbox.
-          </p>
-        </details>
-      )}
+              <div className="divide-y divide-line-soft">
+                {ports.map((name, i) => {
+                  const role = roleOf(name);
+                  const bad = problem(name, i);
+                  return (
+                    <div
+                      key={name}
+                      className="grid gap-2 px-3 py-2 sm:grid-cols-[88px_1fr_1.4fr] sm:items-start"
+                    >
+                      <div className="flex items-center gap-2 sm:flex-col sm:items-start sm:gap-1">
+                        <span className="rounded-md border border-line-soft bg-canvas px-2 py-1 text-center font-mono text-[11px] text-muted">
+                          {name}
+                        </span>
+                        {role && <span className="text-[11px] text-faint">{role.label}</span>}
+                      </div>
+                      <div>
+                        <TextInput
+                          mono
+                          value={config.interfaceNames[name] ?? ""}
+                          onChange={(text) => setName(name, text.replace(/\s+/g, "-"))}
+                          placeholder={role ? role.hint : `mis. LAN-${name}`}
+                        />
+                        {bad && <p className="mt-1 text-xs text-bad">{bad}</p>}
+                      </div>
+                      <TextInput
+                        value={config.interfaceComments[name] ?? ""}
+                        onChange={(text) =>
+                          patch({ interfaceComments: { ...config.interfaceComments, [name]: text } })
+                        }
+                        placeholder="mis. ISP Telkom / Uplink / AP Lantai 2"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-faint">
+              Kosongkan bila tidak perlu. Seluruh form dan script tetap memakai nama bawaan ({ports[0] ?? "ether1"}, dst);
+              nama baru baru dipasang di bagian paling akhir script, sehingga tidak ada setting yang terlewat.
+              Komentar ditulis ke tiap port agar terbaca di Winbox.
+            </p>
+          </details>
+        );
+      })()}
 
       <div className="mt-6 border-t border-line-soft pt-5">
         <h3 className="text-sm font-semibold text-ink">Identitas & waktu</h3>

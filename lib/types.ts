@@ -246,6 +246,8 @@ export interface SetupConfig {
   customInterfaces: string;
   /** Komentar per interface fisik: nama bawaan (ether1) -> teks komentar. */
   interfaceComments: Record<string, string>;
+  /** Nama baru per interface fisik: nama bawaan (ether1) -> nama baru. Dipasang paling akhir di script. */
+  interfaceNames: Record<string, string>;
   ros: RosVersion | "";
   system: SystemConfig;
   wans: WanEntry[];

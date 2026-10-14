@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.29.1] - 2026-10-14
+
+_Form nama interface selalu terlihat_
+
+### Diubah
+
+- Form "Nama & komentar interface" di Setup Mikrotik Baru tidak lagi tersembunyi dalam lipatan: tampil langsung dengan judul sendiri di bawah daftar port setelah Type Mikrotik dipilih.
+
 ## [1.29.0] - 2026-10-14
 
 _Setup Mikrotik Baru: ganti nama interface_

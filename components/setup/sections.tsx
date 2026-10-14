@@ -231,16 +231,17 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
           return "";
         };
         return (
-          <details className="mt-3">
-            <summary className="cursor-pointer text-xs text-muted hover:text-ink">
-              Nama & komentar interface (opsional)
+          <div className="mt-6 border-t border-line-soft pt-5">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
+              Nama & komentar interface
+              <span className="text-xs font-normal text-faint">(opsional)</span>
               {filled > 0 && (
-                <span className="ml-2 rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">
+                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">
                   {filled} port diatur
                 </span>
               )}
-            </summary>
-            <div className="mt-2 overflow-hidden rounded-lg border border-line-soft">
+            </h3>
+            <div className="mt-3 overflow-hidden rounded-lg border border-line-soft">
               <div className="hidden grid-cols-[88px_1fr_1.4fr] gap-2 border-b border-line-soft bg-canvas px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.09em] text-muted sm:grid">
                 <span>Port</span>
                 <span>Nama baru</span>
@@ -287,7 +288,7 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
               nama baru baru dipasang di bagian paling akhir script, sehingga tidak ada setting yang terlewat.
               Komentar ditulis ke tiap port agar terbaca di Winbox.
             </p>
-          </details>
+          </div>
         );
       })()}
 

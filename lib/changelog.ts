@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.21.1",
+    date: "2026-10-14",
+    title: "Tampilan Load Balance lebih simpel",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Halaman Load Balance dibuat lebih ringkas: empat kartu saklar diganti deretan tombol kecil (Load balance, Failover, Rasio bandwidth, NAT), pilihan Target lokal jadi dua tombol, dan pengaturan yang jarang dipakai (metode PCC, metode failover, interval, prioritas cadangan) disembunyikan di \"Pengaturan lanjutan\".",
+          "Jalur ISP kini berupa tabel satu baris per ISP (WAN, Gateway, Mbps, IP cek) sehingga semua ISP terlihat sekaligus; kolom Mbps dan IP cek hanya muncul bila fiturnya aktif.",
+        ],
+      },
+    ],
+  },  {
     version: "1.21.0",
     date: "2026-10-14",
     title: "Load Balance PCC + Failover jadi generator satu layar",

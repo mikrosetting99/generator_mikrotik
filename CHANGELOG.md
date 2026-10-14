@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.21.1] - 2026-10-14
+
+_Tampilan Load Balance lebih simpel_
+
+### Diubah
+
+- Halaman Load Balance dibuat lebih ringkas: empat kartu saklar diganti deretan tombol kecil (Load balance, Failover, Rasio bandwidth, NAT), pilihan Target lokal jadi dua tombol, dan pengaturan yang jarang dipakai (metode PCC, metode failover, interval, prioritas cadangan) disembunyikan di "Pengaturan lanjutan".
+- Jalur ISP kini berupa tabel satu baris per ISP (WAN, Gateway, Mbps, IP cek) sehingga semua ISP terlihat sekaligus; kolom Mbps dan IP cek hanya muncul bila fiturnya aktif.
+
 ## [1.21.0] - 2026-10-14
 
 _Load Balance PCC + Failover jadi generator satu layar_

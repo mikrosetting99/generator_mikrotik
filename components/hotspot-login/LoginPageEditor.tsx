@@ -10,6 +10,7 @@ import {
   isHexColor,
   whatsappLink,
 } from "@/lib/hotspot-page";
+import { IPHONE_PAD, IphoneFrame } from "@/components/hotspot-login/IphoneFrame";
 import { adjustBrightness } from "@/lib/color";
 import { PRESET_LIMITS, type PresetKind } from "@/lib/preset-kinds";
 import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type LoginMode } from "@/lib/types-hotspot-login";
@@ -206,8 +207,12 @@ export function LoginPageEditor({
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
-    const fit = () =>
-      setScale(Math.min(1, (el.clientWidth - 24) / device.w, (el.clientHeight - 24) / device.h));
+    const fit = () => {
+      const pad = device.id === "hp" ? IPHONE_PAD : 0;
+      setScale(
+        Math.min(1, (el.clientWidth - 24) / (device.w + pad * 2), (el.clientHeight - 24) / (device.h + pad * 2)),
+      );
+    };
     fit();
     const observer = new ResizeObserver(fit);
     observer.observe(el);
@@ -1262,21 +1267,34 @@ export function LoginPageEditor({
             className="relative grid min-h-0 flex-1 place-items-center overflow-hidden bg-raised/60"
           >
             {preview ? (
-              <div style={{ width: device.w * scale, height: device.h * scale }}>
-                <iframe
-                  key={device.id}
-                  title="Pratinjau halaman login hotspot"
-                  srcDoc={preview}
-                  sandbox="allow-scripts"
-                  className="block origin-top-left border-0 bg-white shadow-lg"
-                  style={{
-                    width: device.w,
-                    height: device.h,
-                    transform: `scale(${scale})`,
-                    borderRadius: device.id === "hp" ? 32 : device.id === "tablet" ? 18 : 6,
-                  }}
-                />
-              </div>
+              (() => {
+                const isHp = device.id === "hp";
+                const pad = isHp ? IPHONE_PAD : 0;
+                const fw = device.w + pad * 2;
+                const fh = device.h + pad * 2;
+                const frame = (
+                  <iframe
+                    key={device.id}
+                    title="Pratinjau halaman login hotspot"
+                    srcDoc={preview}
+                    sandbox="allow-scripts"
+                    className="block border-0 bg-white"
+                    style={{
+                      width: device.w,
+                      height: device.h,
+                      borderRadius: isHp ? 0 : device.id === "tablet" ? 18 : 6,
+                      boxShadow: isHp ? undefined : "0 10px 30px -12px rgba(0,0,0,.35)",
+                    }}
+                  />
+                );
+                return (
+                  <div style={{ width: fw * scale, height: fh * scale }}>
+                    <div style={{ width: fw, height: fh, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+                      {isHp ? <IphoneFrame width={device.w} height={device.h}>{frame}</IphoneFrame> : frame}
+                    </div>
+                  </div>
+                );
+              })()
             ) : (
               <span className="text-xs text-faint">Memuat pratinjau…</span>
             )}

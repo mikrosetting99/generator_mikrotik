@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.25.0",
+    date: "2026-10-14",
+    title: "Pratinjau HP berbentuk iPhone",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Pratinjau mode HP di editor Halaman Login Hotspot kini berbentuk iPhone sungguhan: bodi logam dengan sudut membulat, notch dengan speaker dan kamera, status bar (jam, sinyal, Wi-Fi, baterai), tombol samping, dan indikator home di bawah. Ukuran layar tetap 390 × 844 dan otomatis menyesuaikan area pratinjau; Tablet dan Laptop tidak berubah.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.24.0",
     date: "2026-10-14",
     title: "Template default, placeholder, dan petunjuk login bisa diatur",

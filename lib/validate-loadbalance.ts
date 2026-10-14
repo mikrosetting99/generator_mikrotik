@@ -20,7 +20,14 @@ export function validateLoadBalanceConfig(config: LoadBalanceConfig): LbIssue[] 
   }
 
   // --- LAN ------------------------------------------------------------------
-  const needLan = config.localMode !== "addresslist";
+  const needLan = config.localMode === "interface";
+  if (config.localMode === "interfacelist") {
+    if (!config.lanList.trim()) {
+      err("lan", "Nama interface-list sisi LAN wajib diisi, mis. LAN.");
+    } else if (!NAME_OK.test(config.lanList.trim())) {
+      err("lan", "Nama interface-list hanya boleh huruf, angka, titik, strip, dan underscore.");
+    }
+  }
   if (needLan && !config.lanIface.trim()) {
     err("lan", "Interface/bridge sisi LAN wajib diisi — ini sumber trafik yang dibagi PCC.");
   } else if (needLan && !NAME_OK.test(config.lanIface.trim())) {

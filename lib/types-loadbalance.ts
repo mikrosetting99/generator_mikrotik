@@ -18,8 +18,8 @@ export interface IspEntry {
   distance: string;
 }
 
-/** Sumber trafik lokal yang dibagi PCC: satu interface LAN, atau daftar alamat privat (RFC1918). */
-export type LocalMode = "interface" | "addresslist";
+/** Sumber trafik lokal yang dibagi PCC: satu interface LAN, satu interface-list, atau daftar alamat privat (RFC1918). */
+export type LocalMode = "interface" | "interfacelist" | "addresslist";
 
 export type PccClassifier = "src-address" | "both-addresses" | "both-addresses-and-ports";
 
@@ -39,6 +39,8 @@ export interface LoadBalanceConfig {
   localMode: LocalMode;
   /** Interface/bridge sisi LAN yang trafiknya dibagi lewat PCC (mode interface). */
   lanIface: string;
+  /** Nama interface-list sisi LAN (mode interface-list), mis. LAN. */
+  lanList: string;
   /** Bagi beban sesuai kecepatan tiap ISP (Mbps) alih-alih rata. */
   ratioEnabled: boolean;
   isps: IspEntry[];

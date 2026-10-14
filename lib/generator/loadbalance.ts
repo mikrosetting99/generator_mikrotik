@@ -44,6 +44,13 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
   const lan = config.lanIface.trim();
   const slugs = isps.map((isp, i) => ispSlug(isp, i));
   const addressList = config.localMode === "addresslist";
+  const interfaceList = config.localMode === "interfacelist";
+  const lanList = config.lanList.trim();
+  const localLabel = addressList
+    ? "IP Address List (RFC1918)"
+    : interfaceList
+      ? `Interface List ${lanList || "(belum diisi)"}`
+      : `Interface ${lan || "(belum diisi)"}`;
   const weights = ratioWeights(isps.map((isp) => Number(isp.speed)), config.ratioEnabled);
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
   /** Pencocok trafik lokal pada rule PCC: interface LAN, atau address-list RFC1918. */
@@ -53,7 +60,9 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
         ["dst-address-list", "!LOCAL-IP"],
         ["dst-address-type", "!local"],
       ]
-    : [["in-interface", lan]];
+    : interfaceList
+      ? [["in-interface-list", lanList]]
+      : [["in-interface", lan]];
   const { pccEnabled, failoverEnabled, failoverMethod } = config;
   const recursive = failoverEnabled && failoverMethod === "recursive";
   const netwatch = failoverEnabled && failoverMethod === "netwatch";
@@ -84,7 +93,7 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
     "",
     `Jumlah ISP : ${isps.length}`,
     `RouterOS   : ${config.ros ? config.ros : "(belum dipilih)"}`,
-    `Target lokal       : ${addressList ? "IP Address List (RFC1918)" : `Interface ${lan || "(belum diisi)"}`}`,
+    `Target lokal       : ${localLabel}`,
     `Bagi beban         : ${config.ratioEnabled ? "sesuai rasio bandwidth" : "rata"}`,
     `Load Balance (PCC) : ${pccEnabled ? "aktif" : "tidak aktif"}`,
     `Failover            : ${failoverEnabled ? `aktif — metode ${methodLabel}` : "tidak aktif"}`,
@@ -141,7 +150,7 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
   if (pccEnabled) {
     section(
       "MANGLE — PCC MARK-CONNECTION",
-      `Membagi koneksi baru dari ${addressList ? "jaringan lokal (LOCAL-IP)" : lan || "(LAN belum diisi)"} ke tiap ISP ${config.ratioEnabled ? "sesuai rasio bandwidth" : "secara rata"} (total bagian: ${totalWeight}).`,
+      `Membagi koneksi baru dari ${addressList ? "jaringan lokal (LOCAL-IP)" : interfaceList ? `interface-list ${lanList || "(belum diisi)"}` : lan || "(LAN belum diisi)"} ke tiap ISP ${config.ratioEnabled ? "sesuai rasio bandwidth" : "secara rata"} (total bagian: ${totalWeight}).`,
     );
     let offset = 0;
     isps.forEach((isp, i) => {

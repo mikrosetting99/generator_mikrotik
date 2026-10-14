@@ -62,15 +62,19 @@ export function LoadBalanceBuilder() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  const filename = `loadbalance-${slug(config.lanIface || "mikrotik")}.rsc`;
+  const filename = `loadbalance-${slug((config.localMode === "interfacelist" ? config.lanList : config.lanIface) || "mikrotik")}.rsc`;
   const addressList = config.localMode === "addresslist";
   const showSpeed = config.ratioEnabled && config.pccEnabled;
   // Nomor | WAN | Gateway | [Mbps] | [IP cek] — kolom opsional hanya muncul bila fiturnya aktif.
   const ispColumns = `1.75rem repeat(${2 + (showSpeed ? 1 : 0) + (config.failoverEnabled ? 1 : 0)}, minmax(0, 1fr))`;
 
+  /** Kosongkan isian tiap ISP (Reset semua mengembalikannya ke isian berurutan). */
   const clearIsps = () => {
     if (!confirm("Kosongkan semua isian ISP?")) return;
-    setConfig((prev) => ({ ...prev, isps: prev.isps.map((_, i) => newIsp(i)) }));
+    setConfig((prev) => ({
+      ...prev,
+      isps: prev.isps.map((isp) => ({ ...isp, iface: "", gateway: "", speed: "", checkTarget: "" })),
+    }));
   };
 
   const resetAll = () => {
@@ -140,7 +144,8 @@ export function LoadBalanceBuilder() {
                   <div className="flex shrink-0 gap-1 rounded-lg border border-line bg-canvas p-1">
                     {(
                       [
-                        { value: "interface", label: "Interface LAN" },
+                        { value: "interface", label: "Interface" },
+                        { value: "interfacelist", label: "Interface List" },
                         { value: "addresslist", label: "Address List" },
                       ] as const
                     ).map((o) => (
@@ -160,11 +165,17 @@ export function LoadBalanceBuilder() {
                       </button>
                     ))}
                   </div>
-                  {!addressList ? (
+                  {config.localMode === "interface" && (
                     <div className="min-w-32 flex-1">
                       <TextInput mono value={config.lanIface} onChange={(lanIface) => patch({ lanIface })} placeholder="bridge-lan" />
                     </div>
-                  ) : (
+                  )}
+                  {config.localMode === "interfacelist" && (
+                    <div className="min-w-32 flex-1">
+                      <TextInput mono value={config.lanList} onChange={(lanList) => patch({ lanList })} placeholder="LAN" />
+                    </div>
+                  )}
+                  {addressList && (
                     <span className="text-xs text-faint">Semua alamat privat (RFC1918) dianggap lokal.</span>
                   )}
                 </div>

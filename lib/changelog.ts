@@ -27,6 +27,25 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.22.0",
+    date: "2026-10-14",
+    title: "Load Balance: Interface List, isian berurutan, target cek 1.1.1.x",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Target lokal kini punya tiga pilihan: Interface, Interface List (rule PCC memakai in-interface-list), dan Address List (RFC1918).",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Isian jalur ISP terisi berurutan sejak awal: ether1 / 192.168.1.1 / 1.1.1.1, ether2 / 192.168.2.1 / 1.1.1.2, ether3 / 192.168.3.1 / 1.1.1.3, dan seterusnya, sehingga tinggal memilih versi RouterOS. Tombol \"Kosongkan\" mengosongkan semua isian, dan \"Reset\" mengembalikan isian berurutan.",
+          "Target cek jalur (IP/DNS) memakai 1.1.1.1, 1.1.1.2, 1.1.1.3; ISP ke-4 dan seterusnya memakai resolver publik lain (8.8.8.8, 9.9.9.9, dst.) karena alamat 1.1.1.4 ke atas tidak dijamin menjawab ping.",
+        ],
+      },
+    ],
+  },  {
     version: "1.21.1",
     date: "2026-10-14",
     title: "Tampilan Load Balance lebih simpel",

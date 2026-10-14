@@ -287,6 +287,10 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
       : readableOn(marqueeBg);
   const tableCustom = isHexColor(page.tableColor ?? "") ? page.tableColor.trim() : "";
   const tableBg = tableCustom || primary;
+  const waBg = isHexColor(page.whatsappColor ?? "") ? page.whatsappColor.trim() : "#25d366";
+  const waFg = isHexColor(page.whatsappTextColor ?? "") ? page.whatsappTextColor.trim() : readableOn(waBg);
+  const clampNum = (v: unknown, min: number, max: number, fallback: number) =>
+    Number.isFinite(Number(v)) && v !== "" && v !== null ? Math.max(min, Math.min(max, Math.round(Number(v)))) : fallback;
   const tableTextCustom = isHexColor(page.tableTextColor ?? "") ? page.tableTextColor.trim() : "";
 
   const packages = page.packages.filter(
@@ -354,14 +358,14 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     BG_BLUR: page.bgFit === "blur" ? "1" : "",
     OVERLAY: rgba(bgColor, Math.max(0, Math.min(90, page.bgOverlay)) / 100),
     WA_LINK: page.whatsappEnabled === false ? "" : whatsappLink(page.whatsapp),
+    WA_BG: waBg,
+    WA_FG: waFg,
+    WA_HEIGHT: String(clampNum(page.whatsappHeight, 32, 72, 48)),
+    WA_FONT: String(clampNum(page.whatsappFontSize, 11, 24, 15)),
     WA_LABEL: escapeHtml(page.whatsappLabel.trim() || "Hubungi admin"),
     START_MODE: page.loginMode === "member" ? "member" : "voucher",
     MODE_SWITCH: page.showModeSwitch ? "1" : "",
     TRIAL: page.showTrial ? "1" : "",
-    CLOCK: page.clockEnabled ? "1" : "",
-    CLOCK_POS: page.clockPosition === "top-left" ? "left" : page.clockPosition === "top-center" ? "center" : "right",
-    CLOCK_SECONDS: page.clockSeconds === false ? "0" : "1",
-    CLOCK_DATE: page.clockDate ? "1" : "0",
     PACKAGES: packages.length > 0 ? "1" : "",
     PACKAGE_VALIDITY: anyValidity ? "1" : "",
     PACKAGE_ROWS: rows.join("\n"),

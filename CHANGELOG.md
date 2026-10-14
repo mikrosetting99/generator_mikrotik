@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.28.0] - 2026-10-14
+
+_Tombol WhatsApp didesain ulang, widget jam dihapus_
+
+### Diubah
+
+- Tombol WhatsApp di halaman login kini berwarna hijau WhatsApp penuh dengan bayangan, bukan lagi tombol bergaris. Warna tombol, warna tulisan, tinggi tombol (32–72 px), dan ukuran tulisan (11–24 px) bisa diatur di bagian WhatsApp. Warna tulisan otomatis menyesuaikan bila tidak dipilih. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.
+- Widget jam di halaman login dihapus.
+
 ## [1.27.1] - 2026-10-14
 
 _Warna font tabel paket bisa diubah_

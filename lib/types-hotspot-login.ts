@@ -131,14 +131,15 @@ export interface HotspotPageConfig {
   whatsappLabel: string;
   /** Tombol WhatsApp tampil atau disembunyikan, tanpa menghapus nomornya. */
   whatsappEnabled: boolean;
+  /** Warna tombol WhatsApp. Kosong = hijau WhatsApp. */
+  whatsappColor: string;
+  /** Warna tulisan tombol WhatsApp. Kosong = otomatis (terbaca di atas warna tombol). */
+  whatsappTextColor: string;
+  /** Tinggi tombol WhatsApp (px). */
+  whatsappHeight: number;
+  /** Ukuran tulisan tombol WhatsApp (px). */
+  whatsappFontSize: number;
   footer: string;
   /** Letak teks footer: di dalam kartu form (bawaan) atau di bawah kartu, di luar form. */
   footerPosition: "inside" | "outside";
-  /** Widget jam di sudut halaman login. */
-  clockEnabled: boolean;
-  clockPosition: "top-left" | "top-center" | "top-right";
-  /** Tampilkan detik. */
-  clockSeconds: boolean;
-  /** Tampilkan tanggal di bawah jam. */
-  clockDate: boolean;
 }

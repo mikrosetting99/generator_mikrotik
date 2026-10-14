@@ -117,8 +117,6 @@
     {{/FOOTER}}
   </div>
 
-  {{#CLOCK}}<div class="clock clock-{{CLOCK_POS}}" id="clock" aria-live="off"></div>{{/CLOCK}}
-
   <script type="text/javascript">
     var infologin = document.getElementById('infologin');
     var username = document.login.username;
@@ -180,27 +178,6 @@
         window.addEventListener('resize', fit, false);
         window.addEventListener('load', fit, false);
       }
-    })();
-    // Widget jam: memakai jam perangkat pengguna, diperbarui tiap detik.
-    (function () {
-      var box = document.getElementById("clock");
-      if (!box) { return; }
-      var withSec = "{{CLOCK_SECONDS}}" === "1";
-      var withDate = "{{CLOCK_DATE}}" === "1";
-      var days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-      var months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-      function two(n) { return (n < 10 ? "0" : "") + n; }
-      function tick() {
-        var d = new Date();
-        var t = two(d.getHours()) + ":" + two(d.getMinutes()) + (withSec ? ":" + two(d.getSeconds()) : "");
-        var html = "<span class=\"ct\">" + t + "</span>";
-        if (withDate) {
-          html += "<span class=\"cd\">" + days[d.getDay()] + ", " + d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear() + "</span>";
-        }
-        box.innerHTML = html;
-      }
-      tick();
-      setInterval(tick, 1000);
     })();
     // Umpan balik instan saat Login ditekan: tombol berputar dan tidak bisa
     // ditekan dua kali, jadi halaman tidak terlihat macet selama router memproses.

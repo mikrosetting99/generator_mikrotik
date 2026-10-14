@@ -79,11 +79,11 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     whatsapp: "",
     whatsappLabel: "Beli voucher via WhatsApp",
     whatsappEnabled: true,
+    whatsappColor: "",
+    whatsappTextColor: "",
+    whatsappHeight: 48,
+    whatsappFontSize: 15,
     footer: "",
     footerPosition: "inside",
-    clockEnabled: false,
-    clockPosition: "top-right",
-    clockSeconds: true,
-    clockDate: false,
   };
 }

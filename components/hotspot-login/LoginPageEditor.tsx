@@ -32,6 +32,7 @@ const PRIMARY_PRESETS = ["#38bdf8", "#22c55e", "#f59e0b", "#2563eb", "#a78bfa", 
 const TITLE_PRESETS = ["#0f172a", "#ffffff", "#2563eb", "#dc2626", "#16a34a", "#f59e0b", "#7c3aed"];
 const MARQUEE_PRESETS = ["#1e293b", "#0f172a", "#dc2626", "#16a34a", "#f59e0b", "#7c3aed", "#2563eb"];
 const BUTTON_TEXT_PRESETS = ["#ffffff", "#0f172a", "#fef08a", "#dc2626", "#16a34a", "#2563eb"];
+const WA_PRESETS = ["#25d366", "#128c7e", "#075e54", "#16a34a", "#0f172a", "#ffffff"];
 const BORDER_PRESETS = ["#e2e8f0", "#94a3b8", "#334155", "#0f172a", "#ffffff"];
 const FORM_PRESETS = ["#ffffff", "#f1f5f9", "#fef3c7", "#e0f2fe", "#1e293b", "#0f172a"];
 const BG_PRESETS = ["#0b1220", "#07070d", "#141a2c", "#1c1917", "#eef2f7", "#ffffff", "#fdf4e3"];
@@ -1148,44 +1149,6 @@ export function LoginPageEditor({
             )}
           </Section>
 
-          <Section title="Widget">
-            <Toggle
-              checked={page.clockEnabled ?? false}
-              onChange={(clockEnabled) => setPage({ clockEnabled })}
-              label="Widget jam"
-              hint="Jam digital di sudut atas halaman login, memakai jam perangkat pengguna."
-            />
-            {page.clockEnabled && (
-              <>
-                <Field label="Letak jam">
-                  <Select
-                    value={page.clockPosition ?? "top-right"}
-                    placeholder=""
-                    onChange={(clockPosition) =>
-                      setPage({ clockPosition: clockPosition as "top-left" | "top-center" | "top-right" })
-                    }
-                    options={[
-                      { value: "top-left", label: "Pojok kiri atas" },
-                      { value: "top-center", label: "Atas tengah" },
-                      { value: "top-right", label: "Pojok kanan atas" },
-                    ]}
-                  />
-                </Field>
-                <Toggle
-                  checked={page.clockSeconds ?? true}
-                  onChange={(clockSeconds) => setPage({ clockSeconds })}
-                  label="Tampilkan detik"
-                />
-                <Toggle
-                  checked={page.clockDate ?? false}
-                  onChange={(clockDate) => setPage({ clockDate })}
-                  label="Tampilkan tanggal"
-                  hint="Hari dan tanggal tampil di bawah jam."
-                />
-              </>
-            )}
-          </Section>
-
           <Section title="WhatsApp">
           <Toggle
             checked={page.whatsappEnabled !== false}
@@ -1227,6 +1190,52 @@ export function LoginPageEditor({
                   Mikrotik Baru → IP Hotspot.
                 </Note>
               )}
+
+              {swatches(WA_PRESETS, page.whatsappColor ?? "", (c) => setPage({ whatsappColor: c }), "Warna tombol")}
+              {swatches(BUTTON_TEXT_PRESETS, page.whatsappTextColor ?? "", (c) => setPage({ whatsappTextColor: c }), "Warna tulisan tombol")}
+              {(page.whatsappColor || page.whatsappTextColor) && (
+                <button
+                  type="button"
+                  onClick={() => setPage({ whatsappColor: "", whatsappTextColor: "" })}
+                  className="-mt-1 text-xs text-brand hover:underline"
+                >
+                  Kembali ke warna bawaan (hijau WhatsApp)
+                </button>
+              )}
+              <div className={grid2}>
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Tinggi tombol</span>
+                    <span className="font-mono text-[11px] text-brand">{page.whatsappHeight ?? 48} px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={32}
+                    max={72}
+                    step={2}
+                    value={page.whatsappHeight ?? 48}
+                    aria-label="Tinggi tombol WhatsApp"
+                    onChange={(e) => setPage({ whatsappHeight: Number(e.target.value) })}
+                    className="mt-2 w-full accent-[color:var(--color-brand)]"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Ukuran tulisan</span>
+                    <span className="font-mono text-[11px] text-brand">{page.whatsappFontSize ?? 15} px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={11}
+                    max={24}
+                    step={1}
+                    value={page.whatsappFontSize ?? 15}
+                    aria-label="Ukuran tulisan tombol WhatsApp"
+                    onChange={(e) => setPage({ whatsappFontSize: Number(e.target.value) })}
+                    className="mt-2 w-full accent-[color:var(--color-brand)]"
+                  />
+                </div>
+              </div>
             </>
           )}
           </Section>

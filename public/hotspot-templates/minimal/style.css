@@ -540,25 +540,14 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* Widget jam: pil kecil di pojok atas, warnanya mengikuti permukaan halaman. */
-.clock {
-  position: fixed;
-  top: 12px;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 12px;
-  background: {{SURFACE}};
-  color: {{TEXT}};
-  border: 1px solid {{BORDER}};
-  box-shadow: 0 4px 14px rgba(0, 0, 0, .14);
-  line-height: 1.2;
-  pointer-events: none;
+/* Tombol WhatsApp: warna, tinggi, dan ukuran tulisan diatur dari editor. */
+a.button2 {
+  height: {{WA_HEIGHT}}px;
+  background: {{WA_BG}};
+  border-color: {{WA_BG}};
+  color: {{WA_FG}};
+  font-size: {{WA_FONT}}px;
+  text-shadow: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .16);
 }
-.clock .ct { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
-.clock .cd { font-size: 11px; opacity: .75; }
-.clock-left { left: 12px; }
-.clock-right { right: 12px; }
-.clock-center { left: 50%; transform: translateX(-50%); }
+a.button2 .icon { width: 1.25em; height: 1.25em; }

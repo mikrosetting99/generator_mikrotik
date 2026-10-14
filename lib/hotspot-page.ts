@@ -287,6 +287,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
       : readableOn(marqueeBg);
   const tableCustom = isHexColor(page.tableColor ?? "") ? page.tableColor.trim() : "";
   const tableBg = tableCustom || primary;
+  const tableTextCustom = isHexColor(page.tableTextColor ?? "") ? page.tableTextColor.trim() : "";
 
   const packages = page.packages.filter(
     (p) => p.name.trim() || p.duration.trim() || p.validity.trim() || p.price.trim(),
@@ -314,7 +315,11 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     MARQUEE_BG: page.marqueeNoBg ? "transparent" : marqueeBg,
     MARQUEE_FG: marqueeFg,
     TABLE_BG: tableBg,
-    TABLE_TEXT: readableOn(tableBg),
+    TABLE_TEXT: tableTextCustom || readableOn(tableBg),
+    // Isi baris/kartu paket (di atas permukaan form): warna sendiri, atau ikut warna teks halaman.
+    TABLE_BODY: tableTextCustom || "var(--text)",
+    TABLE_BODY_MUTED: tableTextCustom || "var(--muted)",
+    TABLE_ACCENT: tableTextCustom || "var(--accent-text)",
     TABLE_LINE: blend(formBorder, tableBg, 0.55),
     MARQUEE_FG_POSTER: isHexColor(page.marqueeTextColor ?? "") ? page.marqueeTextColor.trim() : "var(--text)",
     // Placeholder & kalimat petunjuk: isian sendiri, atau bawaan desain bila kosong.
@@ -374,8 +379,8 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     // Kartu harga desain Poster sengaja melawan arah latar supaya menonjol di
     // atas foto — latar gelap mendapat kartu terang, dan sebaliknya.
     CARD: tableCustom || card,
-    ON_CARD: readableOn(tableCustom || card),
-    CARD_MUTED: mutedOn(tableCustom || card),
+    ON_CARD: tableTextCustom || readableOn(tableCustom || card),
+    CARD_MUTED: tableTextCustom || mutedOn(tableCustom || card),
     BG: palette.bg,
     SURFACE: palette.surface,
     FORM_BG: formOpacity < 100 ? rgba(baseForm, formOpacity / 100) : baseForm,

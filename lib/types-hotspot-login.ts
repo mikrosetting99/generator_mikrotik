@@ -122,6 +122,8 @@ export interface HotspotPageConfig {
   packages: VoucherPackage[];
   /** Warna tabel harga (kepala tabel / kartu harga). Kosong = ikut warna tombol Voucher. */
   tableColor: string;
+  /** Warna font tabel/kartu paket. Kosong = otomatis (terbaca di atas warna tabel). */
+  tableTextColor: string;
   /** Bentuk daftar paket (desain Minimal): tabel, kartu, atau daftar. Poster selalu kartu. */
   packageStyle: "table" | "cards" | "list";
   terms: string;

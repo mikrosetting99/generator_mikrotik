@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.27.1",
+    date: "2026-10-14",
+    title: "Warna font tabel paket bisa diubah",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Pilihan \"Warna font tabel\" di bagian Tabel harga paket. Mengubah warna tulisan di kepala tabel, isi baris, kartu, dan lencana harga (desain Minimal) serta kartu harga (desain Poster). Kosong = otomatis menyesuaikan warna tabel. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.27.0",
     date: "2026-10-14",
     title: "Widget jam di halaman login",

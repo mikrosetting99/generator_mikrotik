@@ -73,6 +73,7 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     showTrial: false,
     packages: [],
     tableColor: "",
+    tableTextColor: "",
     packageStyle: "table",
     terms: "",
     whatsapp: "",

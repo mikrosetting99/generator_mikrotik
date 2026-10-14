@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.27.1] - 2026-10-14
+
+_Warna font tabel paket bisa diubah_
+
+### Ditambahkan
+
+- Pilihan "Warna font tabel" di bagian Tabel harga paket. Mengubah warna tulisan di kepala tabel, isi baris, kartu, dan lencana harga (desain Minimal) serta kartu harga (desain Poster). Kosong = otomatis menyesuaikan warna tabel. Paket halaman login perlu di-upload ulang ke router.
+
 ## [1.27.0] - 2026-10-14
 
 _Widget jam di halaman login_

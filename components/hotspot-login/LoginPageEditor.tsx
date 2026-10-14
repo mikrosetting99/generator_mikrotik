@@ -1058,6 +1058,16 @@ export function LoginPageEditor({
                 Kembali ke warna tabel otomatis (sama dengan tombol Voucher)
               </button>
             )}
+            {swatches(BUTTON_TEXT_PRESETS, page.tableTextColor ?? "", (c) => setPage({ tableTextColor: c }), "Warna font tabel")}
+            {page.tableTextColor && (
+              <button
+                type="button"
+                onClick={() => setPage({ tableTextColor: "" })}
+                className="text-xs text-brand hover:underline"
+              >
+                Kembali ke warna font otomatis
+              </button>
+            )}
             <p className="text-xs leading-relaxed text-faint">
               Warna kepala tabel (desain Minimal) atau kartu harga (desain Poster). Tulisannya menyesuaikan otomatis.
             </p>

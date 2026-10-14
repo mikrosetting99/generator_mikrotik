@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.20.2",
+    date: "2026-10-14",
+    title: "Autoflush DNS lebih rapi",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Autoflush DNS: komentar scheduler di router kini \"Autoflush DNS cache - By Mikrosetting\"; tombol pilihan cepat (6 jam, 12 jam, dst.) dihapus — interval diisi manual; dan tata letak diratakan: panel Jadwal flush dan Cara pakai berakhir sejajar di bawah.",
+        ],
+      },
+    ],
+  },  {
     version: "1.20.1",
     date: "2026-10-14",
     title: "Keterangan perlu login di kartu menu",

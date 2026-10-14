@@ -17,14 +17,6 @@ import {
   type FlushUnit,
 } from "@/lib/generator/dns-flush";
 
-/** Pilihan cepat yang paling sering dipakai. */
-const PRESETS: { label: string; patch: Partial<DnsFlushConfig> }[] = [
-  { label: "Tiap 6 jam", patch: { everyValue: 6, everyUnit: "h", startTime: "" } },
-  { label: "Tiap 12 jam", patch: { everyValue: 12, everyUnit: "h", startTime: "" } },
-  { label: "Harian 03:00", patch: { everyValue: 1, everyUnit: "d", startTime: "03:00:00" } },
-  { label: "Mingguan", patch: { everyValue: 1, everyUnit: "w", startTime: "03:00:00" } },
-];
-
 export function DnsFlushBuilder() {
   const [config, setConfig] = useState<DnsFlushConfig>(DEFAULT_DNS_FLUSH);
   const [copied, setCopied] = useState(false);
@@ -70,26 +62,14 @@ export function DnsFlushBuilder() {
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-5xl gap-5 px-5 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-        <div className="space-y-5">
+      <div className="mx-auto grid w-full max-w-5xl gap-5 px-5 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-stretch">
+        <div className="flex flex-col">
           <Panel
+            fill
             title="Jadwal flush"
             description="Router membersihkan cache DNS-nya sendiri sesuai jadwal — berguna bila cache menyimpan alamat lama atau keliru."
           >
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-1.5">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => patch(p.patch)}
-                    className="rounded-md border border-line-soft bg-canvas px-2.5 py-1 text-xs text-muted transition-colors hover:border-brand/50 hover:text-ink"
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-3">
                 <Field label="Setiap">
                   <TextInput
@@ -150,8 +130,9 @@ export function DnsFlushBuilder() {
           </Panel>
         </div>
 
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5">
           <Panel
+            fill
             title="Script"
             description={
               errors.length === 0
@@ -159,8 +140,8 @@ export function DnsFlushBuilder() {
                 : "Perbaiki isian di kiri dulu."
             }
           >
-            <div className="space-y-3">
-              <pre className="max-h-[420px] overflow-auto rounded-xl border border-line-soft bg-code px-4 py-3 font-mono text-[11.5px] leading-relaxed text-muted">
+            <div className="flex flex-1 flex-col gap-3">
+              <pre className="min-h-[220px] flex-1 overflow-auto rounded-xl border border-line-soft bg-code px-4 py-3 font-mono text-[11.5px] leading-relaxed text-muted lg:max-h-[300px]">
                 {script || "# (belum ada script)"}
               </pre>
               <div className="flex flex-wrap gap-2">
@@ -182,6 +163,7 @@ export function DnsFlushBuilder() {
             </div>
           </Panel>
 
+          <div className="shrink-0">
           <Panel title="Cara pakai">
             <ol className="list-decimal space-y-1.5 pl-5 text-xs leading-relaxed text-muted">
               <li>Salin script di atas.</li>
@@ -196,6 +178,7 @@ export function DnsFlushBuilder() {
               </li>
             </ol>
           </Panel>
+          </div>
         </div>
       </div>
     </main>

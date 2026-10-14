@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.20.2] - 2026-10-14
+
+_Autoflush DNS lebih rapi_
+
+### Diubah
+
+- Autoflush DNS: komentar scheduler di router kini "Autoflush DNS cache - By Mikrosetting"; tombol pilihan cepat (6 jam, 12 jam, dst.) dihapus — interval diisi manual; dan tata letak diratakan: panel Jadwal flush dan Cara pakai berakhir sejajar di bawah.
+
 ## [1.20.1] - 2026-10-14
 
 _Keterangan perlu login di kartu menu_

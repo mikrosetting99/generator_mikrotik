@@ -412,6 +412,7 @@ export function Panel({
   right,
   children,
   id,
+  fill,
 }: {
   title: string;
   step?: string;
@@ -420,11 +421,16 @@ export function Panel({
   right?: ReactNode;
   children: ReactNode;
   id?: string;
+  /** Panel mengisi sisa tinggi kolomnya (untuk menyejajarkan dua kolom). */
+  fill?: boolean;
 }) {
   return (
     <section
       id={id}
-      className="edge-light scroll-mt-24 overflow-hidden rounded-2xl border border-line bg-surface transition-colors duration-300 hover:border-line/80"
+      className={cn(
+        "edge-light scroll-mt-24 overflow-hidden rounded-2xl border border-line bg-surface transition-colors duration-300 hover:border-line/80",
+        fill && "flex h-full flex-col",
+      )}
     >
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line-soft bg-gradient-to-b from-white/[0.025] to-transparent px-5 py-4">
         <div className="flex min-w-0 gap-3">
@@ -451,7 +457,7 @@ export function Panel({
         </div>
         {right}
       </header>
-      <div className="px-5 py-5">{children}</div>
+      <div className={cn("px-5 py-5", fill && "flex flex-1 flex-col")}>{children}</div>
     </section>
   );
 }

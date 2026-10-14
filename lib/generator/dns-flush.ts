@@ -111,7 +111,7 @@ export function generateDnsFlushScript(config: DnsFlushConfig): string {
     ["interval", interval],
     ["start-time", start ?? undefined],
     ["on-event", event],
-    ["comment", "Autoflush DNS cache (Generator Script Mikrotik)"],
+    ["comment", "Autoflush DNS cache - By Mikrosetting"],
   ]);
 
   if (config.replaceExisting) {

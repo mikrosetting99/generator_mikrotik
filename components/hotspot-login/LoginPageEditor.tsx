@@ -1138,6 +1138,44 @@ export function LoginPageEditor({
             )}
           </Section>
 
+          <Section title="Widget">
+            <Toggle
+              checked={page.clockEnabled ?? false}
+              onChange={(clockEnabled) => setPage({ clockEnabled })}
+              label="Widget jam"
+              hint="Jam digital di sudut atas halaman login, memakai jam perangkat pengguna."
+            />
+            {page.clockEnabled && (
+              <>
+                <Field label="Letak jam">
+                  <Select
+                    value={page.clockPosition ?? "top-right"}
+                    placeholder=""
+                    onChange={(clockPosition) =>
+                      setPage({ clockPosition: clockPosition as "top-left" | "top-center" | "top-right" })
+                    }
+                    options={[
+                      { value: "top-left", label: "Pojok kiri atas" },
+                      { value: "top-center", label: "Atas tengah" },
+                      { value: "top-right", label: "Pojok kanan atas" },
+                    ]}
+                  />
+                </Field>
+                <Toggle
+                  checked={page.clockSeconds ?? true}
+                  onChange={(clockSeconds) => setPage({ clockSeconds })}
+                  label="Tampilkan detik"
+                />
+                <Toggle
+                  checked={page.clockDate ?? false}
+                  onChange={(clockDate) => setPage({ clockDate })}
+                  label="Tampilkan tanggal"
+                  hint="Hari dan tanggal tampil di bawah jam."
+                />
+              </>
+            )}
+          </Section>
+
           <Section title="WhatsApp">
           <Toggle
             checked={page.whatsappEnabled !== false}

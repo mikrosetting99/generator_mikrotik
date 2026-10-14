@@ -80,5 +80,9 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     whatsappEnabled: true,
     footer: "",
     footerPosition: "inside",
+    clockEnabled: false,
+    clockPosition: "top-right",
+    clockSeconds: true,
+    clockDate: false,
   };
 }

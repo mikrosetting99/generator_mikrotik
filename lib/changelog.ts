@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.27.0",
+    date: "2026-10-14",
+    title: "Widget jam di halaman login",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Bagian baru \"Widget\" di editor Halaman Login Hotspot: jam digital yang bisa diletakkan di pojok kiri atas, atas tengah, atau pojok kanan atas. Pilihan tambahan: tampilkan detik dan tampilkan hari/tanggal. Jam memakai waktu perangkat pengguna dan warnanya mengikuti tema halaman. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.26.0",
     date: "2026-10-14",
     title: "Pengaturan Mode login dan Tombol dipisah, desain daftar paket bisa dipilih",

@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.27.0] - 2026-10-14
+
+_Widget jam di halaman login_
+
+### Ditambahkan
+
+- Bagian baru "Widget" di editor Halaman Login Hotspot: jam digital yang bisa diletakkan di pojok kiri atas, atas tengah, atau pojok kanan atas. Pilihan tambahan: tampilkan detik dan tampilkan hari/tanggal. Jam memakai waktu perangkat pengguna dan warnanya mengikuti tema halaman. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.
+
 ## [1.26.0] - 2026-10-14
 
 _Pengaturan Mode login dan Tombol dipisah, desain daftar paket bisa dipilih_

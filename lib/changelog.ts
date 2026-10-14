@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.25.1",
+    date: "2026-10-14",
+    title: "Kode voucher bisa huruf kapital",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Kolom kode voucher di halaman login tidak lagi memaksa huruf kecil, jadi voucher/username berhuruf kapital (atau campuran) bisa diketik dan dipakai login. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.25.0",
     date: "2026-10-14",
     title: "Pratinjau HP berbentuk iPhone",

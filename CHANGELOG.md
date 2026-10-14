@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.25.1] - 2026-10-14
+
+_Kode voucher bisa huruf kapital_
+
+### Diperbaiki
+
+- Kolom kode voucher di halaman login tidak lagi memaksa huruf kecil, jadi voucher/username berhuruf kapital (atau campuran) bisa diketik dan dipakai login. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.
+
 ## [1.25.0] - 2026-10-14
 
 _Pratinjau HP berbentuk iPhone_

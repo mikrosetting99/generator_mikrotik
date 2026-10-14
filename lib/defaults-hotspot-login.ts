@@ -73,6 +73,7 @@ export function createDefaultHotspotLoginConfig(): HotspotPageConfig {
     showTrial: false,
     packages: [],
     tableColor: "",
+    packageStyle: "table",
     terms: "",
     whatsapp: "",
     whatsappLabel: "Beli voucher via WhatsApp",

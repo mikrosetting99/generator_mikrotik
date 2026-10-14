@@ -823,7 +823,7 @@ export function LoginPageEditor({
           </Section>
 
           {/* Mode login */}
-          <Section title="Mode login & tombol">
+          <Section title="Mode login">
             <div className={grid2}>
               <Field
                 label="Mode saat halaman dibuka"
@@ -854,6 +854,9 @@ export function LoginPageEditor({
                 />
               </div>
             </div>
+          </Section>
+
+          <Section title="Tombol">
           {swatches(PRIMARY_PRESETS, page.primaryColor, (c) => setPage({ primaryColor: c }), "Warna tombol Voucher")}
           <div>
             <div className="flex items-center justify-between gap-3">
@@ -1032,6 +1035,18 @@ export function LoginPageEditor({
 
           {/* Tabel paket */}
           <Section title="Tabel harga paket">
+          <Field label="Desain daftar paket" hint="Berlaku di desain Minimal. Desain Poster selalu memakai kartu harga.">
+            <Select
+              value={page.packageStyle ?? "table"}
+              placeholder=""
+              onChange={(packageStyle) => setPage({ packageStyle: packageStyle as "table" | "cards" | "list" })}
+              options={[
+                { value: "table", label: "Tabel — kepala berwarna, baris selang-seling" },
+                { value: "cards", label: "Kartu — kotak harga berdampingan" },
+                { value: "list", label: "Daftar — baris dengan lencana harga" },
+              ]}
+            />
+          </Field>
           <div className="space-y-2">
             {swatches(PRIMARY_PRESETS, page.tableColor ?? "", (c) => setPage({ tableColor: c }), "Warna tabel harga")}
             {page.tableColor && (

@@ -27,6 +27,25 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.26.0",
+    date: "2026-10-14",
+    title: "Pengaturan Mode login dan Tombol dipisah, desain daftar paket bisa dipilih",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Bagian \"Mode login & tombol\" dipecah menjadi dua: \"Mode login\" (mode saat halaman dibuka, tombol pilihan Voucher/Member, tautan coba gratis) dan \"Tombol\" (warna tombol Voucher, kecerahan, warna tombol Login, warna font tombol).",
+        ],
+      },
+      {
+        type: "added",
+        items: [
+          "Pilihan \"Desain daftar paket\" di bagian Tabel harga paket: Tabel (kepala berwarna, baris selang-seling), Kartu (kotak harga berdampingan), atau Daftar (baris dengan lencana harga). Warna tabel harga ikut diterapkan. Berlaku di desain Minimal; desain Poster tetap memakai kartu harga. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.25.1",
     date: "2026-10-14",
     title: "Kode voucher bisa huruf kapital",

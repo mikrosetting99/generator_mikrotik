@@ -122,6 +122,8 @@ export interface HotspotPageConfig {
   packages: VoucherPackage[];
   /** Warna tabel harga (kepala tabel / kartu harga). Kosong = ikut warna tombol Voucher. */
   tableColor: string;
+  /** Bentuk daftar paket (desain Minimal): tabel, kartu, atau daftar. Poster selalu kartu. */
+  packageStyle: "table" | "cards" | "list";
   terms: string;
   whatsapp: string;
   whatsappLabel: string;

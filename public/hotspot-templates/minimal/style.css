@@ -294,6 +294,59 @@ body::before {
 }
 .table td:last-child { font-weight: 700; }
 
+/* Gaya "kartu": kotak harga berdampingan. */
+.pkgs-title {
+  margin-top: 18px;
+  color: var(--accent-text);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+}
+.pkgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.pkg {
+  flex: 1 1 28%;
+  min-width: 84px;
+  padding: 10px 6px;
+  text-align: center;
+  border: 1px solid {{TABLE_LINE}};
+  border-top: 3px solid {{TABLE_BG}};
+  border-radius: 10px;
+  background: rgba(127, 127, 127, .06);
+}
+.pkg .pn { font-size: 12px; font-weight: 600; }
+.pkg .pp { margin: 4px 0 2px; font-size: 17px; font-weight: 800; color: var(--accent-text); }
+.pkg .pm { font-size: 11px; color: var(--muted); line-height: 1.35; }
+
+/* Gaya "daftar": satu baris per paket, harga di kanan dalam lencana. */
+.plist { margin-top: 10px; }
+.li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 2px;
+  border-top: 1px solid var(--border);
+}
+.li:first-child { border-top: 0; }
+.li .lt { display: flex; flex-direction: column; min-width: 0; text-align: left; }
+.li .ln { font-size: 13px; font-weight: 600; }
+.li .lm { font-size: 11px; color: var(--muted); }
+.li .lp {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: {{TABLE_BG}};
+  color: {{TABLE_TEXT}};
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .table2 td {
   border: 1px solid var(--border);
   padding: 7px 9px;

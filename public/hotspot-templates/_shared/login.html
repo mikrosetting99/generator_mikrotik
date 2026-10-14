@@ -97,7 +97,21 @@
     $(endif)
     {{/TRIAL}}
 
-    {{#PACKAGES}}
+    {{#PKG_CARDS}}
+    <div class="pkgs-title">Paket Internet</div>
+    <div class="pkgs">
+{{PACKAGE_MINI}}
+    </div>
+    {{/PKG_CARDS}}
+
+    {{#PKG_LIST}}
+    <div class="pkgs-title">Paket Internet</div>
+    <div class="plist">
+{{PACKAGE_LIST}}
+    </div>
+    {{/PKG_LIST}}
+
+    {{#PKG_TABLE}}
     <table class="table">
       <caption>Paket Internet</caption>
       <tr>
@@ -108,7 +122,7 @@
       </tr>
       {{PACKAGE_ROWS}}
     </table>
-    {{/PACKAGES}}
+    {{/PKG_TABLE}}
 
     {{#TERMS}}<div class="terms">{{TERMS}}</div>{{/TERMS}}
 

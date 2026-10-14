@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.26.0] - 2026-10-14
+
+_Pengaturan Mode login dan Tombol dipisah, desain daftar paket bisa dipilih_
+
+### Diubah
+
+- Bagian "Mode login & tombol" dipecah menjadi dua: "Mode login" (mode saat halaman dibuka, tombol pilihan Voucher/Member, tautan coba gratis) dan "Tombol" (warna tombol Voucher, kecerahan, warna tombol Login, warna font tombol).
+
+### Ditambahkan
+
+- Pilihan "Desain daftar paket" di bagian Tabel harga paket: Tabel (kepala berwarna, baris selang-seling), Kartu (kotak harga berdampingan), atau Daftar (baris dengan lencana harga). Warna tabel harga ikut diterapkan. Berlaku di desain Minimal; desain Poster tetap memakai kartu harga. Paket halaman login perlu di-upload ulang ke router.
+
 ## [1.25.1] - 2026-10-14
 
 _Kode voucher bisa huruf kapital_

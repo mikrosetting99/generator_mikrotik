@@ -183,6 +183,31 @@ function packageCard(pkg: VoucherPackage): string {
   );
 }
 
+/** Kartu paket kecil untuk desain Minimal (gaya "kartu"). */
+function miniCard(pkg: VoucherPackage): string {
+  const meta = [pkg.duration.trim(), pkg.validity.trim()].filter(Boolean).map(escapeHtml).join(" &middot; ");
+  return (
+    `      <div class="pkg">\n` +
+    `        <div class="pn">${escapeHtml(pkg.name.trim() || "Paket")}</div>\n` +
+    `        <div class="pp">${escapeHtml(pkg.price.trim())}</div>\n` +
+    (meta ? `        <div class="pm">${meta}</div>\n` : "") +
+    `      </div>`
+  );
+}
+
+/** Satu baris paket untuk desain Minimal (gaya "daftar"): nama + keterangan di kiri, harga di kanan. */
+function listRow(pkg: VoucherPackage): string {
+  const meta = [pkg.duration.trim(), pkg.validity.trim()].filter(Boolean).map(escapeHtml).join(" &middot; ");
+  return (
+    `      <div class="li">\n` +
+    `        <div class="lt"><span class="ln">${escapeHtml(pkg.name.trim() || "Paket")}</span>` +
+    (meta ? `<span class="lm">${meta}</span>` : "") +
+    `</div>\n` +
+    `        <div class="lp">${escapeHtml(pkg.price.trim())}</div>\n` +
+    `      </div>`
+  );
+}
+
 /** Teks aman di dalam string JavaScript berkutip ganda pada halaman login (tanpa tanda kutip pembuka/penutup). */
 function jsString(value: string): string {
   // "$(" dipecah: router menganggapnya variabel RouterOS dan akan mengisinya sendiri.
@@ -331,6 +356,12 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     PACKAGES: packages.length > 0 ? "1" : "",
     PACKAGE_VALIDITY: anyValidity ? "1" : "",
     PACKAGE_ROWS: rows.join("\n"),
+    // Bentuk daftar paket desain Minimal: hanya satu yang aktif.
+    PKG_TABLE: packages.length > 0 && (page.packageStyle ?? "table") === "table" ? "1" : "",
+    PKG_CARDS: packages.length > 0 && page.packageStyle === "cards" ? "1" : "",
+    PKG_LIST: packages.length > 0 && page.packageStyle === "list" ? "1" : "",
+    PACKAGE_MINI: packages.map(miniCard).join("\n"),
+    PACKAGE_LIST: packages.map(listRow).join("\n"),
     PACKAGE_CARDS: packages.map(packageCard).join("\n"),
     PRIMARY: primary,
     PRIMARY_DARK: mix(primary, -0.34),

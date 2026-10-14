@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.21.0] - 2026-10-14
+
+_Load Balance PCC + Failover jadi generator satu layar_
+
+### Diubah
+
+- Halaman Load Balance PCC + Failover dirombak dari wizard bertahap menjadi generator satu layar: pengaturan dan kartu jalur ISP di kiri, script hasil yang ikut berubah saat mengisi di kanan.
+
+### Ditambahkan
+
+- Jumlah jalur WAN (2–8 ISP) dipilih langsung; ISP yang sudah diisi tidak hilang saat jumlah diubah.
+- Target lokal bisa berupa Interface LAN atau IP Address List (RFC1918): mode address list membuat daftar LOCAL-IP, memakai src/dst address-list di rule PCC, dan membatasi NAT ke tujuan di luar jaringan lokal.
+- Rasio bandwidth: isi kecepatan tiap ISP (Mbps) dan beban dibagi sesuai perbandingannya (maksimal 10 bagian per ISP agar rule mangle tetap wajar), menggantikan isian bobot manual.
+
 ## [1.20.2] - 2026-10-14
 
 _Autoflush DNS lebih rapi_

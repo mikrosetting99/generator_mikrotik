@@ -8,13 +8,18 @@ export interface IspEntry {
   name: string;
   iface: string;
   gateway: string;
-  /** Bobot distribusi PCC — makin besar, makin banyak koneksi diarahkan ke ISP ini. */
+  /** Bobot distribusi PCC — makin besar, makin banyak koneksi diarahkan ke ISP ini. Dipakai sebagai cadangan; bobot sebenarnya dihitung dari `speed` bila rasio bandwidth aktif. */
   weight: string;
+  /** Kecepatan jalur dalam Mbps — dasar pembagian beban bila rasio bandwidth aktif. */
+  speed: string;
   /** IP publik yang dicek jalurnya — dipakai oleh metode failover manapun yang aktif. */
   checkTarget: string;
   /** Prioritas sebagai jalur cadangan bagi ISP lain — angka kecil = diutamakan. */
   distance: string;
 }
+
+/** Sumber trafik lokal yang dibagi PCC: satu interface LAN, atau daftar alamat privat (RFC1918). */
+export type LocalMode = "interface" | "addresslist";
 
 export type PccClassifier = "src-address" | "both-addresses" | "both-addresses-and-ports";
 
@@ -30,8 +35,12 @@ export interface LbIssue {
 
 export interface LoadBalanceConfig {
   ros: RosVersion | "";
-  /** Interface/bridge sisi LAN yang trafiknya dibagi lewat PCC. */
+  /** Cara menandai trafik lokal: lewat interface LAN, atau address-list RFC1918. */
+  localMode: LocalMode;
+  /** Interface/bridge sisi LAN yang trafiknya dibagi lewat PCC (mode interface). */
   lanIface: string;
+  /** Bagi beban sesuai kecepatan tiap ISP (Mbps) alih-alih rata. */
+  ratioEnabled: boolean;
   isps: IspEntry[];
   /** Pembagian beban lewat Per Connection Classifier — independen dari failover. */
   pccEnabled: boolean;

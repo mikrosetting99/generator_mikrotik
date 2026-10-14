@@ -11,6 +11,7 @@ export function newIsp(index: number): IspEntry {
     iface: "",
     gateway: "",
     weight: "1",
+    speed: "",
     checkTarget: TARGET_POOL[index % TARGET_POOL.length],
     distance: String(index + 1),
   };
@@ -19,7 +20,9 @@ export function newIsp(index: number): IspEntry {
 export function createDefaultLoadBalanceConfig(): LoadBalanceConfig {
   return {
     ros: "",
+    localMode: "interface",
     lanIface: "bridge-lan",
+    ratioEnabled: false,
     isps: [newIsp(0), newIsp(1)],
     pccEnabled: true,
     classifier: "both-addresses-and-ports",

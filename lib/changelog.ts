@@ -27,6 +27,26 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.21.0",
+    date: "2026-10-14",
+    title: "Load Balance PCC + Failover jadi generator satu layar",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Halaman Load Balance PCC + Failover dirombak dari wizard bertahap menjadi generator satu layar: pengaturan dan kartu jalur ISP di kiri, script hasil yang ikut berubah saat mengisi di kanan.",
+        ],
+      },
+      {
+        type: "added",
+        items: [
+          "Jumlah jalur WAN (2–8 ISP) dipilih langsung; ISP yang sudah diisi tidak hilang saat jumlah diubah.",
+          "Target lokal bisa berupa Interface LAN atau IP Address List (RFC1918): mode address list membuat daftar LOCAL-IP, memakai src/dst address-list di rule PCC, dan membatasi NAT ke tujuan di luar jaringan lokal.",
+          "Rasio bandwidth: isi kecepatan tiap ISP (Mbps) dan beban dibagi sesuai perbandingannya (maksimal 10 bagian per ISP agar rule mangle tetap wajar), menggantikan isian bobot manual.",
+        ],
+      },
+    ],
+  },  {
     version: "1.20.2",
     date: "2026-10-14",
     title: "Autoflush DNS lebih rapi",

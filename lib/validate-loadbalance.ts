@@ -20,9 +20,10 @@ export function validateLoadBalanceConfig(config: LoadBalanceConfig): LbIssue[] 
   }
 
   // --- LAN ------------------------------------------------------------------
-  if (!config.lanIface.trim()) {
+  const needLan = config.localMode !== "addresslist";
+  if (needLan && !config.lanIface.trim()) {
     err("lan", "Interface/bridge sisi LAN wajib diisi — ini sumber trafik yang dibagi PCC.");
-  } else if (!NAME_OK.test(config.lanIface.trim())) {
+  } else if (needLan && !NAME_OK.test(config.lanIface.trim())) {
     err("lan", "Nama interface LAN hanya boleh huruf, angka, titik, strip, dan underscore.");
   }
 
@@ -44,7 +45,7 @@ export function validateLoadBalanceConfig(config: LoadBalanceConfig): LbIssue[] 
   if (new Set(ifaces).size !== ifaces.length) {
     err("isp", "Satu interface tidak boleh dipakai oleh dua ISP sekaligus.");
   }
-  if (config.lanIface.trim() && ifaces.includes(config.lanIface.trim())) {
+  if (needLan && config.lanIface.trim() && ifaces.includes(config.lanIface.trim())) {
     err("isp", "Interface ISP tidak boleh sama dengan interface LAN.");
   }
 
@@ -72,18 +73,18 @@ export function validateLoadBalanceConfig(config: LoadBalanceConfig): LbIssue[] 
     if (config.failoverEnabled && !isIpv4(isp.checkTarget)) {
       err("isp", `${tag}: target cek jalur bukan alamat IPv4 yang valid.`);
     }
-    if (config.pccEnabled && (!/^\d+$/.test(isp.weight) || Number(isp.weight) < 1)) {
-      err("isp", `${tag}: bobot PCC harus bilangan bulat 1 atau lebih.`);
+    if (config.pccEnabled && config.ratioEnabled && !(Number(isp.speed) > 0)) {
+      err("isp", `${tag}: kecepatan (Mbps) wajib diisi angka lebih dari 0 karena rasio bandwidth aktif.`);
     }
     if (!/^\d+$/.test(isp.distance) || Number(isp.distance) < 1 || Number(isp.distance) > 255) {
       err("isp", `${tag}: distance harus angka 1–255.`);
     }
   });
 
-  if (config.pccEnabled) {
-    const totalWeight = filled.reduce((sum, i) => sum + (Number(i.weight) || 0), 0);
-    if (totalWeight > 20) {
-      warn("isp", "Total bobot PCC cukup besar — makin banyak rule mangle yang dibuat (satu rule per satuan bobot).");
+  if (config.pccEnabled && config.ratioEnabled) {
+    const speeds = filled.map((i) => Number(i.speed)).filter((n) => n > 0);
+    if (speeds.length > 1 && Math.max(...speeds) / Math.min(...speeds) > 10) {
+      warn("isp", "Selisih kecepatan lebih dari 10×: jatah ISP terlambat dibatasi 10 bagian agar rule mangle tidak membengkak.");
     }
   }
 

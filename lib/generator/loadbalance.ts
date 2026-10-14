@@ -25,13 +25,35 @@ function ispSlug(isp: IspEntry, index: number): string {
   return clean || `isp${index + 1}`;
 }
 
+/**
+ * Jatah PCC tiap ISP. Rasio bandwidth: kecepatan dibagi kecepatan terkecil
+ * lalu dibulatkan (maks 10 bagian per ISP) supaya jumlah rule mangle tetap
+ * wajar. Tanpa rasio, semua ISP mendapat jatah sama.
+ */
+function ratioWeights(speeds: number[], ratio: boolean): number[] {
+  const valid = speeds.every((n) => Number.isFinite(n) && n > 0);
+  if (!ratio || !valid || speeds.length === 0) return speeds.map(() => 1);
+  const min = Math.min(...speeds);
+  return speeds.map((n) => Math.max(1, Math.min(10, Math.round(n / min))));
+}
+
 export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
   const s = new ScriptBuilder();
   const v7 = config.ros === "v7";
   const isps = config.isps.filter((i) => i.iface.trim() && i.gateway.trim());
   const lan = config.lanIface.trim();
   const slugs = isps.map((isp, i) => ispSlug(isp, i));
-  const totalWeight = isps.reduce((sum, isp) => sum + (Number(isp.weight) || 1), 0);
+  const addressList = config.localMode === "addresslist";
+  const weights = ratioWeights(isps.map((isp) => Number(isp.speed)), config.ratioEnabled);
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+  /** Pencocok trafik lokal pada rule PCC: interface LAN, atau address-list RFC1918. */
+  const localMatch: Array<[string, ArgValue]> = addressList
+    ? [
+        ["src-address-list", "LOCAL-IP"],
+        ["dst-address-list", "!LOCAL-IP"],
+        ["dst-address-type", "!local"],
+      ]
+    : [["in-interface", lan]];
   const { pccEnabled, failoverEnabled, failoverMethod } = config;
   const recursive = failoverEnabled && failoverMethod === "recursive";
   const netwatch = failoverEnabled && failoverMethod === "netwatch";
@@ -62,6 +84,8 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
     "",
     `Jumlah ISP : ${isps.length}`,
     `RouterOS   : ${config.ros ? config.ros : "(belum dipilih)"}`,
+    `Target lokal       : ${addressList ? "IP Address List (RFC1918)" : `Interface ${lan || "(belum diisi)"}`}`,
+    `Bagi beban         : ${config.ratioEnabled ? "sesuai rasio bandwidth" : "rata"}`,
     `Load Balance (PCC) : ${pccEnabled ? "aktif" : "tidak aktif"}`,
     `Failover            : ${failoverEnabled ? `aktif — metode ${methodLabel}` : "tidak aktif"}`,
     `Dibuat     : ${stamp()}`,
@@ -94,15 +118,34 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
     return s.toString();
   }
 
+  // ------------------------------------------- address-list jaringan lokal
+  if (addressList) {
+    section("ADDRESS LIST — JARINGAN LOKAL", "Alamat privat (RFC1918) yang dianggap trafik lokal; hanya trafik ke luar daftar ini yang dibagi PCC dan di-NAT.");
+    for (const cidr of ["192.168.0.0/16", "172.16.0.0/12", "10.0.0.0/8"]) {
+      s.addIfMissing(
+        "/ip firewall address-list",
+        [
+          ["list", "LOCAL-IP"],
+          ["address", cidr],
+        ],
+        args([
+          ["list", "LOCAL-IP"],
+          ["address", cidr],
+          ["comment", tag("Jaringan lokal (RFC1918)")],
+        ]),
+      );
+    }
+  }
+
   // ------------------------------------------------------- mangle: PCC mark
   if (pccEnabled) {
     section(
       "MANGLE — PCC MARK-CONNECTION",
-      `Membagi koneksi baru dari ${lan || "(LAN belum diisi)"} ke tiap ISP berdasarkan bobot yang diatur (total bobot saat ini: ${totalWeight}).`,
+      `Membagi koneksi baru dari ${addressList ? "jaringan lokal (LOCAL-IP)" : lan || "(LAN belum diisi)"} ke tiap ISP ${config.ratioEnabled ? "sesuai rasio bandwidth" : "secara rata"} (total bagian: ${totalWeight}).`,
     );
     let offset = 0;
     isps.forEach((isp, i) => {
-      const weight = Math.max(1, Number(isp.weight) || 1);
+      const weight = weights[i];
       const connMark = `${slugs[i]}-conn`;
       for (let r = 0; r < weight; r += 1) {
         const remainder = offset + r;
@@ -110,13 +153,13 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
           "/ip firewall mangle",
           [
             ["chain", "prerouting"],
-            ["in-interface", lan],
+            ...localMatch,
             ["connection-mark", "no-mark"],
             ["per-connection-classifier", `${config.classifier}:${totalWeight}/${remainder}`],
           ],
           args([
             ["chain", "prerouting"],
-            ["in-interface", lan],
+            ...localMatch,
             ["connection-mark", "no-mark"],
             ["per-connection-classifier", `${config.classifier}:${totalWeight}/${remainder}`],
             ["action", "mark-connection"],
@@ -372,11 +415,13 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
           ["chain", "srcnat"],
           ["action", "masquerade"],
           ["out-interface", isp.iface],
+          ...(addressList ? ([["dst-address-list", "!LOCAL-IP"]] as Array<[string, ArgValue]>) : []),
         ],
         args([
           ["chain", "srcnat"],
           ["action", "masquerade"],
           ["out-interface", isp.iface],
+          ...(addressList ? ([["dst-address-list", "!LOCAL-IP"]] as Array<[string, ArgValue]>) : []),
           ["comment", tag(`NAT ${isp.name}`)],
         ]),
       );

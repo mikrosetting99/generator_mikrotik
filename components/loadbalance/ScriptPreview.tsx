@@ -42,7 +42,7 @@ export function ScriptPreview({
       : { tone: "border-accent/40 bg-accent/10 text-accent", text: "siap pakai" };
 
   return (
-    <div className="flex flex-col gap-4 xl:sticky xl:top-[76px]">
+    <div className="flex flex-col gap-4">
       <div className="edge-light overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_24px_60px_-40px_rgba(0,0,0,0.9)]">
         <div className="flex items-center gap-3 border-b border-line-soft bg-canvas/60 px-4 py-2.5">
           <span className="flex gap-1.5" aria-hidden>
@@ -61,7 +61,7 @@ export function ScriptPreview({
           </span>
         </div>
 
-        <pre className="max-h-[40vh] overflow-auto bg-code px-3 py-3 font-mono text-[11.5px] leading-[1.7] xl:max-h-[calc(100vh-25rem)] xl:min-h-[280px]">
+        <pre className="max-h-[50vh] overflow-auto bg-code px-3 py-3 font-mono text-[11.5px] leading-[1.7] lg:max-h-[calc(100vh-23rem)] lg:min-h-[300px]">
           {lines.map((line, i) => (
             <div key={i} className="flex gap-3 px-1 hover:bg-white/[0.03]">
               <span className="w-7 shrink-0 select-none text-right text-faint/40">{i + 1}</span>

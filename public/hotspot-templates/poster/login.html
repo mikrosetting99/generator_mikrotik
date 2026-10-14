@@ -78,7 +78,7 @@
       <input type="hidden" name="popup" value="true" />
       <input class="username" name="username" type="text" value="$(username)"
              autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
-      <input class="password" name="password" placeholder="Password" type="password"
+      <input class="password" name="password" placeholder="{{PH_PASSWORD}}" type="password"
              autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
 
       <button class="button" type="submit">
@@ -131,12 +131,12 @@
     }
 
     function voucher() {
-      username.placeholder = "Masukkan kode voucher di sini";
+      username.placeholder = "{{PH_VOUCHER_JS}}";
       username.className = "username single";
       password.type = "hidden";
       password.value = username.value;
       username.onkeyup = setpass;
-      infologin.innerHTML = "Masukkan kode voucher, lalu tekan Login.";
+      infologin.innerHTML = "{{HINT_VOUCHER_JS}}";
       if (btnVoucher) { btnVoucher.className = "small-button active"; }
       if (btnMember) { btnMember.className = "small-button"; }
       username.focus();
@@ -144,12 +144,12 @@
 
     // Mode member: username dan password terpisah.
     function member() {
-      username.placeholder = "Username";
+      username.placeholder = "{{PH_USERNAME_JS}}";
       username.className = "username";
       password.type = "password";
       password.value = "";
       username.onkeyup = null;
-      infologin.innerHTML = "Masukkan username dan password, lalu tekan Login.";
+      infologin.innerHTML = "{{HINT_MEMBER_JS}}";
       if (btnMember) { btnMember.className = "small-button active"; }
       if (btnVoucher) { btnVoucher.className = "small-button"; }
       username.focus();

@@ -183,6 +183,31 @@ function packageCard(pkg: VoucherPackage): string {
   );
 }
 
+/** Teks aman di dalam string JavaScript berkutip ganda pada halaman login (tanpa tanda kutip pembuka/penutup). */
+function jsString(value: string): string {
+  // "$(" dipecah: router menganggapnya variabel RouterOS dan akan mengisinya sendiri.
+  return JSON.stringify(value).slice(1, -1).replace(/</g, "\\u003c").replace(/\$\(/g, "$ (");
+}
+
+/** Teks bawaan tiap desain — dipakai bila admin/pengguna tidak mengisi sendiri. */
+const TEXT_DEFAULTS = {
+  minimal: {
+    phVoucher: "Kode Voucher",
+    hintVoucher: "Masukkan kode voucher, lalu klik Login.",
+    hintMember: "Masukkan username dan password, lalu klik Login.",
+  },
+  poster: {
+    phVoucher: "Masukkan kode voucher di sini",
+    hintVoucher: "Masukkan kode voucher, lalu tekan Login.",
+    hintMember: "Masukkan username dan password, lalu tekan Login.",
+  },
+} as const;
+
+/** Teks bawaan desain, untuk contoh isian (placeholder) di editor. */
+export function textDefaults(id: HotspotTemplateId) {
+  return TEXT_DEFAULTS[id === "poster" ? "poster" : "minimal"];
+}
+
 export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const template = getTemplate(page.template);
   const primary = adjustBrightness(
@@ -217,6 +242,11 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const formBorder = customForm ? mix(seen, formIsDark ? 0.18 : -0.14) : palette.border;
   const formField = customForm ? rgba(mix(seen, formIsDark ? 0.07 : -0.04), Math.max(formOpacity, 55) / 100) : palette.bg;
 
+  const defaults = textDefaults(page.template);
+  const phVoucher = page.placeholderVoucher?.trim() || defaults.phVoucher;
+  const hintVoucher = page.hintVoucher?.trim() || defaults.hintVoucher;
+  const hintMember = page.hintMember?.trim() || defaults.hintMember;
+  const hintCustom = isHexColor(page.hintColor ?? "") ? page.hintColor.trim() : "";
   const titleCustom = isHexColor(page.titleColor ?? "") ? page.titleColor.trim() : "";
   const subtitleCustom = isHexColor(page.subtitleColor ?? "") ? page.subtitleColor.trim() : "";
   const fontCustom = isHexColor(page.textColor ?? "") ? page.textColor.trim() : "";
@@ -262,6 +292,15 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     TABLE_TEXT: readableOn(tableBg),
     TABLE_LINE: blend(formBorder, tableBg, 0.55),
     MARQUEE_FG_POSTER: isHexColor(page.marqueeTextColor ?? "") ? page.marqueeTextColor.trim() : "var(--text)",
+    // Placeholder & kalimat petunjuk: isian sendiri, atau bawaan desain bila kosong.
+    PH_VOUCHER: escapeHtml(phVoucher),
+    PH_VOUCHER_JS: jsString(phVoucher),
+    PH_USERNAME_JS: jsString(page.placeholderUsername?.trim() || "Username"),
+    PH_PASSWORD: escapeHtml(page.placeholderPassword?.trim() || "Password"),
+    HINT_VOUCHER_JS: jsString(escapeHtml(hintVoucher)),
+    HINT_MEMBER_JS: jsString(escapeHtml(hintMember)),
+    HINT_COLOR: hintCustom || "var(--muted)",
+    HINT_COLOR_P: hintCustom || "var(--text)",
     MARQUEE_TOP: page.marqueeEnabled !== false && page.marquee.trim() && page.marqueePosition !== "bottom" ? "1" : "",
     MARQUEE_BOTTOM: page.marqueeEnabled !== false && page.marquee.trim() && page.marqueePosition === "bottom" ? "1" : "",
     TERMS: escapeHtml(page.terms.trim()),

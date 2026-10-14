@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.24.0",
+    date: "2026-10-14",
+    title: "Template default, placeholder, dan petunjuk login bisa diatur",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Admin bisa menetapkan satu template sebagai default: tombol \"Jadikan default\" / \"Lepas default\" di daftar Template (editor dan Dashboard Admin). Siapa pun yang membuka Halaman Login Hotspot langsung memulai dari desain itu; template default tampil paling atas dengan label \"default\".",
+          "Bagian baru \"Petunjuk & placeholder\": kalimat petunjuk di atas kolom login (mode Voucher dan Member, mis. \"Masukkan kode voucher, lalu klik Login.\") beserta warnanya, dan placeholder kolom kode voucher, username, dan password. Bila dikosongkan, memakai teks bawaan tiap desain. Teks yang diketik diamankan (tanda kutip dan tag HTML tidak merusak halaman). Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },  {
     version: "1.23.0",
     date: "2026-10-14",
     title: "Logo dan Background terpisah, sudut form bisa diatur",

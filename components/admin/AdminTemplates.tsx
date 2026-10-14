@@ -13,6 +13,7 @@ interface TemplateSummary {
   design: string;
   primaryColor: string;
   bgColor: string;
+  isDefault: boolean;
 }
 
 /** Template Halaman Login Hotspot yang sudah diterbitkan admin — dilihat dan dihapus di sini. */
@@ -28,6 +29,12 @@ export function AdminTemplates() {
   }, []);
 
   useEffect(load, [load]);
+
+  const setDefault = async (t: TemplateSummary, on: boolean) => {
+    const res = await fetch(`/api/admin/hotspot-templates/${t.id}/default`, { method: on ? "POST" : "DELETE" });
+    if (res.ok) load();
+    else setFlash("Gagal mengubah template default.");
+  };
 
   const remove = async (t: TemplateSummary) => {
     if (!confirm(`Hapus template "${t.name}" untuk semua pengguna?`)) return;
@@ -69,12 +76,22 @@ export function AdminTemplates() {
                   <span className="h-6 w-6" style={{ background: t.primaryColor }} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-ink">{t.name}</p>
+                  <p className="flex items-center gap-2 truncate text-sm text-ink">
+                    {t.name}
+                    {t.isDefault && (
+                      <span className="rounded-full border border-brand/40 bg-brand/10 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-brand">
+                        default
+                      </span>
+                    )}
+                  </p>
                   <p className="truncate text-xs text-faint">
                     {t.design === "poster" ? "Poster" : "Minimal"}
                     {t.description ? ` · ${t.description}` : ""}
                   </p>
                 </div>
+                <Button size="sm" title="Dimuat otomatis saat siapa pun membuka Halaman Login Hotspot" onClick={() => setDefault(t, !t.isDefault)}>
+                  {t.isDefault ? "Lepas default" : "Jadikan default"}
+                </Button>
                 <Button size="sm" variant="danger" className="px-2" ariaLabel={`Hapus ${t.name}`} title="Hapus" onClick={() => remove(t)}>
                   <Trash className="h-3.5 w-3.5" />
                 </Button>

@@ -182,7 +182,7 @@ body::before {
 
 #infologin {
   font-size: 12.5px;
-  color: var(--muted);
+  color: {{HINT_COLOR}};
   line-height: 1.6;
   margin-bottom: 12px;
 }

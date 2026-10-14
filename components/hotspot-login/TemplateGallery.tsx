@@ -15,6 +15,8 @@ interface TemplateSummary {
   design: string;
   primaryColor: string;
   bgColor: string;
+  /** Template yang dimuat otomatis saat editor pertama kali dibuka. */
+  isDefault: boolean;
 }
 
 /* Isi template diambil sekali lalu diingat selama tab terbuka — dipakai kartu,
@@ -207,6 +209,22 @@ export function TemplateGallery({
     }
   };
 
+  /** Admin: jadikan template ini (atau lepas) sebagai default yang dimuat pertama kali. */
+  const setDefault = async (t: TemplateSummary, on: boolean) => {
+    setBusy(t.id);
+    const res = await fetch(`/api/admin/hotspot-templates/${t.id}/default`, { method: on ? "POST" : "DELETE" });
+    setBusy(null);
+    if (res.ok) {
+      setFlash({
+        tone: "info",
+        text: on
+          ? `"${t.name}" kini menjadi template default — dimuat otomatis saat siapa pun membuka Halaman Login Hotspot.`
+          : `"${t.name}" tidak lagi menjadi default.`,
+      });
+      refresh();
+    } else setFlash({ tone: "bad", text: "Gagal mengubah template default." });
+  };
+
   const remove = async (t: TemplateSummary) => {
     if (!confirm(`Hapus template "${t.name}" untuk semua pengguna?`)) return;
     setBusy(t.id);
@@ -306,8 +324,13 @@ export function TemplateGallery({
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-ink">{t.name}</p>
-                    <p className="text-[10px] uppercase tracking-[0.09em] text-faint">
+                    <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.09em] text-faint">
                       {t.design === "poster" ? "Poster" : "Minimal"}
+                      {t.isDefault && (
+                        <span className="rounded-full border border-brand/40 bg-brand/10 px-1.5 py-px font-medium text-brand">
+                          default
+                        </span>
+                      )}
                     </p>
                   </div>
                   <span className="mt-0.5 flex shrink-0 overflow-hidden rounded-md border border-line" title="Warna latar dan tombol">
@@ -330,7 +353,15 @@ export function TemplateGallery({
                 </div>
 
                 {isAdmin && (
-                  <div className="flex items-center justify-end gap-1.5 border-t border-line-soft pt-2">
+                  <div className="flex flex-wrap items-center justify-end gap-1.5 border-t border-line-soft pt-2">
+                    <Button
+                      size="sm"
+                      title={t.isDefault ? "Lepas dari status default" : "Dimuat otomatis saat siapa pun membuka editor"}
+                      disabled={busy !== null}
+                      onClick={() => setDefault(t, !t.isDefault)}
+                    >
+                      {t.isDefault ? "Lepas default" : "Jadikan default"}
+                    </Button>
                     <Button
                       size="sm"
                       title="Timpa isi template dengan desain yang sedang dibuka"

@@ -98,6 +98,15 @@ export interface HotspotPageConfig {
   loginMode: LoginMode;
   showModeSwitch: boolean;
   /** Teks berjalan di atas form login. */
+  /** Placeholder kolom login. Kosong = bawaan desain. */
+  placeholderVoucher: string;
+  placeholderUsername: string;
+  placeholderPassword: string;
+  /** Kalimat petunjuk di atas kolom login, per mode. Kosong = bawaan desain. */
+  hintVoucher: string;
+  hintMember: string;
+  /** Warna kalimat petunjuk. Kosong = otomatis. */
+  hintColor: string;
   marquee: string;
   /** Teks berjalan tampil atau disembunyikan, tanpa menghapus teksnya. */
   marqueeEnabled: boolean;

@@ -6,6 +6,7 @@ import { Button, EmptyState, Field, Note, Select, TextInput, Toggle } from "@/co
 import { newPackage } from "@/lib/defaults-hotspot-login";
 import {
   buildPreviewHtml,
+  textDefaults,
   isHexColor,
   whatsappLink,
 } from "@/lib/hotspot-page";
@@ -909,6 +910,53 @@ export function LoginPageEditor({
           )}
           </Section>
 
+          <Section title="Petunjuk & placeholder">
+          <Field label="Petunjuk mode Voucher" hint="Kalimat di atas kolom login saat mode Voucher.">
+            <TextInput
+              value={page.hintVoucher ?? ""}
+              onChange={(hintVoucher) => setPage({ hintVoucher })}
+              placeholder={textDefaults(page.template).hintVoucher}
+            />
+          </Field>
+          <Field label="Petunjuk mode Member" hint="Kalimat di atas kolom login saat mode Member.">
+            <TextInput
+              value={page.hintMember ?? ""}
+              onChange={(hintMember) => setPage({ hintMember })}
+              placeholder={textDefaults(page.template).hintMember}
+            />
+          </Field>
+          {swatches(TITLE_PRESETS, page.hintColor ?? "", (c) => setPage({ hintColor: c }), "Warna petunjuk")}
+          {page.hintColor && (
+            <button
+              type="button"
+              onClick={() => setPage({ hintColor: "" })}
+              className="-mt-1 text-xs text-brand hover:underline"
+            >
+              Kembali ke warna petunjuk otomatis
+            </button>
+          )}
+          <Field label="Placeholder kode voucher" hint="Tulisan abu-abu di dalam kolom saat mode Voucher.">
+            <TextInput
+              value={page.placeholderVoucher ?? ""}
+              onChange={(placeholderVoucher) => setPage({ placeholderVoucher })}
+              placeholder={textDefaults(page.template).phVoucher}
+            />
+          </Field>
+          <Field label="Placeholder username" hint="Kolom username saat mode Member.">
+            <TextInput
+              value={page.placeholderUsername ?? ""}
+              onChange={(placeholderUsername) => setPage({ placeholderUsername })}
+              placeholder="Username"
+            />
+          </Field>
+          <Field label="Placeholder password" hint="Kolom password saat mode Member.">
+            <TextInput
+              value={page.placeholderPassword ?? ""}
+              onChange={(placeholderPassword) => setPage({ placeholderPassword })}
+              placeholder="Password"
+            />
+          </Field>
+          </Section>
           <Section title="Teks berjalan">
           <Toggle
             checked={page.marqueeEnabled !== false}

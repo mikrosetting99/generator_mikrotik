@@ -87,6 +87,8 @@ model HotspotTemplate {
   design       String   @default("minimal")
   primaryColor String   @default("#38bdf8")
   bgColor      String   @default("#eef2f7")
+  /// Template yang dimuat pertama kali saat siapa pun membuka Halaman Login Hotspot (maks satu).
+  isDefault    Boolean  @default(false)
   config       Json
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

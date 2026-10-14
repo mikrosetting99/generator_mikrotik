@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Database, Download, FileText, Wand } from "@/components/icons";
 import { TemplateGallery } from "@/components/hotspot-login/TemplateGallery";
 import { SaveLoadPage } from "@/components/hotspot-login/SaveLoadPage";
@@ -9,7 +9,7 @@ import { LoginPageEditor } from "@/components/hotspot-login/LoginPageEditor";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
 import { Button, Modal, Note } from "@/components/ui";
-import { createDefaultHotspotLoginConfig } from "@/lib/defaults-hotspot-login";
+import { createDefaultHotspotLoginConfig, normalizeHotspotPage } from "@/lib/defaults-hotspot-login";
 import { downloadBlob } from "@/lib/download";
 import { buildHotspotPackage } from "@/lib/hotspot-page";
 import type { HotspotPageConfig } from "@/lib/types-hotspot-login";
@@ -23,8 +23,28 @@ export function HotspotLoginBuilder() {
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [loaded, setLoaded] = useState<{ id: string; name: string } | null>(null);
 
-  const setPage = (partial: Partial<HotspotPageConfig>) =>
+  // Pertama kali dibuka: bila admin menetapkan template default, mulai dari desain itu —
+  // kecuali pengguna sudah keburu mengubah sesuatu sebelum template selesai dimuat.
+  const touched = useRef(false);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/hotspot-templates/default", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (active && !touched.current && d?.template?.config) {
+          setPageState(normalizeHotspotPage(d.template.config));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const setPage = (partial: Partial<HotspotPageConfig>) => {
+    touched.current = true;
     setPageState((prev) => ({ ...prev, ...partial }));
+  };
 
   const downloadLoginPage = async () => {
     setBuildingZip(true);

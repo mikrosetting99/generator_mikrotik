@@ -34,6 +34,7 @@ import {
   DnsSection,
   FirewallSection,
   HotspotSection,
+  InterfaceNameSection,
   NatSection,
   PoolSection,
   PppoeSection,
@@ -65,6 +66,7 @@ const SECTION_COMPONENTS: Record<SectionId, (props: SectionProps) => React.React
   hotspot: HotspotSection,
   pppoe: PppoeSection,
   firewall: FirewallSection,
+  ifname: InterfaceNameSection,
   user: UserSection,
 };
 
@@ -75,6 +77,7 @@ const OPTIONAL_SECTIONS = new Set<SectionId>([
   "vlan",
   "hotspot",
   "pppoe",
+  "ifname",
   "user",
 ]);
 
@@ -117,6 +120,8 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
       return config.pppoe.enabled;
     case "firewall":
       return config.firewall.enabled || config.antiTethering.enabled;
+    case "ifname":
+      return Object.keys(config.interfaceNames).length > 0 || Object.keys(config.interfaceComments).length > 0;
     case "user":
       return Boolean(config.system.adminPassword) || config.users.length > 0;
   }

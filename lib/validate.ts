@@ -56,19 +56,19 @@ export function validateConfig(config: SetupConfig): Issue[] {
       const next = (config.interfaceNames[name] ?? "").trim();
       if (!next || next === name) continue;
       if (!NAME_OK.test(next)) {
-        err("device", `Nama baru untuk ${name} ("${next}") hanya boleh huruf, angka, titik, strip, dan underscore.`);
+        err("ifname", `Nama baru untuk ${name} ("${next}") hanya boleh huruf, angka, titik, strip, dan underscore.`);
         continue;
       }
       const lower = next.toLowerCase();
       const clash = taken.get(lower);
-      if (clash) err("device", `Nama baru "${next}" dipakai dua kali (${clash} dan ${name}).`);
+      if (clash) err("ifname", `Nama baru "${next}" dipakai dua kali (${clash} dan ${name}).`);
       taken.set(lower, name);
       const other = physical.find((p) => p !== name && p.toLowerCase() === lower && !(config.interfaceNames[p] ?? "").trim());
-      if (other) err("device", `Nama baru "${next}" bentrok dengan interface ${other}.`);
+      if (other) err("ifname", `Nama baru "${next}" bentrok dengan interface ${other}.`);
       const own = [...config.bridges.map((b) => b.name), ...config.vlans.map((v) => v.name)].find(
         (n) => n.trim().toLowerCase() === lower,
       );
-      if (own) err("device", `Nama baru "${next}" sama dengan nama bridge/VLAN yang dibuat di script.`);
+      if (own) err("ifname", `Nama baru "${next}" sama dengan nama bridge/VLAN yang dibuat di script.`);
     }
   }
 

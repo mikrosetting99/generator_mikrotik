@@ -27,6 +27,20 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.30.0",
+    date: "2026-10-15",
+    title: "Setup Mikrotik Baru: menu Nama Interface",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Ganti nama interface kini punya menu sendiri, \"Nama Interface\", tepat setelah Firewall & TTL (sebelum User Mikrotik). Komentar interface ikut pindah ke menu ini.",
+          "Kolom nama sudah terisi nama bawaan (ether1, ether2, ether3, dst) dan bisa langsung diedit; port yang namanya tidak diubah tidak ikut diganti di script. Ada ringkasan jumlah nama/komentar yang diatur dan tombol \"Kembalikan semua ke nama bawaan\".",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.29.1",
     date: "2026-10-14",
     title: "Form nama interface selalu terlihat",

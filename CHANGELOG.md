@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.30.0] - 2026-10-15
+
+_Setup Mikrotik Baru: menu Nama Interface_
+
+### Diubah
+
+- Ganti nama interface kini punya menu sendiri, "Nama Interface", tepat setelah Firewall & TTL (sebelum User Mikrotik). Komentar interface ikut pindah ke menu ini.
+- Kolom nama sudah terisi nama bawaan (ether1, ether2, ether3, dst) dan bisa langsung diedit; port yang namanya tidak diubah tidak ikut diganti di script. Ada ringkasan jumlah nama/komentar yang diatur dan tombol "Kembalikan semua ke nama bawaan".
+
 ## [1.29.1] - 2026-10-14
 
 _Form nama interface selalu terlihat_

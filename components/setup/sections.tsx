@@ -69,6 +69,7 @@ export const SECTION_META: Array<{ id: SectionId; step: string; title: string }>
   { id: "hotspot", step: "k", title: "IP Hotspot" },
   { id: "pppoe", step: "l", title: "PPPoE Server" },
   { id: "firewall", step: "m", title: "Firewall & TTL" },
+  { id: "ifname", step: "m2", title: "Nama Interface" },
   { id: "user", step: "n", title: "User Mikrotik" },
 ];
 
@@ -209,88 +210,6 @@ export function DeviceSection({ config, patch, issues }: SectionProps) {
         </div>
       )}
 
-      {model && (() => {
-        const ports = physicalInterfaces(config);
-        const roleOf = (name: string) => {
-          const wanIndex = config.wans.findIndex((w) => w.iface === name);
-          if (wanIndex >= 0) return { label: `WAN ${wanIndex + 1}`, hint: `WAN${wanIndex + 1}` };
-          const bridge = config.bridges.find((b) => b.ports.includes(name));
-          if (bridge) return { label: `Bridge ${bridge.name}`, hint: `LAN-${name}` };
-          return null;
-        };
-        const names = ports.map((n) => (config.interfaceNames[n] ?? "").trim());
-        const filled = ports.filter((n, i) => names[i] || (config.interfaceComments[n] ?? "").trim()).length;
-        const setName = (name: string, text: string) =>
-          patch({ interfaceNames: { ...config.interfaceNames, [name]: text } });
-        const problem = (name: string, i: number): string => {
-          const next = names[i];
-          if (!next || next === name) return "";
-          if (!/^[A-Za-z0-9_.-]+$/.test(next)) return "Hanya huruf, angka, titik, strip, underscore.";
-          if (names.some((other, j) => j !== i && other.toLowerCase() === next.toLowerCase()))
-            return "Nama ini dipakai port lain.";
-          return "";
-        };
-        return (
-          <div className="mt-6 border-t border-line-soft pt-5">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
-              Nama & komentar interface
-              <span className="text-xs font-normal text-faint">(opsional)</span>
-              {filled > 0 && (
-                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">
-                  {filled} port diatur
-                </span>
-              )}
-            </h3>
-            <div className="mt-3 overflow-hidden rounded-lg border border-line-soft">
-              <div className="hidden grid-cols-[88px_1fr_1.4fr] gap-2 border-b border-line-soft bg-canvas px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.09em] text-muted sm:grid">
-                <span>Port</span>
-                <span>Nama baru</span>
-                <span>Komentar</span>
-              </div>
-              <div className="divide-y divide-line-soft">
-                {ports.map((name, i) => {
-                  const role = roleOf(name);
-                  const bad = problem(name, i);
-                  return (
-                    <div
-                      key={name}
-                      className="grid gap-2 px-3 py-2 sm:grid-cols-[88px_1fr_1.4fr] sm:items-start"
-                    >
-                      <div className="flex items-center gap-2 sm:flex-col sm:items-start sm:gap-1">
-                        <span className="rounded-md border border-line-soft bg-canvas px-2 py-1 text-center font-mono text-[11px] text-muted">
-                          {name}
-                        </span>
-                        {role && <span className="text-[11px] text-faint">{role.label}</span>}
-                      </div>
-                      <div>
-                        <TextInput
-                          mono
-                          value={config.interfaceNames[name] ?? ""}
-                          onChange={(text) => setName(name, text.replace(/\s+/g, "-"))}
-                          placeholder={role ? role.hint : `mis. LAN-${name}`}
-                        />
-                        {bad && <p className="mt-1 text-xs text-bad">{bad}</p>}
-                      </div>
-                      <TextInput
-                        value={config.interfaceComments[name] ?? ""}
-                        onChange={(text) =>
-                          patch({ interfaceComments: { ...config.interfaceComments, [name]: text } })
-                        }
-                        placeholder="mis. ISP Telkom / Uplink / AP Lantai 2"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <p className="mt-1.5 text-xs leading-relaxed text-faint">
-              Kosongkan bila tidak perlu. Seluruh form dan script tetap memakai nama bawaan ({ports[0] ?? "ether1"}, dst);
-              nama baru baru dipasang di bagian paling akhir script, sehingga tidak ada setting yang terlewat.
-              Komentar ditulis ke tiap port agar terbaca di Winbox.
-            </p>
-          </div>
-        );
-      })()}
 
       <div className="mt-6 border-t border-line-soft pt-5">
         <h3 className="text-sm font-semibold text-ink">Identitas & waktu</h3>
@@ -1799,6 +1718,111 @@ export function FirewallSection({ config, patch, issues }: SectionProps) {
           </div>
         )}
       </div>
+
+      <IssueList issues={issues} />
+    </Panel>
+  );
+}
+
+/* ------------------------------------------------------- m2: nama interface */
+
+export function InterfaceNameSection({ config, patch, issues }: SectionProps) {
+  const model = getModel(config.modelId);
+  const ports = physicalInterfaces(config);
+  const roleOf = (name: string) => {
+    const wanIndex = config.wans.findIndex((w) => w.iface === name);
+    if (wanIndex >= 0) return `WAN ${wanIndex + 1}`;
+    const bridge = config.bridges.find((b) => b.ports.includes(name));
+    return bridge ? `Bridge ${bridge.name}` : null;
+  };
+  /** Nama yang tampil di kolom: nama baru bila ada, kalau tidak nama bawaan. */
+  const shown = (name: string) => config.interfaceNames[name] ?? name;
+  const changed = ports.filter((n) => shown(n).trim() && shown(n).trim() !== n).length;
+  const commented = ports.filter((n) => (config.interfaceComments[n] ?? "").trim()).length;
+  const setName = (name: string, text: string) => {
+    const clean = text.replace(/\s+/g, "-");
+    const next = { ...config.interfaceNames };
+    // Sama dengan nama bawaan (atau dikosongkan) = tidak diganti.
+    if (!clean.trim() || clean === name) delete next[name];
+    else next[name] = clean;
+    patch({ interfaceNames: next });
+  };
+  const problem = (name: string): string => {
+    const next = shown(name).trim();
+    if (!next || next === name) return "";
+    if (!/^[A-Za-z0-9_.-]+$/.test(next)) return "Hanya huruf, angka, titik, strip, underscore.";
+    if (ports.some((other) => other !== name && shown(other).trim().toLowerCase() === next.toLowerCase()))
+      return "Nama ini dipakai port lain.";
+    return "";
+  };
+
+  return (
+    <Panel
+      id="ifname"
+      step="m2"
+      title="Nama Interface"
+      description="Ganti nama port agar mudah dikenali (mis. WAN-Telkom, LAN-Kantor). Opsional — biarkan tetap ether1, ether2, dst bila tidak ingin diganti."
+    >
+      {!model ? (
+        <p className="text-sm text-muted">Pilih Type Mikrotik lebih dulu di langkah pertama.</p>
+      ) : (
+        <>
+          <div className="overflow-hidden rounded-lg border border-line-soft">
+            <div className="hidden grid-cols-[88px_1fr_1.4fr] gap-2 border-b border-line-soft bg-canvas px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.09em] text-muted sm:grid">
+              <span>Port bawaan</span>
+              <span>Nama interface</span>
+              <span>Komentar</span>
+            </div>
+            <div className="divide-y divide-line-soft">
+              {ports.map((name) => {
+                const role = roleOf(name);
+                const bad = problem(name);
+                return (
+                  <div key={name} className="grid gap-2 px-3 py-2 sm:grid-cols-[88px_1fr_1.4fr] sm:items-start">
+                    <div className="flex items-center gap-2 sm:flex-col sm:items-start sm:gap-1">
+                      <span className="rounded-md border border-line-soft bg-canvas px-2 py-1 text-center font-mono text-[11px] text-muted">
+                        {name}
+                      </span>
+                      {role && <span className="text-[11px] text-faint">{role}</span>}
+                    </div>
+                    <div>
+                      <TextInput
+                        mono
+                        value={shown(name)}
+                        onChange={(text) => setName(name, text)}
+                        placeholder={name}
+                      />
+                      {bad && <p className="mt-1 text-xs text-bad">{bad}</p>}
+                    </div>
+                    <TextInput
+                      value={config.interfaceComments[name] ?? ""}
+                      onChange={(text) =>
+                        patch({ interfaceComments: { ...config.interfaceComments, [name]: text } })
+                      }
+                      placeholder="mis. ISP Telkom / Uplink / AP Lantai 2"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-faint">
+            <span>
+              {changed} nama diganti · {commented} komentar
+            </span>
+            {changed > 0 && (
+              <button type="button" onClick={() => patch({ interfaceNames: {} })} className="text-brand hover:underline">
+                Kembalikan semua ke nama bawaan
+              </button>
+            )}
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-faint">
+            Kolom sudah terisi nama bawaan — ubah hanya port yang ingin diganti. Seluruh form dan script tetap memakai
+            nama bawaan; perintah ganti nama dipasang paling akhir di script, sehingga tidak ada setting yang terlewat.
+            Komentar ditulis ke tiap port agar terbaca di Winbox.
+          </p>
+        </>
+      )}
 
       <IssueList issues={issues} />
     </Panel>

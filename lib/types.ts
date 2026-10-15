@@ -281,6 +281,7 @@ export type SectionId =
   | "hotspot"
   | "pppoe"
   | "firewall"
+  | "ifname"
   | "user";
 
 export interface Issue {

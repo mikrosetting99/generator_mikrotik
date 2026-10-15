@@ -27,6 +27,25 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.31.0",
+    date: "2026-10-15",
+    title: "Background aplikasi dari dashboard admin, Pengaturan umum dirapikan",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Dashboard Admin: bagian baru \"Background aplikasi\". Admin menambah gambar (JPG/PNG/WEBP, maks 400 KB) ke galeri, memilih satu dengan tombol Pakai, dan mengatur lapisan warna tema 0–90% agar tulisan tetap terbaca. Background berlaku di seluruh halaman aplikasi, lengkap dengan pratinjau, dan bisa dilepas kapan saja. Pilihan berlaku setelah menekan Simpan.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Bagian \"Pengaturan umum\" ditata ulang menjadi kartu: Identitas situs (logo + nama) dan Tombol WhatsApp berdampingan, lalu Teks halaman utama selebar penuh, masing-masing dengan judul dan penjelasan singkat.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.30.0",
     date: "2026-10-15",
     title: "Setup Mikrotik Baru: menu Nama Interface",

@@ -35,11 +35,12 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: { icon, shortcut: icon, ...(settings.logoDataUrl ? { apple: icon } : {}) },
   };
 }
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getSiteSettings();
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
@@ -47,6 +48,19 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+        {settings.appBgId && (
+          // Latar seluruh aplikasi dari dashboard admin; lapisan warna tema menjaga keterbacaan.
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center"
+            style={{ backgroundImage: `url(/api/background-presets/${settings.appBgId}/image)` }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{ background: `color-mix(in srgb, var(--color-canvas) ${settings.appBgOverlay}%, transparent)` }}
+            />
+          </div>
+        )}
         <Providers>{children}</Providers>
       </body>
     </html>

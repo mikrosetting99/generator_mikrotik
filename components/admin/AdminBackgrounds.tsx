@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Trash, Upload } from "@/components/icons";
 import { AdminSection } from "@/components/admin/AdminSection";
 import { Button, EmptyState, Field, Note, TextInput } from "@/components/ui";
@@ -12,9 +12,23 @@ interface Preset {
 }
 
 /** Galeri latar atau logo siap pakai untuk Halaman Login Hotspot — dikelola admin. */
-export function AdminBackgrounds({ kind = "background" }: { kind?: PresetKind }) {
+export function AdminBackgrounds({
+  kind = "background",
+  selectedId,
+  onSelect,
+  extra,
+}: {
+  kind?: PresetKind;
+  /** Mode pilih (background aplikasi): id yang dipakai, "" = tanpa gambar. */
+  selectedId?: string;
+  onSelect?: (id: string) => void;
+  /** Isi tambahan di bawah galeri (mis. pengaturan lapisan warna). */
+  extra?: ReactNode;
+}) {
   const limit = PRESET_LIMITS[kind];
   const isLogo = kind === "logo";
+  const isApp = kind === "app";
+  const selecting = Boolean(onSelect);
   const [presets, setPresets] = useState<Preset[] | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -64,27 +78,35 @@ export function AdminBackgrounds({ kind = "background" }: { kind?: PresetKind })
   const remove = async (preset: Preset) => {
     if (!confirm(`Hapus ${limit.label} "${preset.name}" dari galeri?`)) return;
     const res = await fetch(`/api/admin/background-presets/${preset.id}`, { method: "DELETE" });
-    if (res.ok) load();
-    else setFlash({ tone: "bad", text: "Gagal menghapus." });
+    if (res.ok) {
+      if (selecting && selectedId === preset.id) onSelect?.("");
+      load();
+    } else setFlash({ tone: "bad", text: "Gagal menghapus." });
   };
 
   return (
     <AdminSection
-      title={`Galeri ${limit.label} Halaman Login Hotspot`}
-      description={`${isLogo ? "Logo" : "Latar"} siap pakai yang bisa dipilih semua pengguna.`}
+      title={isApp ? "Background aplikasi" : `Galeri ${limit.label} Halaman Login Hotspot`}
+      description={
+        isApp
+          ? "Tambah gambar lalu pilih satu untuk menjadi latar seluruh halaman aplikasi."
+          : `${isLogo ? "Logo" : "Latar"} siap pakai yang bisa dipilih semua pengguna.`
+      }
       badge={presets && <span className="font-mono text-[11px] text-faint">{presets.length} {limit.label}</span>}
     >
-      <p className="px-5 pt-4 text-xs text-muted">
-        {isLogo ? "Logo" : "Latar"} yang diunggah di sini bisa langsung dipilih semua pengguna. Mereka tetap bisa
-        mengunggah {limit.label} sendiri.
-      </p>
+      {!isApp && (
+        <p className="px-5 pt-4 text-xs text-muted">
+          {isLogo ? "Logo" : "Latar"} yang diunggah di sini bisa langsung dipilih semua pengguna. Mereka tetap bisa
+          mengunggah {limit.label} sendiri.
+        </p>
+      )}
       <div className="space-y-4 px-5 py-4">
         {flash && <Note tone={flash.tone}>{flash.text}</Note>}
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-48 flex-1">
             <Field label={`Nama ${limit.label} (opsional)`}>
-              <TextInput value={name} onChange={setName} placeholder={isLogo ? "Mis. Logo Biru" : "Mis. Biru Gelombang"} />
+              <TextInput value={name} onChange={setName} placeholder={isLogo ? "Mis. Logo Biru" : isApp ? "Mis. Gelombang Biru" : "Mis. Biru Gelombang"} />
             </Field>
           </div>
           <Button variant="primary" onClick={() => fileInput.current?.click()} disabled={busy}>
@@ -114,7 +136,12 @@ export function AdminBackgrounds({ kind = "background" }: { kind?: PresetKind })
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {presets.map((p) => (
-              <figure key={p.id} className="overflow-hidden rounded-xl border border-line-soft bg-raised/50">
+              <figure
+                key={p.id}
+                className={`overflow-hidden rounded-xl border bg-raised/50 ${
+                  selecting && selectedId === p.id ? "border-brand ring-2 ring-brand/40" : "border-line-soft"
+                }`}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`/api/background-presets/${p.id}/image`}
@@ -123,7 +150,16 @@ export function AdminBackgrounds({ kind = "background" }: { kind?: PresetKind })
                   className={isLogo ? "h-24 w-full bg-canvas object-contain p-2" : "h-24 w-full object-cover"}
                 />
                 <figcaption className="flex items-center justify-between gap-2 px-2.5 py-2">
-                  <span className="truncate text-xs text-muted">{p.name}</span>
+                  <span className="min-w-0 flex-1 truncate text-xs text-muted">{p.name}</span>
+                  {selecting && (
+                    <Button
+                      size="sm"
+                      variant={selectedId === p.id ? "primary" : "default"}
+                      onClick={() => onSelect?.(selectedId === p.id ? "" : p.id)}
+                    >
+                      {selectedId === p.id ? "Dipakai" : "Pakai"}
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="danger"
@@ -139,6 +175,7 @@ export function AdminBackgrounds({ kind = "background" }: { kind?: PresetKind })
             ))}
           </div>
         )}
+        {extra}
       </div>
     </AdminSection>
   );

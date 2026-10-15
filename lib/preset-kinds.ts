@@ -1,5 +1,5 @@
 /** Galeri bersama: dua jenis gambar yang diunggah admin untuk Halaman Login Hotspot. */
-export type PresetKind = "background" | "logo";
+export type PresetKind = "background" | "logo" | "app";
 
 export const PRESET_LIMITS: Record<
   PresetKind,
@@ -12,6 +12,13 @@ export const PRESET_LIMITS: Record<
     typeLabel: "JPG, PNG, atau WEBP",
     recommend: "1920 × 1080 px (16:9), JPG kualitas 60–75%, maksimal 300 KB. Untuk latar khusus HP tegak: 1080 × 1920 px.",
   },
+  app: {
+    label: "background aplikasi",
+    maxBytes: 400 * 1024,
+    types: ["image/jpeg", "image/png", "image/webp"],
+    typeLabel: "JPG, PNG, atau WEBP",
+    recommend: "1920 × 1080 px (16:9), JPG kualitas 60–70%, maksimal 400 KB. Pilih gambar yang tidak terlalu ramai agar tulisan tetap terbaca.",
+  },
   logo: {
     label: "logo",
     maxBytes: 300 * 1024,
@@ -22,5 +29,5 @@ export const PRESET_LIMITS: Record<
 };
 
 export function parsePresetKind(value: unknown): PresetKind {
-  return value === "logo" ? "logo" : "background";
+  return value === "logo" ? "logo" : value === "app" ? "app" : "background";
 }

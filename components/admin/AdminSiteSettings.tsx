@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { AdminSection } from "@/components/admin/AdminSection";
 import { ArrowRight, Check, ChevronDown, Plus, Save, Trash, Upload, X } from "@/components/icons";
+import { AdminBackgrounds } from "@/components/admin/AdminBackgrounds";
 import { MenuIcon } from "@/components/MenuIcon";
 import { Button, CheckPill, Field, Note, Select, TextInput, Toggle } from "@/components/ui";
 import {
@@ -94,6 +95,27 @@ function GroupNameInput({
       aria-label={label}
       className="min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-sm font-semibold text-ink outline-none transition-colors hover:bg-canvas focus:bg-canvas focus:ring-1 focus:ring-brand/50"
     />
+  );
+}
+
+/** Kartu kelompok pengaturan di dalam satu bagian dashboard. */
+function Card({
+  title,
+  description,
+  children,
+  wide = false,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  wide?: boolean;
+}) {
+  return (
+    <section className={`rounded-xl border border-line-soft bg-raised/40 p-4 sm:p-5 ${wide ? "lg:col-span-2" : ""}`}>
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      {description && <p className="mt-0.5 text-xs leading-relaxed text-muted">{description}</p>}
+      <div className="mt-4 space-y-4">{children}</div>
+    </section>
   );
 }
 
@@ -388,21 +410,23 @@ export function AdminSiteSettings({
           ) : null
         }
       >
-        <div className="divide-y divide-line-soft">
+        <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-2">
           {/* Identitas situs */}
-          <div className="space-y-3 px-5 py-4">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.09em] text-muted">Identitas situs</h3>
-            <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
-              <div className="flex items-center gap-3">
-                <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-canvas">
-                  {settings.logoDataUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={settings.logoDataUrl} alt="Logo" className="h-full w-full object-contain p-1" />
-                  ) : (
-                    <span className="text-[10px] text-faint">tanpa logo</span>
-                  )}
-                </span>
-                <div className="flex flex-col gap-1.5">
+          <Card
+            title="Identitas situs"
+            description="Logo dan nama yang tampil di pojok kiri atas beranda, footer, dan tab browser."
+          >
+            <div className="flex items-center gap-4">
+              <span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-canvas">
+                {settings.logoDataUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={settings.logoDataUrl} alt="Logo" className="h-full w-full object-contain p-1.5" />
+                ) : (
+                  <span className="px-1 text-center text-[10px] leading-tight text-faint">tanpa logo</span>
+                )}
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => logoInput.current?.click()}>
                     <Upload className="h-3.5 w-3.5" />
                     {settings.logoDataUrl ? "Ganti logo" : "Unggah logo"}
@@ -412,39 +436,37 @@ export function AdminSiteSettings({
                       <Trash className="h-3.5 w-3.5" /> Hapus
                     </Button>
                   )}
-                  <input
-                    ref={logoInput}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      e.target.value = "";
-                      if (file) pickLogo(file);
-                    }}
-                  />
                 </div>
-              </div>
-              <div>
-                <Field label="Nama situs">
-                  <TextInput value={settings.siteName} onChange={(siteName) => patch({ siteName })} />
-                </Field>
-                <p className="mt-1.5 text-xs text-faint">
-                  Tampil di pojok kiri atas beranda dan footer. Logo PNG/SVG, maksimal {MAX_LOGO_BYTES / 1024} KB.
-                </p>
+                <p className="mt-2 text-xs text-faint">PNG, JPG, WEBP, atau SVG — maksimal {MAX_LOGO_BYTES / 1024} KB.</p>
                 {logoError && <p className="mt-1 text-xs text-bad">{logoError}</p>}
+                <input
+                  ref={logoInput}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) pickLogo(file);
+                  }}
+                />
               </div>
             </div>
-          </div>
+            <Field label="Nama situs">
+              <TextInput value={settings.siteName} onChange={(siteName) => patch({ siteName })} />
+            </Field>
+          </Card>
 
           {/* WhatsApp */}
-          <div className="space-y-3 px-5 py-4">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.09em] text-muted">Tombol WhatsApp</h3>
+          <Card
+            title="Tombol WhatsApp"
+            description="Tombol chat di bagian atas beranda, dengan pesan awal yang sudah terisi."
+          >
             <Toggle
               checked={settings.waEnabled}
               onChange={(waEnabled) => patch({ waEnabled })}
               label="Tampilkan tombol WhatsApp"
-              hint="Muncul di samping tombol utama di bagian atas beranda."
+              hint="Matikan untuk menyembunyikannya tanpa menghapus nomornya."
             />
             {settings.waEnabled && (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -472,11 +494,10 @@ export function AdminSiteSettings({
                 </div>
               </div>
             )}
-          </div>
+          </Card>
 
           {/* Teks halaman utama */}
-          <div className="space-y-3 px-5 py-4">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.09em] text-muted">Teks halaman utama</h3>
+          <Card wide title="Teks halaman utama" description="Judul, kalimat pembuka, dan tombol utama di beranda.">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Judul baris 1">
                 <TextInput value={settings.heroTitle} onChange={(heroTitle) => patch({ heroTitle })} />
@@ -496,15 +517,18 @@ export function AdminSiteSettings({
                 <TextInput value={settings.footerNote} onChange={(footerNote) => patch({ footerNote })} />
               </Field>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              <CheckPill active={settings.showSample} onClick={() => patch({ showSample: !settings.showSample })}>
-                Cuplikan script
-              </CheckPill>
-              <CheckPill active={settings.showFeatures} onClick={() => patch({ showFeatures: !settings.showFeatures })}>
-                Tiga jaminan
-              </CheckPill>
+            <div>
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Bagian yang ditampilkan</span>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <CheckPill active={settings.showSample} onClick={() => patch({ showSample: !settings.showSample })}>
+                  Cuplikan script
+                </CheckPill>
+                <CheckPill active={settings.showFeatures} onClick={() => patch({ showFeatures: !settings.showFeatures })}>
+                  Tiga jaminan
+                </CheckPill>
+              </div>
             </div>
-          </div>
+          </Card>
         </div>
       </AdminSection>
 
@@ -594,6 +618,66 @@ export function AdminSiteSettings({
           </div>
         </div>
       </AdminSection>
+      {/* ---------------------------------------------- background aplikasi */}
+      <AdminBackgrounds
+        kind="app"
+        selectedId={settings.appBgId}
+        onSelect={(appBgId) => patch({ appBgId })}
+        extra={
+          <div className="rounded-xl border border-line-soft bg-raised/40 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-ink">
+                {settings.appBgId ? "Background aktif" : "Belum ada background dipilih"}
+              </span>
+              {settings.appBgId && (
+                <button type="button" onClick={() => patch({ appBgId: "" })} className="text-xs text-brand hover:underline">
+                  Lepas background
+                </button>
+              )}
+            </div>
+            {settings.appBgId && (
+              <>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                    Lapisan warna tema (agar tulisan terbaca)
+                  </span>
+                  <span className="font-mono text-[11px] text-brand">{settings.appBgOverlay}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={90}
+                  step={5}
+                  value={settings.appBgOverlay}
+                  aria-label="Lapisan warna tema"
+                  onChange={(e) => patch({ appBgOverlay: Number(e.target.value) })}
+                  className="mt-2 w-full accent-[color:var(--color-brand)]"
+                />
+                <div className="mt-1 flex justify-between text-xs text-faint">
+                  <span>Gambar lebih jelas</span>
+                  <span>Lebih pudar</span>
+                </div>
+                <div
+                  className="relative mt-3 h-28 overflow-hidden rounded-lg border border-line bg-cover bg-center"
+                  style={{ backgroundImage: `url(/api/background-presets/${settings.appBgId}/image)` }}
+                >
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: `color-mix(in srgb, var(--color-canvas) ${settings.appBgOverlay}%, transparent)` }}
+                  />
+                  <span className="relative m-3 inline-block rounded-md bg-surface/90 px-2 py-1 text-xs text-ink">
+                    Pratinjau tampilan
+                  </span>
+                </div>
+              </>
+            )}
+            <p className="mt-3 text-xs leading-relaxed text-faint">
+              Pilihan dan lapisan warna berlaku setelah menekan Simpan. Gambar yang diunggah atau dihapus langsung tersimpan di galeri.
+            </p>
+          </div>
+        }
+      />
+
       <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface/95 px-4 py-3 shadow-lg backdrop-blur">
         <span className="text-xs text-muted">
           {dirty ? "Ada perubahan yang belum disimpan." : "Semua perubahan sudah tersimpan."}

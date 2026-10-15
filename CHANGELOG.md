@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.31.0] - 2026-10-15
+
+_Background aplikasi dari dashboard admin, Pengaturan umum dirapikan_
+
+### Ditambahkan
+
+- Dashboard Admin: bagian baru "Background aplikasi". Admin menambah gambar (JPG/PNG/WEBP, maks 400 KB) ke galeri, memilih satu dengan tombol Pakai, dan mengatur lapisan warna tema 0–90% agar tulisan tetap terbaca. Background berlaku di seluruh halaman aplikasi, lengkap dengan pratinjau, dan bisa dilepas kapan saja. Pilihan berlaku setelah menekan Simpan.
+
+### Diubah
+
+- Bagian "Pengaturan umum" ditata ulang menjadi kartu: Identitas situs (logo + nama) dan Tombol WhatsApp berdampingan, lalu Teks halaman utama selebar penuh, masing-masing dengan judul dan penjelasan singkat.
+
 ## [1.30.0] - 2026-10-15
 
 _Setup Mikrotik Baru: menu Nama Interface_

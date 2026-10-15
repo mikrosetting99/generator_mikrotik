@@ -70,6 +70,10 @@ export interface SiteSettings {
   showSample: boolean;
   showFeatures: boolean;
   footerNote: string;
+  /** Background seluruh aplikasi: id gambar dari galeri jenis "app". Kosong = tanpa gambar. */
+  appBgId: string;
+  /** Lapisan warna tema di atas gambar (0–90 %) supaya tulisan tetap terbaca. */
+  appBgOverlay: number;
   /** Daftar grup menu, sesuai urutan tampil di halaman utama. */
   groups: string[];
   /** Urutan array = urutan tampil di halaman utama (di dalam tiap grup). */
@@ -181,6 +185,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   showSample: true,
   showFeatures: true,
   footerNote: "Backup router sebelum menjalankan script apa pun.",
+  appBgId: "",
+  appBgOverlay: 60,
   groups: DEFAULT_GROUPS,
   menus: BUILTIN_MENUS,
 };
@@ -329,6 +335,11 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
     showSample: bool(input.showSample, base.showSample),
     showFeatures: bool(input.showFeatures, base.showFeatures),
     footerNote: str(input.footerNote, base.footerNote, 160),
+    appBgId: /^[A-Za-z0-9_-]{1,40}$/.test(String(input.appBgId ?? "")) ? String(input.appBgId) : "",
+    appBgOverlay:
+      typeof input.appBgOverlay === "number" && Number.isFinite(input.appBgOverlay)
+        ? Math.max(0, Math.min(90, Math.round(input.appBgOverlay)))
+        : base.appBgOverlay,
     groups,
     menus,
   };

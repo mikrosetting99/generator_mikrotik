@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.31.1] - 2026-10-15
+
+_Bagian Nama & sambutan selalu terbuka saat menu dimasuki_
+
+### Diperbaiki
+
+- Di Halaman Login Hotspot, bagian "Nama & sambutan" kini dipastikan terbuka otomatis saat menu pertama kali dimasuki. Status buka-tutup dipegang aplikasi, bukan browser, sehingga tidak ikut terbawa dari halaman yang dipulihkan dari cache.
+
 ## [1.31.0] - 2026-10-15
 
 _Background aplikasi dari dashboard admin, Pengaturan umum dirapikan_

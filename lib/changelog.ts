@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.31.1",
+    date: "2026-10-15",
+    title: "Bagian Nama & sambutan selalu terbuka saat menu dimasuki",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Di Halaman Login Hotspot, bagian \"Nama & sambutan\" kini dipastikan terbuka otomatis saat menu pertama kali dimasuki. Status buka-tutup dipegang aplikasi, bukan browser, sehingga tidak ikut terbawa dari halaman yang dipulihkan dari cache.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.31.0",
     date: "2026-10-15",
     title: "Background aplikasi dari dashboard admin, Pengaturan umum dirapikan",

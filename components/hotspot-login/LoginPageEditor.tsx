@@ -83,8 +83,23 @@ function Section({
   defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
+  // Status buka dipegang React (bukan browser) agar bagian bawaan terbuka selalu
+  // terbuka saat menu dimasuki, juga bila browser memulihkan halaman dari cache.
+  const [open, setOpen] = useState(defaultOpen);
+  const ref = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (defaultOpen && ref.current) {
+      ref.current.open = true;
+      setOpen(true);
+    }
+  }, [defaultOpen]);
   return (
-    <details open={defaultOpen} className="group rounded-xl border border-line-soft bg-raised/50">
+    <details
+      ref={ref}
+      open={open}
+      onToggle={(e) => setOpen(e.currentTarget.open)}
+      className="group rounded-xl border border-line-soft bg-raised/50"
+    >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 [&::-webkit-details-marker]:hidden">
         <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand/80">{title}</span>
         <svg

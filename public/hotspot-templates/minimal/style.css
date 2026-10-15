@@ -304,24 +304,52 @@ body::before {
   text-align: center;
 }
 .pkgs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 .pkg {
-  flex: 1 1 28%;
-  min-width: 84px;
-  padding: 10px 6px;
+  overflow: hidden;
   text-align: center;
-  border: 1px solid {{TABLE_LINE}};
-  border-top: 3px solid {{TABLE_BG}};
-  border-radius: 10px;
-  background: rgba(127, 127, 127, .06);
+  border: 2px solid {{TABLE_BG}};
+  border-radius: 14px;
+  background: rgba(127, 127, 127, .07);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .14);
 }
-.pkg .pn { font-size: 12px; font-weight: 600; color: {{TABLE_BODY}}; }
-.pkg .pp { margin: 4px 0 2px; font-size: 17px; font-weight: 800; color: {{TABLE_ACCENT}}; }
-.pkg .pm { font-size: 11px; color: {{TABLE_BODY_MUTED}}; line-height: 1.35; }
+.pkg .ph {
+  padding: 7px 8px;
+  background: {{TABLE_BG}};
+  color: {{TABLE_TEXT}};
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.pkg .pb { padding: 12px 8px 11px; }
+.pkg .pp {
+  margin-bottom: 8px;
+  color: {{TABLE_ACCENT}};
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+}
+.pkg .pd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 0 0;
+  margin-top: 5px;
+  border-top: 1px dashed {{TABLE_LINE}};
+  color: {{TABLE_BODY_MUTED}};
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.pkg .pd .ic { flex: none; width: 14px; height: 14px; color: {{TABLE_BG}}; }
+.pkg .pd span { min-width: 0; }
 
 /* Gaya "daftar": satu baris per paket, harga di kanan dalam lencana. */
 .plist { margin-top: 10px; }

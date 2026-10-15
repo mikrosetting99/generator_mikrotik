@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Database, Save, Trash, Wand } from "@/components/icons";
 import { Button, EmptyState, Field, Note, TextInput } from "@/components/ui";
 import { normalizeHotspotPage } from "@/lib/defaults-hotspot-login";
@@ -51,6 +51,16 @@ export function SaveLoadPage({
   const [name, setName] = useState(loaded?.name ?? "");
   const [busy, setBusy] = useState<string | null>(null);
   const [flash, setFlash] = useState<{ tone: "info" | "bad"; text: string } | null>(null);
+  const flashRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // Pesan hasil dan formulir template harus terlihat walau daftar panjang.
+  useEffect(() => {
+    if (flash) flashRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [flash]);
+  useEffect(() => {
+    if (publishing) formRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [publishing]);
 
   const refresh = useCallback(() => {
     fetch("/api/hotspot-pages")
@@ -173,7 +183,11 @@ export function SaveLoadPage({
 
   return (
     <div className="space-y-6">
-      {flash && <Note tone={flash.tone}>{flash.text}</Note>}
+      {flash && (
+        <div ref={flashRef}>
+          <Note tone={flash.tone}>{flash.text}</Note>
+        </div>
+      )}
 
       <section>
         <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
@@ -214,10 +228,8 @@ export function SaveLoadPage({
             <EmptyState>Belum ada desain tersimpan.</EmptyState>
           ) : (
             entries.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex items-center gap-3 rounded-xl border border-line-soft bg-raised/50 p-3 transition-colors hover:border-line"
-              >
+              <div key={entry.id}>
+              <div className="flex items-center gap-3 rounded-xl border border-line-soft bg-raised/50 p-3 transition-colors hover:border-line">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-ink">{entry.name}</p>
                   <p className="mt-0.5 font-mono text-[10px] text-faint/80">{formatDate(entry.savedAt)}</p>
@@ -253,31 +265,33 @@ export function SaveLoadPage({
                   <Trash className="h-3.5 w-3.5" />
                 </Button>
               </div>
+                {isAdmin && publishing?.id === entry.id && (
+                  <div ref={formRef} className="mt-2 space-y-3 rounded-xl border border-brand/30 bg-brand/[0.06] p-3.5">
+                    <p className="text-sm font-medium text-ink">Jadikan template: &ldquo;{publishing.name}&rdquo;</p>
+                    <p className="text-xs leading-relaxed text-muted">
+                      Isi desain tersimpan ini disalin menjadi template yang bisa dimuat semua pengguna. Desain tersimpan
+                      Anda sendiri tidak berubah.
+                    </p>
+                    <Field label="Nama template">
+                      <TextInput value={tplName} onChange={setTplName} />
+                    </Field>
+                    <Field label="Keterangan singkat (opsional)">
+                      <TextInput value={tplDesc} onChange={setTplDesc} placeholder="Cocok untuk warnet dan RT/RW Net" />
+                    </Field>
+                    <div className="flex gap-2">
+                      <Button variant="primary" onClick={publishTemplate} disabled={!tplName.trim() || busy === publishing.id}>
+                        <Wand className="h-4 w-4" />
+                        {busy === publishing.id ? "Menerbitkan…" : "Terbitkan template"}
+                      </Button>
+                      <Button onClick={() => setPublishing(null)}>Batal</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ))
           )}
         </div>
-        {isAdmin && publishing && (
-          <div className="mt-3 space-y-3 rounded-xl border border-brand/30 bg-brand/[0.06] p-3.5">
-            <p className="text-sm font-medium text-ink">Jadikan template: &ldquo;{publishing.name}&rdquo;</p>
-            <p className="text-xs leading-relaxed text-muted">
-              Isi desain tersimpan ini disalin menjadi template yang bisa dimuat semua pengguna. Desain tersimpan Anda
-              sendiri tidak berubah.
-            </p>
-            <Field label="Nama template">
-              <TextInput value={tplName} onChange={setTplName} />
-            </Field>
-            <Field label="Keterangan singkat (opsional)">
-              <TextInput value={tplDesc} onChange={setTplDesc} placeholder="Cocok untuk warnet dan RT/RW Net" />
-            </Field>
-            <div className="flex gap-2">
-              <Button variant="primary" onClick={publishTemplate} disabled={!tplName.trim() || busy === publishing.id}>
-                <Wand className="h-4 w-4" />
-                {busy === publishing.id ? "Menerbitkan…" : "Terbitkan template"}
-              </Button>
-              <Button onClick={() => setPublishing(null)}>Batal</Button>
-            </div>
-          </div>
-        )}      </section>
+      </section>
     </div>
   );
 }

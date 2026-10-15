@@ -27,6 +27,25 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.31.2",
+    date: "2026-10-15",
+    title: "Kartu paket lebih tegas, tombol Template jelas terlihat",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Desain daftar paket \"Kartu\" (desain Minimal) dirancang ulang: kepala kartu berwarna dengan nama paket, harga besar tebal, rincian durasi dan masa aktif dengan ikon, bingkai tebal dan bayangan. Kartu tersusun rapi dua atau tiga per baris menyesuaikan lebar layar. Warna tabel dan warna font tetap bisa diatur. Paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+      {
+        type: "fixed",
+        items: [
+          "Tombol \"Template\" (admin) di daftar desain tersimpan terasa tidak berfungsi karena formulirnya muncul di bawah daftar, di luar layar. Formulir kini muncul tepat di bawah desain yang diklik, dan pesan hasilnya digulir ke tampilan.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.31.1",
     date: "2026-10-15",
     title: "Bagian Nama & sambutan selalu terbuka saat menu dimasuki",

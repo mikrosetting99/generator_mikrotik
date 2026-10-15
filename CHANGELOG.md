@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.31.2] - 2026-10-15
+
+_Kartu paket lebih tegas, tombol Template jelas terlihat_
+
+### Diubah
+
+- Desain daftar paket "Kartu" (desain Minimal) dirancang ulang: kepala kartu berwarna dengan nama paket, harga besar tebal, rincian durasi dan masa aktif dengan ikon, bingkai tebal dan bayangan. Kartu tersusun rapi dua atau tiga per baris menyesuaikan lebar layar. Warna tabel dan warna font tetap bisa diatur. Paket halaman login perlu di-upload ulang ke router.
+
+### Diperbaiki
+
+- Tombol "Template" (admin) di daftar desain tersimpan terasa tidak berfungsi karena formulirnya muncul di bawah daftar, di luar layar. Formulir kini muncul tepat di bawah desain yang diklik, dan pesan hasilnya digulir ke tampilan.
+
 ## [1.31.1] - 2026-10-15
 
 _Bagian Nama & sambutan selalu terbuka saat menu dimasuki_

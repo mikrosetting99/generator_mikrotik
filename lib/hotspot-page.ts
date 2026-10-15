@@ -183,14 +183,17 @@ function packageCard(pkg: VoucherPackage): string {
   );
 }
 
-/** Kartu paket kecil untuk desain Minimal (gaya "kartu"). */
+/** Kartu paket untuk desain Minimal (gaya "kartu"): kepala berwarna, harga besar, rincian beri ikon. */
 function miniCard(pkg: VoucherPackage): string {
-  const meta = [pkg.duration.trim(), pkg.validity.trim()].filter(Boolean).map(escapeHtml).join(" &middot; ");
+  const detail = (icon: string, text: string) => `        <div class="pd">${icon}<span>${escapeHtml(text)}</span></div>\n`;
   return (
     `      <div class="pkg">\n` +
-    `        <div class="pn">${escapeHtml(pkg.name.trim() || "Paket")}</div>\n` +
+    `        <div class="ph">${escapeHtml(pkg.name.trim() || "Paket")}</div>\n` +
+    `        <div class="pb">\n` +
     `        <div class="pp">${escapeHtml(pkg.price.trim())}</div>\n` +
-    (meta ? `        <div class="pm">${meta}</div>\n` : "") +
+    (pkg.duration.trim() ? detail(ICON_DURATION, pkg.duration.trim()) : "") +
+    (pkg.validity.trim() ? detail(ICON_VALIDITY, pkg.validity.trim()) : "") +
+    `        </div>\n` +
     `      </div>`
   );
 }

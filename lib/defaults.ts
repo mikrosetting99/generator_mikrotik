@@ -102,8 +102,8 @@ export function newPppoeProfile(): PppoeProfile {
   return { id: uid("ppprof"), name: "", localAddress: "", pool: "", rateLimit: "", onlyOne: true };
 }
 
-export function newUser(): RouterUser {
-  return { id: uid("user"), name: "", password: "", group: "full", allowedAddress: "", comment: "" };
+export function newUser(name = ""): RouterUser {
+  return { id: uid("user"), name, password: "", group: "full", allowedAddress: "", comment: "" };
 }
 
 export function createDefaultConfig(): SetupConfig {

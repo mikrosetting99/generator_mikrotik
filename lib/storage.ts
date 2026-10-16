@@ -282,7 +282,7 @@ export function normalizeConfig(raw: unknown): SetupConfig {
     },
     nat: {
       enabled: asBool(nat.enabled, base.nat.enabled),
-      mode: nat.mode === "perInterface" ? "perInterface" : "global",
+      mode: nat.mode === "perInterface" ? "perInterface" : nat.mode === "any" ? "any" : "global",
       interfaces: asStringList(nat.interfaces),
     },
     bridges,

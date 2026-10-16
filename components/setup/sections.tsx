@@ -1,6 +1,8 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, Plus, Trash } from "@/components/icons";
+import { useState } from "react";
+import { AlertCircle, AlertTriangle, Plus, Trash, Wand } from "@/components/icons";
+import { generatePassword } from "@/lib/password";
 import {
   Button,
   CheckPill,
@@ -502,13 +504,21 @@ export function NatSection({ config, patch, issues }: SectionProps) {
             <Select
               value={config.nat.mode}
               placeholder=""
-              onChange={(mode) => patch({ nat: { ...config.nat, mode: mode as "global" | "perInterface" } })}
+              onChange={(mode) => patch({ nat: { ...config.nat, mode: mode as "global" | "perInterface" | "any" } })}
               options={[
                 { value: "global", label: "Global — semua interface WAN (out-interface-list=WAN)" },
+                { value: "any", label: "Global tanpa out-interface — action masquerade saja" },
                 { value: "perInterface", label: "Per interface — pilih WAN tertentu" },
               ]}
             />
           </Field>
+          {config.nat.mode === "any" && (
+            <p className="text-xs leading-relaxed text-faint">
+              Satu rule <span className="font-mono">chain=srcnat action=masquerade</span> tanpa out-interface — cocok untuk
+              WAN yang sering berganti (PPPoE/DHCP/LTE) atau banyak ISP. Semua trafik keluar disamarkan, termasuk antar
+              jaringan LAN yang lewat router; pilih Global atau Per interface bila ingin dibatasi ke WAN saja.
+            </p>
+          )}
 
           {config.nat.mode === "perInterface" && (
             <div>
@@ -1851,6 +1861,60 @@ const USER_GROUPS: Array<{ value: UserGroup; label: string }> = [
   { value: "read", label: "read — hanya melihat, tidak bisa mengubah" },
 ];
 
+/** Isian password dengan tombol tampilkan, generate acak, dan salin. */
+function PasswordInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const [show, setShow] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setShow(true);
+    }
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="min-w-40 flex-1">
+        <TextInput
+          mono={show}
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+        />
+      </div>
+      <Button
+        size="sm"
+        title="Buat password acak yang kuat"
+        onClick={() => {
+          onChange(generatePassword());
+          setShow(true);
+        }}
+      >
+        <Wand className="h-3.5 w-3.5" /> Generate
+      </Button>
+      <Button size="sm" onClick={() => setShow((v) => !v)} title={show ? "Sembunyikan" : "Tampilkan password"}>
+        {show ? "Sembunyikan" : "Tampilkan"}
+      </Button>
+      {value && (
+        <Button size="sm" onClick={copy} title="Salin password">
+          {copied ? "Tersalin" : "Salin"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function UserSection({ config, patch, issues }: SectionProps) {
   const password = checkPassword(config.system.adminPassword);
   const strengthColor = ["bg-bad", "bg-bad", "bg-warn", "bg-accent", "bg-accent"][password.score];
@@ -1865,7 +1929,18 @@ export function UserSection({ config, patch, issues }: SectionProps) {
       title="User Mikrotik"
       description="Password admin dan penambahan user. Blok ini diletakkan paling akhir di script agar akses ke router tidak terputus bila ada perintah sebelumnya yang gagal."
       right={
-        <Button size="sm" onClick={() => patch({ users: [...config.users, newUser()] })}>
+        <Button
+          size="sm"
+          onClick={() =>
+            // Pengguna pertama otomatis bernama superadmin (group full); berikutnya dikosongkan.
+            patch({
+              users: [
+                ...config.users,
+                newUser(config.users.some((u) => u.name.trim() === "superadmin") ? "" : "superadmin"),
+              ],
+            })
+          }
+        >
           <Plus className="h-3.5 w-3.5" /> Tambah User
         </Button>
       }
@@ -1891,8 +1966,7 @@ export function UserSection({ config, patch, issues }: SectionProps) {
                 : "Kosongkan jika password diatur manual nanti (tidak disarankan)."
             }
           >
-            <TextInput
-              type="password"
+            <PasswordInput
               value={config.system.adminPassword}
               onChange={(adminPassword) => patch({ system: { ...config.system, adminPassword } })}
               placeholder="minimal 8 karakter, huruf besar-kecil, angka, simbol"
@@ -1941,8 +2015,7 @@ export function UserSection({ config, patch, issues }: SectionProps) {
                         : undefined
                     }
                   >
-                    <TextInput
-                      type="password"
+                    <PasswordInput
                       value={user.password}
                       onChange={(password) => update(user.id, { password })}
                       placeholder="password kuat"

@@ -27,6 +27,21 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.32.0",
+    date: "2026-10-16",
+    title: "Setup Mikrotik Baru: NAT tanpa out-interface, user superadmin, generate password",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "NAT: pilihan cakupan baru \"Global tanpa out-interface — action masquerade saja\". Menulis satu rule chain=srcnat action=masquerade tanpa out-interface (dilindungi pemeriksaan agar tidak dobel bila rule yang sama sudah ada), cocok untuk WAN yang sering berganti atau banyak ISP.",
+          "User Mikrotik: tombol Tambah User kini langsung mengisi nama \"superadmin\" (group full) untuk user pertama.",
+          "Password admin dan password user punya tombol Generate (acak 14 karakter: huruf besar-kecil, angka, simbol; tanpa karakter membingungkan atau yang butuh escaping), Tampilkan/Sembunyikan, dan Salin. Password hasil generate otomatis ditampilkan agar bisa dicatat sebelum script dijalankan.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.31.3",
     date: "2026-10-16",
     title: "Ubah nama interface nonaktif secara bawaan",

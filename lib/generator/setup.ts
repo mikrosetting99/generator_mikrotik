@@ -505,6 +505,14 @@ export function generateSetupScript(config: SetupConfig): string {
           ["comment", tag("NAT untuk semua WAN")],
         ]),
       );
+    } else if (config.nat.mode === "any") {
+      s.comment("Tanpa out-interface: semua trafik keluar yang melewati router disamarkan.");
+      // "!out-interface" = rule yang belum membatasi interface; out-interface-list baru ada di 6.41+.
+      s.line(
+        `:if ([:len [/ip firewall nat find where chain=srcnat and action=masquerade and !out-interface${v7 ? " and !out-interface-list" : ""}]] = 0) do={`,
+      );
+      s.line(`  /ip firewall nat add ${args([["chain", "srcnat"], ["action", "masquerade"], ["comment", tag("NAT global tanpa out-interface")]])}`);
+      s.line("}");
     } else {
       for (const iface of config.nat.interfaces) {
         s.addIfMissing(

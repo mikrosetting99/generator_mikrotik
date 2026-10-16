@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.32.0] - 2026-10-16
+
+_Setup Mikrotik Baru: NAT tanpa out-interface, user superadmin, generate password_
+
+### Ditambahkan
+
+- NAT: pilihan cakupan baru "Global tanpa out-interface — action masquerade saja". Menulis satu rule chain=srcnat action=masquerade tanpa out-interface (dilindungi pemeriksaan agar tidak dobel bila rule yang sama sudah ada), cocok untuk WAN yang sering berganti atau banyak ISP.
+- User Mikrotik: tombol Tambah User kini langsung mengisi nama "superadmin" (group full) untuk user pertama.
+- Password admin dan password user punya tombol Generate (acak 14 karakter: huruf besar-kecil, angka, simbol; tanpa karakter membingungkan atau yang butuh escaping), Tampilkan/Sembunyikan, dan Salin. Password hasil generate otomatis ditampilkan agar bisa dicatat sebelum script dijalankan.
+
 ## [1.31.3] - 2026-10-16
 
 _Ubah nama interface nonaktif secara bawaan_

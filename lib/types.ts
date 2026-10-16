@@ -161,7 +161,8 @@ export interface DnsConfig {
 
 export interface NatConfig {
   enabled: boolean;
-  mode: "global" | "perInterface";
+  /** global = out-interface-list WAN, perInterface = WAN tertentu, any = tanpa out-interface. */
+  mode: "global" | "perInterface" | "any";
   interfaces: string[];
 }
 

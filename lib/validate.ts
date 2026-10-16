@@ -49,7 +49,7 @@ export function validateConfig(config: SetupConfig): Issue[] {
   }
 
   // --- ganti nama interface ---------------------------------------------
-  {
+  if (config.renameInterfaces) {
     const physical = physicalInterfaces(config);
     const taken = new Map<string, string>();
     for (const name of physical) {

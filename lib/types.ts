@@ -248,6 +248,8 @@ export interface SetupConfig {
   interfaceComments: Record<string, string>;
   /** Nama baru per interface fisik: nama bawaan (ether1) -> nama baru. Dipasang paling akhir di script. */
   interfaceNames: Record<string, string>;
+  /** Ganti nama interface aktif? Mati (bawaan) = nama di atas diabaikan. */
+  renameInterfaces: boolean;
   ros: RosVersion | "";
   system: SystemConfig;
   wans: WanEntry[];

@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.31.3",
+    date: "2026-10-16",
+    title: "Ubah nama interface nonaktif secara bawaan",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Di menu Nama Interface (Setup Mikrotik Baru) kini ada saklar \"Ubah nama interface\" yang mati secara bawaan: kolom nama terkunci dan menampilkan nama bawaan (ether1, ether2, dst), dan script tidak menulis perintah ganti nama. Aktifkan saklar bila ingin mengganti nama; komentar interface tetap bisa diisi kapan saja.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.31.2",
     date: "2026-10-15",
     title: "Kartu paket lebih tegas, tombol Template jelas terlihat",

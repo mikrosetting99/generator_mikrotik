@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.31.3] - 2026-10-16
+
+_Ubah nama interface nonaktif secara bawaan_
+
+### Diubah
+
+- Di menu Nama Interface (Setup Mikrotik Baru) kini ada saklar "Ubah nama interface" yang mati secara bawaan: kolom nama terkunci dan menampilkan nama bawaan (ether1, ether2, dst), dan script tidak menulis perintah ganti nama. Aktifkan saklar bila ingin mengganti nama; komentar interface tetap bisa diisi kapan saja.
+
 ## [1.31.2] - 2026-10-15
 
 _Kartu paket lebih tegas, tombol Template jelas terlihat_

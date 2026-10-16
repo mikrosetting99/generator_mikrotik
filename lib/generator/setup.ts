@@ -870,7 +870,7 @@ export function generateSetupScript(config: SetupConfig): string {
   // ------------------------------------------------------ ganti nama interface
   // Dijalankan paling akhir: seluruh pengaturan di atas memakai nama bawaan
   // (ether1, dst), dan RouterOS memperbarui rujukannya sendiri saat diganti nama.
-  const renamed = physicalInterfaces(config).filter(
+  const renamed = (config.renameInterfaces ? physicalInterfaces(config) : []).filter(
     (name) => (config.interfaceNames[name] ?? "").trim() && config.interfaceNames[name].trim() !== name,
   );
   if (renamed.length > 0) {

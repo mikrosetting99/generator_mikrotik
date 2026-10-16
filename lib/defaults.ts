@@ -112,6 +112,7 @@ export function createDefaultConfig(): SetupConfig {
     customInterfaces: "",
     interfaceComments: {},
     interfaceNames: {},
+    renameInterfaces: false,
     ros: "",
     system: {
       identity: "",

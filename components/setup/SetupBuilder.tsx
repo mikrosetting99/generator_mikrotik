@@ -121,7 +121,7 @@ function isFilled(config: SetupConfig, id: SectionId): boolean {
     case "firewall":
       return config.firewall.enabled || config.antiTethering.enabled;
     case "ifname":
-      return Object.keys(config.interfaceNames).length > 0 || Object.keys(config.interfaceComments).length > 0;
+      return config.renameInterfaces || Object.keys(config.interfaceComments).length > 0;
     case "user":
       return Boolean(config.system.adminPassword) || config.users.length > 0;
   }

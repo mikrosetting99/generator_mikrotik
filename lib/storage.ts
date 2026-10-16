@@ -259,6 +259,7 @@ export function normalizeConfig(raw: unknown): SetupConfig {
         .map(([name, text]) => [name, asString(text).trim()] as const)
         .filter(([, text]) => text),
     ),
+    renameInterfaces: asBool(input.renameInterfaces, false),
     interfaceNames: Object.fromEntries(
       Object.entries(asRecord(input.interfaceNames))
         .map(([name, text]) => [name, asString(text).trim()] as const)

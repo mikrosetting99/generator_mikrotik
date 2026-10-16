@@ -1737,7 +1737,8 @@ export function InterfaceNameSection({ config, patch, issues }: SectionProps) {
   };
   /** Nama yang tampil di kolom: nama baru bila ada, kalau tidak nama bawaan. */
   const shown = (name: string) => config.interfaceNames[name] ?? name;
-  const changed = ports.filter((n) => shown(n).trim() && shown(n).trim() !== n).length;
+  const enabled = config.renameInterfaces;
+  const changed = enabled ? ports.filter((n) => shown(n).trim() && shown(n).trim() !== n).length : 0;
   const commented = ports.filter((n) => (config.interfaceComments[n] ?? "").trim()).length;
   const setName = (name: string, text: string) => {
     const clean = text.replace(/\s+/g, "-");
@@ -1761,12 +1762,24 @@ export function InterfaceNameSection({ config, patch, issues }: SectionProps) {
       id="ifname"
       step="m2"
       title="Nama Interface"
-      description="Ganti nama port agar mudah dikenali (mis. WAN-Telkom, LAN-Kantor). Opsional — biarkan tetap ether1, ether2, dst bila tidak ingin diganti."
+      description="Ganti nama port agar mudah dikenali (mis. WAN-Telkom, LAN-Kantor). Opsional — nonaktif secara bawaan, nama port tetap ether1, ether2, dst."
     >
       {!model ? (
         <p className="text-sm text-muted">Pilih Type Mikrotik lebih dulu di langkah pertama.</p>
       ) : (
         <>
+          <div className="mb-4">
+            <Toggle
+              checked={enabled}
+              onChange={(renameInterfaces) => patch({ renameInterfaces })}
+              label="Ubah nama interface"
+              hint={
+                enabled
+                  ? "Aktif — kolom nama di bawah bisa diedit dan akan ditulis ke script."
+                  : "Nonaktif — aktifkan dulu bila ingin mengganti nama port. Nama bawaan dipakai apa adanya."
+              }
+            />
+          </div>
           <div className="overflow-hidden rounded-lg border border-line-soft">
             <div className="hidden grid-cols-[88px_1fr_1.4fr] gap-2 border-b border-line-soft bg-canvas px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.09em] text-muted sm:grid">
               <span>Port bawaan</span>
@@ -1776,7 +1789,7 @@ export function InterfaceNameSection({ config, patch, issues }: SectionProps) {
             <div className="divide-y divide-line-soft">
               {ports.map((name) => {
                 const role = roleOf(name);
-                const bad = problem(name);
+                const bad = enabled ? problem(name) : "";
                 return (
                   <div key={name} className="grid gap-2 px-3 py-2 sm:grid-cols-[88px_1fr_1.4fr] sm:items-start">
                     <div className="flex items-center gap-2 sm:flex-col sm:items-start sm:gap-1">
@@ -1788,9 +1801,10 @@ export function InterfaceNameSection({ config, patch, issues }: SectionProps) {
                     <div>
                       <TextInput
                         mono
-                        value={shown(name)}
+                        value={enabled ? shown(name) : name}
                         onChange={(text) => setName(name, text)}
                         placeholder={name}
+                        disabled={!enabled}
                       />
                       {bad && <p className="mt-1 text-xs text-bad">{bad}</p>}
                     </div>

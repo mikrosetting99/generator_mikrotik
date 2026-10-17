@@ -20,8 +20,7 @@ function stamp(): string {
 function ispSlug(isp: IspEntry, index: number): string {
   const clean = isp.name
     .trim()
-    .replace(/[^A-Za-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/[^A-Za-z0-9]+/g, "");
   return clean || `ISP${index + 1}`;
 }
 
@@ -60,16 +59,15 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
 
   /** Pencocok asal trafik lokal pada rule mark-routing: interface LAN, interface-list, atau address-list. */
   const sourceMatch: Array<[string, ArgValue]> = addressList
-    ? [["src-address-list", "LOCAL-IP"]]
+    ? [
+        ["dst-address-list", raw("!LOCAL-IP")],
+        ["src-address-list", "LOCAL-IP"],
+      ]
     : interfaceList
       ? [["in-interface-list", lanList]]
       : [["in-interface", lan]];
   /** Pencocok rule PCC: sama seperti di atas, ditambah tujuan bukan alamat lokal router. */
-  const pccMatch: Array<[string, ArgValue]> = [
-    ...sourceMatch,
-    ...(addressList ? ([["dst-address-list", raw("!LOCAL-IP")]] as Array<[string, ArgValue]>) : []),
-    ["dst-address-type", raw("!local")],
-  ];
+  const pccMatch: Array<[string, ArgValue]> = [...sourceMatch, ["dst-address-type", raw("!local")]];
 
   /** Gateway yang dipakai default route: IP target recursive untuk method recursive, gateway asli untuk netwatch/schedule. */
   const routeGateway = (isp: IspEntry) => (recursive ? isp.checkTarget : isp.gateway);
@@ -265,12 +263,11 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
       ]);
     });
 
-    // Koneksi yang masuk lewat WAN dibalas lewat WAN yang sama. Memakai prerouting (bukan input)
-    // agar koneksi yang diteruskan ke LAN (port-forward/dst-nat) juga ikut ditandai, bukan hanya yang ke router.
+    // Koneksi yang masuk lewat WAN dibalas lewat WAN yang sama.
     isps.forEach((isp, i) => {
       add([
         ["action", "mark-connection"],
-        ["chain", "prerouting"],
+        ["chain", "input"],
         ["connection-mark", "no-mark"],
         ["in-interface", isp.iface],
         ["new-connection-mark", `${slugs[i]}-conn`],

@@ -21,7 +21,7 @@ export function newIsp(index: number): IspEntry {
 export function createDefaultLoadBalanceConfig(): LoadBalanceConfig {
   return {
     ros: "",
-    localMode: "interface",
+    localMode: "addresslist",
     lanIface: "bridge-lan",
     lanList: "LAN",
     ratioEnabled: false,

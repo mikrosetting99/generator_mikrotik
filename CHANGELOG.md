@@ -8,6 +8,17 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.34.4] - 2026-10-17
+
+_Load Balance: disamakan dengan script LB PCC yang terbukti jalan_
+
+### Diperbaiki
+
+- Mode IP Address List (RFC1918): rule mark-routing prerouting kini memakai src-address-list=LOCAL-IP dan dst-address-list=!LOCAL-IP, seperti rule PCC-nya. Sebelumnya hanya src-address-list.
+- Mode target lokal bawaan diganti dari Interface (bridge-lan, hanya tebakan nama) menjadi IP Address List (RFC1918), yang tidak bergantung pada nama interface LAN. Nama LAN yang salah di mode Interface membuat rule PCC tidak pernah cocok sehingga tidak ada trafik yang dibagi.
+- Rule WAN mark-connection dikembalikan ke chain input, sesuai pola yang terbukti jalan.
+- Nama mark/routing table tidak lagi memakai strip: nama ISP "ISP 1" menjadi ISP1-conn dan to-ISP1 (sebelumnya ISP-1-conn dan to-ISP-1).
+
 ## [1.34.3] - 2026-10-17
 
 _Load Balance: mark-connection WAN memakai prerouting_

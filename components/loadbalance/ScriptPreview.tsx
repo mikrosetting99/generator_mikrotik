@@ -8,20 +8,28 @@ import { highlightScriptLine } from "@/lib/script-highlight";
 import type { LbIssue, LbSectionId } from "@/lib/types-loadbalance";
 
 export function ScriptPreview({
-  script,
+  script: setupScript,
+  removeScript,
   issues,
   onJump,
-  filename,
+  filename: setupFilename,
 }: {
   script: string;
+  /** Script penghapus semua settingan Load Balance. */
+  removeScript: string;
   issues: LbIssue[];
   onJump: (section: LbSectionId) => void;
   filename: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [tab, setTab] = useState<"setup" | "remove">("setup");
+  const removing = tab === "remove";
+  const script = removing ? removeScript : setupScript;
+  const filename = removing ? setupFilename.replace(/\.rsc$/, "") + "-hapus.rsc" : setupFilename;
   const errors = issues.filter((i) => i.level === "error");
   const warnings = issues.filter((i) => i.level === "warn");
-  const blocked = errors.length > 0;
+  // Script penghapus tidak bergantung pada kelengkapan form.
+  const blocked = !removing && errors.length > 0;
   const lines = script.split("\n");
   const commandCount = lines.filter((l) => l.trim() && !l.trim().startsWith("#")).length;
 
@@ -35,7 +43,9 @@ export function ScriptPreview({
     }
   };
 
-  const status = blocked
+  const status = removing
+    ? { tone: "border-warn/40 bg-warn/10 text-warn", text: "hapus semua" }
+    : blocked
     ? { tone: "border-bad/40 bg-bad/10 text-bad", text: `${errors.length} error` }
     : warnings.length > 0
       ? { tone: "border-warn/40 bg-warn/10 text-warn", text: `${warnings.length} catatan` }
@@ -44,6 +54,31 @@ export function ScriptPreview({
   return (
     <div className="flex flex-col gap-4">
       <div className="edge-light overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_24px_60px_-40px_rgba(0,0,0,0.9)]">
+        <div role="tablist" className="flex gap-1 border-b border-line-soft bg-raised/50 p-1.5">
+          {(
+            [
+              ["setup", "Script setup"],
+              ["remove", "Hapus semua"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                tab === id
+                  ? id === "remove"
+                    ? "bg-warn/15 text-warn ring-1 ring-warn/40"
+                    : "bg-brand/15 text-brand ring-1 ring-brand/40"
+                  : "text-muted hover:text-ink"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="flex items-center gap-3 border-b border-line-soft bg-canvas/60 px-4 py-2.5">
           <span className="flex gap-1.5" aria-hidden>
             <span className="h-2.5 w-2.5 rounded-full bg-bad/60" />
@@ -76,6 +111,12 @@ export function ScriptPreview({
           </span>
         </div>
 
+        {removing && (
+          <p className="border-t border-line-soft bg-warn/[0.06] px-4 py-2.5 text-xs leading-relaxed text-muted">
+            <b className="font-medium text-warn">Hati-hati:</b> menghapus rule mangle, NAT, route, dan failover Load Balance.
+            Pastikan router masih punya jalur internet lain, dan backup dulu.
+          </p>
+        )}
         <div className="flex flex-wrap gap-2 border-t border-line-soft bg-canvas/40 px-4 py-3.5">
           <Button
             variant="primary"

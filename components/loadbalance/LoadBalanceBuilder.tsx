@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button, CheckPill, Field, Select, TextInput } from "@/components/ui";
 import { VersionBadge } from "@/components/VersionBadge";
 import { createDefaultLoadBalanceConfig, newIsp } from "@/lib/defaults-loadbalance";
-import { generateLoadBalanceScript } from "@/lib/generator/loadbalance";
+import { generateLoadBalanceRemoveScript, generateLoadBalanceScript } from "@/lib/generator/loadbalance";
 import { ROS_LABEL } from "@/lib/models";
 import type { IspEntry, LbSectionId, LoadBalanceConfig, RosVersion } from "@/lib/types-loadbalance";
 import { validateLoadBalanceConfig } from "@/lib/validate-loadbalance";
@@ -55,6 +55,7 @@ export function LoadBalanceBuilder() {
 
   const issues = useMemo(() => validateLoadBalanceConfig(config), [config]);
   const script = useMemo(() => generateLoadBalanceScript(config), [config]);
+  const removeScript = useMemo(() => generateLoadBalanceRemoveScript(config), [config]);
 
   const jump = useCallback((section: LbSectionId) => {
     document
@@ -344,7 +345,7 @@ export function LoadBalanceBuilder() {
         </div>
         {/* --------------------------------------------------------- script */}
         <div className="min-w-0 lg:sticky lg:top-[76px]">
-          <ScriptPreview script={script} issues={issues} onJump={jump} filename={filename} />
+          <ScriptPreview script={script} removeScript={removeScript} issues={issues} onJump={jump} filename={filename} />
         </div>
       </div>
     </main>

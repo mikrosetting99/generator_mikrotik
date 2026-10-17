@@ -27,6 +27,26 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.34.0",
+    date: "2026-10-17",
+    title: "Load Balance: script hapus semua settingan",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Panel script Load Balance kini punya dua tab: \"Script setup\" dan \"Hapus semua\". Tab Hapus semua menghasilkan script yang membuang semua rule mangle (PCC, bypass lokal, bypass hotspot), NAT per ISP, route (recursive, per routing-mark, cadangan, default), tabel routing (v7), Netwatch/Scheduler/Script failover, dan address-list LOCAL-IP. Bisa disalin atau diunduh sebagai file -hapus.rsc, dan tidak bergantung pada kelengkapan form.",
+          "Rule dikenali dari komentar khas Load Balance dan dari ciri-cirinya (nama connection-mark/routing-mark per ISP, interface, address-list), sehingga rule menu lain seperti NAT atau anti tethering dari Setup Mikrotik Baru tidak ikut terhapus.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Baris penutup script setup Load Balance kini mengarahkan ke tab Hapus semua, menggantikan perintah pembersihan berbasis komentar yang bisa ikut menghapus rule menu lain.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.33.1",
     date: "2026-10-17",
     title: "Tampilan mode terang dipertegas",

@@ -8,6 +8,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.34.0] - 2026-10-17
+
+_Load Balance: script hapus semua settingan_
+
+### Ditambahkan
+
+- Panel script Load Balance kini punya dua tab: "Script setup" dan "Hapus semua". Tab Hapus semua menghasilkan script yang membuang semua rule mangle (PCC, bypass lokal, bypass hotspot), NAT per ISP, route (recursive, per routing-mark, cadangan, default), tabel routing (v7), Netwatch/Scheduler/Script failover, dan address-list LOCAL-IP. Bisa disalin atau diunduh sebagai file -hapus.rsc, dan tidak bergantung pada kelengkapan form.
+- Rule dikenali dari komentar khas Load Balance dan dari ciri-cirinya (nama connection-mark/routing-mark per ISP, interface, address-list), sehingga rule menu lain seperti NAT atau anti tethering dari Setup Mikrotik Baru tidak ikut terhapus.
+
+### Diubah
+
+- Baris penutup script setup Load Balance kini mengarahkan ke tab Hapus semua, menggantikan perintah pembersihan berbasis komentar yang bisa ikut menghapus rule menu lain.
+
 ## [1.33.1] - 2026-10-17
 
 _Tampilan mode terang dipertegas_

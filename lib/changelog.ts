@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.34.3",
+    date: "2026-10-17",
+    title: "Load Balance: mark-connection WAN memakai prerouting",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Rule mangle yang menandai koneksi masuk dari WAN (ISPx-conn) kini memakai chain prerouting, bukan input. Dengan input, koneksi yang diteruskan ke LAN (port-forward/dst-nat) tidak ditandai sehingga balasannya bisa keluar lewat ISP yang salah; prerouting menangkap koneksi ke router sekaligus koneksi yang diteruskan.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.34.2",
     date: "2026-10-17",
     title: "Load Balance: FastTrack tidak lagi menggagalkan PCC",

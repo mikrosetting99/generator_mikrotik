@@ -265,11 +265,12 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
       ]);
     });
 
-    // Koneksi yang masuk lewat WAN dibalas lewat WAN yang sama.
+    // Koneksi yang masuk lewat WAN dibalas lewat WAN yang sama. Memakai prerouting (bukan input)
+    // agar koneksi yang diteruskan ke LAN (port-forward/dst-nat) juga ikut ditandai, bukan hanya yang ke router.
     isps.forEach((isp, i) => {
       add([
         ["action", "mark-connection"],
-        ["chain", "input"],
+        ["chain", "prerouting"],
         ["connection-mark", "no-mark"],
         ["in-interface", isp.iface],
         ["new-connection-mark", `${slugs[i]}-conn`],

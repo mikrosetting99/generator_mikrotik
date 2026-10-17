@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.34.3] - 2026-10-17
+
+_Load Balance: mark-connection WAN memakai prerouting_
+
+### Diperbaiki
+
+- Rule mangle yang menandai koneksi masuk dari WAN (ISPx-conn) kini memakai chain prerouting, bukan input. Dengan input, koneksi yang diteruskan ke LAN (port-forward/dst-nat) tidak ditandai sehingga balasannya bisa keluar lewat ISP yang salah; prerouting menangkap koneksi ke router sekaligus koneksi yang diteruskan.
+
 ## [1.34.2] - 2026-10-17
 
 _Load Balance: FastTrack tidak lagi menggagalkan PCC_

@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.34.1] - 2026-10-17
+
+_Load Balance: perbaikan penyebab PCC tidak berjalan_
+
+### Diperbaiki
+
+- Mode Interface List: script kini membuat interface-list LAN bila belum ada. Sebelumnya rule mangle yang merujuk list yang tidak ada ditolak router, sehingga PCC tidak terpasang sama sekali. Interface LAN tetap harus dimasukkan sebagai member list (petunjuk perintahnya ada di script).
+- RouterOS v7 dengan Recursive Gateway: rute per routing-table (to-ISPx) kini memakai gateway dengan akhiran @main agar next-hop rekursif dicari di tabel main. Tanpa ini rute di tabel ISP tidak bisa menemukan host-route cek dan trafik bertanda tidak punya jalan keluar.
+- Script diakhiri daftar cek bila LB tidak berjalan: sumber trafik LAN, counter mangle, status rute, FastTrack, dan koneksi tiap ISP.
+
 ## [1.34.0] - 2026-10-17
 
 _Load Balance: script hapus semua settingan_

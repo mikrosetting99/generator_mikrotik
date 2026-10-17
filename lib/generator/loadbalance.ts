@@ -73,6 +73,13 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
 
   /** Gateway yang dipakai default route: IP target recursive untuk method recursive, gateway asli untuk netwatch/schedule. */
   const routeGateway = (isp: IspEntry) => (recursive ? isp.checkTarget : isp.gateway);
+  /**
+   * RouterOS v7 mencari next-hop rekursif di tabel routing yang sama dengan rutenya.
+   * Rute di tabel to-ISPx tidak menemukan host-route cek (ada di tabel main), jadi
+   * rutenya "unreachable" dan trafik bertanda tidak punya jalan keluar. "@main"
+   * memerintahkan pencarian next-hop di tabel main.
+   */
+  const markedGateway = (isp: IspEntry): ArgValue => (v7 && recursive ? raw(`${isp.checkTarget}@main`) : routeGateway(isp));
   const routeScope: Array<[string, ArgValue]> = recursive
     ? [
         ["check-gateway", "ping"],
@@ -124,6 +131,14 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
   }
   s.blank();
   s.comment("Syarat: interface tiap ISP dan LAN sudah punya IP address. Backup dulu: /system backup save name=sebelum-loadbalance");
+
+  // ---------------------------------------------------- interface-list LAN
+  // Rule mangle yang merujuk interface-list yang belum ada ditolak router, sehingga PCC tidak terpasang sama sekali.
+  if (interfaceList && lanList) {
+    s.blank();
+    s.comment(`Interface-list ${lanList} dibuat bila belum ada. WAJIB diisi interface LAN (bridge/VLAN): /interface list member add list=${lanList} interface=<nama-interface-LAN>`);
+    s.line(`:if ([:len [/interface list find where name=${ScriptBuilder.q(lanList)}]] = 0) do={ /interface list add name=${ScriptBuilder.q(lanList)} comment=${ScriptBuilder.q(tag("Interface LAN untuk PCC"))} }`);
+  }
 
   // ------------------------------------------------------------ address-list
   menu("/ip firewall address-list");
@@ -185,7 +200,7 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
       add([
         ...(recursive ? ([["check-gateway", "ping"]] as Array<[string, ArgValue]>) : []),
         ["distance", 1],
-        ["gateway", routeGateway(isp)],
+        ["gateway", markedGateway(isp)],
         [markKey, `to-${slugs[i]}`],
         ...(recursive
           ? ([
@@ -205,7 +220,7 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
           add([
             ...routeScope.slice(0, 1),
             ["distance", k + 1],
-            ["gateway", routeGateway(entry)],
+            ["gateway", markedGateway(entry)],
             [markKey, `to-${slugs[ownerIndex]}`],
             ...routeScope.slice(1),
             ["comment", tag(`PCC Backup Routing Mark ${owner.name} via ${entry.name}`)],
@@ -344,6 +359,12 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
   // -------------------------------------------------------------- penutup
   s.blank();
   s.comment("Cek hasil: /ip route print where dst-address=\"0.0.0.0/0\"  |  /ip firewall mangle print stats");
+  s.comment("Jika Load Balance tidak berjalan, cek berurutan:");
+  s.comment(`1) Interface LAN harus ada di sumber trafik: ${interfaceList ? `interface-list ${lanList || "(belum diisi)"} wajib punya member` : addressList ? "address-list LOCAL-IP" : `interface ${lan || "(belum diisi)"}`}`);
+  s.comment("2) /ip firewall mangle print stats  -> counter rule PCC harus naik");
+  s.comment(`3) /ip route print where ${v7 ? "routing-table" : "routing-mark"}~"to-"  -> rute tiap ISP harus aktif (huruf A)`);
+  s.comment("4) FastTrack bawaan mengabaikan mangle: /ip firewall filter disable [find action=fasttrack-connection]");
+  s.comment("5) Tiap ISP harus punya IP + gateway benar dan bisa di-ping: /ping 1.1.1.1 interface=<ether-ISP>");
   s.comment("Hapus semua settingan Load Balance: pakai tab \"Hapus semua\" di sebelah script ini.");
   return s.toString();
 }

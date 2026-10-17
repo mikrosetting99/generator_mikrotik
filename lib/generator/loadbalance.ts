@@ -316,6 +316,17 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
     });
   }
 
+  // ---------------------------------------------------------------- fasttrack
+  // Konfigurasi bawaan MikroTik memakai FastTrack, yang melewati mangle dan membuat PCC tidak membagi
+  // trafik. Rule FastTrack dibatasi ke koneksi TANPA mark: koneksi PCC (yang selalu bermark ISPx-conn)
+  // tetap diproses mangle, sedangkan trafik lain tetap ter-fasttrack.
+  if (pccEnabled) {
+    s.blank();
+    s.comment("FastTrack bawaan melewati mangle, jadi dibatasi ke koneksi tanpa mark (koneksi PCC tidak di-fasttrack).");
+    s.line("/ip firewall filter");
+    s.line("set [find where action=fasttrack-connection] connection-mark=no-mark");
+  }
+
   // ----------------------------------------------- deteksi failover (non-recursive)
   if (netwatch) {
     menu("/tool netwatch");
@@ -363,7 +374,7 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
   s.comment(`1) Interface LAN harus ada di sumber trafik: ${interfaceList ? `interface-list ${lanList || "(belum diisi)"} wajib punya member` : addressList ? "address-list LOCAL-IP" : `interface ${lan || "(belum diisi)"}`}`);
   s.comment("2) /ip firewall mangle print stats  -> counter rule PCC harus naik");
   s.comment(`3) /ip route print where ${v7 ? "routing-table" : "routing-mark"}~"to-"  -> rute tiap ISP harus aktif (huruf A)`);
-  s.comment("4) FastTrack bawaan mengabaikan mangle: /ip firewall filter disable [find action=fasttrack-connection]");
+  s.comment("4) Rule FastTrack harus berisi connection-mark=no-mark: /ip firewall filter print where action=fasttrack-connection");
   s.comment("5) Tiap ISP harus punya IP + gateway benar dan bisa di-ping: /ping 1.1.1.1 interface=<ether-ISP>");
   s.comment("Hapus semua settingan Load Balance: pakai tab \"Hapus semua\" di sebelah script ini.");
   return s.toString();
@@ -439,6 +450,11 @@ export function generateLoadBalanceRemoveScript(config: LoadBalanceConfig): stri
   s.line("remove [find where name=mikrosetting-failover-scheduler]");
   s.line("/system script");
   s.line("remove [find where name=mikrosetting-failover-check]");
+
+  s.blank();
+  s.comment("Kembalikan rule FastTrack seperti semula (batas connection-mark=no-mark dilepas).");
+  s.line("/ip firewall filter");
+  s.line("unset [find where action=fasttrack-connection] connection-mark");
 
   s.blank();
   s.line("/ip firewall address-list");

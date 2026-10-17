@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.34.2] - 2026-10-17
+
+_Load Balance: FastTrack tidak lagi menggagalkan PCC_
+
+### Diperbaiki
+
+- Script Load Balance (PCC) kini membatasi rule FastTrack bawaan MikroTik ke koneksi tanpa mark (set connection-mark=no-mark pada rule fasttrack-connection). FastTrack yang melewati mangle adalah penyebab umum PCC tidak membagi trafik di router berkonfigurasi bawaan. Koneksi PCC selalu bermark ISPx-conn sehingga tetap diproses mangle, sedangkan trafik lain tetap ter-fasttrack.
+- Script "Hapus semua" ikut mengembalikan rule FastTrack seperti semula (unset connection-mark).
+
 ## [1.34.1] - 2026-10-17
 
 _Load Balance: perbaikan penyebab PCC tidak berjalan_

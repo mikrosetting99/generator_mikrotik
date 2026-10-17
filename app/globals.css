@@ -44,16 +44,16 @@
  * cyan #38bdf8 hanya 1.9:1 terhadap putih, jauh di bawah syarat teks.
  */
 :root[data-theme="light"] {
-  --color-canvas: #f4f7fb;
+  --color-canvas: #e8edf4;
   --color-surface: #ffffff;
-  --color-raised: #eef2f8;
-  --color-line: #d3dce8;
-  --color-line-soft: #e6ecf4;
-  --color-code: #f7f9fc;
+  --color-raised: #e3e9f2;
+  --color-line: #9fb0c5;
+  --color-line-soft: #bccadb;
+  --color-code: #eef2f8;
 
   --color-ink: #0f1b2d;
-  --color-muted: #475569;
-  --color-faint: #5b6b80;
+  --color-muted: #3b4a5f;
+  --color-faint: #4d5d73;
 
   --color-brand: #0369a1;
   --color-brand-dim: #7dd3fc;
@@ -63,7 +63,7 @@
   --color-warn: #b45309;
   --color-bad: #be123c;
 
-  --edge-highlight: rgba(15, 27, 45, 0.08);
+  --edge-highlight: rgba(15, 27, 45, 0.14);
   --grid-line: rgba(3, 105, 161, 0.07);
   --scrollbar-hover: #b6c3d4;
 }
@@ -71,15 +71,15 @@
 /* Tanpa JavaScript, ikuti setelan perangkat. */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
-    --color-canvas: #f4f7fb;
+    --color-canvas: #e8edf4;
     --color-surface: #ffffff;
-    --color-raised: #eef2f8;
-    --color-line: #d3dce8;
-    --color-line-soft: #e6ecf4;
-    --color-code: #f7f9fc;
+    --color-raised: #e3e9f2;
+    --color-line: #9fb0c5;
+    --color-line-soft: #bccadb;
+    --color-code: #eef2f8;
     --color-ink: #0f1b2d;
-    --color-muted: #475569;
-    --color-faint: #5b6b80;
+    --color-muted: #3b4a5f;
+    --color-faint: #4d5d73;
     --color-brand: #0369a1;
     --color-brand-dim: #7dd3fc;
     --color-brand-ink: #ffffff;
@@ -87,9 +87,42 @@
     --color-accent-ink: #ffffff;
     --color-warn: #b45309;
     --color-bad: #be123c;
-    --edge-highlight: rgba(15, 27, 45, 0.08);
+    --edge-highlight: rgba(15, 27, 45, 0.14);
     --grid-line: rgba(3, 105, 161, 0.07);
     --scrollbar-hover: #b6c3d4;
+  }
+}
+
+/*
+ * Tema terang: kartu & bagian diberi bayangan tipis dan judul bagian dipertegas,
+ * karena garis tepi saja terlalu samar di atas latar terang.
+ */
+:root[data-theme="light"] .bg-surface.border,
+:root[data-theme="light"] .bg-surface\/95.border {
+  box-shadow: 0 1px 2px rgba(15, 27, 45, 0.1), 0 6px 18px rgba(15, 27, 45, 0.07);
+}
+:root[data-theme="light"] .border.bg-raised\/50,
+:root[data-theme="light"] .border.bg-raised\/40,
+:root[data-theme="light"] .border.bg-raised\/60 {
+  box-shadow: 0 1px 2px rgba(15, 27, 45, 0.08);
+}
+:root[data-theme="light"] .text-brand\/80 {
+  color: var(--color-brand);
+  font-weight: 600;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .bg-surface.border,
+  :root:not([data-theme]) .bg-surface\/95.border {
+    box-shadow: 0 1px 2px rgba(15, 27, 45, 0.1), 0 6px 18px rgba(15, 27, 45, 0.07);
+  }
+  :root:not([data-theme]) .border.bg-raised\/50,
+  :root:not([data-theme]) .border.bg-raised\/40,
+  :root:not([data-theme]) .border.bg-raised\/60 {
+    box-shadow: 0 1px 2px rgba(15, 27, 45, 0.08);
+  }
+  :root:not([data-theme]) .text-brand\/80 {
+    color: var(--color-brand);
+    font-weight: 600;
   }
 }
 

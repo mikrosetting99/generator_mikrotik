@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.33.1] - 2026-10-17
+
+_Tampilan mode terang dipertegas_
+
+### Diubah
+
+- Mode terang di seluruh aplikasi dipertegas: latar halaman sedikit lebih gelap agar kartu putih menonjol, garis tepi dan pemisah lebih jelas, teks sekunder lebih gelap, kartu mendapat bayangan tipis, dan judul section (mis. NAMA & SAMBUTAN, KARTU FORM) memakai warna aksen penuh dan huruf tebal. Mode gelap tidak berubah.
+
 ## [1.33.0] - 2026-10-17
 
 _Load Balance: format script dibuat ringkas seperti LB PCC standar_

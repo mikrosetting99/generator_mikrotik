@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.33.1",
+    date: "2026-10-17",
+    title: "Tampilan mode terang dipertegas",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Mode terang di seluruh aplikasi dipertegas: latar halaman sedikit lebih gelap agar kartu putih menonjol, garis tepi dan pemisah lebih jelas, teks sekunder lebih gelap, kartu mendapat bayangan tipis, dan judul section (mis. NAMA & SAMBUTAN, KARTU FORM) memakai warna aksen penuh dan huruf tebal. Mode gelap tidak berubah.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.33.0",
     date: "2026-10-17",
     title: "Load Balance: format script dibuat ringkas seperti LB PCC standar",

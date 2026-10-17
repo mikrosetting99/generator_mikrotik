@@ -27,6 +27,22 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.33.0",
+    date: "2026-10-17",
+    title: "Load Balance: format script dibuat ringkas seperti LB PCC standar",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Hasil script Load Balance ditulis ulang dengan format ringkas: header ringkasan (tanggal, RouterOS, jumlah ISP, Recursive Gateway, Bandwidth Ratio, tipe PCC, target lokal), lalu perintah dikelompokkan per menu (address-list, nat, routing table, route, mangle) dengan baris add biasa tanpa pembungkus \"buat bila belum ada\".",
+          "Isi mangle mengikuti pola standar: bypass hotspot (nonaktif), bypass trafik lokal di lima chain, mark-connection di chain input per WAN, mark-routing output, PCC mark-connection (dst-address-type=!local), lalu mark-routing prerouting. Address-list LOCAL-IP (RFC1918) dan NAT dengan dst-address-list=!LOCAL-IP kini selalu dibuat di semua mode target lokal.",
+          "Route: cek recursive (scope/target-scope 10), route per routing-mark, dan default route memakai scope/target-scope 30 dengan check-gateway=ping. Nama mark mempertahankan huruf asli nama ISP (mis. ISP1-conn, to-ISP1). Bila failover aktif, rute cadangan lintas ISP untuk tiap routing-mark ditambahkan di bawah rute utama.",
+          "Karena memakai add biasa, menjalankan script dua kali akan menggandakan rule — bersihkan dulu dengan perintah di baris penutup script bila perlu mengulang.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.32.0",
     date: "2026-10-16",
     title: "Setup Mikrotik Baru: NAT tanpa out-interface, user superadmin, generate password",

@@ -1,5 +1,5 @@
 import type { IspEntry, LoadBalanceConfig } from "../types-loadbalance";
-import { args, type ArgValue, ScriptBuilder } from "./script-builder";
+import { args, type ArgValue, raw, ScriptBuilder } from "./script-builder";
 
 /** Penanda pembuat yang ikut di setiap comment agar mudah dikenali di Winbox. */
 const BRAND = "By Mikrosetting";
@@ -9,20 +9,20 @@ function tag(text?: string): string {
   return clean ? `${clean} - ${BRAND}` : BRAND;
 }
 
+/** Tanggal & jam di header, mis. 17/10/2026 09.42.48. */
 function stamp(): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}.${pad(now.getMinutes())}.${pad(now.getSeconds())}`;
 }
 
-/** Nama pendek RouterOS-safe untuk connection-mark / routing-mark / routing table. */
+/** Nama pendek RouterOS-safe untuk connection-mark / routing-mark / routing table (huruf besar-kecil dipertahankan, mis. ISP1). */
 function ispSlug(isp: IspEntry, index: number): string {
   const clean = isp.name
     .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/[^A-Za-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-  return clean || `isp${index + 1}`;
+  return clean || `ISP${index + 1}`;
 }
 
 /**
@@ -49,70 +49,66 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
   const localLabel = addressList
     ? "IP Address List (RFC1918)"
     : interfaceList
-      ? `Interface List ${lanList || "(belum diisi)"}`
-      : `Interface ${lan || "(belum diisi)"}`;
+      ? `In. Interface List (${lanList || "belum diisi"})`
+      : `In. Interface (${lan || "belum diisi"})`;
   const weights = ratioWeights(isps.map((isp) => Number(isp.speed)), config.ratioEnabled);
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-  /** Pencocok trafik lokal pada rule PCC: interface LAN, atau address-list RFC1918. */
-  const localMatch: Array<[string, ArgValue]> = addressList
-    ? [
-        ["src-address-list", "LOCAL-IP"],
-        ["dst-address-list", "!LOCAL-IP"],
-        ["dst-address-type", "!local"],
-      ]
-    : interfaceList
-      ? [["in-interface-list", lanList]]
-      : [["in-interface", lan]];
   const { pccEnabled, failoverEnabled, failoverMethod } = config;
   const recursive = failoverEnabled && failoverMethod === "recursive";
   const netwatch = failoverEnabled && failoverMethod === "netwatch";
   const schedule = failoverEnabled && failoverMethod === "schedule";
 
-  /** Gateway yang dipakai default route: target recursive (v7/v6, dua-duanya) untuk method recursive, gateway asli untuk netwatch/schedule. */
-  const failoverGateway = (isp: IspEntry) => (recursive ? isp.checkTarget : isp.gateway);
-  const failoverExtraArgs: Array<[string, ArgValue]> = recursive
+  /** Pencocok asal trafik lokal pada rule mark-routing: interface LAN, interface-list, atau address-list. */
+  const sourceMatch: Array<[string, ArgValue]> = addressList
+    ? [["src-address-list", "LOCAL-IP"]]
+    : interfaceList
+      ? [["in-interface-list", lanList]]
+      : [["in-interface", lan]];
+  /** Pencocok rule PCC: sama seperti di atas, ditambah tujuan bukan alamat lokal router. */
+  const pccMatch: Array<[string, ArgValue]> = [
+    ...sourceMatch,
+    ...(addressList ? ([["dst-address-list", raw("!LOCAL-IP")]] as Array<[string, ArgValue]>) : []),
+    ["dst-address-type", raw("!local")],
+  ];
+
+  /** Gateway yang dipakai default route: IP target recursive untuk method recursive, gateway asli untuk netwatch/schedule. */
+  const routeGateway = (isp: IspEntry) => (recursive ? isp.checkTarget : isp.gateway);
+  const routeScope: Array<[string, ArgValue]> = recursive
     ? [
-        ["target-scope", 10],
         ["check-gateway", "ping"],
+        ["scope", 30],
+        ["target-scope", 30],
       ]
     : [];
+  const markKey = v7 ? "routing-table" : "routing-mark";
 
-  let sectionNo = 0;
-  const section = (title: string, description?: string) => {
-    sectionNo += 1;
-    s.section(`${sectionNo}. ${title}`, description);
+  /** Satu blok menu: baris path sekali, lalu satu `add` per entri. */
+  let currentMenu = "";
+  const menu = (path: string) => {
+    s.blank();
+    s.line(path);
+    currentMenu = path;
+  };
+  const add = (pairs: Array<[string, ArgValue]>, extra = "") => {
+    if (!currentMenu) return;
+    s.line(`add ${args(pairs)}${extra}`);
   };
 
   // ---------------------------------------------------------------- header
   const methodLabel = { recursive: "Recursive Gateway", netwatch: "Netwatch Ping", schedule: "Scheduler Check" }[
     failoverMethod
   ];
-  s.banner([
-    "SCRIPT LOAD BALANCE PCC & FAILOVER MULTI-ISP",
-    "Generator Script Mikrotik by Mikrosetting.com",
-    "",
-    `Jumlah ISP : ${isps.length}`,
-    `RouterOS   : ${config.ros ? config.ros : "(belum dipilih)"}`,
-    `Target lokal       : ${localLabel}`,
-    `Bagi beban         : ${config.ratioEnabled ? "sesuai rasio bandwidth" : "rata"}`,
-    `Load Balance (PCC) : ${pccEnabled ? "aktif" : "tidak aktif"}`,
-    `Failover            : ${failoverEnabled ? `aktif — metode ${methodLabel}` : "tidak aktif"}`,
-    `Dibuat     : ${stamp()}`,
-    "",
-    "SYARAT",
-    "Interface tiap ISP (dan interface LAN) harus SUDAH punya IP address —",
-    "script ini hanya menambah lapisan routing/PCC di atasnya, bukan",
-    "mengatur ulang alamat IP. Gunakan menu Setup Mikrotik Baru dulu bila",
-    "WAN belum dikonfigurasi.",
-    "",
-    "SIFAT SCRIPT INI",
-    "Hanya menambah, tidak menghapus apa pun. Setiap perintah dilindungi",
-    "pemeriksaan \"buat hanya bila belum ada\", jadi aman dijalankan ulang.",
-    "",
-    "BACKUP DULU (bila router sudah terpakai)",
-    "  /system backup save name=sebelum-loadbalance",
-    "  /export file=sebelum-loadbalance",
-  ]);
+  s.comment("MikroTik Load Balancing Connection Classifier (LB PCC)");
+  s.comment("Generated by Mikrosetting.com");
+  s.comment(`Date: ${stamp()}`);
+  s.comment(`RouterOS: ${config.ros ? `${config.ros}.xx` : "(belum dipilih)"}`);
+  s.comment(`WAN ISPs: ${isps.length}`);
+  s.comment(
+    `Recursive Gateway: ${recursive ? "on" : "off"}${failoverEnabled && !recursive ? ` (Failover: ${methodLabel})` : ""}`,
+  );
+  s.comment(`Bandwidth Ratio: ${config.ratioEnabled ? "on" : "off"}`);
+  s.comment(`PCC Type: ${pccEnabled ? config.classifier : "off"}`);
+  s.comment(`Local Target: ${localLabel}`);
 
   if (isps.length < 2) {
     s.blank().comment(
@@ -126,151 +122,201 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
     );
     return s.toString();
   }
+  s.blank();
+  s.comment("Syarat: interface tiap ISP dan LAN sudah punya IP address. Backup dulu: /system backup save name=sebelum-loadbalance");
 
-  // ------------------------------------------- address-list jaringan lokal
-  if (addressList) {
-    section("ADDRESS LIST — JARINGAN LOKAL", "Alamat privat (RFC1918) yang dianggap trafik lokal; hanya trafik ke luar daftar ini yang dibagi PCC dan di-NAT.");
-    for (const cidr of ["192.168.0.0/16", "172.16.0.0/12", "10.0.0.0/8"]) {
-      s.addIfMissing(
-        "/ip firewall address-list",
-        [
-          ["list", "LOCAL-IP"],
-          ["address", cidr],
-        ],
-        args([
-          ["list", "LOCAL-IP"],
-          ["address", cidr],
-          ["comment", tag("Jaringan lokal (RFC1918)")],
-        ]),
-      );
+  // ------------------------------------------------------------ address-list
+  menu("/ip firewall address-list");
+  add([["address", "192.168.0.0/16"], ["list", "LOCAL-IP"], ["comment", tag("Local IPs or Private IPs (RFC1918)")]]);
+  add([["address", "172.16.0.0/12"], ["list", "LOCAL-IP"]]);
+  add([["address", "10.0.0.0/8"], ["list", "LOCAL-IP"]]);
+
+  // --------------------------------------------------------------------- NAT
+  if (config.natEnabled) {
+    menu("/ip firewall nat");
+    isps.forEach((isp, i) => {
+      add([
+        ["chain", "srcnat"],
+        ["out-interface", isp.iface],
+        ["dst-address-list", raw("!LOCAL-IP")],
+        ["action", "masquerade"],
+        ["comment", tag(`Nat Masquerade to ${isp.name || `ISP${i + 1}`}`)],
+      ]);
+    });
+  }
+
+  // ------------------------------------------------------- routing table (v7)
+  if (pccEnabled && v7) {
+    menu("/routing table");
+    slugs.forEach((slug, i) => {
+      s.line(`add ${args([["name", `to-${slug}`]])} fib ${args([["comment", tag(`Tabel ${isps[i].name}`)]])}`);
+    });
+  }
+
+  // ------------------------------------------------------------------- route
+  menu("/ip route");
+  if (recursive) {
+    isps.forEach((isp) => {
+      add([
+        ["dst-address", isp.checkTarget],
+        ["distance", 1],
+        ["gateway", isp.gateway],
+        ["target-scope", 10],
+        ["scope", 10],
+        ["comment", tag(`PCC Recursive Check ${isp.name}`)],
+      ]);
+    });
+    s.blank();
+  } else if (netwatch) {
+    isps.forEach((isp) => {
+      add([
+        ["dst-address", isp.checkTarget],
+        ["distance", 1],
+        ["gateway", isp.gateway],
+        ["comment", tag(`Pin cek jalur ${isp.name}`)],
+      ]);
+    });
+    s.blank();
+  }
+
+  if (pccEnabled) {
+    // Satu rute per tabel ISP, menuju gateway ISP itu sendiri.
+    isps.forEach((isp, i) => {
+      add([
+        ...(recursive ? ([["check-gateway", "ping"]] as Array<[string, ArgValue]>) : []),
+        ["distance", 1],
+        ["gateway", routeGateway(isp)],
+        [markKey, `to-${slugs[i]}`],
+        ...(recursive
+          ? ([
+              ["scope", 30],
+              ["target-scope", 30],
+            ] as Array<[string, ArgValue]>)
+          : []),
+        ["comment", tag(`PCC Routing Mark to ${isp.name}`)],
+      ]);
+    });
+    // Cadangan: bila ISP pemilik tabel putus, koneksi bertanda tetap bisa keluar lewat ISP lain.
+    if (failoverEnabled) {
+      isps.forEach((owner, ownerIndex) => {
+        isps.forEach((_, k) => {
+          if (k === 0) return;
+          const entry = isps[(ownerIndex + k) % isps.length];
+          add([
+            ...routeScope.slice(0, 1),
+            ["distance", k + 1],
+            ["gateway", routeGateway(entry)],
+            [markKey, `to-${slugs[ownerIndex]}`],
+            ...routeScope.slice(1),
+            ["comment", tag(`PCC Backup Routing Mark ${owner.name} via ${entry.name}`)],
+          ]);
+        });
+      });
     }
   }
 
-  // ------------------------------------------------------- mangle: PCC mark
+  // Default route umum (tanpa mark): trafik router sendiri dan failover utama.
+  const defaultRoutes = failoverEnabled ? isps : [isps.reduce((min, isp) => (Number(isp.distance) < Number(min.distance) ? isp : min))];
+  defaultRoutes.forEach((isp) => {
+    add([
+      ...routeScope.slice(0, 1),
+      ["distance", isp.distance],
+      ["gateway", routeGateway(isp)],
+      ...routeScope.slice(1),
+      ["comment", tag(`${pccEnabled ? "PCC " : ""}Default Route to ${isp.name}`)],
+    ]);
+  });
+
+  // ------------------------------------------------------------------ mangle
   if (pccEnabled) {
-    section(
-      "MANGLE — PCC MARK-CONNECTION",
-      `Membagi koneksi baru dari ${addressList ? "jaringan lokal (LOCAL-IP)" : interfaceList ? `interface-list ${lanList || "(belum diisi)"}` : lan || "(LAN belum diisi)"} ke tiap ISP ${config.ratioEnabled ? "sesuai rasio bandwidth" : "secara rata"} (total bagian: ${totalWeight}).`,
-    );
-    let offset = 0;
-    isps.forEach((isp, i) => {
-      const weight = weights[i];
-      const connMark = `${slugs[i]}-conn`;
-      for (let r = 0; r < weight; r += 1) {
-        const remainder = offset + r;
-        s.addIfMissing(
-          "/ip firewall mangle",
-          [
-            ["chain", "prerouting"],
-            ...localMatch,
-            ["connection-mark", "no-mark"],
-            ["per-connection-classifier", `${config.classifier}:${totalWeight}/${remainder}`],
-          ],
-          args([
-            ["chain", "prerouting"],
-            ...localMatch,
-            ["connection-mark", "no-mark"],
-            ["per-connection-classifier", `${config.classifier}:${totalWeight}/${remainder}`],
-            ["action", "mark-connection"],
-            ["new-connection-mark", connMark],
-            ["passthrough", false],
-            ["comment", tag(`PCC ${isp.name} (jatah ${remainder + 1}/${totalWeight})`)],
-          ]),
-        );
-      }
-      offset += weight;
+    menu("/ip firewall mangle");
+    add([
+      ["action", "accept"],
+      ["chain", "prerouting"],
+      ["hotspot", raw("from-client,!auth")],
+      ["disabled", true],
+      ["comment", "HOTSPOT LOGIN BYPASS - Enable this if this Router handles Hotspot Login."],
+    ]);
+    const bypass: Array<[string, ArgValue]> = [
+      ["dst-address-list", "LOCAL-IP"],
+      ["src-address-list", "LOCAL-IP"],
+    ];
+    ["prerouting", "postrouting", "forward", "input", "output"].forEach((chain, i) => {
+      add([
+        ["action", "accept"],
+        ["chain", chain],
+        ...bypass,
+        ...(i === 0 ? ([["comment", tag("// LOCAL TRAFFIC BYPASS")]] as Array<[string, ArgValue]>) : []),
+      ]);
     });
 
-    section("MANGLE — MARK-ROUTING", "Mengarahkan tiap connection-mark ke tabel routing ISP-nya.");
+    // Koneksi yang masuk lewat WAN dibalas lewat WAN yang sama.
     isps.forEach((isp, i) => {
-      const connMark = `${slugs[i]}-conn`;
-      const routingMark = `to-${slugs[i]}`;
-      s.addIfMissing(
-        "/ip firewall mangle",
-        [
+      add([
+        ["action", "mark-connection"],
+        ["chain", "input"],
+        ["connection-mark", "no-mark"],
+        ["in-interface", isp.iface],
+        ["new-connection-mark", `${slugs[i]}-conn`],
+        ["passthrough", true],
+        ...(i === 0 ? ([["comment", tag("// PCC LOAD BALANCING")]] as Array<[string, ArgValue]>) : []),
+      ]);
+    });
+    isps.forEach((_, i) => {
+      add([
+        ["action", "mark-routing"],
+        ["chain", "output"],
+        ["connection-mark", `${slugs[i]}-conn`],
+        ["new-routing-mark", `to-${slugs[i]}`],
+        ["passthrough", false],
+      ]);
+    });
+
+    // Pembagian koneksi baru dari jaringan lokal ke tiap ISP.
+    let offset = 0;
+    isps.forEach((_, i) => {
+      for (let r = 0; r < weights[i]; r += 1) {
+        add([
+          ["action", "mark-connection"],
           ["chain", "prerouting"],
-          ["connection-mark", connMark],
-        ],
-        args([
-          ["chain", "prerouting"],
-          ["connection-mark", connMark],
-          ["action", "mark-routing"],
-          ["new-routing-mark", routingMark],
-          ["passthrough", false],
-          ["comment", tag(`Routing ${isp.name}`)],
-        ]),
-      );
+          ["connection-state", "new"],
+          ["connection-mark", "no-mark"],
+          ["new-connection-mark", `${slugs[i]}-conn`],
+          ["passthrough", true],
+          ["per-connection-classifier", `${config.classifier}:${totalWeight}/${offset + r}`],
+          ...pccMatch,
+        ]);
+      }
+      offset += weights[i];
+    });
+    isps.forEach((_, i) => {
+      add([
+        ["action", "mark-routing"],
+        ["chain", "prerouting"],
+        ["connection-mark", `${slugs[i]}-conn`],
+        ["new-routing-mark", `to-${slugs[i]}`],
+        ["passthrough", true],
+        ...sourceMatch,
+      ]);
     });
   }
 
-  // ------------------------------------------------------- deteksi failover
-  if (recursive) {
-    section(
-      "RECURSIVE GATEWAY — TARGET PENGUJI JALUR",
-      "Host route /32 ke IP publik lewat gateway asli tiap ISP, dipantau check-gateway=ping. Inilah yang mendeteksi ISP mati.",
-    );
-    isps.forEach((isp) => {
-      s.addIfMissing(
-        "/ip route",
-        [
-          ["dst-address", `${isp.checkTarget}/32`],
-          ["gateway", isp.gateway],
-        ],
-        args([
-          ["dst-address", `${isp.checkTarget}/32`],
-          ["gateway", isp.gateway],
-          ["distance", 1],
-          ["scope", 10],
-          ["check-gateway", "ping"],
-          ["comment", tag(`Cek jalur ${isp.name}`)],
-        ]),
-      );
-    });
-  } else if (netwatch) {
-    section(
-      "NETWATCH — PIN JALUR CEK",
-      "Route /32 khusus supaya ping Netwatch ke target tiap ISP pasti lewat gateway ISP itu (Netwatch sendiri tidak punya opsi pilih interface).",
-    );
-    isps.forEach((isp) => {
-      s.addIfMissing(
-        "/ip route",
-        [
-          ["dst-address", `${isp.checkTarget}/32`],
-          ["gateway", isp.gateway],
-        ],
-        args([
-          ["dst-address", `${isp.checkTarget}/32`],
-          ["gateway", isp.gateway],
-          ["distance", 1],
-          ["comment", tag(`Pin cek jalur ${isp.name}`)],
-        ]),
-      );
-    });
-
-    section(
-      "NETWATCH — DETEKSI ISP",
-      "Memantau target tiap ISP; saat putus/pulih, route ISP itu otomatis dimatikan/dinyalakan di semua tabel.",
-    );
+  // ----------------------------------------------- deteksi failover (non-recursive)
+  if (netwatch) {
+    menu("/tool netwatch");
     isps.forEach((isp) => {
       const upScript = `:log info "${isp.name} aktif kembali"; /ip route enable [find gateway=${isp.gateway}]`;
       const downScript = `:log info "${isp.name} terputus"; /ip route disable [find gateway=${isp.gateway}]`;
-      const netwatchArgs: Array<[string, ArgValue]> = [
+      add([
         ["host", isp.checkTarget],
         ["interval", config.checkInterval],
-      ];
-      if (v7) netwatchArgs.push(["type", "simple"]);
-      netwatchArgs.push(
+        ...(v7 ? ([["type", "simple"]] as Array<[string, ArgValue]>) : []),
         ["up-script", upScript],
         ["down-script", downScript],
         ["comment", tag(`Netwatch ${isp.name}`)],
-      );
-      s.addIfMissing("/tool netwatch", [["host", isp.checkTarget]], args(netwatchArgs));
+      ]);
     });
   } else if (schedule) {
-    section(
-      "SCHEDULER — DETEKSI ISP",
-      "Script berkala ping tiap ISP lewat interface-nya masing-masing (tanpa perlu paket Netwatch); ISP yang tidak merespons route-nya dimatikan sampai pulih.",
-    );
     const scriptName = "mikrosetting-failover-check";
     const schedulerName = "mikrosetting-failover-scheduler";
     const scriptSource = [
@@ -280,208 +326,26 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
         `:if ($ok > 0) do={ /ip route enable [find gateway=${isp.gateway}] } else={ /ip route disable [find gateway=${isp.gateway}] }`,
       ]),
     ].join("\n");
-    s.addIfMissing(
-      "/system script",
-      [["name", scriptName]],
-      args([
-        ["name", scriptName],
-        ["source", scriptSource],
-        ["comment", tag("Cek jalur tiap ISP")],
-      ]),
-    );
-    s.addIfMissing(
-      "/system scheduler",
-      [["name", schedulerName]],
-      args([
-        ["name", schedulerName],
-        ["interval", config.checkInterval],
-        ["on-event", scriptName],
-        ["comment", tag("Jadwal cek jalur ISP")],
-      ]),
-    );
+    menu("/system script");
+    add([
+      ["name", scriptName],
+      ["source", scriptSource],
+      ["comment", tag("Cek jalur tiap ISP")],
+    ]);
+    menu("/system scheduler");
+    add([
+      ["name", schedulerName],
+      ["interval", config.checkInterval],
+      ["on-event", scriptName],
+      ["comment", tag("Jadwal cek jalur ISP")],
+    ]);
   }
 
-  // -------------------------------------------------------- routing table
-  if (pccEnabled && v7) {
-    section(
-      "ROUTING TABLE",
-      "RouterOS v7 mewajibkan tabel routing dideklarasikan dulu sebelum dipakai di /ip route.",
-    );
-    slugs.forEach((slug, i) => {
-      const name = `to-${slug}`;
-      // /routing table memakai "fib" sebagai flag telanjang, bukan fib=yes —
-      // di luar pola args() yang selalu key=value, jadi ditambah manual.
-      s.addIfMissing(
-        "/routing table",
-        [["name", name]],
-        `${args([["name", name], ["comment", tag(`Tabel ${isps[i].name}`)]])} fib`,
-      );
-    });
-  }
-
-  // --------------------------------------------- default route per routing-mark
-  if (pccEnabled) {
-    section(
-      "DEFAULT ROUTE PER ISP",
-      failoverEnabled
-        ? "Tiap tabel/mark ISP diberi rute ke SEMUA ISP secara berurutan — bila ISP utamanya putus, trafik yang sudah di-mark otomatis lompat ke ISP berikutnya."
-        : "Failover tidak aktif — tiap tabel/mark ISP cuma punya satu rute langsung ke gateway-nya sendiri, tanpa cadangan.",
-    );
-    isps.forEach((owner, ownerIndex) => {
-      const routingMark = `to-${slugs[ownerIndex]}`;
-      if (!failoverEnabled) {
-        s.addIfMissing(
-          "/ip route",
-          [
-            ["dst-address", "0.0.0.0/0"],
-            ["gateway", owner.gateway],
-            [v7 ? "routing-table" : "routing-mark", routingMark],
-          ],
-          args([
-            ["dst-address", "0.0.0.0/0"],
-            ["gateway", owner.gateway],
-            [v7 ? "routing-table" : "routing-mark", routingMark],
-            ["distance", 1],
-            ["comment", tag(`Default ${owner.name}`)],
-          ]),
-        );
-        return;
-      }
-      const order = isps.map((_, k) => isps[(ownerIndex + k) % isps.length]);
-      order.forEach((entry, position) => {
-        const distance = position + 1;
-        s.addIfMissing(
-          "/ip route",
-          [
-            ["dst-address", "0.0.0.0/0"],
-            ["gateway", failoverGateway(entry)],
-            [v7 ? "routing-table" : "routing-mark", routingMark],
-          ],
-          args([
-            ["dst-address", "0.0.0.0/0"],
-            ["gateway", failoverGateway(entry)],
-            [v7 ? "routing-table" : "routing-mark", routingMark],
-            ["distance", distance],
-            ...failoverExtraArgs,
-            [
-              "comment",
-              tag(position === 0 ? `Utama ${owner.name}` : `Cadangan ${owner.name} via ${entry.name}`),
-            ],
-          ]),
-        );
-      });
-    });
-  }
-
-  // ------------------------------------------------- default route umum
-  section(
-    "DEFAULT ROUTE UMUM (TANPA MARK)",
-    pccEnabled
-      ? "Untuk trafik yang tidak kena mangle (mis. dari router sendiri)."
-      : "Jalur utama untuk seluruh trafik — PCC tidak aktif, jadi tidak ada pembagian per koneksi.",
+  // -------------------------------------------------------------- penutup
+  s.blank();
+  s.comment("Cek hasil: /ip route print where dst-address=\"0.0.0.0/0\"  |  /ip firewall mangle print stats");
+  s.comment(
+    `Bersihkan: /ip firewall mangle remove [find comment~"${BRAND}"]  /ip firewall nat remove [find comment~"${BRAND}"]  /ip route remove [find comment~"${BRAND}"]`,
   );
-  if (failoverEnabled) {
-    isps.forEach((isp) => {
-      s.addIfMissing(
-        "/ip route",
-        [
-          ["dst-address", "0.0.0.0/0"],
-          ["gateway", failoverGateway(isp)],
-        ],
-        args([
-          ["dst-address", "0.0.0.0/0"],
-          ["gateway", failoverGateway(isp)],
-          ["distance", isp.distance],
-          ...failoverExtraArgs,
-          ["comment", tag(`Default via ${isp.name}`)],
-        ]),
-      );
-    });
-  } else {
-    const primary = isps.reduce((min, isp) => (Number(isp.distance) < Number(min.distance) ? isp : min));
-    s.addIfMissing(
-      "/ip route",
-      [
-        ["dst-address", "0.0.0.0/0"],
-        ["gateway", primary.gateway],
-      ],
-      args([
-        ["dst-address", "0.0.0.0/0"],
-        ["gateway", primary.gateway],
-        ["distance", primary.distance],
-        ["comment", tag(`Default via ${primary.name}`)],
-      ]),
-    );
-  }
-
-  // ----------------------------------------------------------------- NAT
-  if (config.natEnabled) {
-    section("NAT", "Masquerade per interface ISP.");
-    isps.forEach((isp) => {
-      s.addIfMissing(
-        "/ip firewall nat",
-        [
-          ["chain", "srcnat"],
-          ["action", "masquerade"],
-          ["out-interface", isp.iface],
-          ...(addressList ? ([["dst-address-list", "!LOCAL-IP"]] as Array<[string, ArgValue]>) : []),
-        ],
-        args([
-          ["chain", "srcnat"],
-          ["action", "masquerade"],
-          ["out-interface", isp.iface],
-          ...(addressList ? ([["dst-address-list", "!LOCAL-IP"]] as Array<[string, ArgValue]>) : []),
-          ["comment", tag(`NAT ${isp.name}`)],
-        ]),
-      );
-    });
-  }
-
-  // ------------------------------------------------------------ verifikasi
-  const cleanup = [
-    '  /ip firewall mangle remove [find comment~"By Mikrosetting"]',
-    '  /ip firewall nat remove [find comment~"By Mikrosetting"]',
-    '  /ip route remove [find comment~"By Mikrosetting"]',
-    ...(pccEnabled && v7 ? ['  /routing table remove [find comment~"By Mikrosetting"]'] : []),
-    ...(netwatch ? ['  /tool netwatch remove [find comment~"By Mikrosetting"]'] : []),
-    ...(schedule
-      ? [
-          '  /system scheduler remove [find comment~"By Mikrosetting"]',
-          '  /system script remove [find comment~"By Mikrosetting"]',
-        ]
-      : []),
-  ];
-  s.banner([
-    "SELESAI — CARA MEMERIKSA HASIL",
-    "",
-    "/ip route print where dst-address=\"0.0.0.0/0\"",
-    recursive
-      ? "  Pastikan rute recursive (gateway = IP target, bukan gateway asli ISP) aktif (huruf A)."
-      : "  Pastikan rute yang berstatus A (aktif) mengarah ke ISP yang sedang hidup.",
-    "",
-    ...(pccEnabled
-      ? [
-          "/ip firewall mangle print stats",
-          "  Kolom bytes/packets naik berarti PCC sedang membagi trafik.",
-          "",
-          ...isps.map(
-            (isp, i) => `ping ${isp.checkTarget} routing-mark=to-${slugs[i]}   # cek jalur ${isp.name}`,
-          ),
-          "",
-        ]
-      : []),
-    ...(failoverEnabled
-      ? [
-          "Cabut salah satu kabel ISP, lalu tunggu beberapa detik — trafik ke ISP yang mati",
-          "harus otomatis lewat ISP lain (failover).",
-          netwatch ? "/tool netwatch print   # kolom STATUS harus berubah jadi down" : "",
-          schedule ? `/system scheduler print   # cek waktu jalan terakhir "${"mikrosetting-failover-scheduler"}"` : "",
-          "",
-        ].filter(Boolean)
-      : []),
-    "BERSIHKAN (bila perlu mengulang dari nol)",
-    ...cleanup,
-  ]);
-
   return s.toString();
 }

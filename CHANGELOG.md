@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.35.3] - 2026-10-18
+
+_Halaman login: kartu tidak lagi bergantung pada animasi untuk muncul (iPhone)_
+
+### Diperbaiki
+
+- Animasi masuk kartu login sebelumnya memudar dari opacity 0. Browser mini iOS untuk captive portal bisa menunda animasi, sehingga kartu tetap tak terlihat dan halaman tampak kosong di iPhone padahal normal di Android. Animasi kini hanya bergeser 6 px tanpa mengubah opacity, jadi kartu selalu terlihat. Animasi centang di halaman Berhasil masuk juga tidak lagi mulai dari transparan. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.
+
 ## [1.35.2] - 2026-10-18
 
 _Halaman login: jeda 3 detik dengan animasi saat kode voucher benar_

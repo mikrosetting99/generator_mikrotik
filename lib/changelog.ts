@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.35.3",
+    date: "2026-10-18",
+    title: "Halaman login: kartu tidak lagi bergantung pada animasi untuk muncul (iPhone)",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Animasi masuk kartu login sebelumnya memudar dari opacity 0. Browser mini iOS untuk captive portal bisa menunda animasi, sehingga kartu tetap tak terlihat dan halaman tampak kosong di iPhone padahal normal di Android. Animasi kini hanya bergeser 6 px tanpa mengubah opacity, jadi kartu selalu terlihat. Animasi centang di halaman Berhasil masuk juga tidak lagi mulai dari transparan. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.35.2",
     date: "2026-10-18",
     title: "Halaman login: jeda 3 detik dengan animasi saat kode voucher benar",

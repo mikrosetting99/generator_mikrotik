@@ -398,7 +398,9 @@ a { color: var(--accent-text); }
   line-height: 1.7;
 }
 
-@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+/* Hanya bergeser, TIDAK memudar dari opacity 0: browser captive portal iOS bisa menunda animasi,
+   dan kartu yang mulai dari transparan akan tetap tak terlihat (halaman tampak kosong). */
+@keyframes fadein { from { transform: translateY(6px); } to { transform: none; } }
 
 /* --- polesan interaksi, sama untuk semua desain --- */
 
@@ -651,7 +653,7 @@ a.button2:hover { filter: none; opacity: .8; }
   width: 74px;
   height: 74px;
   margin: 0 auto 10px;
-  animation: okpop .5s cubic-bezier(.2, 1.4, .4, 1) both;
+  animation: okpop .5s cubic-bezier(.2, 1.4, .4, 1);
 }
 .okmark .okc {
   stroke: #22c55e;
@@ -688,5 +690,5 @@ a.button2:hover { filter: none; opacity: .8; }
 }
 
 @keyframes okdraw { to { stroke-dashoffset: 0; } }
-@keyframes okpop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes okpop { from { transform: scale(.4); } to { transform: scale(1); } }
 @keyframes okfill { to { width: 100%; } }

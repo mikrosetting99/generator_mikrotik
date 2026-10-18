@@ -27,6 +27,26 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.35.0",
+    date: "2026-10-18",
+    title: "Halaman login: pesan error berjenis dan layar loading",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Pesan error di halaman login kini berjenis, dengan judul dan warna sendiri: \"Server tidak merespons\" (RADIUS timeout, oranye), \"Voucher sudah digunakan\" (batas sesi/perangkat, biru), \"Voucher habis\" (batas waktu atau kuota, kuning), dan \"Kode tidak valid\" (merah). Jenisnya dikenali dari pesan asli RouterOS, sehingga tetap benar walau teks di errors.txt diubah.",
+          "Layar loading penuh (spinner di atas latar kabur) tampil setelah kode voucher diisi dan Login ditekan. Bila server lambat lebih dari 8 detik, teksnya berganti menjadi \"Masih menunggu respons server…\". Layar ditutup otomatis bila pengguna kembali dengan tombol Back. Tombol Login tetap berputar dan tidak bisa ditekan dua kali.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "errors.txt: pesan untuk RADIUS tidak merespons, voucher dipakai perangkat lain, voucher habis waktu, voucher habis kuota, dan kode tidak valid ditulis lebih jelas (kode tidak valid kini menyebut kemungkinan voucher sudah digunakan atau habis). Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.34.4",
     date: "2026-10-17",
     title: "Load Balance: disamakan dengan script LB PCC yang terbukti jalan",

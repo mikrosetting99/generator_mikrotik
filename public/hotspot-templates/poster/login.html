@@ -71,7 +71,13 @@
     </div>
     {{/MODE_SWITCH}}
 
-    $(if error)<div class="notice">$(error)</div>$(endif)
+    $(if error)
+    <div class="notice" id="notice" role="alert">
+      <b class="nt" id="noticeTitle">Login gagal</b>
+      <span class="nm" id="noticeMsg">$(error)</span>
+      <span id="noticeOrig" hidden>$(error-orig)</span>
+    </div>
+    $(endif)
 
     <form autocomplete="off" name="login" action="$(link-login-only)" method="post" $(if chap-id)onSubmit="return doLogin()"$(endif)>
       <input type="hidden" name="dst" value="$(link-orig)" />
@@ -115,6 +121,15 @@
     {{#FOOTER}}
     <div class="foot">{{FOOTER}}</div>
     {{/FOOTER}}
+  </div>
+
+  <!-- Layar loading: tampil penuh setelah kode dimasukkan dan Login ditekan. -->
+  <div id="loadscr" class="loadscr" role="status" aria-live="polite">
+    <div class="ls">
+      <i class="sp"></i>
+      <p class="lt" id="loadtext">Sedang memeriksa kode…</p>
+      <p class="ls2" id="loadsub">Mohon tunggu sebentar</p>
+    </div>
   </div>
 
   <script type="text/javascript">
@@ -179,9 +194,58 @@
         window.addEventListener('load', fit, false);
       }
     })();
+    // Pesan error yang jelas: jenisnya dikenali dari pesan asli RouterOS (variabel error-orig),
+    // sedangkan teks yang tampil tetap dari errors.txt sehingga bisa diubah sesuka Anda.
+    (function () {
+      var box = document.getElementById("notice");
+      if (!box) { return; }
+      var orig = (document.getElementById("noticeOrig").textContent || "").toLowerCase();
+      var shown = (document.getElementById("noticeMsg").textContent || "").toLowerCase();
+      // Pesan asli RouterOS dipakai lebih dulu; teks terjemahan hanya cadangan (bisa menyebut beberapa hal sekaligus).
+      var text = (orig && orig.indexOf(String.fromCharCode(36) + "(") < 0) ? orig : shown;
+      var kind = "invalid";
+      var title = "Kode tidak valid";
+      if (/radius|not responding|no response|timeout|tidak merespon|tidak merespons/.test(text)) {
+        kind = "radius"; title = "Server tidak merespons";
+      } else if (/already logged|no more sessions|session limit|simultaneous|sedang dipakai|sudah dipakai|sudah digunakan/.test(text)) {
+        kind = "used"; title = "Voucher sudah digunakan";
+      } else if (/uptime limit|traffic limit|expired|has reached|habis|kedaluwarsa/.test(text)) {
+        kind = "expired"; title = "Voucher habis";
+      } else if (/invalid|wrong|salah|tidak valid|password/.test(text)) {
+        kind = "invalid"; title = "Kode tidak valid";
+      } else {
+        kind = "other"; title = "Login gagal";
+      }
+      box.className = "notice k-" + kind;
+      document.getElementById("noticeTitle").innerHTML = title;
+    })();
+    // Layar loading penuh setelah kode diisi dan Login ditekan. Tombol juga berputar
+    // dan tidak bisa ditekan dua kali, jadi halaman tidak terlihat macet.
+    function showLoading() {
+      var l = document.getElementById("loadscr");
+      if (!l) { return; }
+      l.className = "loadscr show";
+      setTimeout(function () {
+        var t = document.getElementById("loadtext");
+        var s = document.getElementById("loadsub");
+        if (t) { t.innerHTML = "Masih menunggu respons server…"; }
+        if (s) { s.innerHTML = "Jika terlalu lama, periksa koneksi lalu coba lagi"; }
+      }, 8000);
+    }
+    // Kembali dengan tombol Back: tutup layar loading yang masih tertinggal di cache.
+    window.addEventListener("pageshow", function () {
+      var l = document.getElementById("loadscr");
+      if (l) { l.className = "loadscr"; }
+      var b = document.login.querySelector(".button");
+      if (b && b.className.indexOf("loading") >= 0) {
+        b.className = "button";
+        b.lastChild.nodeValue = " Login";
+      }
+    });
     // Umpan balik instan saat Login ditekan: tombol berputar dan tidak bisa
     // ditekan dua kali, jadi halaman tidak terlihat macet selama router memproses.
     document.login.addEventListener("submit", function () {
+      if (username.value) { showLoading(); }
       var b = document.login.querySelector(".button");
       if (b) {
         b.className = "button loading";

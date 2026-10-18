@@ -22,7 +22,7 @@ ippool-empty = Alamat IP habis. Hubungi petugas.
 shutting-down = Layanan hotspot sedang ditutup sementara.
 
 # Batas jumlah pemakaian bersama (shared-users) terlampaui.
-user-session-limit = Kode ini sedang dipakai di perangkat lain ($(username))
+user-session-limit = Voucher $(username) sudah digunakan di perangkat lain. Satu voucher hanya bisa dipakai di jumlah perangkat yang ditentukan.
 
 # Batas jumlah klien aktif sesuai lisensi RouterOS terlampaui.
 license-session-limit = Jumlah pengguna sedang penuh. Coba beberapa saat lagi.
@@ -34,17 +34,17 @@ wrong-mac-username = Kode tidak cocok dengan perangkat ini ($(username))
 chap-missing = Browser tidak mengirim balasan. Aktifkan JavaScript lalu coba lagi.
 
 # Username atau password salah.
-invalid-username = Kode voucher atau password salah. Periksa lagi lalu coba ulang.
+invalid-username = Kode voucher tidak valid. Periksa penulisannya; bila benar, voucher mungkin sudah digunakan atau sudah habis.
 
 # User terikat ke MAC address tertentu, tetapi login dari perangkat lain.
 invalid-mac = Kode $(username) hanya bisa dipakai di perangkat yang pertama kali memakainya.
 
 # Batas waktu dan kuota untuk user lokal.
-uptime-limit = Masa aktif kode $(username) sudah habis.
-traffic-limit = Kuota kode $(username) sudah habis.
+uptime-limit = Voucher $(username) sudah habis (waktu pemakaian terpakai seluruhnya).
+traffic-limit = Voucher $(username) sudah habis (kuota data terpakai seluruhnya).
 
 # RADIUS server tidak menjawab.
-radius-timeout = Server tidak merespon. Coba beberapa saat lagi.
+radius-timeout = Server autentikasi (RADIUS) tidak merespons. Coba lagi beberapa saat, atau hubungi admin bila terus terjadi.
 
 # Proses otorisasi sebelumnya belum selesai.
 auth-in-progress = Proses login sebelumnya belum selesai, coba lagi sebentar.

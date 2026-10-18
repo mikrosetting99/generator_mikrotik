@@ -603,3 +603,56 @@ a.button2 {
   box-shadow: 0 4px 12px rgba(0, 0, 0, .16);
 }
 a.button2 .icon { width: 1.25em; height: 1.25em; }
+
+/* --- pesan error berjenis & layar loading --- */
+
+.notice .nt { display: block; margin-bottom: 2px; font-size: 14px; font-weight: 800; }
+.notice .nm { display: block; }
+
+.loadscr {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, .55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.loadscr.show { display: flex; }
+
+.loadscr .ls {
+  min-width: 220px;
+  max-width: 320px;
+  padding: 26px 28px 22px;
+  text-align: center;
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+}
+
+.loadscr .sp {
+  display: block;
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 16px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+.loadscr .lt { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.35; }
+.loadscr .ls2 { margin: 6px 0 0; font-size: 12px; opacity: .75; line-height: 1.4; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.notice.k-radius { background: rgba(234, 88, 12, .95); }
+.notice.k-used { background: rgba(37, 99, 235, .95); }
+.notice.k-expired { background: rgba(180, 83, 9, .95); }
+.notice.k-invalid, .notice.k-other { background: rgba(211, 32, 39, .94); }

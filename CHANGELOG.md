@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.35.2] - 2026-10-18
+
+_Halaman login: jeda 3 detik dengan animasi saat kode voucher benar_
+
+### Ditambahkan
+
+- Setelah kode voucher benar (halaman Berhasil masuk), pengguna melihat animasi centang hijau, bilah waktu yang terisi selama 3 detik, dan hitung mundur "Kode voucher benar. Mengalihkan dalam N detik…" sebelum dialihkan otomatis. Tombol "Lanjutkan sekarang" tetap ada untuk melewati jeda, dan ada pengalihan cadangan 4 detik bila JavaScript mati. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.
+
 ## [1.35.1] - 2026-10-18
 
 _WhatsApp di halaman login menjadi teks tegas_

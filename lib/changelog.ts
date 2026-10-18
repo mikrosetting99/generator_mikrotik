@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.35.2",
+    date: "2026-10-18",
+    title: "Halaman login: jeda 3 detik dengan animasi saat kode voucher benar",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Setelah kode voucher benar (halaman Berhasil masuk), pengguna melihat animasi centang hijau, bilah waktu yang terisi selama 3 detik, dan hitung mundur \"Kode voucher benar. Mengalihkan dalam N detik…\" sebelum dialihkan otomatis. Tombol \"Lanjutkan sekarang\" tetap ada untuk melewati jeda, dan ada pengalihan cadangan 4 detik bila JavaScript mati. Berlaku di desain Minimal dan Poster; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.35.1",
     date: "2026-10-18",
     title: "WhatsApp di halaman login menjadi teks tegas",

@@ -6,6 +6,8 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css">
+  <!-- Cadangan bila JavaScript mati: dialihkan setelah 4 detik. -->
+  <meta http-equiv="refresh" content="4;url=$(link-redirect)">
   <script language="JavaScript">
     function startRedirect() {
       $(if popup == 'true')
@@ -21,8 +23,14 @@
   <div class="main">
     <div class="box brandbox">
       {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{PAGE_TITLE}}">{{/LOGO}}
+      <!-- Animasi centang: kode voucher benar, tunggu 3 detik sebelum dialihkan. -->
+      <svg class="okmark" viewBox="0 0 52 52" aria-hidden="true">
+        <circle class="okc" cx="26" cy="26" r="23" fill="none" />
+        <path class="okt" fill="none" d="M15 27 l8 8 l15 -17" />
+      </svg>
       <h3 class="brand">Berhasil masuk</h3>
-      <p class="subtitle">Anda sudah terhubung ke internet. Halaman akan dialihkan otomatis.</p>
+      <p class="subtitle" id="okmsg">Kode voucher benar. Mengalihkan dalam 3 detik…</p>
+      <div class="okbar" aria-hidden="true"><i></i></div>
     </div>
 
     <table class="table2">
@@ -37,8 +45,23 @@
     </div>
   </div>
 
-  <!-- Langsung dialihkan: tidak menunggu logo dan gambar latar selesai dimuat (onLoad). -->
-  <script type="text/javascript">startRedirect();</script>
+  <!-- Jeda 3 detik dengan animasi, lalu dialihkan. Dimulai langsung, tidak menunggu logo dan gambar latar dimuat. -->
+  <script type="text/javascript">
+    (function () {
+      var left = 3;
+      var msg = document.getElementById("okmsg");
+      var timer = setInterval(function () {
+        left -= 1;
+        if (left <= 0) {
+          clearInterval(timer);
+          if (msg) { msg.innerHTML = "Mengalihkan…"; }
+          startRedirect();
+        } else if (msg) {
+          msg.innerHTML = "Kode voucher benar. Mengalihkan dalam " + left + " detik…";
+        }
+      }, 1000);
+    })();
+  </script>
 </body>
 
 </html>

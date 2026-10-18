@@ -568,17 +568,28 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* Tombol WhatsApp: warna, tinggi, dan ukuran tulisan diatur dari editor. */
+/* WhatsApp: teks tegas, bukan tombol. Warna & ukuran diatur dari editor. */
 a.button2 {
-  height: {{WA_HEIGHT}}px;
-  background: {{WA_BG}};
-  border-color: {{WA_BG}};
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 14px;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   color: {{WA_FG}};
   font-size: {{WA_FONT}}px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
   text-shadow: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .16);
 }
-a.button2 .icon { width: 1.25em; height: 1.25em; }
+a.button2:hover { filter: none; opacity: .8; }
 
 /* --- pesan error berjenis & layar loading --- */
 

@@ -291,7 +291,9 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
   const tableCustom = isHexColor(page.tableColor ?? "") ? page.tableColor.trim() : "";
   const tableBg = tableCustom || primary;
   const waBg = isHexColor(page.whatsappColor ?? "") ? page.whatsappColor.trim() : "#25d366";
-  const waFg = isHexColor(page.whatsappTextColor ?? "") ? page.whatsappTextColor.trim() : readableOn(waBg);
+  // WhatsApp tampil sebagai teks tegas (bukan tombol): warna sendiri, atau hijau tua/terang menurut latar kartu.
+  const waCustom = isHexColor(page.whatsappTextColor ?? "") ? page.whatsappTextColor.trim() : "";
+  const waFg = waCustom || (formIsDark ? "#4ade80" : "#0f7a3d");
   const clampNum = (v: unknown, min: number, max: number, fallback: number) =>
     Number.isFinite(Number(v)) && v !== "" && v !== null ? Math.max(min, Math.min(max, Math.round(Number(v)))) : fallback;
   const tableTextCustom = isHexColor(page.tableTextColor ?? "") ? page.tableTextColor.trim() : "";
@@ -363,6 +365,7 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     WA_LINK: page.whatsappEnabled === false ? "" : whatsappLink(page.whatsapp),
     WA_BG: waBg,
     WA_FG: waFg,
+    WA_FG_POSTER: waCustom || "var(--text)",
     WA_HEIGHT: String(clampNum(page.whatsappHeight, 32, 72, 48)),
     WA_FONT: String(clampNum(page.whatsappFontSize, 11, 24, 15)),
     WA_LABEL: escapeHtml(page.whatsappLabel.trim() || "Hubungi admin"),

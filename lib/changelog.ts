@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.35.1",
+    date: "2026-10-18",
+    title: "WhatsApp di halaman login menjadi teks tegas",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "WhatsApp di halaman login tidak lagi berupa tombol, melainkan teks tebal bergaris bawah di bawah form (tanpa ikon dan bingkai). Warna teks bisa dipilih (bawaan hijau yang menyesuaikan terang/gelapnya kartu, atau putih/hitam/warna lain) dan ukuran tulisannya 11–24 px. Pengaturan warna tombol dan tinggi tombol dihapus dari editor. Berlaku di desain Minimal dan Poster, juga di halaman logout dan error; paket halaman login perlu di-upload ulang ke router.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.35.0",
     date: "2026-10-18",
     title: "Halaman login: pesan error berjenis dan layar loading",

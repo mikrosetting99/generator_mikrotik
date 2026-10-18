@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.35.1] - 2026-10-18
+
+_WhatsApp di halaman login menjadi teks tegas_
+
+### Diubah
+
+- WhatsApp di halaman login tidak lagi berupa tombol, melainkan teks tebal bergaris bawah di bawah form (tanpa ikon dan bingkai). Warna teks bisa dipilih (bawaan hijau yang menyesuaikan terang/gelapnya kartu, atau putih/hitam/warna lain) dan ukuran tulisannya 11–24 px. Pengaturan warna tombol dan tinggi tombol dihapus dari editor. Berlaku di desain Minimal dan Poster, juga di halaman logout dan error; paket halaman login perlu di-upload ulang ke router.
+
 ## [1.35.0] - 2026-10-18
 
 _Halaman login: pesan error berjenis dan layar loading_

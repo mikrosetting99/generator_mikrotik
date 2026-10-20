@@ -210,7 +210,7 @@ export function generateLoadBalanceScript(config: LoadBalanceConfig): string {
       ]);
     });
     // Cadangan: bila ISP pemilik tabel putus, koneksi bertanda tetap bisa keluar lewat ISP lain.
-    if (failoverEnabled) {
+    if (failoverEnabled && config.markBackup) {
       isps.forEach((owner, ownerIndex) => {
         isps.forEach((_, k) => {
           if (k === 0) return;

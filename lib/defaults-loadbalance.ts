@@ -30,6 +30,7 @@ export function createDefaultLoadBalanceConfig(): LoadBalanceConfig {
     classifier: "both-addresses-and-ports",
     failoverEnabled: true,
     failoverMethod: "recursive",
+    markBackup: false,
     checkInterval: "10s",
     natEnabled: true,
   };

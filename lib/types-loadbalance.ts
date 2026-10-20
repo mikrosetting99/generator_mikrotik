@@ -50,6 +50,8 @@ export interface LoadBalanceConfig {
   /** Pindah otomatis ke ISP lain saat satu ISP putus — independen dari PCC. */
   failoverEnabled: boolean;
   failoverMethod: FailoverMethod;
+  /** Rute cadangan lintas ISP di tiap tabel routing-mark. Menambah N×(N−1) rute; mati = sama dengan script LB PCC standar. */
+  markBackup: boolean;
   /** Interval cek jalur, format durasi RouterOS. Dipakai Netwatch & Scheduler. */
   checkInterval: string;
   natEnabled: boolean;

@@ -243,6 +243,18 @@ export function LoadBalanceBuilder() {
                       <TextInput mono value={config.checkInterval} onChange={(checkInterval) => patch({ checkInterval })} placeholder="10s" />
                     </Field>
                   )}
+                  {config.failoverEnabled && config.pccEnabled && (
+                    <div className="sm:col-span-2">
+                      <CheckPill active={config.markBackup} onClick={() => patch({ markBackup: !config.markBackup })}>
+                        Rute cadangan lintas ISP
+                      </CheckPill>
+                      <p className="mt-1.5 text-xs leading-relaxed text-faint">
+                        Menambah rute cadangan di tiap tabel ISP agar koneksi bertanda tetap keluar bila ISP-nya mati.
+                        Jumlah rute bertambah N×(N−1) (3 ISP = 6, 8 ISP = 56). Biarkan mati untuk script yang sama dengan
+                        LB PCC standar; aktifkan bila perlu failover untuk koneksi yang sudah dibagi.
+                      </p>
+                    </div>
+                  )}
                   {config.failoverEnabled && (
                     <div className="sm:col-span-2">
                       <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">

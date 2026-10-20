@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.35.4] - 2026-10-20
+
+_Load Balance 3–8 ISP: disamakan dengan script LB PCC standar_
+
+### Diperbaiki
+
+- Script Load Balance untuk 3 ISP ke atas kini memiliki jumlah rule yang sama dengan script LB PCC standar. Penyebab router terputus saat script ditempel adalah rute cadangan lintas ISP yang bertambah N×(N−1) (3 ISP = 6 rute, 8 ISP = 56 rute) dan tidak ada di script standar.
+
+### Diubah
+
+- Rute cadangan lintas ISP dijadikan opsi "Rute cadangan lintas ISP" di Pengaturan lanjutan, mati secara bawaan. Aktifkan hanya bila memerlukan failover untuk koneksi yang sudah dibagi PCC.
+
 ## [1.35.3] - 2026-10-18
 
 _Halaman login: kartu tidak lagi bergantung pada animasi untuk muncul (iPhone)_

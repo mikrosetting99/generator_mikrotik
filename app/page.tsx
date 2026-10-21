@@ -49,6 +49,8 @@ export default async function Home() {
       menus: menus.filter((m) => !settings.groups.includes(m.group)),
     },
   ].filter((s) => s.menus.length > 0);
+  // Penghitung urutan kartu menu (untuk animasi muncul bertahap).
+  let cardOrder = 0;
   const isAdmin = session?.user?.role === "ADMIN";
   const loggedIn = Boolean(session?.user);
   const username = session?.user?.username ?? session?.user?.name ?? "";
@@ -200,17 +202,19 @@ export default async function Home() {
         </div>
 
         {/* --------------------------------------------------------- menu */}
-        <h2 className="mt-20 text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
+        <h2 className="animate-rise mt-20 text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
           Pilih menu
         </h2>
         <div className="mt-5 space-y-7">
           {sections.map((section) => (
             <div key={section.name || "menu"}>
               {section.name && (
-                <h3 className="mb-3 text-xs font-semibold text-muted">{section.name}</h3>
+                <h3 className="animate-rise mb-3 text-xs font-semibold text-muted">{section.name}</h3>
               )}
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {section.menus.map((menu) => {
+            // Urutan kartu di seluruh grup: dipakai sebagai jeda animasi muncul bertahap.
+            const order = cardOrder++;
             const external = isExternalHref(menu.href);
             // Menu pengembangan hanya bisa dibuka admin; yang lain melihat kartu nonaktif.
             const locked = menu.devMode && !isAdmin;
@@ -267,9 +271,9 @@ export default async function Home() {
             );
 
             const cardClass =
-              "edge-light group flex items-start gap-3.5 rounded-2xl border border-line bg-surface p-4 transition-all duration-200";
+              "edge-light group flex h-full items-start gap-3.5 rounded-2xl border border-line bg-surface p-4 transition-all duration-200";
 
-            return locked ? (
+            const card = locked ? (
               <div key={menu.id} className={`${cardClass} opacity-60`}>
                 {body}
               </div>
@@ -293,6 +297,16 @@ export default async function Home() {
                   </TrackedLink>
                 );
               })()
+            );
+
+            return (
+              <div
+                key={menu.id}
+                className="animate-card h-full"
+                style={{ "--i": Math.min(order, 14) } as React.CSSProperties}
+              >
+                {card}
+              </div>
             );
           })}
               </div>

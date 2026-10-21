@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.36.2] - 2026-10-21
+
+_Animasi muncul bertahap pada kartu menu_
+
+### Ditambahkan
+
+- Kartu menu di beranda kini muncul bertahap: tiap kartu naik sambil memudar masuk dengan jeda 55 ms dari kartu sebelumnya, lalu ikonnya membal sebentar. Judul grup dan label "Pilih menu" ikut naik halus. Animasi dimatikan otomatis bila perangkat memakai pengaturan "kurangi animasi".
+
 ## [1.36.1] - 2026-10-21
 
 _Hitung Bandwidth: angka utama adalah kebutuhan puncak + cadangan_

@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.36.2",
+    date: "2026-10-21",
+    title: "Animasi muncul bertahap pada kartu menu",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Kartu menu di beranda kini muncul bertahap: tiap kartu naik sambil memudar masuk dengan jeda 55 ms dari kartu sebelumnya, lalu ikonnya membal sebentar. Judul grup dan label \"Pilih menu\" ikut naik halus. Animasi dimatikan otomatis bila perangkat memakai pengaturan \"kurangi animasi\".",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.36.1",
     date: "2026-10-21",
     title: "Hitung Bandwidth: angka utama adalah kebutuhan puncak + cadangan",

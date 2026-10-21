@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.36.1] - 2026-10-21
+
+_Hitung Bandwidth: angka utama adalah kebutuhan puncak + cadangan_
+
+### Diubah
+
+- Di menu Hitung Bandwidth, angka besar yang disorot kini kebutuhan bandwidth (kebutuhan puncak + cadangan), mis. 216 Mbps. Paket ISP terdekat yang cukup (mis. 300 Mbps) dipindah menjadi keterangan kecil di bawahnya.
+
 ## [1.36.0] - 2026-10-21
 
 _Menu baru: Hitung Bandwidth_

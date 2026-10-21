@@ -386,13 +386,19 @@ export function BandwidthCalculator() {
         {/* ----------------------------------------------------- hasil */}
         <aside className="space-y-5 lg:sticky lg:top-20 lg:self-start">
           <section className="rounded-2xl border border-brand/40 bg-surface p-5">
-            <p className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Paket ISP yang disarankan</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+              Kebutuhan bandwidth (puncak + cadangan)
+            </p>
             <p className="mt-1 text-4xl font-bold tracking-tight text-brand">
-              {result.tierDown > 0 ? fmtMbps(result.tierDown) : "—"}
+              {result.needDown > 0 ? fmtMbps(result.needDown) : "—"}
             </p>
             <p className="mt-1 text-xs text-muted">
-              Kebutuhan puncak {fmtMbps(result.peakDown)} + cadangan {state.assumptions.headroom}% ={" "}
-              <b className="font-semibold text-ink">{fmtMbps(result.needDown)}</b> download
+              download · kebutuhan puncak <b className="font-semibold text-ink">{fmtMbps(result.peakDown)}</b> + cadangan{" "}
+              {state.assumptions.headroom}%
+            </p>
+            <p className="mt-3 rounded-lg border border-line-soft bg-raised/50 px-3 py-2 text-xs text-muted">
+              Paket ISP terdekat yang cukup:{" "}
+              <b className="font-semibold text-ink">{result.tierDown > 0 ? fmtMbps(result.tierDown) : "—"}</b>
             </p>
 
             <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-line-soft pt-4 text-sm">

@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.36.1",
+    date: "2026-10-21",
+    title: "Hitung Bandwidth: angka utama adalah kebutuhan puncak + cadangan",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Di menu Hitung Bandwidth, angka besar yang disorot kini kebutuhan bandwidth (kebutuhan puncak + cadangan), mis. 216 Mbps. Paket ISP terdekat yang cukup (mis. 300 Mbps) dipindah menjadi keterangan kecil di bawahnya.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.36.0",
     date: "2026-10-21",
     title: "Menu baru: Hitung Bandwidth",

@@ -155,6 +155,18 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     requireLogin: false,
   },
   {
+    id: "bandwidth",
+    group: "Alat",
+    builtin: true,
+    title: "Hitung Bandwidth",
+    description: "Perkirakan kebutuhan bandwidth dari jumlah user PPPoE, Hotspot, dan DHCP dengan banyak paket.",
+    href: "/hitung-bandwidth",
+    icon: "users",
+    visible: true,
+    devMode: false,
+    requireLogin: false,
+  },
+  {
     id: "ip-calc",
     group: "Alat",
     builtin: true,

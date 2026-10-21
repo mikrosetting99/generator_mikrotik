@@ -27,6 +27,23 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.36.0",
+    date: "2026-10-21",
+    title: "Menu baru: Hitung Bandwidth",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Menu Hitung Bandwidth (/hitung-bandwidth, grup Alat) untuk memperkirakan kebutuhan bandwidth ISP dari jumlah user PPPoE, Hotspot, dan IP DHCP. Tiap layanan punya banyak paket pembatasan (nama, download, upload, jumlah user), persen user online bersamaan, dan intensitas pemakaian dengan profil cepat Ringan/Sedang/Berat.",
+          "Hasil langsung: paket ISP yang disarankan (dibulatkan ke ukuran lazim), kebutuhan puncak + cadangan (headroom), kebutuhan upload, rasio overbooking, kasus terburuk bila semua user penuh, porsi per layanan, rincian per paket, dan bagian tiap ISP untuk Load Balance (termasuk agar tetap cukup bila satu ISP mati). Ada peringatan bila overbooking terlalu tinggi atau isian belum lengkap.",
+          "Asumsi bisa diatur: cadangan 0–200%, skenario jam sibuk Hemat/Normal/Aman, dan jumlah ISP 1–8.",
+          "Perintah RouterOS siap salin untuk pembatasan tiap paket: /ppp profile (PPPoE), /ip hotspot user profile (Hotspot), dan tipe PCQ + simple queue per subnet (IP DHCP), dengan rate-limit upload/download.",
+          "Isian tersimpan di browser (tidak dikirim ke server) dan menu bisa diatur dari Dashboard Admin seperti menu lain.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.35.4",
     date: "2026-10-20",
     title: "Load Balance 3–8 ISP: disamakan dengan script LB PCC standar",

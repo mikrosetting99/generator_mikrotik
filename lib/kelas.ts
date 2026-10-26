@@ -15,5 +15,5 @@ export const controlBase =
   "w-full rounded-lg border border-line bg-canvas px-3 text-sm text-ink outline-none " +
   "transition-[border-color,box-shadow,background-color] duration-200 " +
   "placeholder:text-faint/70 hover:border-line/80 " +
-  "focus:border-brand focus:shadow-[0_0_0_3px_rgba(56,189,248,0.14)] focus-visible:outline-none " +
+  "focus:border-brand focus:shadow-[0_0_0_3px_rgba(113,75,103,0.22)] focus-visible:outline-none " +
   "disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted";

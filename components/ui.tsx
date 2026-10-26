@@ -374,11 +374,11 @@ export function Button({
 }) {
   const variants = {
     default:
-      "border border-line bg-raised text-ink hover:border-brand/50 hover:bg-raised/70 hover:text-brand active:scale-[0.98]",
+      "border border-line bg-surface text-ink hover:border-brand/60 hover:bg-raised hover:text-brand active:scale-[0.98]",
     primary:
-      "border border-accent/40 bg-accent text-[color:var(--color-accent-ink)] font-semibold shadow-[0_10px_30px_-14px_rgba(34,197,94,0.9)] hover:brightness-110 active:scale-[0.98]",
+      "border border-brand bg-brand text-[color:var(--color-brand-ink)] font-semibold hover:brightness-110 active:scale-[0.98]",
     brand:
-      "border border-brand/40 bg-brand text-[color:var(--color-brand-ink)] font-semibold shadow-[0_10px_30px_-14px_rgba(56,189,248,0.55)] hover:brightness-110 active:scale-[0.98]",
+      "border border-accent bg-accent text-[color:var(--color-accent-ink)] font-semibold hover:brightness-110 active:scale-[0.98]",
     ghost: "border border-transparent text-muted hover:bg-raised hover:text-ink",
     danger: "border border-transparent text-faint hover:bg-bad/10 hover:text-bad",
   };
@@ -432,7 +432,7 @@ export function Panel({
         fill && "flex h-full flex-col",
       )}
     >
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line-soft bg-gradient-to-b from-white/[0.025] to-transparent px-5 py-4">
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line-soft bg-raised/60 px-5 py-3.5">
         <div className="flex min-w-0 gap-3">
           {step && (
             <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-brand/25 bg-brand/10 font-mono text-[11px] font-medium text-brand">

@@ -27,6 +27,22 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.37.0",
+    date: "2026-10-26",
+    title: "Tampilan aplikasi diubah menjadi bergaya Odoo",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Seluruh aplikasi memakai tampilan ala Odoo: warna utama ungu #714B67 dengan aksen teal #017E84, latar abu muda dengan kartu putih datar, sudut lebih kecil, tanpa efek cahaya/gradasi, dan font Roboto. Berlaku di mode terang dan gelap (ungu dicerahkan di mode gelap).",
+          "Semua header halaman (Setup, Load Balance, Halaman Login Hotspot, Cek Mikrotik, Autoflush DNS, Kalkulator IP, Hitung Bandwidth, Admin, Changelog) kini berupa bilah navigasi ungu dengan teks putih.",
+          "Beranda didesain ulang seperti layar aplikasi Odoo: bilah ungu di atas dengan ikon grid dan nama situs, lembar putih berisi judul dan cuplikan script, lalu bagian \"Aplikasi\" berisi ikon berwarna (persegi membulat) per menu dengan nama, deskripsi, jumlah pemakaian, dan label perlu login/pengembangan. Animasi muncul bertahap tetap ada.",
+          "Tombol: aksi utama berwarna ungu datar, tombol sekunder putih bertepi abu seperti Odoo. Pengaturan menu, grup, mode pengembangan, dan login tetap dari Dashboard Admin; tampilan halaman login hotspot yang diunduh ke router tidak berubah.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.36.2",
     date: "2026-10-21",
     title: "Animasi muncul bertahap pada kartu menu",

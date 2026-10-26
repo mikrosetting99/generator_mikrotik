@@ -31,6 +31,14 @@ const SAMPLE = [
   { text: "    in-interface-list=WAN", kind: "cmd" },
 ];
 
+/** Warna ikon aplikasi di beranda (palet ala Odoo); dipilih stabil dari id menu. */
+const APP_COLORS = ["#714b67", "#017e84", "#e0902b", "#5b7fa6", "#c4567f", "#4e9f6e", "#8a6fc9", "#d9644a"];
+function appColor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return APP_COLORS[h % APP_COLORS.length];
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
@@ -57,69 +65,66 @@ export default async function Home() {
   const waUrl = settings.waEnabled ? waLink(settings.waNumber, settings.waMessage) : "";
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
-      {/* Cahaya ambien di belakang hero */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-40 h-[520px] opacity-70"
-        style={{
-          background:
-            "radial-gradient(60% 60% at 20% 0%, rgba(56,189,248,0.16), transparent 70%), radial-gradient(45% 55% at 78% 8%, rgba(34,197,94,0.12), transparent 70%)",
-        }}
-      />
-      <div aria-hidden className="bg-grid pointer-events-none absolute inset-x-0 top-0 h-[560px]" />
-
-      <div className="relative mx-auto w-full max-w-6xl px-5 py-14 sm:py-20">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <main className="relative min-h-screen">
+      {/* Bilah navigasi ungu ala Odoo (gayanya dari header.sticky di globals.css). */}
+      <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-2.5">
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-white/15" aria-hidden>
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="currentColor">
+                <path d="M4 4h4v4H4V4Zm6 0h4v4h-4V4Zm6 0h4v4h-4V4ZM4 10h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4ZM4 16h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4Z" />
+              </svg>
+            </span>
             {settings.logoDataUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={`/api/site-logo?v=${settings.logoVersion}`}
                 alt={settings.siteName}
-                className="h-9 w-auto max-w-[140px] object-contain"
+                className="h-8 w-auto max-w-[140px] rounded-sm bg-white/90 object-contain p-0.5"
               />
             )}
             <span className="truncate text-sm font-semibold text-ink">{settings.siteName}</span>
           </Link>
           <div className="flex items-center gap-2">
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-muted transition-colors hover:border-brand/50 hover:text-ink"
-            >
-              <Shield className="h-3.5 w-3.5" />
-              Dashboard Admin
-            </Link>
-          )}
-          {loggedIn ? (
-            <span className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-line bg-surface pl-3 pr-1 text-xs text-muted">
-              <User className="h-3.5 w-3.5 text-brand" />
-              <span className="font-medium text-ink">{username}</span>
-              {isAdmin && (
-                <span className="rounded-full border border-brand/30 bg-brand/10 px-1.5 text-[10px] uppercase tracking-wide text-brand">
-                  admin
-                </span>
-              )}
-              <SignOutButton />
-            </span>
-          ) : (
-            <Link
-              href="/login"
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-muted transition-colors hover:border-brand/50 hover:text-ink"
-            >
-              <LogIn className="h-3.5 w-3.5" />
-              Masuk
-            </Link>
-          )}
-          <ThemeToggle />
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-3 text-xs font-medium text-ink transition-colors hover:bg-raised"
+              >
+                <Shield className="h-3.5 w-3.5" />
+                Dashboard Admin
+              </Link>
+            )}
+            {loggedIn ? (
+              <span className="inline-flex min-h-9 items-center gap-1 rounded-md border border-line bg-surface pl-3 pr-1 text-xs text-muted">
+                <User className="h-3.5 w-3.5 text-brand" />
+                <span className="font-medium text-ink">{username}</span>
+                {isAdmin && (
+                  <span className="rounded-full border border-line px-1.5 text-[10px] uppercase tracking-wide text-ink">
+                    admin
+                  </span>
+                )}
+                <SignOutButton />
+              </span>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-3 text-xs font-medium text-ink transition-colors hover:bg-raised"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                Masuk
+              </Link>
+            )}
+            <ThemeToggle />
           </div>
         </div>
+      </header>
 
+      <div className="relative mx-auto w-full max-w-6xl px-5 py-8 sm:py-10">
         {/* ---------------------------------------------------------- hero */}
-        <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
+        <div className="grid gap-8 rounded-lg border border-line bg-surface p-6 shadow-sm sm:p-8 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <header className="animate-rise">
-            <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-[3.25rem]">
+            <h1 className="text-3xl font-medium leading-[1.15] tracking-tight text-ink sm:text-[2.75rem]">
               {settings.heroTitle}
               <span className="block text-brand">{settings.heroAccent}</span>
             </h1>
@@ -142,7 +147,7 @@ export default async function Home() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/setup"
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-5 text-sm font-semibold text-[color:var(--color-accent-ink)] shadow-[0_14px_40px_-16px_rgba(34,197,94,0.85)] transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md bg-brand px-5 text-sm font-semibold text-[color:var(--color-brand-ink)] transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
               >
                 {settings.ctaLabel}
                 <ArrowRight className="h-4 w-4" />
@@ -152,7 +157,7 @@ export default async function Home() {
                   href={waUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#25D366]/50 bg-[#25D366]/10 px-5 text-sm font-semibold text-[#25D366] transition-all duration-200 hover:bg-[#25D366]/20 active:scale-[0.98]"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#25D366]/50 bg-[#25D366]/10 px-5 text-sm font-semibold text-[#25D366] transition-all duration-200 hover:bg-[#25D366]/20 active:scale-[0.98]"
                 >
                   <WhatsappIcon className="h-4 w-4" />
                   {settings.waLabel}
@@ -167,7 +172,7 @@ export default async function Home() {
 
           {/* Cuplikan hasil */}
           {settings.showSample && (
-          <div className="animate-rise edge-light overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_30px_80px_-50px_rgba(0,0,0,1)]">
+          <div className="animate-rise overflow-hidden rounded-lg border border-line bg-surface shadow-sm">
             <div className="flex items-center gap-3 border-b border-line-soft bg-canvas/60 px-4 py-2.5">
               <span className="flex gap-1.5" aria-hidden>
                 <span className="h-2.5 w-2.5 rounded-full bg-bad/60" />
@@ -202,16 +207,14 @@ export default async function Home() {
         </div>
 
         {/* --------------------------------------------------------- menu */}
-        <h2 className="animate-rise mt-20 text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
-          Pilih menu
-        </h2>
-        <div className="mt-5 space-y-7">
+        <h2 className="animate-rise mt-10 text-lg font-medium text-ink">Aplikasi</h2>
+        <div className="mt-4 space-y-7">
           {sections.map((section) => (
             <div key={section.name || "menu"}>
               {section.name && (
-                <h3 className="animate-rise mb-3 text-xs font-semibold text-muted">{section.name}</h3>
+                <h3 className="animate-rise mb-3 border-b border-line pb-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted">{section.name}</h3>
               )}
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {section.menus.map((menu) => {
             // Urutan kartu di seluruh grup: dipakai sebagai jeda animasi muncul bertahap.
             const order = cardOrder++;
@@ -226,24 +229,21 @@ export default async function Home() {
 
             const body = (
               <>
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-brand/25 bg-brand/10 text-brand transition-colors group-hover:border-brand/50">
-                  <MenuIcon name={menu.icon} className="h-5 w-5" />
+                <span
+                  className="grid h-16 w-16 shrink-0 place-items-center rounded-[14px] text-white shadow-sm transition-transform duration-200 group-hover:scale-105"
+                  style={{ background: appColor(menu.id) }}
+                >
+                  <MenuIcon name={menu.icon} className="h-8 w-8" />
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-ink">{menu.title}</span>
-                    {locked ? (
-                      <Lock className="h-3.5 w-3.5 shrink-0 text-faint" />
-                    ) : (
-                      <ArrowRight className="h-4 w-4 shrink-0 text-faint transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-brand" />
-                    )}
+                <span className="mt-3.5 flex w-full min-w-0 flex-col items-center text-center">
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                    {menu.title}
+                    {locked && <Lock className="h-3.5 w-3.5 shrink-0 text-faint" />}
                   </span>
                   {menu.description && (
-                    <span className="mt-1 block text-xs leading-relaxed text-muted">
-                      {menu.description}
-                    </span>
+                    <span className="mt-1 line-clamp-3 text-xs leading-relaxed text-muted">{menu.description}</span>
                   )}
-                  <span className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <span className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
                     <span className="font-mono text-[10px] text-faint">
                       {(usage[menu.id] ?? 0).toLocaleString("id-ID")}× dipakai
                     </span>
@@ -271,7 +271,7 @@ export default async function Home() {
             );
 
             const cardClass =
-              "edge-light group flex h-full items-start gap-3.5 rounded-2xl border border-line bg-surface p-4 transition-all duration-200";
+              "group flex h-full flex-col items-center rounded-lg border border-line bg-surface p-5 shadow-sm transition-all duration-200";
 
             const card = locked ? (
               <div key={menu.id} className={`${cardClass} opacity-60`}>
@@ -281,7 +281,7 @@ export default async function Home() {
               (() => {
                 const props = {
                   href,
-                  className: `${cardClass} hover:-translate-y-0.5 hover:border-brand/50`,
+                  className: `${cardClass} hover:-translate-y-0.5 hover:border-brand/60 hover:shadow-md`,
                   ...(external && href === menu.href
                     ? { target: "_blank", rel: "noopener noreferrer" }
                     : {}),

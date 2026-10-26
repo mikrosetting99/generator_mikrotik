@@ -36,7 +36,7 @@ export function PilihTema({
               className={cn(
                 "group relative overflow-hidden rounded-xl border text-left transition-all duration-200",
                 dipilih
-                  ? "border-brand shadow-[0_0_0_3px_rgba(56,189,248,0.18)]"
+                  ? "border-brand shadow-[0_0_0_3px_rgba(113,75,103,0.28)]"
                   : "border-line hover:border-brand/50"
               )}
             >

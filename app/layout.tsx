@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Roboto } from "next/font/google";
 import { Providers } from "@/app/providers";
 import { themeBootScript } from "@/components/ThemeToggle";
 import { getSiteSettings } from "@/lib/site-settings-server";
 import "./globals.css";
 
-const inter = Inter({
+/** Roboto, seperti Odoo. Nama variabelnya tetap --font-inter agar tidak mengubah pemakai lain. */
+const inter = Roboto({
   variable: "--font-inter",
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
   display: "swap",
 });

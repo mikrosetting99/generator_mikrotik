@@ -35,7 +35,13 @@ function restore(raw: unknown): StaticRoutingConfig {
   if (!Array.isArray(r.isps) || r.isps.length === 0 || !Array.isArray(r.apps)) return base;
   const isps: IspRow[] = r.isps.slice(0, MAX_ISPS).map((i, n) => ({
     id: typeof i.id === "string" && i.id ? i.id : newIspRow(n).id,
-    name: typeof i.name === "string" ? i.name.slice(0, 20) : `ISP${n + 1}`,
+    // Data lama memakai "name"; kini kolomnya adalah routing mark itu sendiri.
+    mark:
+      typeof i.mark === "string"
+        ? i.mark.slice(0, 30)
+        : typeof (i as { name?: unknown }).name === "string"
+          ? `sr-${String((i as { name?: string }).name).replace(/[^A-Za-z0-9]+/g, "")}`.slice(0, 30)
+          : `sr-ISP${n + 1}`,
     iface: typeof i.iface === "string" ? i.iface.slice(0, 30) : "",
     gateway: typeof i.gateway === "string" ? i.gateway.slice(0, 20) : "",
   }));
@@ -132,7 +138,7 @@ export function StaticRoutingBuilder() {
     }
   };
 
-  const ispOptions = config.isps.map((i, n) => ({ value: i.id, label: `${i.name || `ISP ${n + 1}`} — ${i.iface || "?"}` }));
+  const ispOptions = config.isps.map((i, n) => ({ value: i.id, label: `${i.mark || `ISP ${n + 1}`} — ${i.iface || "?"}` }));
 
   return (
     <main className="min-h-screen">
@@ -185,7 +191,7 @@ export function StaticRoutingBuilder() {
 
           <Panel
             title="Jalur ISP"
-            description="Interface dan gateway tiap ISP tujuan. Nama dipakai untuk routing-mark (sr-NAMA)."
+            description="Interface dan gateway tiap ISP tujuan. Kolom pertama adalah nama routing mark (v7: nama tabel routing), dipakai apa adanya — boleh disamakan dengan routing mark Load Balance, mis. to-ISP1."
             right={
               <Button size="sm" onClick={addIsp} disabled={config.isps.length >= MAX_ISPS}>
                 <Plus className="h-3.5 w-3.5" /> Tambah ISP
@@ -195,8 +201,8 @@ export function StaticRoutingBuilder() {
             <div className="space-y-2.5">
               {config.isps.map((isp, index) => (
                 <div key={isp.id} className="grid gap-2.5 rounded-xl border border-line-soft bg-raised/40 p-3 sm:grid-cols-[1fr_1fr_1.2fr_auto] sm:items-end">
-                  <Field label={index === 0 ? "Nama" : undefined}>
-                    <TextInput value={isp.name} onChange={(name) => patchIsp(isp.id, { name })} placeholder="ISP1" />
+                  <Field label={index === 0 ? "Routing mark" : undefined}>
+                    <TextInput mono value={isp.mark} onChange={(mark) => patchIsp(isp.id, { mark: mark.replace(/\s+/g, "-") })} placeholder="to-ISP1" />
                   </Field>
                   <Field label={index === 0 ? "Interface WAN" : undefined}>
                     <TextInput mono value={isp.iface} onChange={(iface) => patchIsp(isp.id, { iface })} placeholder="ether1" />
@@ -208,7 +214,7 @@ export function StaticRoutingBuilder() {
                     size="sm"
                     variant="danger"
                     className="px-2.5"
-                    ariaLabel={`Hapus ${isp.name || "ISP"}`}
+                    ariaLabel={`Hapus ${isp.mark || "ISP"}`}
                     title="Hapus ISP"
                     onClick={() => removeIsp(isp.id)}
                     disabled={config.isps.length <= 1}

@@ -27,6 +27,20 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.40.1",
+    date: "2026-10-26",
+    title: "Static Routing: kolom nama ISP menjadi nama routing mark",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Di menu Static Routing Aplikasi, kolom \"Nama\" pada Jalur ISP diganti menjadi \"Routing mark\" dan nilainya dipakai apa adanya sebagai nama routing mark (v7: nama tabel routing), tanpa awalan sr- otomatis. Bawaannya sr-ISP1, sr-ISP2, …; bisa disamakan dengan Load Balance (mis. to-ISP1). Isian divalidasi (huruf, angka, titik, strip, underscore; tidak boleh kembar). Isian lama yang tersimpan di browser dikonversi otomatis.",
+          "Tabel routing v7 kini dibuat hanya bila belum ada, jadi aman dipakai berdampingan dengan tabel Load Balance yang bernama sama.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.40.0",
     date: "2026-10-26",
     title: "Menu baru: Static Routing Aplikasi (RAW + mangle, RouterOS 6/7)",

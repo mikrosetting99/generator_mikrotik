@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.40.1] - 2026-10-26
+
+_Static Routing: kolom nama ISP menjadi nama routing mark_
+
+### Diubah
+
+- Di menu Static Routing Aplikasi, kolom "Nama" pada Jalur ISP diganti menjadi "Routing mark" dan nilainya dipakai apa adanya sebagai nama routing mark (v7: nama tabel routing), tanpa awalan sr- otomatis. Bawaannya sr-ISP1, sr-ISP2, …; bisa disamakan dengan Load Balance (mis. to-ISP1). Isian divalidasi (huruf, angka, titik, strip, underscore; tidak boleh kembar). Isian lama yang tersimpan di browser dikonversi otomatis.
+- Tabel routing v7 kini dibuat hanya bila belum ada, jadi aman dipakai berdampingan dengan tabel Load Balance yang bernama sama.
+
 ## [1.40.0] - 2026-10-26
 
 _Menu baru: Static Routing Aplikasi (RAW + mangle, RouterOS 6/7)_

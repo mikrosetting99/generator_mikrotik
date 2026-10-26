@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode, type SelectHTMLAttributes } from "react";
+import { createPortal } from "react-dom";
 import { AlertCircle, AlertTriangle, ChevronDown, Trash, X } from "@/components/icons";
 import { cn, controlBase } from "@/lib/kelas";
 
@@ -525,6 +526,10 @@ export function Modal({
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  // Dirender lewat portal ke <body>: dialog yang dibuka dari dalam header (yang warnanya
+  // dibalik jadi putih di atas ungu) tidak boleh ikut mewarisi warna header itu.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
@@ -542,11 +547,11 @@ export function Modal({
       document.removeEventListener("keydown", onKey);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when the modal opens/closes, not when the caller's inline onClose identity changes (that was stealing focus on every keystroke)
-  }, [open]);
+  }, [open, mounted]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6">
       <div
         className="absolute inset-0 bg-canvas/80 backdrop-blur-sm"
@@ -573,7 +578,8 @@ export function Modal({
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

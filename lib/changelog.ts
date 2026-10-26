@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.39.1",
+    date: "2026-10-26",
+    title: "Jendela konfirmasi keluar kembali terlihat",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Jendela konfirmasi \"Keluar dari akun?\" tidak terlihat saat tombol Keluar di bilah ungu beranda diklik, karena jendela itu dirender di dalam header sehingga mewarisi warna header (teks putih di atas permukaan transparan). Semua jendela dialog kini dirender di luar header (portal ke body), jadi warnanya normal dan tidak terpengaruh letak pemanggilnya. Tombol \"Ya, keluar\" juga dibuat lebih jelas.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.39.0",
     date: "2026-10-26",
     title: "Menu tampil untuk user atau tidak, dan tema warna dari Dashboard Admin",

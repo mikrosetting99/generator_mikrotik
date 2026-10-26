@@ -21,6 +21,7 @@ export function ConfirmSignOutModal({ open, onClose }: { open: boolean; onClose:
         </Button>
         <Button
           variant="danger"
+          className="border-bad/50! bg-bad/10 font-semibold text-bad! hover:bg-bad/20"
           disabled={busy}
           onClick={() => {
             setBusy(true);

@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.39.1] - 2026-10-26
+
+_Jendela konfirmasi keluar kembali terlihat_
+
+### Diperbaiki
+
+- Jendela konfirmasi "Keluar dari akun?" tidak terlihat saat tombol Keluar di bilah ungu beranda diklik, karena jendela itu dirender di dalam header sehingga mewarisi warna header (teks putih di atas permukaan transparan). Semua jendela dialog kini dirender di luar header (portal ke body), jadi warnanya normal dan tidak terpengaruh letak pemanggilnya. Tombol "Ya, keluar" juga dibuat lebih jelas.
+
 ## [1.39.0] - 2026-10-26
 
 _Menu tampil untuk user atau tidak, dan tema warna dari Dashboard Admin_

@@ -1,0 +1,99 @@
+﻿import Link from "next/link";
+import type { ReactNode } from "react";
+import { Cpu, Database, FileText, Shield, Terminal, Users } from "@/components/icons";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { VersionBadge } from "@/components/VersionBadge";
+
+export const ADMIN_NAV = [
+  { id: "ringkasan", label: "Ringkasan", href: "/admin", icon: Shield },
+  { id: "situs", label: "Situs & Menu", href: "/admin?tab=situs", icon: Cpu },
+  { id: "template", label: "Template Login", href: "/admin?tab=template", icon: FileText },
+  { id: "galeri", label: "Galeri Gambar", href: "/admin?tab=galeri", icon: Database },
+  { id: "pengguna", label: "Pengguna", href: "/admin/users", icon: Users },
+  { id: "versi", label: "Versi & Changelog", href: "/admin?tab=versi", icon: Terminal },
+] as const;
+
+export type AdminTab = (typeof ADMIN_NAV)[number]["id"];
+
+/**
+ * Kerangka Dashboard Admin ala aplikasi Pengaturan Odoo: bilah ungu di atas,
+ * panel kontrol berisi breadcrumb, sidebar menu di kiri, dan isi di kanan.
+ */
+export function AdminFrame({ active, children }: { active: AdminTab; children: ReactNode }) {
+  const current = ADMIN_NAV.find((n) => n.id === active) ?? ADMIN_NAV[0];
+
+  return (
+    <main className="min-h-screen">
+      <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-2.5 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/"
+              aria-label="Kembali ke beranda"
+              title="Beranda"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-white/15 transition-colors hover:bg-white/25"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="currentColor" aria-hidden>
+                <path d="M4 4h4v4H4V4Zm6 0h4v4h-4V4Zm6 0h4v4h-4V4ZM4 10h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4ZM4 16h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4Z" />
+              </svg>
+            </Link>
+            <h1 className="truncate text-sm font-semibold text-ink">Dashboard Admin</h1>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      {/* Panel kontrol: breadcrumb di kiri, aksi cepat di kanan */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-4 py-2.5 lg:px-6">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
+          <Link href="/admin" className="font-medium text-brand hover:underline">
+            Dashboard Admin
+          </Link>
+          <span className="text-faint">/</span>
+          <span className="font-semibold text-ink">{current.label}</span>
+        </nav>
+        <div className="flex items-center gap-3">
+          <VersionBadge />
+          <Link
+            href="/"
+            className="inline-flex min-h-8 items-center rounded-md border border-line px-3 text-xs font-medium text-ink transition-colors hover:border-brand/60 hover:bg-raised hover:text-brand"
+          >
+            Lihat beranda
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-[240px_minmax(0,1fr)]">
+        {/* Sidebar menu (di layar kecil menjadi deretan tab yang bisa digeser) */}
+        <aside className="border-b border-line bg-surface lg:min-h-[calc(100vh-7rem)] lg:border-b-0 lg:border-r">
+          <nav
+            aria-label="Menu admin"
+            className="flex gap-1 overflow-x-auto p-2 lg:flex-col lg:gap-0 lg:overflow-visible lg:p-0 lg:py-2"
+          >
+            {ADMIN_NAV.map((item) => {
+              const Glyph = item.icon;
+              const on = item.id === active;
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  aria-current={on ? "page" : undefined}
+                  className={`flex shrink-0 items-center gap-3 whitespace-nowrap px-4 py-2.5 text-sm transition-colors lg:border-l-4 ${
+                    on
+                      ? "bg-brand/10 font-semibold text-brand lg:border-brand"
+                      : "text-muted hover:bg-raised hover:text-ink lg:border-transparent"
+                  }`}
+                >
+                  <Glyph className="h-4 w-4 shrink-0" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 px-4 py-5 lg:px-8">{children}</div>
+      </div>
+    </main>
+  );
+}

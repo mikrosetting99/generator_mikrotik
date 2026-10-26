@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, User, UserPlus, Users } from "@/components/icons";
-import { Button, EmptyState, Field, Note, Panel, Select, TextInput } from "@/components/ui";
+import { AdminSection } from "@/components/admin/AdminSection";
+import { Check, UserPlus } from "@/components/icons";
+import { Button, EmptyState, Field, Note, Select, TextInput } from "@/components/ui";
 
 interface AdminUser {
   id: string;
@@ -75,12 +76,12 @@ export function AdminUsersPanel() {
   };
 
   return (
-    <div className="space-y-5">
-      <Panel
+    <div>
+      <AdminSection
         title="Tambah akun"
         description="Untuk sementara hanya admin yang bisa mendaftarkan akun baru."
       >
-        <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+        <form onSubmit={submit} className="grid gap-4 p-5 sm:grid-cols-2">
           <Field label="Username" required hint="Dipakai untuk login, tidak bisa diubah nanti.">
             <TextInput mono value={username} onChange={setUsername} placeholder="teknisi1" />
           </Field>
@@ -120,66 +121,62 @@ export function AdminUsersPanel() {
             </Button>
           </div>
         </form>
-      </Panel>
+      </AdminSection>
 
-      <Panel
+      <AdminSection
         title="Daftar akun"
         description="Semua akun yang bisa masuk ke Setup Mikrotik Baru."
-        right={
-          users && (
-            <span className="font-mono text-[11px] text-faint">{users.length} akun</span>
-          )
-        }
+        badge={users && <span className="font-mono text-[11px] text-muted">{users.length} akun</span>}
       >
         {loadError ? (
-          <Note tone="bad">{loadError}</Note>
+          <div className="p-5">
+            <Note tone="bad">{loadError}</Note>
+          </div>
         ) : users === null ? (
-          <p className="py-6 text-center text-xs text-faint">Memuat…</p>
+          <p className="py-8 text-center text-xs text-faint">Memuat…</p>
         ) : users.length === 0 ? (
-          <EmptyState>Belum ada akun.</EmptyState>
+          <div className="p-5">
+            <EmptyState>Belum ada akun.</EmptyState>
+          </div>
         ) : (
-          <div className="space-y-2">
-            {users.map((u) => (
-              <div
-                key={u.id}
-                className="flex items-center gap-3 rounded-xl border border-line-soft bg-raised/50 p-3"
-              >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line bg-canvas text-faint">
-                  {u.role === "ADMIN" ? (
-                    <Users className="h-4 w-4 text-brand" />
-                  ) : (
-                    <User className="h-4 w-4" />
-                  )}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-2 text-sm text-ink">
-                    <span className="font-mono">{u.username}</span>
-                    {u.name && <span className="truncate text-faint">· {u.name}</span>}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-faint">
-                    Dibuat {formatDate(u.createdAt)} · {u.configCount} konfigurasi tersimpan
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                    u.role === "ADMIN"
-                      ? "border-brand/40 bg-brand/10 text-brand"
-                      : "border-line text-faint"
-                  }`}
-                >
-                  {u.role === "ADMIN" ? (
-                    <span className="inline-flex items-center gap-1">
-                      <Check className="h-3 w-3" /> admin
-                    </span>
-                  ) : (
-                    "user"
-                  )}
-                </span>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            {/* Tampilan daftar ala Odoo: kepala abu-abu, baris bergaris, sorotan saat disentuh. */}
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-line bg-raised/60 text-[11px] uppercase tracking-[0.08em] text-muted">
+                <tr>
+                  <th className="px-5 py-2.5 font-semibold">Username</th>
+                  <th className="px-5 py-2.5 font-semibold">Nama</th>
+                  <th className="px-5 py-2.5 font-semibold">Peran</th>
+                  <th className="px-5 py-2.5 font-semibold">Dibuat</th>
+                  <th className="px-5 py-2.5 text-right font-semibold">Konfigurasi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id} className="border-b border-line-soft last:border-0 hover:bg-brand/[0.05]">
+                    <td className="px-5 py-2.5 font-mono text-ink">{u.username}</td>
+                    <td className="px-5 py-2.5 text-muted">{u.name || "—"}</td>
+                    <td className="px-5 py-2.5">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ${
+                          u.role === "ADMIN"
+                            ? "bg-brand/15 text-brand"
+                            : "bg-raised text-muted"
+                        }`}
+                      >
+                        {u.role === "ADMIN" && <Check className="h-3 w-3" />}
+                        {u.role === "ADMIN" ? "Admin" : "User"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-2.5 text-muted">{formatDate(u.createdAt)}</td>
+                    <td className="px-5 py-2.5 text-right font-mono text-ink">{u.configCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </Panel>
+      </AdminSection>
     </div>
   );
 }

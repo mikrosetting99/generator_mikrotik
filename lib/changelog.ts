@@ -27,6 +27,22 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.38.0",
+    date: "2026-10-26",
+    title: "Dashboard Admin bergaya aplikasi Pengaturan Odoo",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Dashboard Admin disusun ulang seperti aplikasi Pengaturan Odoo: bilah ungu di atas, panel kontrol dengan breadcrumb (Dashboard Admin / halaman) dan tombol Lihat beranda, sidebar menu di kiri (di layar kecil menjadi deretan tab), dan isi di kanan. Menu sidebar: Ringkasan, Situs & Menu, Template Login, Galeri Gambar, Pengguna, Versi & Changelog; tiap menu punya alamatnya sendiri (/admin?tab=…).",
+          "Bagian yang tadinya berupa dropdown kini menjadi blok pengaturan datar ala Odoo: kepala abu-abu berisi judul tebal dan keterangan, isi di atas permukaan putih, selalu terbuka.",
+          "Ringkasan menampilkan kartu statistik berikon berwarna dan tabel Pemakaian menu (dengan bilah proporsi) serta pintasan. Halaman Pengguna kini memakai tampilan daftar Odoo: tabel dengan kepala abu-abu (Username, Nama, Peran, Dibuat, Konfigurasi), baris bergaris, dan sorotan saat disentuh.",
+          "Kolom isian di seluruh aplikasi kini berlatar putih seperti Odoo.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.37.1",
     date: "2026-10-26",
     title: "Tampilan memenuhi lebar layar",

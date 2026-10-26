@@ -1,10 +1,8 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminFrame } from "@/components/admin/AdminFrame";
 import { AdminUsersPanel } from "@/components/admin/AdminUsersPanel";
-import { ArrowLeft, Users } from "@/components/icons";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -19,30 +17,8 @@ export default async function AdminUsersPage() {
   if (session.user.role !== "ADMIN") redirect("/");
 
   return (
-    <main className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 lg:px-8 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href="/setup"
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-sm text-muted transition-colors hover:bg-raised hover:text-ink"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Setup</span>
-            </Link>
-            <span className="h-5 w-px bg-line" />
-            <div className="flex min-w-0 items-center gap-2">
-              <Users className="h-4 w-4 text-brand" />
-              <h1 className="truncate text-sm font-semibold text-ink">Kelola Pengguna</h1>
-            </div>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
-
-      <div className="w-full px-5 lg:px-8 py-6">
-        <AdminUsersPanel />
-      </div>
-    </main>
+    <AdminFrame active="pengguna">
+      <AdminUsersPanel />
+    </AdminFrame>
   );
 }

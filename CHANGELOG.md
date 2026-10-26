@@ -8,6 +8,17 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.38.0] - 2026-10-26
+
+_Dashboard Admin bergaya aplikasi Pengaturan Odoo_
+
+### Diubah
+
+- Dashboard Admin disusun ulang seperti aplikasi Pengaturan Odoo: bilah ungu di atas, panel kontrol dengan breadcrumb (Dashboard Admin / halaman) dan tombol Lihat beranda, sidebar menu di kiri (di layar kecil menjadi deretan tab), dan isi di kanan. Menu sidebar: Ringkasan, Situs & Menu, Template Login, Galeri Gambar, Pengguna, Versi & Changelog; tiap menu punya alamatnya sendiri (/admin?tab=…).
+- Bagian yang tadinya berupa dropdown kini menjadi blok pengaturan datar ala Odoo: kepala abu-abu berisi judul tebal dan keterangan, isi di atas permukaan putih, selalu terbuka.
+- Ringkasan menampilkan kartu statistik berikon berwarna dan tabel Pemakaian menu (dengan bilah proporsi) serta pintasan. Halaman Pengguna kini memakai tampilan daftar Odoo: tabel dengan kepala abu-abu (Username, Nama, Peran, Dibuat, Konfigurasi), baris bergaris, dan sorotan saat disentuh.
+- Kolom isian di seluruh aplikasi kini berlatar putih seperti Odoo.
+
 ## [1.37.1] - 2026-10-26
 
 _Tampilan memenuhi lebar layar_

@@ -211,7 +211,7 @@ export function SetupBuilder() {
   return (
     <main className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3 px-5 py-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 lg:px-8 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
@@ -310,7 +310,7 @@ export function SetupBuilder() {
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1600px] gap-6 px-5 py-6 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_420px]">
+      <div className="grid w-full gap-6 px-5 lg:px-8 py-6 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_420px]">
         {/* Stepper */}
         <nav aria-label="Langkah konfigurasi" className="lg:sticky lg:top-[88px] lg:self-start">
           <div className="mb-3 hidden items-center justify-between px-2.5 lg:flex">

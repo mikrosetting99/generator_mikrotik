@@ -56,7 +56,7 @@ export function IpCalculator() {
   return (
     <main className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-5 py-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 lg:px-8 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
@@ -78,7 +78,7 @@ export function IpCalculator() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-4xl space-y-5 px-5 py-6">
+      <div className="w-full space-y-5 px-5 lg:px-8 py-6">
         <Panel
           title="Alamat IP"
           description="Ketik alamat dengan prefix (192.168.1.10/24) atau dengan netmask (192.168.1.10 255.255.255.0). Hasil langsung dihitung."

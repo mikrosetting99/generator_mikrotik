@@ -21,7 +21,7 @@ export default async function AdminUsersPage() {
   return (
     <main className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 px-5 py-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 lg:px-8 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/setup"
@@ -40,7 +40,7 @@ export default async function AdminUsersPage() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-3xl px-5 py-6">
+      <div className="w-full px-5 lg:px-8 py-6">
         <AdminUsersPanel />
       </div>
     </main>

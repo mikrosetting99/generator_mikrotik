@@ -18,7 +18,7 @@ export default async function LoginPageHotspotLayout({ children }: { children: R
   return (
     <div className="min-h-dvh bg-canvas">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
+        <div className="flex items-center gap-3 px-4 lg:px-8 py-3">
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-brand"
@@ -54,7 +54,7 @@ export default async function LoginPageHotspotLayout({ children }: { children: R
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <main className="px-4 lg:px-8 py-8">{children}</main>
     </div>
   );
 }

@@ -68,7 +68,7 @@ export default async function Home() {
     <main className="relative min-h-screen">
       {/* Bilah navigasi ungu ala Odoo (gayanya dari header.sticky di globals.css). */}
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-2.5">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 lg:px-8 py-2.5">
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-white/15" aria-hidden>
               <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="currentColor">
@@ -120,7 +120,7 @@ export default async function Home() {
         </div>
       </header>
 
-      <div className="relative mx-auto w-full max-w-6xl px-5 py-8 sm:py-10">
+      <div className="relative w-full px-5 lg:px-8 py-8 sm:py-10">
         {/* ---------------------------------------------------------- hero */}
         <div className="grid gap-8 rounded-lg border border-line bg-surface p-6 shadow-sm sm:p-8 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <header className="animate-rise">
@@ -214,7 +214,7 @@ export default async function Home() {
               {section.name && (
                 <h3 className="animate-rise mb-3 border-b border-line pb-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted">{section.name}</h3>
               )}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
           {section.menus.map((menu) => {
             // Urutan kartu di seluruh grup: dipakai sebagai jeda animasi muncul bertahap.
             const order = cardOrder++;

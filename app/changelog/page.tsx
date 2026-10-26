@@ -25,7 +25,7 @@ export default function ChangelogPage() {
   return (
     <main className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-5 py-3">
+        <div className="flex w-full items-center justify-between gap-3 px-5 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             <Link
               href="/"
@@ -44,7 +44,7 @@ export default function ChangelogPage() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-2xl px-5 py-10">
+      <div className="w-full px-5 lg:px-8 py-10">
         <p className="text-sm text-muted">
           Riwayat perubahan Generator Script Mikrotik, versi terbaru di paling atas. Versi berjalan
           saat ini: <span className="font-mono text-ink">v{APP_VERSION}</span>.

@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.37.1",
+    date: "2026-10-26",
+    title: "Tampilan memenuhi lebar layar",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Semua halaman (beranda, Setup, Load Balance, Halaman Login Hotspot, Cek Mikrotik, Autoflush DNS, Kalkulator IP, Hitung Bandwidth, Admin, Changelog) kini memenuhi lebar layar, bukan lagi dibatasi dan diposisikan di tengah. Header ungu juga selebar layar, dan kartu aplikasi di beranda bertambah kolom (hingga 6) di layar lebar.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.37.0",
     date: "2026-10-26",
     title: "Tampilan aplikasi diubah menjadi bergaya Odoo",

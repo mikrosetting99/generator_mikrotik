@@ -62,7 +62,7 @@ export function HotspotLoginBuilder() {
   return (
     <main className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-3 px-5 py-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 lg:px-8 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
@@ -99,7 +99,7 @@ export function HotspotLoginBuilder() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[1400px] space-y-3 px-5 py-4">
+      <div className="w-full space-y-3 px-5 lg:px-8 py-4">
         {zipError && <Note tone="bad">{zipError}</Note>}
         <p className="text-xs leading-relaxed text-muted">
           Atur tampilan lalu unduh <span className="font-mono text-ink">hotspot.zip</span> — upload isinya ke

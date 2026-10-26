@@ -140,7 +140,7 @@ export function BandwidthCalculator() {
   return (
     <main className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 lg:px-8 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
@@ -167,7 +167,7 @@ export function BandwidthCalculator() {
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-5xl gap-5 px-5 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
+      <div className="grid w-full gap-5 px-5 lg:px-8 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
         {/* ----------------------------------------------------- isian */}
         <div className="space-y-5">
           <Note>

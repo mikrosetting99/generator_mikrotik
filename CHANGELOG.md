@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.37.1] - 2026-10-26
+
+_Tampilan memenuhi lebar layar_
+
+### Diubah
+
+- Semua halaman (beranda, Setup, Load Balance, Halaman Login Hotspot, Cek Mikrotik, Autoflush DNS, Kalkulator IP, Hitung Bandwidth, Admin, Changelog) kini memenuhi lebar layar, bukan lagi dibatasi dan diposisikan di tengah. Header ungu juga selebar layar, dan kartu aplikasi di beranda bertambah kolom (hingga 6) di layar lebar.
+
 ## [1.37.0] - 2026-10-26
 
 _Tampilan aplikasi diubah menjadi bergaya Odoo_

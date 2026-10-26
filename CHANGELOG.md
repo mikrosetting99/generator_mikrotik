@@ -8,6 +8,17 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.40.0] - 2026-10-26
+
+_Menu baru: Static Routing Aplikasi (RAW + mangle, RouterOS 6/7)_
+
+### Ditambahkan
+
+- Menu Static Routing Aplikasi (/static-routing, grup Konfigurasi) untuk mengarahkan YouTube, TikTok, Facebook (termasuk Messenger dan Instagram), WhatsApp, atau domain kustom lewat ISP tertentu. Tiap aplikasi diaktifkan dan dipetakan ke salah satu jalur ISP (nama, interface WAN, gateway; sampai 8 ISP).
+- Cara kerja script: rule RAW (/ip firewall raw) membaca nama domain (SNI) pada paket TLS port 443 dengan content= lalu memasukkan IP tujuan ke address-list SR-<APLIKASI> secara dinamis (add-dst-to-address-list, masa simpan 6 jam–7 hari); mangle prerouting memberi routing-mark pada trafik LAN ke daftar itu; tiap ISP punya tabel/rute default sendiri dengan NAT masquerade per interface. Mendukung RouterOS 6 (routing-mark) dan 7 (/routing table + routing-table).
+- Opsi: bibit address-list dari nama host utama (agar koneksi pertama sudah benar), blokir QUIC (UDP 443) ke IP aplikasi agar klien beralih ke TCP yang SNI-nya terbaca, NAT masquerade (dilewati bila sudah ada), pembatasan FastTrack ke koneksi tanpa mark, rule mangle di paling atas (place-before=0) agar mendahului PCC Load Balance, dan rute cadangan lewat ISP lain. Target trafik LAN bisa memakai Address List RFC1918, Interface List, atau Interface.
+- Panel script dengan tab Script setup dan Hapus semua (menghapus hanya rule berkomentar SR … - By Mikrosetting dan address-list SR-*), validasi isian, peringatan (mis. Facebook dan WhatsApp berbagi IP Meta), salin dan unduh .rsc. Isian tersimpan di browser.
+
 ## [1.39.1] - 2026-10-26
 
 _Jendela konfirmasi keluar kembali terlihat_

@@ -3,6 +3,7 @@ import { JetBrains_Mono, Roboto } from "next/font/google";
 import { Providers } from "@/app/providers";
 import { themeBootScript } from "@/components/ThemeToggle";
 import { getSiteSettings } from "@/lib/site-settings-server";
+import { themeCss } from "@/lib/theme";
 import "./globals.css";
 
 /** Roboto, seperti Odoo. Nama variabelnya tetap --font-inter agar tidak mengubah pemakai lain. */
@@ -48,6 +49,10 @@ export default async function RootLayout({
       <head>
         {/* Menetapkan tema sebelum halaman digambar agar tidak berkedip. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        {/* Warna tema pilihan admin; bila kosong, tampilan memakai warna bawaan di globals.css. */}
+        {(settings.themeBrand || settings.themeAccent) && (
+          <style dangerouslySetInnerHTML={{ __html: themeCss(settings.themeBrand, settings.themeAccent) }} />
+        )}
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         {settings.appBgId && (

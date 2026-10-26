@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: "Dashboard Admin",
 };
 
-const TABS: AdminTab[] = ["ringkasan", "situs", "template", "galeri", "versi"];
+const TABS: AdminTab[] = ["ringkasan", "situs", "tema", "template", "galeri", "versi"];
 
 export default async function AdminDashboardPage({
   searchParams,
@@ -114,7 +114,8 @@ export default async function AdminDashboardPage({
             <ul className="divide-y divide-line-soft">
               {[
                 { href: "/admin/users", title: "Kelola Pengguna", body: "Tambah akun dan lihat daftar pengguna." },
-                { href: "/admin?tab=situs", title: "Situs & Menu", body: "Logo, WhatsApp, teks beranda, menu, dan background aplikasi." },
+                { href: "/admin?tab=situs", title: "Situs & Menu", body: "Logo, WhatsApp, teks beranda, serta tampil/sembunyi menu untuk user." },
+                { href: "/admin?tab=tema", title: "Tema & Tampilan", body: "Warna tema aplikasi dan background aplikasi." },
                 { href: "/admin?tab=template", title: "Template Login", body: "Template halaman login hotspot untuk semua pengguna." },
               ].map((item) => (
                 <li key={item.href}>
@@ -135,7 +136,8 @@ export default async function AdminDashboardPage({
         </>
       )}
 
-      {tab === "situs" && <AdminSiteSettings initial={settings} usage={usage} />}
+      {tab === "situs" && <AdminSiteSettings initial={settings} usage={usage} view="situs" />}
+      {tab === "tema" && <AdminSiteSettings initial={settings} usage={usage} view="tema" />}
 
       {tab === "template" && <AdminTemplates />}
 

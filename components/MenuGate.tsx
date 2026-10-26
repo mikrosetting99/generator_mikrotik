@@ -16,6 +16,29 @@ export async function MenuGate({ id, children }: { id: string; children: ReactNo
   const menu = settings.menus.find((m) => m.id === id);
   if (!menu) return <>{children}</>;
 
+  // Menu yang disembunyikan dari user biasa: hanya admin yang boleh membukanya.
+  if (!menu.userVisible && session?.user?.role !== "ADMIN") {
+    return (
+      <main className="grid min-h-screen place-items-center px-5">
+        <div className="max-w-sm text-center">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-line bg-surface text-muted">
+            <Lock className="h-5 w-5" />
+          </span>
+          <h1 className="mt-5 text-lg font-semibold text-ink">Menu tidak tersedia</h1>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Menu ini tidak ditampilkan untuk pengguna. Hubungi admin bila Anda memerlukannya.
+          </p>
+          <Link
+            href="/"
+            className="mt-6 inline-flex min-h-10 items-center rounded-xl border border-line px-4 text-sm text-ink transition-colors hover:border-brand/50"
+          >
+            Kembali ke beranda
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   if (menu.requireLogin && !session?.user) {
     redirect(`/login?callbackUrl=${encodeURIComponent(menu.href)}`);
   }

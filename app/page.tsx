@@ -47,7 +47,9 @@ export default async function Home() {
     getServerSession(authOptions),
     getMenuUsage(),
   ]);
-  const menus = settings.menus.filter((m) => m.visible);
+  // Menu yang dimatikan untuk user hanya tampil bagi admin.
+  const isAdminViewer = session?.user?.role === "ADMIN";
+  const menus = settings.menus.filter((m) => m.visible && (m.userVisible || isAdminViewer));
   // Kelompokkan menu sesuai grup; yang tidak punya grup masuk "Lainnya"
   // (atau tanpa judul bila memang tidak ada grup sama sekali).
   const sections = [
@@ -261,6 +263,11 @@ export default async function Home() {
                       </span>
                     )}
                   </span>
+                  {!menu.userVisible && (
+                    <span className="mt-1.5 inline-block rounded-full border border-line px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+                      disembunyikan dari user
+                    </span>
+                  )}
                   {menu.devMode && (
                     <span className="mt-1.5 inline-block rounded-full border border-warn/40 bg-warn/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warn">
                       {locked ? "dalam pengembangan" : "pengembangan · hanya admin"}

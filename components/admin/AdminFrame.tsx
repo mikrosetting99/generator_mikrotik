@@ -1,12 +1,13 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import type { ReactNode } from "react";
-import { Cpu, Database, FileText, Shield, Terminal, Users } from "@/components/icons";
+import { Cpu, Database, FileText, Shield, Terminal, Users, Wand } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
 
 export const ADMIN_NAV = [
   { id: "ringkasan", label: "Ringkasan", href: "/admin", icon: Shield },
   { id: "situs", label: "Situs & Menu", href: "/admin?tab=situs", icon: Cpu },
+  { id: "tema", label: "Tema & Tampilan", href: "/admin?tab=tema", icon: Wand },
   { id: "template", label: "Template Login", href: "/admin?tab=template", icon: FileText },
   { id: "galeri", label: "Galeri Gambar", href: "/admin?tab=galeri", icon: Database },
   { id: "pengguna", label: "Pengguna", href: "/admin/users", icon: Users },

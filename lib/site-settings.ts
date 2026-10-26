@@ -30,6 +30,8 @@ export const MENU_ICON_LABEL: Record<MenuIconName, string> = {
   lock: "Gembok",
 };
 
+import { isHexColor } from "./color";
+
 export interface MenuSetting {
   /** Menu bawaan memakai id tetap; menu tambahan berawalan "custom-". */
   id: string;
@@ -42,6 +44,8 @@ export interface MenuSetting {
   href: string;
   icon: MenuIconName;
   visible: boolean;
+  /** Tampil untuk user biasa (dan tamu). Mati = hanya admin yang melihat dan bisa membuka menu ini. */
+  userVisible: boolean;
   /** Mode pengembangan: hanya admin yang bisa membuka, yang lain melihat "dalam pengembangan". */
   devMode: boolean;
   /** Wajib login untuk membuka menu ini. Mati = bebas diakses siapa saja; yang sudah login selalu lolos. */
@@ -70,6 +74,10 @@ export interface SiteSettings {
   showSample: boolean;
   showFeatures: boolean;
   footerNote: string;
+  /** Warna utama tampilan (hex). Kosong = bawaan (ungu Odoo). */
+  themeBrand: string;
+  /** Warna aksen tampilan (hex). Kosong = bawaan (teal Odoo). */
+  themeAccent: string;
   /** Background seluruh aplikasi: id gambar dari galeri jenis "app". Kosong = tanpa gambar. */
   appBgId: string;
   /** Lapisan warna tema di atas gambar (0–90 %) supaya tulisan tetap terbaca. */
@@ -103,6 +111,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     href: "/setup",
     icon: "cpu",
     visible: true,
+    userVisible: true,
     devMode: false,
     requireLogin: true,
   },
@@ -115,6 +124,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     href: "/loadbalance",
     icon: "split",
     visible: true,
+    userVisible: true,
     devMode: false,
     requireLogin: false,
   },
@@ -127,6 +137,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     href: "/hotspot-login",
     icon: "filetext",
     visible: true,
+    userVisible: true,
     devMode: false,
     requireLogin: false,
   },
@@ -139,6 +150,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     href: "/cek",
     icon: "shield",
     visible: true,
+    userVisible: true,
     devMode: false,
     requireLogin: false,
   },
@@ -151,6 +163,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     href: "/autoflush-dns",
     icon: "terminal",
     visible: true,
+    userVisible: true,
     devMode: false,
     requireLogin: false,
   },
@@ -163,6 +176,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     href: "/hitung-bandwidth",
     icon: "users",
     visible: true,
+    userVisible: true,
     devMode: false,
     requireLogin: false,
   },
@@ -175,6 +189,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     href: "/kalkulator-ip",
     icon: "route",
     visible: true,
+    userVisible: true,
     devMode: false,
     requireLogin: false,
   },
@@ -197,6 +212,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   showSample: true,
   showFeatures: true,
   footerNote: "Backup router sebelum menjalankan script apa pun.",
+  themeBrand: "",
+  themeAccent: "",
   appBgId: "",
   appBgOverlay: 60,
   groups: DEFAULT_GROUPS,
@@ -254,6 +271,7 @@ export function newCustomMenu(group = ""): MenuSetting {
     href: "/",
     icon: "terminal",
     visible: true,
+    userVisible: true,
     devMode: false,
     requireLogin: false,
   };
@@ -296,6 +314,7 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
         title: str(item.title, def.title, 60) || def.title,
         description: str(item.description, def.description, 200),
         visible: bool(item.visible, true),
+        userVisible: bool(item.userVisible, true),
         devMode: bool(item.devMode, false),
         requireLogin: bool(item.requireLogin, def.requireLogin),
       });
@@ -316,6 +335,7 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
       href,
       icon,
       visible: bool(item.visible, true),
+      userVisible: bool(item.userVisible, true),
       devMode: bool(item.devMode, false),
       requireLogin: bool(item.requireLogin, false),
     });
@@ -347,6 +367,8 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
     showSample: bool(input.showSample, base.showSample),
     showFeatures: bool(input.showFeatures, base.showFeatures),
     footerNote: str(input.footerNote, base.footerNote, 160),
+    themeBrand: typeof input.themeBrand === "string" && isHexColor(input.themeBrand) ? input.themeBrand.trim().toLowerCase() : "",
+    themeAccent: typeof input.themeAccent === "string" && isHexColor(input.themeAccent) ? input.themeAccent.trim().toLowerCase() : "",
     appBgId: /^[A-Za-z0-9_-]{1,40}$/.test(String(input.appBgId ?? "")) ? String(input.appBgId) : "",
     appBgOverlay:
       typeof input.appBgOverlay === "number" && Number.isFinite(input.appBgOverlay)

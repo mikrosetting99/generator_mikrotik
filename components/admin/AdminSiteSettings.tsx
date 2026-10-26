@@ -5,6 +5,8 @@ import { AdminSection } from "@/components/admin/AdminSection";
 import { ArrowRight, Check, ChevronDown, Plus, Save, Trash, Upload, X } from "@/components/icons";
 import { AdminBackgrounds } from "@/components/admin/AdminBackgrounds";
 import { MenuIcon } from "@/components/MenuIcon";
+import { mix, readableOn } from "@/lib/color";
+import { DEFAULT_THEME, resolveTheme, THEME_PRESETS } from "@/lib/theme";
 import { Button, CheckPill, Field, Note, Select, TextInput, Toggle } from "@/components/ui";
 import {
   MAX_CUSTOM_MENUS,
@@ -120,15 +122,18 @@ function Card({
 }
 
 /** Kolom pengaturan: label di atas saklar, supaya sejajar di semua baris. */
-const COLS = "sm:grid-cols-[minmax(0,1fr)_repeat(3,2.75rem)_7.75rem]";
+const COLS = "sm:grid-cols-[minmax(0,1fr)_repeat(4,2.75rem)_7.75rem]";
 
 /** Pengaturan umum (identitas, WhatsApp, teks beranda) dan menu beranda dengan grup. */
 export function AdminSiteSettings({
   initial,
   usage,
+  view = "situs",
 }: {
   initial: SiteSettings;
   usage: Record<string, number>;
+  /** situs = identitas, teks beranda, menu; tema = warna tema dan background aplikasi. */
+  view?: "situs" | "tema";
 }) {
   const [settings, setSettings] = useState<SiteSettings>(initial);
   const [saved, setSaved] = useState<SiteSettings>(initial);
@@ -140,6 +145,7 @@ export function AdminSiteSettings({
   const [logoError, setLogoError] = useState("");
 
   const dirty = JSON.stringify(settings) !== JSON.stringify(saved);
+  const theme = resolveTheme(settings.themeBrand, settings.themeAccent);
   const patch = (partial: Partial<SiteSettings>) => setSettings((s) => ({ ...s, ...partial }));
   const customCount = settings.menus.filter((m) => !m.builtin).length;
 
@@ -287,8 +293,12 @@ export function AdminSiteSettings({
         setFlash({ tone: "bad", text: data?.error ?? `Gagal menyimpan (kode ${res.status}).` });
         return;
       }
+      const themeChanged =
+        data.settings.themeBrand !== saved.themeBrand || data.settings.themeAccent !== saved.themeAccent;
       setSettings(data.settings);
       setSaved(data.settings);
+      // Warna tema dipasang oleh server saat halaman dimuat, jadi muat ulang agar langsung terlihat.
+      if (themeChanged) window.location.reload();
       setFlash({ tone: "info", text: "Tersimpan. Halaman utama sudah memakai pengaturan ini." });
     } catch {
       setFlash({ tone: "bad", text: "Gagal menghubungi server." });
@@ -332,6 +342,10 @@ export function AdminSiteSettings({
             <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
               <span className="sm:hidden">Tampil</span>
               <Switch label="Tampil di beranda" checked={menu.visible} onChange={(visible) => patchMenu(menu.id, { visible })} />
+            </label>
+            <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
+              <span className="sm:hidden">User</span>
+              <Switch label="Tampil untuk user (mati = hanya admin)" checked={menu.userVisible} onChange={(userVisible) => patchMenu(menu.id, { userVisible })} />
             </label>
             <label className="flex items-center gap-2 text-[11px] text-muted sm:justify-center">
               <span className="sm:hidden">Dev</span>
@@ -398,6 +412,8 @@ export function AdminSiteSettings({
     <div className="space-y-3">
       {flash && <Note tone={flash.tone}>{flash.text}</Note>}
 
+      {view === "situs" && (
+        <>
       {/* ------------------------------------------------ pengaturan umum */}
       <AdminSection
         title="Pengaturan umum"
@@ -542,7 +558,7 @@ export function AdminSiteSettings({
         <div className="space-y-3 p-4">
           <p className="text-xs leading-relaxed text-muted">
             Panah ↑↓ menggeser menu; di ujung grup, menu pindah ke grup tetangga. Ubah nama grup langsung di
-            judulnya. <b className="font-medium text-ink">Dev</b>: hanya admin yang bisa membuka.{" "}
+            judulnya. <b className="font-medium text-ink">User</b>: mati = menu disembunyikan dari pengguna biasa dan tamu (hanya admin yang melihat dan bisa membukanya). <b className="font-medium text-ink">Dev</b>: hanya admin yang bisa membuka.{" "}
             <b className="font-medium text-ink">Login</b>: wajib masuk dulu (mati = bebas, yang sudah login selalu bisa).
           </p>
 
@@ -589,6 +605,7 @@ export function AdminSiteSettings({
                   >
                     <span className="text-left">Menu</span>
                     <span>Tampil</span>
+                    <span>User</span>
                     <span>Dev</span>
                     <span>Login</span>
                     <span />
@@ -618,6 +635,138 @@ export function AdminSiteSettings({
           </div>
         </div>
       </AdminSection>
+        </>
+      )}
+
+      {view === "tema" && (
+        <>
+      {/* ----------------------------------------------------- tema warna */}
+      <AdminSection title="Tema warna" description="Warna utama dan aksen untuk seluruh tampilan aplikasi.">
+        <div className="space-y-5 p-5">
+          <div>
+            <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Tema siap pakai</span>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {THEME_PRESETS.map((preset) => {
+                const active = theme.brand === preset.brand && theme.accent === preset.accent;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() =>
+                      patch(
+                        preset.brand === DEFAULT_THEME.brand && preset.accent === DEFAULT_THEME.accent
+                          ? { themeBrand: "", themeAccent: "" }
+                          : { themeBrand: preset.brand, themeAccent: preset.accent },
+                      )
+                    }
+                    aria-pressed={active}
+                    className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs transition-colors ${
+                      active ? "border-brand bg-brand/10 text-ink" : "border-line bg-surface text-muted hover:border-brand/50 hover:text-ink"
+                    }`}
+                  >
+                    <span className="flex overflow-hidden rounded-sm border border-line">
+                      <span className="h-5 w-5" style={{ background: preset.brand }} />
+                      <span className="h-5 w-5" style={{ background: preset.accent }} />
+                    </span>
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(
+              [
+                ["themeBrand", "Warna utama", "Bilah navigasi, tombol utama, tautan, dan judul."] as const,
+                ["themeAccent", "Warna aksen", "Tombol aksi sekunder dan penanda keberhasilan."] as const,
+              ]
+            ).map(([key, label, hint]) => {
+              const value = key === "themeBrand" ? theme.brand : theme.accent;
+              return (
+                <Field key={key} label={label} hint={hint}>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={value}
+                      aria-label={label}
+                      onChange={(e) => patch({ [key]: e.target.value.toLowerCase() } as Partial<SiteSettings>)}
+                      className="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-line bg-surface p-1"
+                    />
+                    <TextInput
+                      mono
+                      value={settings[key] || value}
+                      onChange={(text) => {
+                        const v = text.trim();
+                        if (/^#[0-9a-f]{6}$/i.test(v)) patch({ [key]: v.toLowerCase() } as Partial<SiteSettings>);
+                      }}
+                      placeholder={key === "themeBrand" ? DEFAULT_THEME.brand : DEFAULT_THEME.accent}
+                    />
+                  </div>
+                </Field>
+              );
+            })}
+          </div>
+
+          {(settings.themeBrand || settings.themeAccent) && (
+            <button
+              type="button"
+              onClick={() => patch({ themeBrand: "", themeAccent: "" })}
+              className="text-xs text-brand hover:underline"
+            >
+              Kembalikan ke warna bawaan (ungu Odoo)
+            </button>
+          )}
+
+          {/* Pratinjau: bilah, tombol, dan tautan dalam tema terang dan gelap. */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {(
+              [
+                { name: "Tema terang", nav: theme.brand, brand: theme.brand, accent: theme.accent, bg: "#eef0f3", card: "#ffffff", ink: "#1f2328", line: "#c3c8d0" },
+                {
+                  name: "Tema gelap",
+                  nav: mix(theme.brand, -0.45),
+                  brand: mix(theme.brand, 0.42),
+                  accent: mix(theme.accent, 0.38),
+                  bg: "#14161a",
+                  card: "#1d2025",
+                  ink: "#eceff3",
+                  line: "#3d424c",
+                },
+              ] as const
+            ).map((p) => (
+              <div key={p.name} className="overflow-hidden rounded-md border" style={{ borderColor: p.line, background: p.bg }}>
+                <div className="flex items-center justify-between px-3 py-2 text-xs font-semibold" style={{ background: p.nav, color: readableOn(p.nav) }}>
+                  <span>Dashboard Admin</span>
+                  <span className="opacity-80">{p.name}</span>
+                </div>
+                <div className="space-y-2.5 p-3">
+                  <div className="rounded-md border p-3" style={{ background: p.card, borderColor: p.line, color: p.ink }}>
+                    <p className="text-sm font-semibold">Judul kartu</p>
+                    <p className="mt-0.5 text-xs opacity-70">Teks keterangan dan <span style={{ color: p.brand, fontWeight: 600 }}>tautan</span>.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-md px-3 py-1.5 text-xs font-semibold" style={{ background: p.brand, color: readableOn(p.brand) }}>
+                        Tombol utama
+                      </span>
+                      <span className="rounded-md px-3 py-1.5 text-xs font-semibold" style={{ background: p.accent, color: readableOn(p.accent) }}>
+                        Aksen
+                      </span>
+                      <span className="rounded-md border px-3 py-1.5 text-xs" style={{ borderColor: p.line }}>
+                        Sekunder
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs leading-relaxed text-faint">
+            Pilihan berlaku untuk semua pengguna setelah menekan Simpan; halaman dimuat ulang otomatis. Tampilan halaman
+            login hotspot yang diunduh ke router memiliki warna sendiri dan tidak terpengaruh.
+          </p>
+        </div>
+      </AdminSection>
+
       {/* ---------------------------------------------- background aplikasi */}
       <AdminBackgrounds
         kind="app"
@@ -677,6 +826,8 @@ export function AdminSiteSettings({
           </div>
         }
       />
+        </>
+      )}
 
       <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface/95 px-4 py-3 shadow-lg backdrop-blur">
         <span className="text-xs text-muted">

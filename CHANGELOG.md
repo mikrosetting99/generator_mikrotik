@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.39.0] - 2026-10-26
+
+_Menu tampil untuk user atau tidak, dan tema warna dari Dashboard Admin_
+
+### Ditambahkan
+
+- Pengaturan menu: kolom baru "User" di tabel Menu & grup (Dashboard Admin, Situs & Menu). Bila dimatikan, menu disembunyikan dari pengguna biasa dan tamu di beranda dan tidak bisa dibuka lewat alamatnya (tampil halaman "Menu tidak tersedia"); admin tetap melihat dan bisa membukanya, dengan label "disembunyikan dari user" di kartunya. Berbeda dari Tampil (menyembunyikan dari semua orang) dan Dev (menampilkan kartu terkunci).
+- Tab baru "Tema & Tampilan" di Dashboard Admin: pilih tema warna siap pakai (Odoo ungu, Biru, Hijau, Oranye, Merah anggur, Abu gelap) atau atur warna utama dan warna aksen sendiri dengan pemilih warna dan kode hex. Ada pratinjau tema terang dan gelap, dan tombol kembali ke warna bawaan. Warna berlaku untuk seluruh aplikasi dan semua pengguna setelah Simpan (halaman dimuat ulang otomatis); di mode gelap warnanya dicerahkan otomatis agar terbaca. Background aplikasi dipindah ke tab ini.
+
 ## [1.38.0] - 2026-10-26
 
 _Dashboard Admin bergaya aplikasi Pengaturan Odoo_

@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.40.2",
+    date: "2026-10-26",
+    title: "Static Routing: istilah \"bibit\" diganti domain (FQDN)",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Di menu Static Routing Aplikasi, istilah \"bibit\" diganti dengan istilah yang umum: saklar kini berjudul \"Isi address-list dari domain utama (FQDN)\" dan komentar rule menjadi \"SR domain <Aplikasi>\" (sebelumnya \"SR bibit …\"). Fungsinya sama; penghapusan lewat tab Hapus semua tetap menjangkau rule lama karena memakai address-list SR-*.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.40.1",
     date: "2026-10-26",
     title: "Static Routing: kolom nama ISP menjadi nama routing mark",

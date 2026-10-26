@@ -6,7 +6,7 @@
  *  1. RAW (prerouting, sebelum connection tracking) membaca nama domain (SNI) pada paket
  *     TLS ke port 443 dengan `content=` lalu memasukkan IP tujuannya ke address-list aplikasi
  *     (`add-dst-to-address-list`). Daftar IP terisi sendiri dan menyesuaikan perubahan CDN.
- *  2. (Opsional) alamat domain utama dimasukkan lebih dulu ke address-list sebagai "bibit",
+ *  2. (Opsional) alamat domain utama dimasukkan lebih dulu ke address-list sebagai entri domain (FQDN),
  *     supaya koneksi pertama pun sudah lewat ISP yang benar.
  *  3. Mangle prerouting memberi routing-mark pada lalu lintas LAN yang menuju address-list itu.
  *  4. Tabel routing tiap ISP punya rute default ke gateway ISP-nya, dan NAT masquerade
@@ -25,7 +25,7 @@ export interface AppDef {
   color: string;
   /** Potongan nama domain yang dicari di SNI (content=). */
   domains: string[];
-  /** Nama host utama untuk "bibit" address-list (di-resolve router lewat DNS). */
+  /** Domain (FQDN) utama yang dimasukkan ke address-list; di-resolve router lewat DNS. */
   seeds: string[];
   note: string;
 }
@@ -268,7 +268,7 @@ export function validateStaticRouting(config: StaticRoutingConfig): SrIssue[] {
     );
   }
   if (config.fallback && config.isps.length < 2) warn("Rute cadangan butuh minimal dua jalur ISP; opsi diabaikan.");
-  if (!config.seed) warn("Tanpa bibit, koneksi pertama ke IP baru lewat jalur utama dulu; daftar IP baru terisi setelah paket TLS pertama terbaca.");
+  if (!config.seed) warn("Tanpa entri domain (FQDN), koneksi pertama ke IP baru lewat jalur utama dulu; daftar IP baru terisi setelah paket TLS pertama terbaca.");
   return issues;
 }
 
@@ -346,7 +346,7 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
     menu("/ip firewall address-list");
     for (const app of apps) {
       for (const host of app.seeds) {
-        add([["list", app.list], ["address", host], ["comment", tag(`SR bibit ${app.label}`)]]);
+        add([["list", app.list], ["address", host], ["comment", tag(`SR domain ${app.label}`)]]);
       }
     }
   }

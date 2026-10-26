@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.40.2] - 2026-10-26
+
+_Static Routing: istilah "bibit" diganti domain (FQDN)_
+
+### Diubah
+
+- Di menu Static Routing Aplikasi, istilah "bibit" diganti dengan istilah yang umum: saklar kini berjudul "Isi address-list dari domain utama (FQDN)" dan komentar rule menjadi "SR domain <Aplikasi>" (sebelumnya "SR bibit …"). Fungsinya sama; penghapusan lewat tab Hapus semua tetap menjangkau rule lama karena memakai address-list SR-*.
+
 ## [1.40.1] - 2026-10-26
 
 _Static Routing: kolom nama ISP menjadi nama routing mark_

@@ -328,7 +328,7 @@ export function StaticRoutingBuilder() {
                   options={(Object.keys(TIMEOUT_LABEL) as ListTimeout[]).map((k) => ({ value: k, label: TIMEOUT_LABEL[k] }))}
                 />
               </Field>
-              <Toggle checked={config.seed} onChange={(seed) => patch({ seed })} label="Isi bibit dari nama host utama" hint="Alamat domain utama di-resolve router lebih dulu, jadi koneksi pertama pun sudah lewat ISP yang benar." />
+              <Toggle checked={config.seed} onChange={(seed) => patch({ seed })} label="Isi address-list dari domain utama (FQDN)" hint="Domain utama aplikasi di-resolve router lebih dulu, jadi koneksi pertama pun sudah lewat ISP yang benar." />
               <Toggle checked={config.blockQuic} onChange={(blockQuic) => patch({ blockQuic })} label="Blokir QUIC (UDP 443) ke IP aplikasi" hint="QUIC tidak bisa dibaca SNI-nya. Dengan memblokirnya, klien beralih ke TCP/TLS sehingga IP aplikasi terus terdeteksi." />
               <Toggle checked={config.nat} onChange={(nat) => patch({ nat })} label="Buat NAT masquerade per interface ISP" hint="Dilewati bila rule yang sama sudah ada (mis. dari Setup atau Load Balance)." />
               <Toggle checked={config.fasttrack} onChange={(fasttrack) => patch({ fasttrack })} label="Batasi FastTrack ke koneksi tanpa mark" hint="FastTrack melewati mangle; tanpa ini routing per aplikasi bisa tidak berlaku." />
@@ -447,7 +447,7 @@ export function StaticRoutingBuilder() {
             <h3 className="text-sm font-semibold text-ink">Perlu diketahui</h3>
             <ul className="mt-2.5 space-y-2 text-xs leading-relaxed text-muted">
               <li>• SNI hanya terbaca pada TLS/TCP. Trafik QUIC (HTTP/3) tidak bisa dibaca, karena itu ada opsi memblokir QUIC ke IP aplikasi.</li>
-              <li>• Koneksi pertama ke IP yang belum dikenal bisa putus sekali sebelum IP itu masuk daftar; bibit dari nama host utama mengurangi hal ini.</li>
+              <li>• Koneksi pertama ke IP yang belum dikenal bisa putus sekali sebelum IP itu masuk daftar; mengisi address-list dari domain utama (FQDN) mengurangi hal ini.</li>
               <li>• Rule RAW dengan <span className="font-mono">content=</span> memeriksa isi paket port 443 dari LAN. Pada router kecil dengan trafik besar, pilih aplikasi seperlunya.</li>
               <li>• Facebook dan WhatsApp sama-sama milik Meta dan berbagi banyak IP; sebaiknya pakai ISP yang sama untuk keduanya.</li>
             </ul>

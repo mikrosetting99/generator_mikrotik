@@ -398,7 +398,7 @@ export function StaticRoutingBuilder() {
             </div>
             {removing && (
               <p className="border-t border-line-soft bg-warn/[0.06] px-4 py-2.5 text-xs leading-relaxed text-muted">
-                <b className="font-medium text-warn">Hati-hati:</b> hanya menghapus rule berkomentar &ldquo;SR … - By Mikrosetting&rdquo;
+                <b className="font-medium text-warn">Hati-hati:</b> hanya menghapus rule berkomentar &ldquo;sr … - by mikrosetting&rdquo;
                 (RAW, mangle, rute, NAT, dan address-list SR-*). Aplikasi akan kembali lewat jalur utama.
               </p>
             )}

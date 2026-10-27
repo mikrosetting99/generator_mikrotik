@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.40.3] - 2026-10-27
+
+_Static Routing: comment rule memakai huruf kecil_
+
+### Diubah
+
+- Semua comment rule yang dihasilkan menu Static Routing Aplikasi kini ditulis huruf kecil semua, mis. "sr rute to-isp1 - by mikrosetting" dan "sr pelajari ip youtube (youtube.com) - by mikrosetting". Script Hapus semua mengenali comment huruf kecil maupun versi lama yang berhuruf besar, sehingga rule hasil script sebelumnya tetap ikut terhapus.
+
 ## [1.40.2] - 2026-10-26
 
 _Static Routing: istilah "bibit" diganti domain (FQDN)_

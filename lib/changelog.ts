@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.40.3",
+    date: "2026-10-27",
+    title: "Static Routing: comment rule memakai huruf kecil",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Semua comment rule yang dihasilkan menu Static Routing Aplikasi kini ditulis huruf kecil semua, mis. \"sr rute to-isp1 - by mikrosetting\" dan \"sr pelajari ip youtube (youtube.com) - by mikrosetting\". Script Hapus semua mengenali comment huruf kecil maupun versi lama yang berhuruf besar, sehingga rule hasil script sebelumnya tetap ikut terhapus.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.40.2",
     date: "2026-10-26",
     title: "Static Routing: istilah \"bibit\" diganti domain (FQDN)",

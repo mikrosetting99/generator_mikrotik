@@ -21,10 +21,12 @@ import {
   type IspRow,
   type ListTimeout,
   type LocalMode,
+  type MatchMode,
   type StaticRoutingConfig,
 } from "@/lib/static-routing";
 
-const STORAGE_KEY = "static-routing-v1";
+// v2: bawaan berubah (NAT, FastTrack, dan blokir QUIC nonaktif; metode content), jadi isian lama tidak dipulihkan.
+const STORAGE_KEY = "static-routing-v2";
 const MAX_ISPS = 8;
 
 /** Pulihkan isian tersimpan; bentuk yang rusak atau lama kembali ke bawaan. */
@@ -65,6 +67,7 @@ function restore(raw: unknown): StaticRoutingConfig {
     localMode: pick<LocalMode>(r.localMode, ["addresslist", "interfacelist", "interface"], "addresslist"),
     lanList: typeof r.lanList === "string" ? r.lanList.slice(0, 30) : base.lanList,
     lanIface: typeof r.lanIface === "string" ? r.lanIface.slice(0, 30) : base.lanIface,
+    matchMode: pick<MatchMode>(r.matchMode, ["content", "tlshost"], "content"),
     timeout: pick<ListTimeout>(r.timeout, ["6h", "1d", "3d", "7d"], "1d"),
     nat: typeof r.nat === "boolean" ? r.nat : base.nat,
     fasttrack: typeof r.fasttrack === "boolean" ? r.fasttrack : base.fasttrack,
@@ -320,6 +323,24 @@ export function StaticRoutingBuilder() {
 
           <Panel title="Opsi" description="Bawaan sudah cocok untuk kebanyakan jaringan.">
             <div className="space-y-2.5">
+              <Field
+                label="Cara RAW mengenali domain"
+                hint={
+                  config.matchMode === "content"
+                    ? "content: mencari teks domain di isi paket TCP. Berjalan di RouterOS 6 dan 7, tetapi lebih berat bagi CPU."
+                    : "tls-host: membaca nama host TLS (tls-host=*.domain). Lebih ringan; butuh RouterOS 6.41+ dan tidak membaca TLS yang terfragmentasi atau memakai ECH."
+                }
+              >
+                <Select
+                  value={config.matchMode}
+                  placeholder=""
+                  onChange={(matchMode) => patch({ matchMode: matchMode as MatchMode })}
+                  options={[
+                    { value: "content", label: "content (bawaan)" },
+                    { value: "tlshost", label: "tls-host" },
+                  ]}
+                />
+              </Field>
               <Field label="Masa simpan IP di address-list" hint="IP yang tidak muncul lagi akan dihapus otomatis setelah waktu ini.">
                 <Select
                   value={config.timeout}
@@ -446,9 +467,9 @@ export function StaticRoutingBuilder() {
           <div className="rounded-2xl border border-line bg-surface p-4">
             <h3 className="text-sm font-semibold text-ink">Perlu diketahui</h3>
             <ul className="mt-2.5 space-y-2 text-xs leading-relaxed text-muted">
-              <li>• SNI hanya terbaca pada TLS/TCP. Trafik QUIC (HTTP/3) tidak bisa dibaca, karena itu ada opsi memblokir QUIC ke IP aplikasi.</li>
+              <li>• Domain hanya terbaca pada TLS/TCP. Trafik QUIC (HTTP/3) tidak bisa dibaca; bila aplikasi tetap lewat jalur utama, aktifkan opsi blokir QUIC agar klien pindah ke TCP.</li>
               <li>• Koneksi pertama ke IP yang belum dikenal bisa putus sekali sebelum IP itu masuk daftar; mengisi address-list dari domain utama (FQDN) mengurangi hal ini.</li>
-              <li>• Rule RAW dengan <span className="font-mono">content=</span> memeriksa isi paket port 443 dari LAN. Pada router kecil dengan trafik besar, pilih aplikasi seperlunya.</li>
+              <li>• Satu rule RAW dibuat per domain dan memeriksa paket TCP dari LAN (tanpa batas port). Pada router kecil dengan trafik besar, pilih aplikasi seperlunya atau pakai tls-host yang lebih ringan.</li>
               <li>• Facebook dan WhatsApp sama-sama milik Meta dan berbagi banyak IP; sebaiknya pakai ISP yang sama untuk keduanya.</li>
             </ul>
           </div>

@@ -27,6 +27,27 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.41.0",
+    date: "2026-10-27",
+    title: "Static Routing: format RAW seperti Buananet, pilihan content/tls-host, bawaan baru",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Rule RAW kini berformat satu rule per domain: action=add-dst-to-address-list, chain=prerouting, protocol=tcp, src-address-list=LOCAL-IP, dst-address-list=!LOCAL-IP (mode Address List), tanpa dst-port. Comment hanya ada di rule pertama tiap aplikasi sebagai judul grup (mis. \"youtube - mikrosetting.com\"), sama seperti tampilan Winbox pada contoh.",
+          "Bawaan diubah: blokir QUIC, NAT masquerade, dan pembatasan FastTrack kini nonaktif. Isian lama di browser tidak dipulihkan agar bawaan baru berlaku.",
+          "Script Hapus semua mengenali rule RAW dari nama address-list SR-* (karena rule setelah yang pertama tidak punya comment), selain dari comment lama.",
+        ],
+      },
+      {
+        type: "added",
+        items: [
+          "Opsi \"Cara RAW mengenali domain\": content (bawaan; mencari teks domain di isi paket, berjalan di RouterOS 6 dan 7) atau tls-host (membaca nama host TLS dengan tls-host=*.domain; lebih ringan, butuh RouterOS 6.41+ dan tidak membaca TLS terfragmentasi/ECH).",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.40.3",
     date: "2026-10-27",
     title: "Static Routing: comment rule memakai huruf kecil",

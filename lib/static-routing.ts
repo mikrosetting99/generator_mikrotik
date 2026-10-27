@@ -3,8 +3,8 @@
  * lewat RAW + mangle, untuk RouterOS 6 dan 7.
  *
  * Cara kerja:
- *  1. RAW (prerouting, sebelum connection tracking) membaca nama domain (SNI) pada paket
- *     TLS ke port 443 dengan `content=` lalu memasukkan IP tujuannya ke address-list aplikasi
+ *  1. RAW (prerouting, sebelum connection tracking) mengenali domain pada paket TCP dari LAN
+ *     dengan `content=` (bawaan) atau `tls-host=`, lalu memasukkan IP tujuannya ke address-list aplikasi
  *     (`add-dst-to-address-list`). Daftar IP terisi sendiri dan menyesuaikan perubahan CDN.
  *  2. (Opsional) alamat domain utama dimasukkan lebih dulu ke address-list sebagai entri domain (FQDN),
  *     supaya koneksi pertama pun sudah lewat ISP yang benar.
@@ -14,7 +14,7 @@
  */
 
 import { isIpv4 } from "./net";
-import { args, type ArgValue, ScriptBuilder } from "./generator/script-builder";
+import { args, type ArgValue, raw, ScriptBuilder } from "./generator/script-builder";
 
 export type AppId = "youtube" | "tiktok" | "facebook" | "whatsapp" | "custom";
 
@@ -88,6 +88,8 @@ export interface AppSelection {
 
 export type LocalMode = "addresslist" | "interfacelist" | "interface";
 export type ListTimeout = "6h" | "1d" | "3d" | "7d";
+/** Cara rule RAW mengenali domain: teks di isi paket (content) atau nama host TLS (tls-host). */
+export type MatchMode = "content" | "tlshost";
 
 export interface StaticRoutingConfig {
   ros: "" | "v6" | "v7";
@@ -96,6 +98,8 @@ export interface StaticRoutingConfig {
   localMode: LocalMode;
   lanList: string;
   lanIface: string;
+  /** Pencocok domain pada rule RAW. Bawaan: content. */
+  matchMode: MatchMode;
   /** Lama sebuah IP bertahan di address-list sejak terakhir terlihat. */
   timeout: ListTimeout;
   /** Buat NAT masquerade pada interface ISP tujuan (bila belum ada). */
@@ -149,11 +153,12 @@ export function defaultStaticRouting(): StaticRoutingConfig {
     localMode: "addresslist",
     lanList: "LAN",
     lanIface: "bridge-lan",
+    matchMode: "content",
     timeout: "1d",
-    nat: true,
-    fasttrack: true,
+    nat: false,
+    fasttrack: false,
     seed: true,
-    blockQuic: true,
+    blockQuic: false,
     fallback: false,
     top: true,
   };
@@ -353,33 +358,39 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
   }
 
   // ----------------------------------------------------------------- RAW
+  // Satu rule per domain, tanpa dst-port; comment hanya di rule pertama tiap aplikasi
+  // (judul grup di Winbox), mis. "youtube - mikrosetting.com".
   menu("/ip firewall raw");
   const local = localMatch(config);
+  const notLocal: Array<[string, ArgValue]> =
+    config.localMode === "addresslist" ? [["dst-address-list", raw("!LOCAL-IP")]] : [];
   for (const app of apps) {
-    for (const domain of app.domains) {
+    app.domains.forEach((domain, di) => {
+      const matcher: [string, ArgValue] =
+        config.matchMode === "tlshost" ? ["tls-host", `*.${domain}`] : ["content", domain];
       add([
-        ["chain", "prerouting"],
-        ...local,
-        ["protocol", "tcp"],
-        ["dst-port", 443],
-        ["content", domain],
         ["action", "add-dst-to-address-list"],
         ["address-list", app.list],
         ["address-list-timeout", config.timeout],
-        ["comment", tag(`SR pelajari IP ${app.label} (${domain})`)],
+        ["chain", "prerouting"],
+        matcher,
+        ...notLocal,
+        ["protocol", "tcp"],
+        ...local,
+        ...(di === 0 ? ([["comment", `${app.label.toLowerCase()} - mikrosetting.com`]] as Array<[string, ArgValue]>) : []),
       ]);
-    }
+    });
   }
   if (config.blockQuic) {
     for (const app of apps) {
       add([
-        ["chain", "prerouting"],
-        ...local,
-        ["protocol", "udp"],
-        ["dst-port", 443],
-        ["dst-address-list", app.list],
         ["action", "drop"],
-        ["comment", tag(`SR blokir QUIC ${app.label}`)],
+        ["chain", "prerouting"],
+        ["dst-address-list", app.list],
+        ["dst-port", 443],
+        ["protocol", "udp"],
+        ...local,
+        ["comment", `${app.label.toLowerCase()} blokir quic - mikrosetting.com`],
       ]);
     }
   }
@@ -468,8 +479,8 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
   s.comment("  /ip firewall address-list print where list~\"^SR-\"");
   s.comment("  /ip firewall raw print stats  ->  counter rule SR naik bila paket TLS terbaca");
   s.comment("  /tool traceroute <ip-tujuan> routing-table=<mark>   (v7)  |  routing-mark=<mark>   (v6)");
-  s.comment("Catatan: SNI hanya terbaca pada TLS/TCP. QUIC (HTTP/3) tidak bisa dibaca, karena itu rule blokir");
-  s.comment("QUIC memaksa klien beralih ke TCP. Koneksi pertama ke IP yang belum dikenal bisa putus sekali.");
+  s.comment("Catatan: domain hanya terbaca pada TLS/TCP. QUIC (HTTP/3) tidak bisa dibaca; rule blokir QUIC (bila");
+  s.comment("diaktifkan) memaksa klien beralih ke TCP. Koneksi pertama ke IP yang belum dikenal bisa putus sekali.");
   s.comment("Hapus semua pengaturan ini: pakai tab \"Hapus semua\".");
   return s.toString();
 }
@@ -492,7 +503,8 @@ export function generateStaticRoutingRemove(config: StaticRoutingConfig): string
   s.line(`remove [find where ${re}]`);
   s.blank();
   s.line("/ip firewall raw");
-  s.line(`remove [find where ${re}]`);
+  // Rule RAW hanya punya comment di rule pertama tiap aplikasi, jadi dikenali dari nama address-list SR-*.
+  s.line(`remove [find where address-list~"^SR-" or dst-address-list~"^SR-" or ${re}]`);
   s.blank();
   s.line("/ip route");
   s.line(`remove [find where ${re}]`);

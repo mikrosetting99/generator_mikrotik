@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.46.0] - 2026-10-29
+
+_Script VPN: form admin bergaya pengaturan Mikrotik (label kiri, isian kanan)_
+
+### Diubah
+
+- Form Tambah/Ubah link script kini tersusun seperti jendela pengaturan Winbox: tiap baris berisi label di kiri dan kolom isian di kanan, dikelompokkan dalam kotak Pelanggan, Script VPN, Akses router untuk pelanggan, dan Catatan. Di layar HP baris otomatis menumpuk (label di atas isian).
+
 ## [1.45.0] - 2026-10-29
 
 _Static Routing: disamakan dengan script RAW acuan Buananet agar routing berlaku_

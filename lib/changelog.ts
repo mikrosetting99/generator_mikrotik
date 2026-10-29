@@ -27,6 +27,18 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.46.0",
+    date: "2026-10-29",
+    title: "Script VPN: form admin bergaya pengaturan Mikrotik (label kiri, isian kanan)",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Form Tambah/Ubah link script kini tersusun seperti jendela pengaturan Winbox: tiap baris berisi label di kiri dan kolom isian di kanan, dikelompokkan dalam kotak Pelanggan, Script VPN, Akses router untuk pelanggan, dan Catatan. Di layar HP baris otomatis menumpuk (label di atas isian).",
+        ],
+      },
+    ],
+  },  {
     version: "1.45.0",
     date: "2026-10-29",
     title: "Static Routing: disamakan dengan script RAW acuan Buananet agar routing berlaku",

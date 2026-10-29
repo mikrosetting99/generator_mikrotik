@@ -356,59 +356,55 @@ export function VpnAdmin() {
         description="Pilih tipe VPN lalu isi username dan password VPN dari app.mikrosetting.com. Password disimpan terenkripsi di database."
         badge={form.id ? <span className="rounded-md bg-warn/15 px-2 py-0.5 text-[11px] font-medium text-warn">sedang mengubah</span> : undefined}
       >
-        <div className="grid gap-4 p-5 sm:grid-cols-2">
-          <Field label="Nomor HP pelanggan" required hint={isValidPhone(normalizePhone(form.phone)) ? `Disimpan sebagai ${formatPhone(normalizePhone(form.phone))}` : "Dipakai pelanggan untuk membuka link. Boleh 08…, +62…, atau 62…"}>
-            <TextInput mono value={form.phone} onChange={(phone) => patch({ phone })} placeholder="081234567890" />
-          </Field>
-          <Field label="Nama pelanggan (opsional)">
-            <TextInput value={form.customer} onChange={(customer) => patch({ customer })} placeholder="Budi Santoso" />
-          </Field>
-          <Field label="Kategori" required>
-            <Select value={form.categoryId} placeholder="— pilih kategori —" onChange={(categoryId) => patch({ categoryId })} options={categoryOptions} />
-          </Field>
-          <Field label="Judul" required hint="Tampil di halaman pelanggan.">
-            <TextInput value={form.title} onChange={(title) => patch({ title })} placeholder="VPN Remote - Router Kantor" />
-          </Field>
-          {/* ------------------------------------------------- script VPN */}
-          <div className="space-y-3 rounded-md border border-line-soft bg-raised/40 p-4 sm:col-span-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-1 text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Tipe VPN yang ditawarkan</span>
-              {VPN_PROTOCOLS.map((p) => (
-                <CheckPill key={p.id} active={form.offered.includes(p.id)} onClick={() => toggleOffered(p.id)}>
-                  {p.label}
+        <div className="space-y-4 p-4 sm:p-5">
+          <Group title="Pelanggan">
+            <FormRow label="Nomor HP" required hint={isValidPhone(normalizePhone(form.phone)) ? `Disimpan sebagai ${formatPhone(normalizePhone(form.phone))}` : "Dipakai pelanggan untuk membuka link. Boleh 08…, +62…, atau 62…"}>
+              <TextInput mono value={form.phone} onChange={(phone) => patch({ phone })} placeholder="081234567890" />
+            </FormRow>
+            <FormRow label="Nama pelanggan">
+              <TextInput value={form.customer} onChange={(customer) => patch({ customer })} placeholder="Budi Santoso (opsional)" />
+            </FormRow>
+            <FormRow label="Kategori" required>
+              <Select value={form.categoryId} placeholder="— pilih kategori —" onChange={(categoryId) => patch({ categoryId })} options={categoryOptions} />
+            </FormRow>
+            <FormRow label="Judul" required hint="Tampil di halaman pelanggan.">
+              <TextInput value={form.title} onChange={(title) => patch({ title })} placeholder="VPN Remote - Router Kantor" />
+            </FormRow>
+          </Group>
+
+          <Group title="Script VPN">
+            <FormRow label="Tipe VPN" hint={form.protocol ? `Pelanggan memilih sendiri tipe di halaman link-nya. Pilihan awal: ${form.offered[0]?.toUpperCase()}.` : "Pilih satu atau lebih tipe, atau isi manual."}>
+              <div className="flex flex-wrap items-center gap-2">
+                {VPN_PROTOCOLS.map((p) => (
+                  <CheckPill key={p.id} active={form.offered.includes(p.id)} onClick={() => toggleOffered(p.id)}>
+                    {p.label}
+                  </CheckPill>
+                ))}
+                <CheckPill active={form.offered.length === 0} onClick={() => patch({ offered: [], protocol: "" })}>
+                  Manual / tanpa VPN
                 </CheckPill>
-              ))}
-              <CheckPill active={form.offered.length === 0} onClick={() => patch({ offered: [], protocol: "" })}>
-                Manual / tanpa VPN
-              </CheckPill>
-            </div>
+              </div>
+            </FormRow>
 
             {form.protocol ? (
               <>
-                <p className="text-xs text-muted">
-                  Cukup isi username dan password VPN. Pelanggan memilih sendiri tipe{" "}
-                  {form.offered.map((p) => p.toUpperCase()).join(", ")} di halaman link-nya; script (interface client, Netwatch, dan
-                  scheduler) dibuat otomatis. Pilihan awal: {form.offered[0]?.toUpperCase()}.
-                </p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Username VPN" required>
-                    <TextInput mono value={form.username} onChange={(username) => patch({ username })} placeholder="test33" />
-                  </Field>
-                  <Field label="Password VPN" required>
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <TextInput mono type={showPassword ? "text" : "password"} value={form.password} onChange={(password) => patch({ password })} placeholder="password" />
-                      </div>
-                      <Button onClick={() => setShowPassword((v) => !v)}>{showPassword ? "Sembunyikan" : "Tampilkan"}</Button>
+                <FormRow label="Username VPN" required>
+                  <TextInput mono value={form.username} onChange={(username) => patch({ username })} placeholder="test33" />
+                </FormRow>
+                <FormRow label="Password VPN" required>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <TextInput mono type={showPassword ? "text" : "password"} value={form.password} onChange={(password) => patch({ password })} placeholder="password" />
                     </div>
-                  </Field>
-                </div>
-                <details className="rounded-md border border-line-soft bg-surface">
-                  <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted hover:text-ink">
+                    <Button onClick={() => setShowPassword((v) => !v)}>{showPassword ? "Sembunyikan" : "Tampilkan"}</Button>
+                  </div>
+                </FormRow>
+                <details className="border-t border-line-soft">
+                  <summary className="cursor-pointer px-4 py-2.5 text-xs font-medium text-muted hover:text-ink">
                     Pengaturan lanjutan (bawaan sudah sesuai)
                   </summary>
-                  <div className="grid gap-4 border-t border-line-soft p-3 sm:grid-cols-2">
-                    <Field label="Versi RouterOS pelanggan">
+                  <div className="border-t border-line-soft">
+                    <FormRow label="Versi RouterOS">
                       <Select
                         value={form.rosVersion}
                         placeholder=""
@@ -418,116 +414,112 @@ export function VpnAdmin() {
                           { value: "v7", label: "RouterOS 7.x" },
                         ]}
                       />
-                    </Field>
-                    <Field label="Server VPN" hint={`Bawaan ${DEFAULT_VPN_SERVER}`}>
+                    </FormRow>
+                    <FormRow label="Server VPN" hint={`Bawaan ${DEFAULT_VPN_SERVER}`}>
                       <TextInput mono value={form.vpnServer} onChange={(vpnServer) => patch({ vpnServer })} placeholder={DEFAULT_VPN_SERVER} />
-                    </Field>
-                    <Field label="Gateway tunnel (dipantau Netwatch)" hint={`Bawaan ${DEFAULT_VPN_GATEWAY}`}>
+                    </FormRow>
+                    <FormRow label="Gateway tunnel" hint={`Dipantau Netwatch. Bawaan ${DEFAULT_VPN_GATEWAY}`}>
                       <TextInput mono value={form.gatewayIp} onChange={(gatewayIp) => patch({ gatewayIp })} placeholder={DEFAULT_VPN_GATEWAY} />
-                    </Field>
-                    <Field label="Nama tunnel" hint="Kosong = dibuat dari username.">
+                    </FormRow>
+                    <FormRow label="Nama tunnel" hint="Kosong = dibuat dari username.">
                       <TextInput mono value={form.tunnelName} onChange={(tunnelName) => patch({ tunnelName })} placeholder={defaultTunnelName(form.username)} />
-                    </Field>
+                    </FormRow>
                     {form.protocol === "ovpn" && (
-                      <Field label="Port OVPN" hint="Kosong = 1194.">
+                      <FormRow label="Port OVPN" hint="Kosong = 1194.">
                         <TextInput mono value={form.vpnPort} onChange={(vpnPort) => patch({ vpnPort: vpnPort.replace(/\D/g, "") })} placeholder="1194" />
-                      </Field>
+                      </FormRow>
                     )}
                     {form.protocol === "l2tp" && (
-                      <Field label="IPsec secret" hint="Kosong = tanpa IPsec.">
+                      <FormRow label="IPsec secret" hint="Kosong = tanpa IPsec.">
                         <TextInput mono value={form.ipsecSecret} onChange={(ipsecSecret) => patch({ ipsecSecret })} placeholder="opsional" />
-                      </Field>
+                      </FormRow>
                     )}
                   </div>
                 </details>
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <span className="flex flex-wrap items-center gap-2 text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
-                      Pratinjau script
-                      {form.offered.length > 1 &&
-                        form.offered.map((p) => (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => setPreviewProto(p)}
-                            className={`rounded-md px-2 py-0.5 font-mono text-[11px] normal-case ${
-                              shownProto === p ? "bg-brand/15 text-brand" : "text-muted hover:text-ink"
-                            }`}
-                          >
-                            {p.toUpperCase()}
-                          </button>
-                        ))}
-                    </span>
-                    {vpnPreview.script && (
-                      <Button size="sm" onClick={() => copy("preview", vpnPreview.script)}>
-                        {copied === "preview" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                        {copied === "preview" ? "Tersalin" : "Salin"}
-                      </Button>
+                <FormRow
+                  label="Pratinjau script"
+                  hint="Script dibuat otomatis (interface client, Netwatch, scheduler)."
+                >
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <span className="flex flex-wrap items-center gap-2">
+                        {form.offered.length > 1 &&
+                          form.offered.map((p) => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => setPreviewProto(p)}
+                              className={`rounded-md px-2 py-0.5 font-mono text-[11px] ${
+                                shownProto === p ? "bg-brand/15 text-brand" : "text-muted hover:text-ink"
+                              }`}
+                            >
+                              {p.toUpperCase()}
+                            </button>
+                          ))}
+                      </span>
+                      {vpnPreview.script && (
+                        <Button size="sm" onClick={() => copy("preview", vpnPreview.script)}>
+                          {copied === "preview" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copied === "preview" ? "Tersalin" : "Salin"}
+                        </Button>
+                      )}
+                    </div>
+                    {vpnPreview.error ? (
+                      <p className="rounded-md border border-dashed border-line px-3 py-3 text-xs text-faint">{vpnPreview.error}</p>
+                    ) : (
+                      <pre className="max-h-64 overflow-auto rounded-md border border-line-soft bg-code px-3 py-3 font-mono text-[11.5px] leading-relaxed text-ink">
+                        {vpnPreview.script}
+                      </pre>
                     )}
                   </div>
-                  {vpnPreview.error ? (
-                    <p className="rounded-md border border-dashed border-line px-3 py-3 text-xs text-faint">{vpnPreview.error}</p>
-                  ) : (
-                    <pre className="max-h-64 overflow-auto rounded-md border border-line-soft bg-code px-3 py-3 font-mono text-[11.5px] leading-relaxed text-ink">
-                      {vpnPreview.script}
-                    </pre>
-                  )}
-                </div>
+                </FormRow>
               </>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Username (opsional)">
-                  <TextInput mono value={form.username} onChange={(username) => patch({ username })} placeholder="username" />
-                </Field>
-                <Field label="Password (opsional)">
+              <>
+                <FormRow label="Username">
+                  <TextInput mono value={form.username} onChange={(username) => patch({ username })} placeholder="username (opsional)" />
+                </FormRow>
+                <FormRow label="Password">
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <TextInput mono type={showPassword ? "text" : "password"} value={form.password} onChange={(password) => patch({ password })} placeholder="password" />
+                      <TextInput mono type={showPassword ? "text" : "password"} value={form.password} onChange={(password) => patch({ password })} placeholder="password (opsional)" />
                     </div>
                     <Button onClick={() => setShowPassword((v) => !v)}>{showPassword ? "Sembunyikan" : "Tampilkan"}</Button>
                   </div>
-                </Field>
-                <div className="sm:col-span-2">
-                  <Field label="Script manual" hint="Tempel script apa adanya (opsional).">
-                    <textarea
-                      value={form.script}
-                      onChange={(e) => patch({ script: e.target.value })}
-                      rows={7}
-                      spellCheck={false}
-                      placeholder="/interface ovpn-client add ..."
-                      className="w-full rounded-lg border border-line bg-surface px-3 py-2 font-mono text-[12px] leading-relaxed text-ink outline-none focus:border-brand"
-                    />
-                  </Field>
-                </div>
-              </div>
+                </FormRow>
+                <FormRow label="Script manual" hint="Tempel script apa adanya (opsional).">
+                  <textarea
+                    value={form.script}
+                    onChange={(e) => patch({ script: e.target.value })}
+                    rows={7}
+                    spellCheck={false}
+                    placeholder="/interface ovpn-client add ..."
+                    className="w-full rounded-lg border border-line bg-surface px-3 py-2 font-mono text-[12px] leading-relaxed text-ink outline-none focus:border-brand"
+                  />
+                </FormRow>
+              </>
             )}
-          </div>
+          </Group>
 
-          {/* --------------------------------------- akses router pelanggan */}
-          <div className="space-y-3 rounded-md border border-line-soft bg-raised/40 p-4 sm:col-span-2">
-            <div>
-              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Akses router untuk pelanggan</span>
-              <p className="mt-0.5 text-xs text-faint">Opsional. Ditampilkan di halaman pelanggan dengan tombol salin.</p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="IP Winbox" hint="Alamat:port untuk Winbox, mis. 103.1.2.3:8291.">
-                <TextInput mono value={form.winbox} onChange={(winbox) => patch({ winbox: winbox.replace(/\s+/g, "") })} placeholder="vpn-id1.mikrosetting.com:20575" />
-              </Field>
-              <Field label="IP API" hint="Alamat:port untuk API, mis. 103.1.2.3:8728.">
-                <TextInput mono value={form.api} onChange={(api) => patch({ api: api.replace(/\s+/g, "") })} placeholder="vpn-id1.mikrosetting.com:28575" />
-              </Field>
-              <div className="sm:col-span-2">
-                <Field label="Link Mikhmon online" hint="Harus diawali https:// atau http://.">
-                  <TextInput mono value={form.mikhmonUrl} onChange={(mikhmonUrl) => patch({ mikhmonUrl: mikhmonUrl.trim() })} placeholder="https://mikhmon.mikrosetting.com/..." />
-                </Field>
-              </div>
-            </div>
-          </div>
-          <div className="sm:col-span-2">
-            <Field label="Catatan untuk pelanggan (opsional)">
-              <TextInput value={form.note} onChange={(note) => patch({ note })} placeholder="mis. Berlaku sampai 30 November 2026" />
-            </Field>
-          </div>          <div className="flex flex-wrap gap-2 sm:col-span-2">
+          <Group title="Akses router untuk pelanggan" note="Opsional. Ditampilkan di halaman pelanggan dengan tombol salin.">
+            <FormRow label="IP Winbox" hint="Alamat:port untuk Winbox, mis. 103.1.2.3:8291.">
+              <TextInput mono value={form.winbox} onChange={(winbox) => patch({ winbox: winbox.replace(/\s+/g, "") })} placeholder="vpn-id1.mikrosetting.com:20575" />
+            </FormRow>
+            <FormRow label="IP API" hint="Alamat:port untuk API, mis. 103.1.2.3:8728.">
+              <TextInput mono value={form.api} onChange={(api) => patch({ api: api.replace(/\s+/g, "") })} placeholder="vpn-id1.mikrosetting.com:28575" />
+            </FormRow>
+            <FormRow label="Link Mikhmon" hint="Harus diawali https:// atau http://.">
+              <TextInput mono value={form.mikhmonUrl} onChange={(mikhmonUrl) => patch({ mikhmonUrl: mikhmonUrl.trim() })} placeholder="https://mikhmon.mikrosetting.com/..." />
+            </FormRow>
+          </Group>
+
+          <Group title="Catatan">
+            <FormRow label="Catatan pelanggan">
+              <TextInput value={form.note} onChange={(note) => patch({ note })} placeholder="mis. Berlaku sampai 30 November 2026 (opsional)" />
+            </FormRow>
+          </Group>
+
+          <div className="flex flex-wrap gap-2 sm:pl-[206px]">
             <Button variant="primary" onClick={save} disabled={busy}>
               <Save className="h-4 w-4" />
               {busy ? "Menyimpan…" : form.id ? "Simpan perubahan" : "Simpan & buat link"}
@@ -536,7 +528,7 @@ export function VpnAdmin() {
           </div>
 
           {lastLink && (
-            <div className="space-y-3 rounded-md border border-brand/40 bg-brand/[0.06] p-4 sm:col-span-2">
+            <div className="space-y-3 rounded-md border border-brand/40 bg-brand/[0.06] p-4">
               <p className="text-sm font-semibold text-ink">Link untuk pelanggan</p>
               <code className="block break-all rounded-md border border-line bg-surface px-3 py-2 font-mono text-[12.5px] text-ink">{lastLink.url}</code>
               <div className="flex flex-wrap gap-2">
@@ -649,5 +641,34 @@ export function VpnAdmin() {
         </div>
       </AdminSection>
     </div>
+  );
+}
+/** Satu baris ala jendela Winbox: label di kiri, kontrol di kanan. */
+function FormRow({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-1.5 border-b border-line-soft px-4 py-3 last:border-b-0 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-start sm:gap-4">
+      <label className="pt-2 text-[13px] font-medium text-muted sm:text-right">
+        {label}
+        {required && <span className="text-bad"> *</span>}
+        <span className="hidden sm:inline">:</span>
+      </label>
+      <div className="min-w-0">
+        {children}
+        {hint && <p className="mt-1 text-xs text-faint">{hint}</p>}
+      </div>
+    </div>
+  );
+}
+
+/** Kotak bergaris dengan judul, seperti tab/grup pengaturan Mikrotik. */
+function Group({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
+  return (
+    <section className="overflow-hidden rounded-md border border-line bg-surface">
+      <header className="border-b border-line-soft bg-raised/60 px-4 py-2">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.09em] text-brand">{title}</h3>
+        {note && <p className="mt-0.5 text-xs text-faint">{note}</p>}
+      </header>
+      {children}
+    </section>
   );
 }

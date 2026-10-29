@@ -11,7 +11,7 @@ import {
   DEFAULT_VPN_SERVER,
   defaultTunnelName,
   generateVpnScript,
-  DEFAULT_VPN_PUBLIC_IP,
+  VPN_SERVERS,
   MAX_NAT_RULES,
   natAccess,
   vpnCategoryKind,
@@ -139,6 +139,7 @@ export function VpnAdmin() {
   const [showPassword, setShowPassword] = useState(false);
   const [lastLink, setLastLink] = useState<{ url: string; message: string; phone: string } | null>(null);
   const [copied, setCopied] = useState("");
+  const [customServer, setCustomServer] = useState(false);
   const [previewProto, setPreviewProto] = useState<VpnProtocol>("sstp");
 
   const loadCategories = useCallback(async () => {
@@ -177,7 +178,14 @@ export function VpnAdmin() {
   const showNat = kind !== "mikhmon";
   const showMikhmon = kind !== "remote";
   // alamat akses hasil rule: lewat IP publik dan lewat domain server VPN
+  // server terpilih: preset bila domainnya dikenal (kosong = server pertama), selain itu manual
+  const knownServer = VPN_SERVERS.find((s) => s.domain === (form.vpnServer || VPN_SERVERS[0].domain)) ?? null;
+  const serverPreset = customServer ? null : knownServer;
   const accessList = showNat ? natAccess(toNatRules(form.nat).filter((r) => r.publicPort > 0), form.vpnServer, form.publicIp) : [];
+  const resetForm = () => {
+    setForm({ ...EMPTY, categoryId: form.categoryId });
+    setCustomServer(false);
+  };
   const patchNat = (i: number, partial: Partial<FormState["nat"][number]>) =>
     setForm((f) => ({ ...f, nat: f.nat.map((r, idx) => (idx === i ? { ...r, ...partial } : r)) }));
 
@@ -283,7 +291,7 @@ export function VpnAdmin() {
         setLastLink(null);
       }
       setFlash({ tone: "info", text: form.id ? "Perubahan tersimpan. Link yang sudah dikirim tetap berlaku." : "Link script dibuat. Kirim link-nya ke pelanggan." });
-      setForm({ ...EMPTY, categoryId: form.categoryId });
+      resetForm();
       void loadScripts();
       void loadCategories();
     } finally {
@@ -321,6 +329,7 @@ export function VpnAdmin() {
       publicIp: s.publicIp ?? "",
       note: s.note,
     });
+    setCustomServer(Boolean(s.vpnServer) && !VPN_SERVERS.some((v) => v.domain === s.vpnServer));
     setLastLink(null);
     setFlash(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -330,7 +339,7 @@ export function VpnAdmin() {
     if (!window.confirm(`Hapus link "${row.title}" milik ${formatPhone(row.phone)}? Link yang sudah dikirim tidak akan bisa dibuka lagi.`)) return;
     const r = await api(`/api/admin/vpn/scripts/${row.id}`, { method: "DELETE" });
     if (!r.ok) return setFlash({ tone: "bad", text: r.data.error ?? "Gagal menghapus." });
-    if (form.id === row.id) setForm({ ...EMPTY, categoryId: form.categoryId });
+    if (form.id === row.id) resetForm();
     void loadScripts();
     void loadCategories();
   };
@@ -439,6 +448,35 @@ export function VpnAdmin() {
 
             {form.protocol ? (
               <>
+                <FormRow
+                  label="Server VPN"
+                  required
+                  hint={serverPreset ? `connect-to ${serverPreset.domain} · IP publik ${serverPreset.ip}` : "Isi domain dan IP publik server sendiri."}
+                >
+                  <Select
+                    value={serverPreset ? serverPreset.domain : "__custom"}
+                    placeholder=""
+                    onChange={(v) => {
+                      if (v === "__custom") {
+                        setCustomServer(true);
+                        patch({ vpnServer: "", publicIp: "" });
+                      } else {
+                        setCustomServer(false);
+                        patch({ vpnServer: v, publicIp: "" });
+                      }
+                    }}
+                    options={[
+                      ...VPN_SERVERS.map((s) => ({ value: s.domain, label: `${s.domain} — ${s.ip}` })),
+                      { value: "__custom", label: "Lainnya (isi manual)" },
+                    ]}
+                  />
+                  {!serverPreset && (
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <TextInput mono value={form.vpnServer} onChange={(vpnServer) => patch({ vpnServer: vpnServer.replace(/\s+/g, "") })} placeholder="domain server, mis. vpn.contoh.com" />
+                      <TextInput mono value={form.publicIp} onChange={(publicIp) => patch({ publicIp: publicIp.replace(/\s+/g, "") })} placeholder="IP publik, mis. 103.1.2.3" />
+                    </div>
+                  )}
+                </FormRow>
                 <FormRow label="Username VPN" required>
                   <TextInput mono value={form.username} onChange={(username) => patch({ username })} placeholder="test33" />
                 </FormRow>
@@ -465,9 +503,6 @@ export function VpnAdmin() {
                           { value: "v7", label: "RouterOS 7.x" },
                         ]}
                       />
-                    </FormRow>
-                    <FormRow label="Server VPN" hint={`Bawaan ${DEFAULT_VPN_SERVER}`}>
-                      <TextInput mono value={form.vpnServer} onChange={(vpnServer) => patch({ vpnServer })} placeholder={DEFAULT_VPN_SERVER} />
                     </FormRow>
                     <FormRow label="Gateway tunnel" hint={`Dipantau Netwatch. Bawaan ${DEFAULT_VPN_GATEWAY}`}>
                       <TextInput mono value={form.gatewayIp} onChange={(gatewayIp) => patch({ gatewayIp })} placeholder={DEFAULT_VPN_GATEWAY} />
@@ -556,9 +591,6 @@ export function VpnAdmin() {
             <Group title="Port forward (dst-nat)" note="Khusus VPN Remote. Router pelanggan meneruskan akses ke IP tunnel:port menuju perangkat di LAN-nya.">
               <FormRow label="IP tunnel pelanggan" required={form.nat.length > 0} hint="IP pelanggan di dalam tunnel VPN, mis. 10.202.0.17.">
                 <TextInput mono value={form.tunnelIp} onChange={(tunnelIp) => patch({ tunnelIp: tunnelIp.replace(/\s+/g, "") })} placeholder="10.202.0.17" />
-              </FormRow>
-              <FormRow label="IP publik server" hint={`Dipakai untuk alamat akses via IP. Kosong = ${DEFAULT_VPN_PUBLIC_IP} (server bawaan). Domain mengikuti Server VPN di Pengaturan lanjutan.`}>
-                <TextInput mono value={form.publicIp} onChange={(publicIp) => patch({ publicIp: publicIp.replace(/\s+/g, "") })} placeholder={DEFAULT_VPN_PUBLIC_IP} />
               </FormRow>
               <FormRow label="Rule" hint="Port akses = port di server VPN yang dibuka pelanggan. Port tunnel → IP tujuan di LAN : port tujuan (kosong = sama dengan port tunnel).">
                 <div className="space-y-2">
@@ -649,7 +681,7 @@ export function VpnAdmin() {
               <Save className="h-4 w-4" />
               {busy ? "Menyimpan…" : form.id ? "Simpan perubahan" : "Simpan & buat link"}
             </Button>
-            {form.id && <Button onClick={() => setForm({ ...EMPTY, categoryId: form.categoryId })}>Batal ubah</Button>}
+            {form.id && <Button onClick={() => resetForm()}>Batal ubah</Button>}
           </div>
 
           {lastLink && (

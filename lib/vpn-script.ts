@@ -13,10 +13,16 @@ export const VPN_PROTOCOLS: Array<{ id: VpnProtocol; label: string }> = [
   { id: "ovpn", label: "OVPN" },
 ];
 
-export const DEFAULT_VPN_SERVER = "vpn-id1.mikrosetting.com";
+/** Server VPN yang bisa dipilih admin: domain untuk connect-to dan alamat akses, IP publik untuk akses via IP. */
+export const VPN_SERVERS: Array<{ domain: string; ip: string; label: string }> = [
+  { domain: "vpn-id1.mikrosetting.com", ip: "103.181.143.233", label: "Indonesia 1 (vpn-id1)" },
+  { domain: "vpn-sg1.mikrosetting.com", ip: "103.250.11.78", label: "Singapura 1 (vpn-sg1)" },
+];
+
+export const DEFAULT_VPN_SERVER = VPN_SERVERS[0].domain;
 export const DEFAULT_VPN_GATEWAY = "10.202.0.1";
 /** Alamat IP publik server bawaan (A record dari DEFAULT_VPN_SERVER). */
-export const DEFAULT_VPN_PUBLIC_IP = "103.181.143.233";
+export const DEFAULT_VPN_PUBLIC_IP = VPN_SERVERS[0].ip;
 
 export interface VpnScriptParams {
   protocol: VpnProtocol;
@@ -60,7 +66,7 @@ export interface VpnNatAccess {
 /** Alamat akses per rule dst-nat: lewat IP publik dan lewat domain server VPN. Hanya rule yang punya port akses. */
 export function natAccess(rules: VpnNatRule[], server: string, publicIp: string): VpnNatAccess[] {
   const domain = (server || DEFAULT_VPN_SERVER).trim();
-  const ip = (publicIp || (domain === DEFAULT_VPN_SERVER ? DEFAULT_VPN_PUBLIC_IP : "")).trim();
+  const ip = (publicIp || VPN_SERVERS.find((s) => s.domain === domain)?.ip || "").trim();
   return rules
     .filter((r) => r.publicPort > 0)
     .map((rule) => ({ rule, viaIp: ip ? `${ip}:${rule.publicPort}` : "", viaDomain: `${domain}:${rule.publicPort}` }));

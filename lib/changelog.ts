@@ -27,6 +27,25 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.50.0",
+    date: "2026-10-29",
+    title: "Script VPN: pilih server VPN (domain dan IP publik)",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Form kini punya pilihan Server VPN: vpn-id1.mikrosetting.com (103.181.143.233) atau vpn-sg1.mikrosetting.com (103.250.11.78). Pilihan menentukan connect-to pada script, serta domain dan IP publik pada alamat akses via domain/via IP. Opsi Lainnya (isi manual) tersedia untuk server lain dengan domain dan IP sendiri.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Kolom Server VPN dipindah dari Pengaturan lanjutan ke bagian utama Script VPN, dan kolom IP publik server di port forward dihapus karena mengikuti server yang dipilih.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.49.0",
     date: "2026-10-29",
     title: "VPN Remote: alamat akses via IP dan via domain muncul otomatis dari port forward",

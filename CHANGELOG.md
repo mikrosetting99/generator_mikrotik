@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.50.0] - 2026-10-29
+
+_Script VPN: pilih server VPN (domain dan IP publik)_
+
+### Ditambahkan
+
+- Form kini punya pilihan Server VPN: vpn-id1.mikrosetting.com (103.181.143.233) atau vpn-sg1.mikrosetting.com (103.250.11.78). Pilihan menentukan connect-to pada script, serta domain dan IP publik pada alamat akses via domain/via IP. Opsi Lainnya (isi manual) tersedia untuk server lain dengan domain dan IP sendiri.
+
+### Diubah
+
+- Kolom Server VPN dipindah dari Pengaturan lanjutan ke bagian utama Script VPN, dan kolom IP publik server di port forward dihapus karena mengikuti server yang dipilih.
+
 ## [1.49.0] - 2026-10-29
 
 _VPN Remote: alamat akses via IP dan via domain muncul otomatis dari port forward_

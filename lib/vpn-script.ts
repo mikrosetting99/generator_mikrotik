@@ -31,6 +31,41 @@ export interface VpnScriptParams {
   ipsecSecret: string;
   /** Hanya OVPN: port server (0 = 1194). */
   port: number;
+  /** Kategori VPN Remote: IP tunnel pelanggan (mis. 10.202.0.17) dan daftar port-forward dst-nat di router pelanggan. */
+  tunnelIp?: string;
+  nat?: VpnNatRule[];
+}
+
+/** Satu rule dst-nat: akses ke IP tunnel:port diteruskan ke perangkat di LAN pelanggan. */
+export interface VpnNatRule {
+  port: number;
+  toAddress: string;
+  toPort: number;
+}
+
+export const MAX_NAT_RULES = 12;
+
+export type VpnCategoryKind = "mikhmon" | "remote" | "other";
+
+/** Jenis form menurut nama kategori: Mikhmon (tanpa dst-nat), VPN Remote (dengan dst-nat), atau lainnya (semua kolom). */
+export function vpnCategoryKind(name: string): VpnCategoryKind {
+  if (/mikhmon/i.test(name)) return "mikhmon";
+  if (/remote/i.test(name)) return "remote";
+  return "other";
+}
+
+/** Membaca daftar rule dari JSON di database; isian rusak diabaikan. */
+export function parseNatRules(json: string): VpnNatRule[] {
+  try {
+    const raw: unknown = JSON.parse(json || "[]");
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((r) => ({ port: Math.round(Number(r?.port)), toAddress: String(r?.toAddress ?? "").trim(), toPort: Math.round(Number(r?.toPort)) }))
+      .filter((r) => r.port > 0 && r.toAddress)
+      .slice(0, MAX_NAT_RULES);
+  } catch {
+    return [];
+  }
 }
 
 /** Nama tunnel bawaan dari username, mis. test33 → tunnel_mikrosetting-test33. */
@@ -49,6 +84,23 @@ const NAME_OK = /^[A-Za-z0-9_.-]+$/;
 const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
 
 /** Pemeriksaan isian script VPN; mengembalikan pesan galat pertama, atau "" bila sah. */
+/** Pemeriksaan port-forward dst-nat; "" bila sah atau tidak dipakai. */
+function checkNat(p: VpnScriptParams): string {
+  const rules = p.nat ?? [];
+  if (!rules.length) return "";
+  if (rules.length > MAX_NAT_RULES) return `Maksimal ${MAX_NAT_RULES} port-forward.`;
+  if (!IPV4.test((p.tunnelIp ?? "").trim())) return "Isi IP tunnel pelanggan (mis. 10.202.0.17) untuk port-forward dst-nat.";
+  const seen = new Set<number>();
+  for (const r of rules) {
+    if (!Number.isInteger(r.port) || r.port < 1 || r.port > 65535) return "Port tunnel pada dst-nat harus 1–65535.";
+    if (seen.has(r.port)) return `Port tunnel ${r.port} dipakai dua kali pada dst-nat.`;
+    seen.add(r.port);
+    if (!IPV4.test(r.toAddress.trim())) return `IP tujuan untuk port ${r.port} harus berupa alamat IPv4, mis. 192.168.0.88.`;
+    if (!Number.isInteger(r.toPort) || r.toPort < 1 || r.toPort > 65535) return `Port tujuan untuk port ${r.port} harus 1–65535.`;
+  }
+  return "";
+}
+
 export function checkVpnParams(p: VpnScriptParams): string {
   if (!p.user.trim()) return "Username VPN belum diisi.";
   if (!p.password) return "Password VPN belum diisi.";
@@ -58,7 +110,7 @@ export function checkVpnParams(p: VpnScriptParams): string {
   if (!NAME_OK.test(tunnel)) return "Nama tunnel hanya boleh huruf, angka, titik, strip, dan underscore.";
   if (!IPV4.test((p.gateway || DEFAULT_VPN_GATEWAY).trim())) return "Gateway tunnel harus berupa alamat IPv4, mis. 10.202.0.1.";
   if (p.protocol === "ovpn" && p.port !== 0 && (p.port < 1 || p.port > 65535)) return "Port OVPN harus 1–65535.";
-  return "";
+  return checkNat(p);
 }
 
 export function generateVpnScript(p: VpnScriptParams): string {
@@ -86,6 +138,19 @@ export function generateVpnScript(p: VpnScriptParams): string {
     `:if ([/ping \\$ip count=5] = 0) do={ :log warning \\"Interface \\$interface is restarting\\"; ` +
     `/interface disable \\$interface; :delay 3; /interface enable \\$interface }`;
 
+  const tunnelIp = (p.tunnelIp ?? "").trim();
+  const natLines: string[] = [];
+  if (tunnelIp && p.nat?.length) {
+    natLines.push("", "# Port Forward (dst-nat)");
+    for (const r of p.nat) {
+      const comment = `tunnel-nat-${tunnelIp}-${r.port}`;
+      natLines.push(
+        `/ip firewall nat remove [find comment="${comment}"]`,
+        `/ip firewall nat add action=dst-nat chain=dstnat protocol=tcp dst-address=${tunnelIp} dst-port=${r.port} to-addresses=${r.toAddress.trim()} to-ports=${r.toPort} comment="${comment}"`,
+      );
+    }
+  }
+
   return [
     `# Tambah Interface ${label} Client`,
     `${menu} remove [find comment="${tunnel}"]`,
@@ -99,5 +164,6 @@ export function generateVpnScript(p: VpnScriptParams): string {
     "# Disable Enable Interface (Optional)",
     `/system scheduler remove [find name="${schedulerName}"]`,
     `/system scheduler add interval=1m name=${schedulerName} on-event="${onEvent}" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon`,
+    ...natLines,
   ].join("\n");
 }

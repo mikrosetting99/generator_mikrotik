@@ -8,6 +8,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.48.0] - 2026-10-29
+
+_Script VPN: form menyesuaikan kategori, port forward dst-nat untuk VPN Remote_
+
+### Ditambahkan
+
+- Kategori VPN Remote kini punya bagian Port forward (dst-nat): admin mengisi IP tunnel pelanggan (mis. 10.202.0.17) dan daftar rule port tunnel → IP tujuan di LAN : port tujuan. Script pelanggan otomatis ditambah rule /ip firewall nat dst-nat (dengan remove [find comment=...] sebelum add, comment tunnel-nat-<ip>-<port>) setelah bagian scheduler. Kategori Mikhmon tetap tanpa dst-nat.
+- Kolom form menyesuaikan kategori: Mikhmon menampilkan Link Mikhmon dan menyembunyikan dst-nat; VPN Remote menampilkan dst-nat dan menyembunyikan Link Mikhmon; kategori lain menampilkan semuanya. Jenis kategori dikenali dari namanya (mengandung "mikhmon" atau "remote").
+
+### Diubah
+
+- Alamat akses Winbox dan API boleh berupa IP publik atau domain, dengan port (mis. 103.1.2.3:8291 atau vpn.contoh.com:8291), dan kini divalidasi formatnya. Label di halaman pelanggan menjadi Alamat Winbox dan Alamat API.
+
 ## [1.47.1] - 2026-10-29
 
 _Script VPN: daftar link dikelompokkan per nomor HP_

@@ -5,7 +5,7 @@ import { Check, ChevronDown, Copy, Download, Lock, Terminal } from "@/components
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button, Field, Note, TextInput } from "@/components/ui";
 import { downloadBlob } from "@/lib/download";
-import { generateVpnScript, VPN_PROTOCOLS, type VpnProtocol } from "@/lib/vpn-script";
+import { generateVpnScript, VPN_PROTOCOLS, type VpnNatRule, type VpnProtocol } from "@/lib/vpn-script";
 
 interface Entry {
   token: string;
@@ -26,6 +26,8 @@ interface Entry {
   winbox: string;
   api: string;
   mikhmonUrl: string;
+  tunnelIp: string;
+  nat: VpnNatRule[];
   note: string;
   createdAt: string;
 }
@@ -90,6 +92,8 @@ function EntryDropdown({ entry, opened }: { entry: Entry; opened: boolean }) {
             password: entry.password,
             ipsecSecret: entry.ipsecSecret,
             port: entry.vpnPort,
+            tunnelIp: entry.tunnelIp,
+            nat: entry.nat,
           })
         : entry.script,
     [isVpn, choice, entry],
@@ -136,8 +140,8 @@ function EntryDropdown({ entry, opened }: { entry: Entry; opened: boolean }) {
 
         {(entry.winbox || entry.api) && (
           <div className="grid gap-3 sm:grid-cols-2">
-            {entry.winbox && <Credential label="IP Winbox" value={entry.winbox} />}
-            {entry.api && <Credential label="IP API" value={entry.api} />}
+            {entry.winbox && <Credential label="Alamat Winbox" value={entry.winbox} />}
+            {entry.api && <Credential label="Alamat API" value={entry.api} />}
           </div>
         )}
 

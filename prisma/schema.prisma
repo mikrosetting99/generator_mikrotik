@@ -231,6 +231,9 @@ model VpnScript {
   winbox      String      @default("") @db.VarChar(200)
   api         String      @default("") @db.VarChar(200)
   mikhmonUrl  String      @default("") @db.VarChar(300)
+  /// Kategori VPN Remote: IP tunnel pelanggan dan port-forward dst-nat (JSON [{port,toAddress,toPort}]).
+  tunnelIp    String      @default("") @db.VarChar(45)
+  natRules    String      @default("") @db.VarChar(1500)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

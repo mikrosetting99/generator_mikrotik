@@ -11,7 +11,10 @@ import {
   DEFAULT_VPN_SERVER,
   defaultTunnelName,
   generateVpnScript,
+  MAX_NAT_RULES,
+  vpnCategoryKind,
   VPN_PROTOCOLS,
+  type VpnNatRule,
   type VpnProtocol,
 } from "@/lib/vpn-script";
 
@@ -57,6 +60,9 @@ interface FormState {
   winbox: string;
   api: string;
   mikhmonUrl: string;
+  /** VPN Remote: IP tunnel pelanggan dan rule port-forward dst-nat (diisi sebagai teks). */
+  tunnelIp: string;
+  nat: Array<{ port: string; toAddress: string; toPort: string }>;
   note: string;
 }
 
@@ -80,8 +86,19 @@ const EMPTY: FormState = {
   winbox: "",
   api: "",
   mikhmonUrl: "",
+  tunnelIp: "",
+  nat: [],
   note: "",
 };
+
+/** Rule dari teks isian → angka; baris kosong dibuang, port tujuan kosong = sama dengan port tunnel. */
+const toNatRules = (rows: FormState["nat"]): VpnNatRule[] =>
+  rows
+    .filter((r) => r.port.trim() || r.toAddress.trim())
+    .map((r) => {
+      const port = Math.round(Number(r.port));
+      return { port, toAddress: r.toAddress.trim(), toPort: Math.round(Number(r.toPort)) || port };
+    });
 
 const linkFor = (token: string) => `${window.location.origin}/script/${token}`;
 
@@ -150,6 +167,13 @@ export function VpnAdmin() {
   const categoryOptions = useMemo(() => (categories ?? []).map((c) => ({ value: c.id, label: c.name })), [categories]);
   const patch = (partial: Partial<FormState>) => setForm((f) => ({ ...f, ...partial }));
 
+  // Kolom yang tampil mengikuti kategori: Mikhmon (link Mikhmon, tanpa dst-nat) dan VPN Remote (dst-nat, tanpa link Mikhmon).
+  const kind = vpnCategoryKind((categories ?? []).find((c) => c.id === form.categoryId)?.name ?? "");
+  const showNat = kind !== "mikhmon";
+  const showMikhmon = kind !== "remote";
+  const patchNat = (i: number, partial: Partial<FormState["nat"][number]>) =>
+    setForm((f) => ({ ...f, nat: f.nat.map((r, idx) => (idx === i ? { ...r, ...partial } : r)) }));
+
   // Pratinjau script VPN yang akan dilihat pelanggan (dibuat di browser dengan fungsi yang sama dengan server).
   const shownProto: VpnProtocol | "" = form.offered.includes(previewProto) ? previewProto : (form.offered[0] ?? "");
   const vpnPreview = useMemo(() => {
@@ -164,10 +188,12 @@ export function VpnAdmin() {
       password: form.password,
       ipsecSecret: form.ipsecSecret,
       port: Number(form.vpnPort) || 0,
+      tunnelIp: showNat ? form.tunnelIp : "",
+      nat: showNat ? toNatRules(form.nat) : [],
     };
     const error = checkVpnParams(params);
     return { error, script: error ? "" : generateVpnScript(params) };
-  }, [form, shownProto]);
+  }, [form, shownProto, showNat]);
 
   /** Menyalakan/mematikan satu tipe yang ditawarkan; urutannya selalu SSTP, L2TP, OVPN. */
   const toggleOffered = (id: VpnProtocol) => {
@@ -231,7 +257,9 @@ export function VpnAdmin() {
         script: form.script,
         winbox: form.winbox,
         api: form.api,
-        mikhmonUrl: form.mikhmonUrl,
+        mikhmonUrl: showMikhmon ? form.mikhmonUrl : "",
+        tunnelIp: showNat ? form.tunnelIp : "",
+        nat: showNat ? toNatRules(form.nat) : [],
         note: form.note,
       });
       const r = form.id
@@ -256,7 +284,7 @@ export function VpnAdmin() {
   };
 
   const edit = async (row: ScriptRow) => {
-    const r = await api<{ script: Omit<FormState, "id" | "vpnPort"> & { vpnPort: number } }>(`/api/admin/vpn/scripts/${row.id}`);
+    const r = await api<{ script: Omit<FormState, "id" | "vpnPort" | "nat"> & { vpnPort: number; nat: VpnNatRule[] } }>(`/api/admin/vpn/scripts/${row.id}`);
     if (!r.ok) return setFlash({ tone: "bad", text: r.data.error ?? "Gagal memuat data." });
     const s = r.data.script;
     setForm({
@@ -280,6 +308,8 @@ export function VpnAdmin() {
       winbox: s.winbox,
       api: s.api,
       mikhmonUrl: s.mikhmonUrl,
+      tunnelIp: s.tunnelIp ?? "",
+      nat: (s.nat ?? []).map((n) => ({ port: String(n.port), toAddress: n.toAddress, toPort: String(n.toPort) })),
       note: s.note,
     });
     setLastLink(null);
@@ -513,16 +543,57 @@ export function VpnAdmin() {
             )}
           </Group>
 
-          <Group title="Akses router untuk pelanggan" note="Opsional. Ditampilkan di halaman pelanggan dengan tombol salin.">
-            <FormRow label="IP Winbox" hint="Alamat:port untuk Winbox, mis. 103.1.2.3:8291.">
+          {form.protocol && showNat && (
+            <Group title="Port forward (dst-nat)" note="Khusus VPN Remote. Router pelanggan meneruskan akses ke IP tunnel:port menuju perangkat di LAN-nya.">
+              <FormRow label="IP tunnel pelanggan" required={form.nat.length > 0} hint="IP pelanggan di dalam tunnel VPN, mis. 10.202.0.17.">
+                <TextInput mono value={form.tunnelIp} onChange={(tunnelIp) => patch({ tunnelIp: tunnelIp.replace(/\s+/g, "") })} placeholder="10.202.0.17" />
+              </FormRow>
+              <FormRow label="Rule" hint="Port tunnel → IP tujuan di LAN : port tujuan. Port tujuan kosong = sama dengan port tunnel.">
+                <div className="space-y-2">
+                  {form.nat.map((r, i) => (
+                    <div key={i} className="flex flex-wrap items-center gap-1.5">
+                      <div className="w-24">
+                        <TextInput mono value={r.port} onChange={(port) => patchNat(i, { port: port.replace(/\D/g, "") })} placeholder="8728" />
+                      </div>
+                      <span className="text-muted">→</span>
+                      <div className="min-w-[140px] flex-1">
+                        <TextInput mono value={r.toAddress} onChange={(toAddress) => patchNat(i, { toAddress: toAddress.replace(/\s+/g, "") })} placeholder="192.168.0.88" />
+                      </div>
+                      <span className="text-muted">:</span>
+                      <div className="w-24">
+                        <TextInput mono value={r.toPort} onChange={(toPort) => patchNat(i, { toPort: toPort.replace(/\D/g, "") })} placeholder="80" />
+                      </div>
+                      <Button size="sm" variant="danger" className="px-2" ariaLabel="Hapus rule" title="Hapus rule" onClick={() => patch({ nat: form.nat.filter((_, idx) => idx !== i) })}>
+                        <Trash className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                  {form.nat.length < MAX_NAT_RULES && (
+                    <Button size="sm" onClick={() => patch({ nat: [...form.nat, { port: "", toAddress: "", toPort: "" }] })}>
+                      <Plus className="h-3.5 w-3.5" />
+                      Tambah port forward
+                    </Button>
+                  )}
+                </div>
+              </FormRow>
+            </Group>
+          )}
+
+          <Group
+            title="Akses router untuk pelanggan"
+            note={`Opsional. Boleh IP publik atau domain, dengan port${showMikhmon ? ". Link Mikhmon online juga ditampilkan di halaman pelanggan" : ""}.`}
+          >
+            <FormRow label="Winbox" hint="IP publik atau domain:port, mis. 103.1.2.3:8291 atau vpn.contoh.com:8291.">
               <TextInput mono value={form.winbox} onChange={(winbox) => patch({ winbox: winbox.replace(/\s+/g, "") })} placeholder="vpn-id1.mikrosetting.com:20575" />
             </FormRow>
-            <FormRow label="IP API" hint="Alamat:port untuk API, mis. 103.1.2.3:8728.">
+            <FormRow label="API" hint="IP publik atau domain:port, mis. 103.1.2.3:8728 atau vpn.contoh.com:8728.">
               <TextInput mono value={form.api} onChange={(api) => patch({ api: api.replace(/\s+/g, "") })} placeholder="vpn-id1.mikrosetting.com:28575" />
             </FormRow>
-            <FormRow label="Link Mikhmon" hint="Harus diawali https:// atau http://.">
-              <TextInput mono value={form.mikhmonUrl} onChange={(mikhmonUrl) => patch({ mikhmonUrl: mikhmonUrl.trim() })} placeholder="https://mikhmon.mikrosetting.com/..." />
-            </FormRow>
+            {showMikhmon && (
+              <FormRow label="Link Mikhmon" hint="Harus diawali https:// atau http://.">
+                <TextInput mono value={form.mikhmonUrl} onChange={(mikhmonUrl) => patch({ mikhmonUrl: mikhmonUrl.trim() })} placeholder="https://mikhmon.mikrosetting.com/..." />
+              </FormRow>
+            )}
           </Group>
 
           <Group title="Catatan">

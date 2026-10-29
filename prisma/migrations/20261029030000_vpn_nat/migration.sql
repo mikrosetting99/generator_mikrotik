@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `vpn_scripts` ADD COLUMN `tunnelIp` VARCHAR(45) NOT NULL DEFAULT '',
+    ADD COLUMN `natRules` VARCHAR(1500) NOT NULL DEFAULT '';

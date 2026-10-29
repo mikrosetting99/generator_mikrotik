@@ -1,5 +1,5 @@
 import { isValidPhone, normalizePhone } from "@/lib/phone";
-import { checkVpnParams, VPN_PROTOCOLS, type VpnProtocol } from "@/lib/vpn-script";
+import { checkVpnParams, MAX_NAT_RULES, VPN_PROTOCOLS, type VpnNatRule, type VpnProtocol } from "@/lib/vpn-script";
 
 export const VPN_LIMITS = {
   category: 80,
@@ -40,8 +40,14 @@ export interface VpnScriptInput {
   winbox: string;
   api: string;
   mikhmonUrl: string;
+  /** Kategori VPN Remote: IP tunnel pelanggan dan port-forward dst-nat. */
+  tunnelIp: string;
+  nat: VpnNatRule[];
   note: string;
 }
+
+/** Alamat akses: IPv4 atau domain, boleh diikuti :port. */
+const ACCESS_OK = /^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:\d{1,5})?$/;
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
 
@@ -66,6 +72,16 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
   const offered: VpnProtocol[] = picked;
   const protocol: "" | VpnProtocol = offered[0] ?? "";
   const portNum = Math.round(Number(b.vpnPort));
+  const nat: VpnNatRule[] = Array.isArray(b.nat)
+    ? b.nat
+        .slice(0, MAX_NAT_RULES)
+        .map((r: Record<string, unknown>) => {
+          const port = Math.round(Number(r?.port));
+          const toPort = Math.round(Number(r?.toPort)) || port;
+          return { port, toAddress: str(r?.toAddress, 45).trim(), toPort };
+        })
+        .filter((r) => r.port || r.toAddress)
+    : [];
 
   const data: VpnScriptInput = {
     phone,
@@ -86,11 +102,13 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
     winbox: str(b.winbox, VPN_LIMITS.address).trim(),
     api: str(b.api, VPN_LIMITS.address).trim(),
     mikhmonUrl: str(b.mikhmonUrl, VPN_LIMITS.url).trim(),
+    tunnelIp: str(b.tunnelIp, 45).trim(),
+    nat,
     note: str(b.note, VPN_LIMITS.note).trim(),
   };
 
-  if (/\s/.test(data.winbox)) return { ok: false, error: "IP Winbox tidak boleh berisi spasi, mis. 103.1.2.3:8291." };
-  if (/\s/.test(data.api)) return { ok: false, error: "IP API tidak boleh berisi spasi, mis. 103.1.2.3:8728." };
+  if (data.winbox && !ACCESS_OK.test(data.winbox)) return { ok: false, error: "Alamat Winbox harus IP publik atau domain, boleh dengan port. Contoh: 103.1.2.3:8291 atau vpn.contoh.com:8291." };
+  if (data.api && !ACCESS_OK.test(data.api)) return { ok: false, error: "Alamat API harus IP publik atau domain, boleh dengan port. Contoh: 103.1.2.3:8728 atau vpn.contoh.com:8728." };
   if (data.mikhmonUrl && !/^https?:\/\/[^\s]+$/i.test(data.mikhmonUrl)) {
     return { ok: false, error: "Link Mikhmon online harus diawali http:// atau https://." };
   }
@@ -106,10 +124,16 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
       password: data.password,
       ipsecSecret: data.ipsecSecret,
       port: data.vpnPort,
+      tunnelIp: data.tunnelIp,
+      nat: data.nat,
     });
     if (problem) return { ok: false, error: problem };
   } else if (!data.username && !data.password && !data.script.trim() && !data.winbox && !data.api && !data.mikhmonUrl) {
     return { ok: false, error: "Isi minimal salah satu: username/password, script, IP Winbox, IP API, atau link Mikhmon." };
+  }
+  if (!protocol) {
+    data.nat = [];
+    data.tunnelIp = "";
   }
   return { ok: true, data };
 }

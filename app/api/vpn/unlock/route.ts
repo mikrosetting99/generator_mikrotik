@@ -69,6 +69,8 @@ export async function POST(request: Request) {
         winbox: full.winbox,
         api: full.api,
         mikhmonUrl: full.mikhmonUrl,
+        tunnelIp: full.tunnelIp,
+        nat: full.nat,
         note: full.note,
         createdAt: full.createdAt,
       };

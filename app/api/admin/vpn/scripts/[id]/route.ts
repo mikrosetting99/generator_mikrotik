@@ -51,6 +51,8 @@ export async function PUT(request: Request, { params }: Ctx) {
       winbox: d.winbox,
       api: d.api,
       mikhmonUrl: d.mikhmonUrl,
+      tunnelIp: d.tunnelIp,
+      natRules: d.nat.length ? JSON.stringify(d.nat) : "",
       note: d.note,
     },
   });

@@ -86,6 +86,8 @@ export async function POST(request: Request) {
       winbox: d.winbox,
       api: d.api,
       mikhmonUrl: d.mikhmonUrl,
+      tunnelIp: d.tunnelIp,
+      natRules: d.nat.length ? JSON.stringify(d.nat) : "",
       note: d.note,
     },
     select: { id: true, token: true },

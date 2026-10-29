@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { open } from "@/lib/vault";
-import { generateVpnScript, VPN_PROTOCOLS, type VpnProtocol } from "@/lib/vpn-script";
+import { generateVpnScript, parseNatRules, VPN_PROTOCOLS, type VpnNatRule, type VpnProtocol } from "@/lib/vpn-script";
 
 export const DEFAULT_VPN_CATEGORIES = ["Mikhmon online", "VPN Remote"];
 
@@ -43,6 +43,8 @@ export interface VpnScriptFull {
   winbox: string;
   api: string;
   mikhmonUrl: string;
+  tunnelIp: string;
+  nat: VpnNatRule[];
   note: string;
   createdAt: string;
   updatedAt: string;
@@ -70,6 +72,8 @@ type Row = {
   winbox: string;
   api: string;
   mikhmonUrl: string;
+  tunnelIp: string;
+  natRules: string;
   note: string;
   createdAt: Date;
   updatedAt: Date;
@@ -84,6 +88,7 @@ export function toFull(row: Row): VpnScriptFull {
   const offeredList = row.offered.split(",").filter((x) => VPN_PROTOCOLS.some((p) => p.id === x)) as VpnProtocol[];
   const offered: VpnProtocol[] = protocol ? (offeredList.length ? offeredList : VPN_PROTOCOLS.map((p) => p.id)) : [];
   const ipsecSecret = row.ipsecEnc ? open(row.ipsecEnc) : "";
+  const nat = parseNatRules(row.natRules);
   return {
     id: row.id,
     token: row.token,
@@ -105,6 +110,8 @@ export function toFull(row: Row): VpnScriptFull {
           password,
           ipsecSecret,
           port: row.vpnPort,
+          tunnelIp: row.tunnelIp,
+          nat,
         })
       : open(row.scriptEnc),
     protocol,
@@ -118,6 +125,8 @@ export function toFull(row: Row): VpnScriptFull {
     winbox: row.winbox,
     api: row.api,
     mikhmonUrl: row.mikhmonUrl,
+    tunnelIp: row.tunnelIp,
+    nat,
     note: row.note,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

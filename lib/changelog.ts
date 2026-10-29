@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.46.1",
+    date: "2026-10-29",
+    title: "Script VPN: form admin dirapatkan",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Form Tambah/Ubah link script dirapikan: baris lebih rapat, kolom label lebih sempit dan sejajar dengan isian, dan kotak grup dibatasi lebarnya sehingga isian tidak melebar sampai tepi layar.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.46.0",
     date: "2026-10-29",
     title: "Script VPN: form admin bergaya pengaturan Mikrotik (label kiri, isian kanan)",

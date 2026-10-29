@@ -356,7 +356,7 @@ export function VpnAdmin() {
         description="Pilih tipe VPN lalu isi username dan password VPN dari app.mikrosetting.com. Password disimpan terenkripsi di database."
         badge={form.id ? <span className="rounded-md bg-warn/15 px-2 py-0.5 text-[11px] font-medium text-warn">sedang mengubah</span> : undefined}
       >
-        <div className="space-y-4 p-4 sm:p-5">
+        <div className="space-y-3 p-4 sm:p-5">
           <Group title="Pelanggan">
             <FormRow label="Nomor HP" required hint={isValidPhone(normalizePhone(form.phone)) ? `Disimpan sebagai ${formatPhone(normalizePhone(form.phone))}` : "Dipakai pelanggan untuk membuka link. Boleh 08…, +62…, atau 62…"}>
               <TextInput mono value={form.phone} onChange={(phone) => patch({ phone })} placeholder="081234567890" />
@@ -519,7 +519,7 @@ export function VpnAdmin() {
             </FormRow>
           </Group>
 
-          <div className="flex flex-wrap gap-2 sm:pl-[206px]">
+          <div className="flex flex-wrap gap-2 sm:pl-[202px]">
             <Button variant="primary" onClick={save} disabled={busy}>
               <Save className="h-4 w-4" />
               {busy ? "Menyimpan…" : form.id ? "Simpan perubahan" : "Simpan & buat link"}
@@ -646,8 +646,8 @@ export function VpnAdmin() {
 /** Satu baris ala jendela Winbox: label di kiri, kontrol di kanan. */
 function FormRow({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-1.5 border-b border-line-soft px-4 py-3 last:border-b-0 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-start sm:gap-4">
-      <label className="pt-2 text-[13px] font-medium text-muted sm:text-right">
+    <div className="grid gap-1 border-b border-line-soft px-4 py-2 last:border-b-0 sm:grid-cols-[170px_minmax(0,1fr)] sm:items-start sm:gap-3">
+      <label className="text-[12.5px] font-medium text-muted sm:pt-[10px] sm:text-right">
         {label}
         {required && <span className="text-bad"> *</span>}
         <span className="hidden sm:inline">:</span>
@@ -663,7 +663,7 @@ function FormRow({ label, required, hint, children }: { label: string; required?
 /** Kotak bergaris dengan judul, seperti tab/grup pengaturan Mikrotik. */
 function Group({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-md border border-line bg-surface">
+    <section className="max-w-3xl overflow-hidden rounded-md border border-line bg-surface">
       <header className="border-b border-line-soft bg-raised/60 px-4 py-2">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.09em] text-brand">{title}</h3>
         {note && <p className="mt-0.5 text-xs text-faint">{note}</p>}

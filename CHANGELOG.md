@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.46.1] - 2026-10-29
+
+_Script VPN: form admin dirapatkan_
+
+### Diubah
+
+- Form Tambah/Ubah link script dirapikan: baris lebih rapat, kolom label lebih sempit dan sejajar dengan isian, dan kotak grup dibatasi lebarnya sehingga isian tidak melebar sampai tepi layar.
+
 ## [1.46.0] - 2026-10-29
 
 _Script VPN: form admin bergaya pengaturan Mikrotik (label kiri, isian kanan)_

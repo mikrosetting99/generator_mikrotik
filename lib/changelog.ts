@@ -27,6 +27,21 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.43.0",
+    date: "2026-10-29",
+    title: "Script VPN dibuat otomatis (SSTP/L2TP/OVPN), plus IP Winbox, IP API, dan link Mikhmon",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Menu Script VPN & Mikhmon Online: admin memilih tipe SSTP, L2TP, atau OVPN lalu cukup mengisi username dan password VPN. Script dibuat otomatis mengikuti bentuk script standar: interface client (dengan remove berdasarkan comment agar aman diulang), Netwatch ke gateway tunnel, dan scheduler yang mematikan lalu menyalakan interface bila gateway tidak bisa di-ping. Pratinjau script yang dilihat pelanggan tampil langsung di formulir.",
+          "Pengaturan lanjutan (bawaan sudah sesuai): versi RouterOS pelanggan (6/7; v7 menambah type=simple pada Netwatch dan cipher aes256-cbc untuk OVPN), server VPN (bawaan vpn-id1.mikrosetting.com), gateway tunnel (bawaan 10.202.0.1), nama tunnel (bawaan dari username), port OVPN, dan IPsec secret untuk L2TP. Username dan password otomatis di-escape agar karakter khusus (kutip, $, ?, backslash) tidak merusak script. Pilihan \"Manual / tanpa VPN\" tetap ada untuk menempel script sendiri.",
+          "Kolom baru untuk pelanggan: IP Winbox, IP API (alamat:port), dan Link Mikhmon online (harus http:// atau https://; link berbahaya seperti javascript: ditolak). Di halaman pelanggan tampil dengan tombol salin, dan link Mikhmon menjadi tombol \"Buka Mikhmon Online\". Daftar link admin menampilkan penanda tipe VPN dan Mikhmon.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.42.0",
     date: "2026-10-29",
     title: "Menu baru: Script VPN & Mikhmon Online (link pribadi per nomor HP)",

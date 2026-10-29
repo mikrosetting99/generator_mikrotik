@@ -217,6 +217,18 @@ model VpnScript {
   passwordEnc String      @db.Text
   scriptEnc   String      @db.LongText
   note        String      @default("") @db.VarChar(500)
+  /// Tipe script VPN yang dibuat otomatis: "sstp", "l2tp", "ovpn", atau "" (script manual di scriptEnc).
+  protocol    String      @default("") @db.VarChar(10)
+  rosVersion  String      @default("v6") @db.VarChar(4)
+  vpnServer   String      @default("") @db.VarChar(160)
+  gatewayIp   String      @default("") @db.VarChar(45)
+  tunnelName  String      @default("") @db.VarChar(80)
+  vpnPort     Int         @default(0)
+  ipsecEnc    String      @default("") @db.VarChar(400)
+  /// Alamat akses router untuk pelanggan: Winbox, API, dan link Mikhmon online.
+  winbox      String      @default("") @db.VarChar(200)
+  api         String      @default("") @db.VarChar(200)
+  mikhmonUrl  String      @default("") @db.VarChar(300)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

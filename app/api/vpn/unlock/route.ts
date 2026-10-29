@@ -58,6 +58,10 @@ export async function POST(request: Request) {
         username: full.username,
         password: full.password,
         script: full.script,
+        protocol: full.protocol,
+        winbox: full.winbox,
+        api: full.api,
+        mikhmonUrl: full.mikhmonUrl,
         note: full.note,
         createdAt: full.createdAt,
       };

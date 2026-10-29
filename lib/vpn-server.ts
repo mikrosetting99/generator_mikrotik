@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { open } from "@/lib/vault";
+import { generateVpnScript, VPN_PROTOCOLS, type VpnProtocol } from "@/lib/vpn-script";
 
 export const DEFAULT_VPN_CATEGORIES = ["Mikhmon online", "VPN Remote"];
 
@@ -28,7 +29,18 @@ export interface VpnScriptFull {
   title: string;
   username: string;
   password: string;
+  /** Script yang ditampilkan: dibuat otomatis bila protocol terisi, selain itu script manual. */
   script: string;
+  protocol: "" | VpnProtocol;
+  rosVersion: "v6" | "v7";
+  vpnServer: string;
+  gatewayIp: string;
+  tunnelName: string;
+  vpnPort: number;
+  ipsecSecret: string;
+  winbox: string;
+  api: string;
+  mikhmonUrl: string;
   note: string;
   createdAt: string;
   updatedAt: string;
@@ -45,6 +57,16 @@ type Row = {
   username: string;
   passwordEnc: string;
   scriptEnc: string;
+  protocol: string;
+  rosVersion: string;
+  vpnServer: string;
+  gatewayIp: string;
+  tunnelName: string;
+  vpnPort: number;
+  ipsecEnc: string;
+  winbox: string;
+  api: string;
+  mikhmonUrl: string;
   note: string;
   createdAt: Date;
   updatedAt: Date;
@@ -52,6 +74,10 @@ type Row = {
 
 /** Baris database → bentuk lengkap dengan password dan script yang sudah dibuka. */
 export function toFull(row: Row): VpnScriptFull {
+  const password = open(row.passwordEnc);
+  const protocol: "" | VpnProtocol = VPN_PROTOCOLS.some((p) => p.id === row.protocol) ? (row.protocol as VpnProtocol) : "";
+  const rosVersion: "v6" | "v7" = row.rosVersion === "v7" ? "v7" : "v6";
+  const ipsecSecret = row.ipsecEnc ? open(row.ipsecEnc) : "";
   return {
     id: row.id,
     token: row.token,
@@ -61,8 +87,30 @@ export function toFull(row: Row): VpnScriptFull {
     category: row.category.name,
     title: row.title,
     username: row.username,
-    password: open(row.passwordEnc),
-    script: open(row.scriptEnc),
+    password,
+    script: protocol
+      ? generateVpnScript({
+          protocol,
+          ros: rosVersion,
+          server: row.vpnServer,
+          tunnel: row.tunnelName,
+          gateway: row.gatewayIp,
+          user: row.username,
+          password,
+          ipsecSecret,
+          port: row.vpnPort,
+        })
+      : open(row.scriptEnc),
+    protocol,
+    rosVersion,
+    vpnServer: row.vpnServer,
+    gatewayIp: row.gatewayIp,
+    tunnelName: row.tunnelName,
+    vpnPort: row.vpnPort,
+    ipsecSecret,
+    winbox: row.winbox,
+    api: row.api,
+    mikhmonUrl: row.mikhmonUrl,
     note: row.note,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

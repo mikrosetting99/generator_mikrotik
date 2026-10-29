@@ -3,8 +3,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminSection } from "@/components/admin/AdminSection";
 import { Check, Copy, Plus, Save, Trash } from "@/components/icons";
-import { Button, EmptyState, Field, Note, Select, TextInput } from "@/components/ui";
+import { Button, CheckPill, EmptyState, Field, Note, Select, TextInput } from "@/components/ui";
 import { formatPhone, isValidPhone, normalizePhone } from "@/lib/phone";
+import {
+  checkVpnParams,
+  DEFAULT_VPN_GATEWAY,
+  DEFAULT_VPN_SERVER,
+  defaultTunnelName,
+  generateVpnScript,
+  VPN_PROTOCOLS,
+  type VpnProtocol,
+} from "@/lib/vpn-script";
 
 interface Category {
   id: string;
@@ -21,6 +30,8 @@ interface ScriptRow {
   category: string;
   title: string;
   username: string;
+  protocol: string;
+  hasMikhmon: boolean;
   createdAt: string;
 }
 
@@ -32,11 +43,42 @@ interface FormState {
   title: string;
   username: string;
   password: string;
+  /** "" = script manual. */
+  protocol: "" | VpnProtocol;
+  rosVersion: "v6" | "v7";
+  vpnServer: string;
+  gatewayIp: string;
+  tunnelName: string;
+  vpnPort: string;
+  ipsecSecret: string;
   script: string;
+  winbox: string;
+  api: string;
+  mikhmonUrl: string;
   note: string;
 }
 
-const EMPTY: FormState = { id: null, phone: "", customer: "", categoryId: "", title: "", username: "", password: "", script: "", note: "" };
+const EMPTY: FormState = {
+  id: null,
+  phone: "",
+  customer: "",
+  categoryId: "",
+  title: "",
+  username: "",
+  password: "",
+  protocol: "sstp",
+  rosVersion: "v6",
+  vpnServer: "",
+  gatewayIp: "",
+  tunnelName: "",
+  vpnPort: "",
+  ipsecSecret: "",
+  script: "",
+  winbox: "",
+  api: "",
+  mikhmonUrl: "",
+  note: "",
+};
 
 const linkFor = (token: string) => `${window.location.origin}/script/${token}`;
 
@@ -104,6 +146,24 @@ export function VpnAdmin() {
   const categoryOptions = useMemo(() => (categories ?? []).map((c) => ({ value: c.id, label: c.name })), [categories]);
   const patch = (partial: Partial<FormState>) => setForm((f) => ({ ...f, ...partial }));
 
+  // Pratinjau script VPN yang akan dilihat pelanggan (dibuat di browser dengan fungsi yang sama dengan server).
+  const vpnPreview = useMemo(() => {
+    if (!form.protocol) return { error: "", script: "" };
+    const params = {
+      protocol: form.protocol,
+      ros: form.rosVersion,
+      server: form.vpnServer,
+      tunnel: form.tunnelName,
+      gateway: form.gatewayIp,
+      user: form.username,
+      password: form.password,
+      ipsecSecret: form.ipsecSecret,
+      port: Number(form.vpnPort) || 0,
+    };
+    const error = checkVpnParams(params);
+    return { error, script: error ? "" : generateVpnScript(params) };
+  }, [form]);
+
   /* ------------------------------------------------------------ kategori */
 
   const addCategory = async () => {
@@ -149,7 +209,17 @@ export function VpnAdmin() {
         title: form.title,
         username: form.username,
         password: form.password,
+        protocol: form.protocol,
+        rosVersion: form.rosVersion,
+        vpnServer: form.vpnServer,
+        gatewayIp: form.gatewayIp,
+        tunnelName: form.tunnelName,
+        vpnPort: Number(form.vpnPort) || 0,
+        ipsecSecret: form.ipsecSecret,
         script: form.script,
+        winbox: form.winbox,
+        api: form.api,
+        mikhmonUrl: form.mikhmonUrl,
         note: form.note,
       });
       const r = form.id
@@ -174,10 +244,31 @@ export function VpnAdmin() {
   };
 
   const edit = async (row: ScriptRow) => {
-    const r = await api<{ script: FormState & { categoryId: string } }>(`/api/admin/vpn/scripts/${row.id}`);
+    const r = await api<{ script: Omit<FormState, "id" | "vpnPort"> & { vpnPort: number } }>(`/api/admin/vpn/scripts/${row.id}`);
     if (!r.ok) return setFlash({ tone: "bad", text: r.data.error ?? "Gagal memuat data." });
     const s = r.data.script;
-    setForm({ id: row.id, phone: s.phone, customer: s.customer, categoryId: s.categoryId, title: s.title, username: s.username, password: s.password, script: s.script, note: s.note });
+    setForm({
+      id: row.id,
+      phone: s.phone,
+      customer: s.customer,
+      categoryId: s.categoryId,
+      title: s.title,
+      username: s.username,
+      password: s.password,
+      protocol: s.protocol,
+      rosVersion: s.rosVersion,
+      vpnServer: s.vpnServer,
+      gatewayIp: s.gatewayIp,
+      tunnelName: s.tunnelName,
+      vpnPort: s.vpnPort ? String(s.vpnPort) : "",
+      ipsecSecret: s.ipsecSecret,
+      // Mode otomatis: script dibuat ulang dari isian, jadi kolom manual dikosongkan.
+      script: s.protocol ? "" : s.script,
+      winbox: s.winbox,
+      api: s.api,
+      mikhmonUrl: s.mikhmonUrl,
+      note: s.note,
+    });
     setLastLink(null);
     setFlash(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -249,7 +340,7 @@ export function VpnAdmin() {
       {/* ------------------------------------------------------ formulir */}
       <AdminSection
         title={form.id ? "Ubah link script" : "Tambah link script"}
-        description="Isi data dari app.mikrosetting.com. Password dan script disimpan terenkripsi di database."
+        description="Pilih tipe VPN lalu isi username dan password VPN dari app.mikrosetting.com. Password disimpan terenkripsi di database."
         badge={form.id ? <span className="rounded-md bg-warn/15 px-2 py-0.5 text-[11px] font-medium text-warn">sedang mengubah</span> : undefined}
       >
         <div className="grid gap-4 p-5 sm:grid-cols-2">
@@ -265,35 +356,149 @@ export function VpnAdmin() {
           <Field label="Judul" required hint="Tampil di halaman pelanggan.">
             <TextInput value={form.title} onChange={(title) => patch({ title })} placeholder="VPN Remote - Router Kantor" />
           </Field>
-          <Field label="Username">
-            <TextInput mono value={form.username} onChange={(username) => patch({ username })} placeholder="username dari app.mikrosetting.com" />
-          </Field>
-          <Field label="Password">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <TextInput mono type={showPassword ? "text" : "password"} value={form.password} onChange={(password) => patch({ password })} placeholder="password" />
-              </div>
-              <Button onClick={() => setShowPassword((v) => !v)}>{showPassword ? "Sembunyikan" : "Tampilkan"}</Button>
+          {/* ------------------------------------------------- script VPN */}
+          <div className="space-y-3 rounded-md border border-line-soft bg-raised/40 p-4 sm:col-span-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Tipe script</span>
+              {VPN_PROTOCOLS.map((p) => (
+                <CheckPill key={p.id} active={form.protocol === p.id} onClick={() => patch({ protocol: p.id })}>
+                  {p.label}
+                </CheckPill>
+              ))}
+              <CheckPill active={form.protocol === ""} onClick={() => patch({ protocol: "" })}>
+                Manual / tanpa VPN
+              </CheckPill>
             </div>
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label="Script" hint="Tempel script dari app.mikrosetting.com apa adanya.">
-              <textarea
-                value={form.script}
-                onChange={(e) => patch({ script: e.target.value })}
-                rows={9}
-                spellCheck={false}
-                placeholder="/interface ovpn-client add ..."
-                className="w-full rounded-lg border border-line bg-surface px-3 py-2 font-mono text-[12px] leading-relaxed text-ink outline-none focus:border-brand"
-              />
-            </Field>
+
+            {form.protocol ? (
+              <>
+                <p className="text-xs text-muted">
+                  Cukup isi username dan password VPN — script {form.protocol.toUpperCase()} (interface client, Netwatch, dan
+                  scheduler) dibuat otomatis.
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Username VPN" required>
+                    <TextInput mono value={form.username} onChange={(username) => patch({ username })} placeholder="test33" />
+                  </Field>
+                  <Field label="Password VPN" required>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <TextInput mono type={showPassword ? "text" : "password"} value={form.password} onChange={(password) => patch({ password })} placeholder="password" />
+                      </div>
+                      <Button onClick={() => setShowPassword((v) => !v)}>{showPassword ? "Sembunyikan" : "Tampilkan"}</Button>
+                    </div>
+                  </Field>
+                </div>
+                <details className="rounded-md border border-line-soft bg-surface">
+                  <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted hover:text-ink">
+                    Pengaturan lanjutan (bawaan sudah sesuai)
+                  </summary>
+                  <div className="grid gap-4 border-t border-line-soft p-3 sm:grid-cols-2">
+                    <Field label="Versi RouterOS pelanggan">
+                      <Select
+                        value={form.rosVersion}
+                        placeholder=""
+                        onChange={(rosVersion) => patch({ rosVersion: rosVersion as "v6" | "v7" })}
+                        options={[
+                          { value: "v6", label: "RouterOS 6.x" },
+                          { value: "v7", label: "RouterOS 7.x" },
+                        ]}
+                      />
+                    </Field>
+                    <Field label="Server VPN" hint={`Bawaan ${DEFAULT_VPN_SERVER}`}>
+                      <TextInput mono value={form.vpnServer} onChange={(vpnServer) => patch({ vpnServer })} placeholder={DEFAULT_VPN_SERVER} />
+                    </Field>
+                    <Field label="Gateway tunnel (dipantau Netwatch)" hint={`Bawaan ${DEFAULT_VPN_GATEWAY}`}>
+                      <TextInput mono value={form.gatewayIp} onChange={(gatewayIp) => patch({ gatewayIp })} placeholder={DEFAULT_VPN_GATEWAY} />
+                    </Field>
+                    <Field label="Nama tunnel" hint="Kosong = dibuat dari username.">
+                      <TextInput mono value={form.tunnelName} onChange={(tunnelName) => patch({ tunnelName })} placeholder={defaultTunnelName(form.username)} />
+                    </Field>
+                    {form.protocol === "ovpn" && (
+                      <Field label="Port OVPN" hint="Kosong = 1194.">
+                        <TextInput mono value={form.vpnPort} onChange={(vpnPort) => patch({ vpnPort: vpnPort.replace(/\D/g, "") })} placeholder="1194" />
+                      </Field>
+                    )}
+                    {form.protocol === "l2tp" && (
+                      <Field label="IPsec secret" hint="Kosong = tanpa IPsec.">
+                        <TextInput mono value={form.ipsecSecret} onChange={(ipsecSecret) => patch({ ipsecSecret })} placeholder="opsional" />
+                      </Field>
+                    )}
+                  </div>
+                </details>
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Script yang dilihat pelanggan</span>
+                    {vpnPreview.script && (
+                      <Button size="sm" onClick={() => copy("preview", vpnPreview.script)}>
+                        {copied === "preview" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        {copied === "preview" ? "Tersalin" : "Salin"}
+                      </Button>
+                    )}
+                  </div>
+                  {vpnPreview.error ? (
+                    <p className="rounded-md border border-dashed border-line px-3 py-3 text-xs text-faint">{vpnPreview.error}</p>
+                  ) : (
+                    <pre className="max-h-64 overflow-auto rounded-md border border-line-soft bg-code px-3 py-3 font-mono text-[11.5px] leading-relaxed text-ink">
+                      {vpnPreview.script}
+                    </pre>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Username (opsional)">
+                  <TextInput mono value={form.username} onChange={(username) => patch({ username })} placeholder="username" />
+                </Field>
+                <Field label="Password (opsional)">
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <TextInput mono type={showPassword ? "text" : "password"} value={form.password} onChange={(password) => patch({ password })} placeholder="password" />
+                    </div>
+                    <Button onClick={() => setShowPassword((v) => !v)}>{showPassword ? "Sembunyikan" : "Tampilkan"}</Button>
+                  </div>
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="Script manual" hint="Tempel script apa adanya (opsional).">
+                    <textarea
+                      value={form.script}
+                      onChange={(e) => patch({ script: e.target.value })}
+                      rows={7}
+                      spellCheck={false}
+                      placeholder="/interface ovpn-client add ..."
+                      className="w-full rounded-lg border border-line bg-surface px-3 py-2 font-mono text-[12px] leading-relaxed text-ink outline-none focus:border-brand"
+                    />
+                  </Field>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* --------------------------------------- akses router pelanggan */}
+          <div className="space-y-3 rounded-md border border-line-soft bg-raised/40 p-4 sm:col-span-2">
+            <div>
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Akses router untuk pelanggan</span>
+              <p className="mt-0.5 text-xs text-faint">Opsional. Ditampilkan di halaman pelanggan dengan tombol salin.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="IP Winbox" hint="Alamat:port untuk Winbox, mis. 103.1.2.3:8291.">
+                <TextInput mono value={form.winbox} onChange={(winbox) => patch({ winbox: winbox.replace(/\s+/g, "") })} placeholder="vpn-id1.mikrosetting.com:20575" />
+              </Field>
+              <Field label="IP API" hint="Alamat:port untuk API, mis. 103.1.2.3:8728.">
+                <TextInput mono value={form.api} onChange={(api) => patch({ api: api.replace(/\s+/g, "") })} placeholder="vpn-id1.mikrosetting.com:28575" />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label="Link Mikhmon online" hint="Harus diawali https:// atau http://.">
+                  <TextInput mono value={form.mikhmonUrl} onChange={(mikhmonUrl) => patch({ mikhmonUrl: mikhmonUrl.trim() })} placeholder="https://mikhmon.mikrosetting.com/..." />
+                </Field>
+              </div>
+            </div>
           </div>
           <div className="sm:col-span-2">
             <Field label="Catatan untuk pelanggan (opsional)">
               <TextInput value={form.note} onChange={(note) => patch({ note })} placeholder="mis. Berlaku sampai 30 November 2026" />
             </Field>
-          </div>
-          <div className="flex flex-wrap gap-2 sm:col-span-2">
+          </div>          <div className="flex flex-wrap gap-2 sm:col-span-2">
             <Button variant="primary" onClick={save} disabled={busy}>
               <Save className="h-4 w-4" />
               {busy ? "Menyimpan…" : form.id ? "Simpan perubahan" : "Simpan & buat link"}
@@ -375,7 +580,13 @@ export function VpnAdmin() {
                       <td className="px-4 py-2.5">
                         <span className="rounded-md bg-brand/12 px-2 py-0.5 text-[11px] font-medium text-brand">{row.category}</span>
                       </td>
-                      <td className="px-4 py-2.5 text-ink">{row.title}</td>
+                      <td className="px-4 py-2.5 text-ink">
+                        {row.title}
+                        {row.protocol && (
+                          <span className="ml-2 rounded-md bg-raised px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted">{row.protocol}</span>
+                        )}
+                        {row.hasMikhmon && <span className="ml-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-accent">mikhmon</span>}
+                      </td>
                       <td className="whitespace-nowrap px-4 py-2.5 text-muted">{fmtDate(row.createdAt)}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex flex-wrap justify-end gap-1.5">

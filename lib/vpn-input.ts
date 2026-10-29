@@ -1,4 +1,5 @@
 import { isValidPhone, normalizePhone } from "@/lib/phone";
+import { checkVpnParams, VPN_PROTOCOLS, type VpnProtocol } from "@/lib/vpn-script";
 
 export const VPN_LIMITS = {
   category: 80,
@@ -8,6 +9,11 @@ export const VPN_LIMITS = {
   customer: 120,
   note: 500,
   script: 200_000,
+  address: 200,
+  url: 300,
+  server: 160,
+  tunnel: 80,
+  ipsec: 100,
 };
 
 export interface VpnScriptInput {
@@ -15,9 +21,23 @@ export interface VpnScriptInput {
   customer: string;
   categoryId: string;
   title: string;
+  /** Untuk script VPN otomatis: username dan password VPN. */
   username: string;
   password: string;
+  /** "" = script manual (tempel sendiri); selain itu script dibuat otomatis. */
+  protocol: "" | VpnProtocol;
+  rosVersion: "v6" | "v7";
+  vpnServer: string;
+  gatewayIp: string;
+  tunnelName: string;
+  vpnPort: number;
+  ipsecSecret: string;
+  /** Hanya mode manual. */
   script: string;
+  /** Alamat akses router untuk pelanggan. */
+  winbox: string;
+  api: string;
+  mikhmonUrl: string;
   note: string;
 }
 
@@ -32,6 +52,11 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
   if (!title) return { ok: false, error: "Judul belum diisi." };
   const categoryId = str(b.categoryId, 60);
   if (!categoryId) return { ok: false, error: "Pilih kategori." };
+
+  const protocolRaw = str(b.protocol, 10);
+  const protocol = VPN_PROTOCOLS.some((p) => p.id === protocolRaw) ? (protocolRaw as VpnProtocol) : "";
+  const portNum = Math.round(Number(b.vpnPort));
+
   const data: VpnScriptInput = {
     phone,
     customer: str(b.customer, VPN_LIMITS.customer).trim(),
@@ -39,11 +64,41 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
     title,
     username: str(b.username, VPN_LIMITS.username).trim(),
     password: str(b.password, VPN_LIMITS.password),
-    script: str(b.script, VPN_LIMITS.script).replace(/\r\n/g, "\n"),
+    protocol,
+    rosVersion: b.rosVersion === "v7" ? "v7" : "v6",
+    vpnServer: str(b.vpnServer, VPN_LIMITS.server).trim(),
+    gatewayIp: str(b.gatewayIp, 45).trim(),
+    tunnelName: str(b.tunnelName, VPN_LIMITS.tunnel).trim(),
+    vpnPort: Number.isFinite(portNum) && portNum > 0 ? portNum : 0,
+    ipsecSecret: protocol === "l2tp" ? str(b.ipsecSecret, VPN_LIMITS.ipsec) : "",
+    script: protocol ? "" : str(b.script, VPN_LIMITS.script).replace(/\r\n/g, "\n"),
+    winbox: str(b.winbox, VPN_LIMITS.address).trim(),
+    api: str(b.api, VPN_LIMITS.address).trim(),
+    mikhmonUrl: str(b.mikhmonUrl, VPN_LIMITS.url).trim(),
     note: str(b.note, VPN_LIMITS.note).trim(),
   };
-  if (!data.username && !data.password && !data.script.trim()) {
-    return { ok: false, error: "Isi minimal salah satu: username, password, atau script." };
+
+  if (/\s/.test(data.winbox)) return { ok: false, error: "IP Winbox tidak boleh berisi spasi, mis. 103.1.2.3:8291." };
+  if (/\s/.test(data.api)) return { ok: false, error: "IP API tidak boleh berisi spasi, mis. 103.1.2.3:8728." };
+  if (data.mikhmonUrl && !/^https?:\/\/[^\s]+$/i.test(data.mikhmonUrl)) {
+    return { ok: false, error: "Link Mikhmon online harus diawali http:// atau https://." };
+  }
+
+  if (protocol) {
+    const problem = checkVpnParams({
+      protocol,
+      ros: data.rosVersion,
+      server: data.vpnServer,
+      tunnel: data.tunnelName,
+      gateway: data.gatewayIp,
+      user: data.username,
+      password: data.password,
+      ipsecSecret: data.ipsecSecret,
+      port: data.vpnPort,
+    });
+    if (problem) return { ok: false, error: problem };
+  } else if (!data.username && !data.password && !data.script.trim() && !data.winbox && !data.api && !data.mikhmonUrl) {
+    return { ok: false, error: "Isi minimal salah satu: username/password, script, IP Winbox, IP API, atau link Mikhmon." };
   }
   return { ok: true, data };
 }

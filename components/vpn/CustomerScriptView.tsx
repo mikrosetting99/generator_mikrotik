@@ -13,6 +13,10 @@ interface Entry {
   username: string;
   password: string;
   script: string;
+  protocol: string;
+  winbox: string;
+  api: string;
+  mikhmonUrl: string;
   note: string;
   createdAt: string;
 }
@@ -193,14 +197,37 @@ export function CustomerScriptView({ token, siteName }: { token: string; siteNam
                     <article key={entry.token} className="space-y-3 p-5">
                       <div className="flex flex-wrap items-center gap-2">
                         <h4 className="text-base font-semibold text-ink">{entry.title}</h4>
+                        {entry.protocol && (
+                          <span className="rounded-md bg-raised px-2 py-0.5 font-mono text-[11px] font-medium uppercase text-muted">{entry.protocol}</span>
+                        )}
                         {entry.token === data.opened && (
                           <span className="rounded-md bg-brand/15 px-2 py-0.5 text-[11px] font-medium text-brand">link ini</span>
                         )}
                       </div>
+                      {entry.mikhmonUrl && (
+                        <div className="flex flex-wrap items-center gap-2 rounded-md border border-brand/40 bg-brand/[0.06] p-3">
+                          <a
+                            href={entry.mikhmonUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-[color:var(--color-brand-ink)] transition-all hover:brightness-110"
+                          >
+                            Buka Mikhmon Online
+                          </a>
+                          <CopyButton text={entry.mikhmonUrl} label="Salin link" />
+                          <span className="min-w-0 basis-full break-all font-mono text-[11px] text-muted sm:basis-auto">{entry.mikhmonUrl}</span>
+                        </div>
+                      )}
                       {(entry.username || entry.password) && (
                         <div className="grid gap-3 sm:grid-cols-2">
-                          {entry.username && <Credential label="Username" value={entry.username} />}
-                          {entry.password && <Credential label="Password" value={entry.password} secret />}
+                          {entry.username && <Credential label={entry.protocol ? "Username VPN" : "Username"} value={entry.username} />}
+                          {entry.password && <Credential label={entry.protocol ? "Password VPN" : "Password"} value={entry.password} secret />}
+                        </div>
+                      )}
+                      {(entry.winbox || entry.api) && (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {entry.winbox && <Credential label="IP Winbox" value={entry.winbox} />}
+                          {entry.api && <Credential label="IP API" value={entry.api} />}
                         </div>
                       )}
                       {entry.script.trim() && (

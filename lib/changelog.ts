@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.51.0",
+    date: "2026-10-29",
+    title: "Menu baru: AI Mikrotik Engineer",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Menu AI Mikrotik Engineer (di grup Mikrotik bila ada, jika tidak di Konfigurasi): chat dengan AI untuk bertanya, menyusun script, dan memberi instruksi. Jawaban AI berisi blok perintah RouterOS yang bisa disalin atau dijalankan langsung di router.",
+          "API AI bisa dipilih: Anthropic (Claude), OpenAI, Google Gemini, OpenRouter, DeepSeek, Groq, atau penyedia lain yang kompatibel dengan OpenAI (isi Base URL). Model bisa dipilih atau diketik sendiri. API key disimpan di browser pengguna dan hanya diteruskan server ke penyedia saat chat.",
+          "Koneksi ke Mikrotik lewat API RouterOS (port 8728, atau 8729 dengan TLS) memakai IP publik atau domain. Klien API ditulis sendiri (tanpa pustaka tambahan) dan mendukung login RouterOS 6 dan 7. Perintah gaya CLI (print where, add, set, remove, enable, disable, [find ...]) diterjemahkan otomatis ke API.",
+          "Skill dari skills.sh: tempel link skills.sh, URL GitHub, pemilik/repo, atau perintah npx skills add ... --skill nama. SKILL.md diambil dari GitHub, bisa diaktifkan atau dinonaktifkan, dan dikirim ke AI sebagai panduan tambahan. Skill disimpan di browser pengguna.",
+          "Keamanan: perintah baca (print) bisa dijalankan otomatis dan hasilnya dianalisis AI; perintah yang mengubah konfigurasi selalu butuh persetujuan pengguna, perintah berisiko (reboot, user, service, paket) butuh persetujuan kedua, dan reset-configuration diblokir. Server hanya mau menyambung ke IP publik (alamat jaringan lokal ditolak), kredensial router tidak disimpan, dan jumlah permintaan per pengguna dibatasi.",
+          "Menu ini wajib login dan secara bawaan hanya terlihat admin; admin bisa membukanya untuk pengguna di Dashboard Admin > Situs & Menu.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.50.2",
     date: "2026-10-29",
     title: "Script VPN: section form dipertegas",

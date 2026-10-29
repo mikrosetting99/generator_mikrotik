@@ -95,6 +95,7 @@ export interface SiteSettings {
  */
 const GROUP_CANDIDATES: Record<string, string[]> = {
   "dns-flush": ["Mikrotik", "Konfigurasi"],
+  "ai-engineer": ["Mikrotik", "Konfigurasi"],
 };
 
 export const MAX_CUSTOM_MENUS = 12;
@@ -190,6 +191,20 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     icon: "lock",
     visible: true,
     // Pengelolaan hanya untuk admin; pelanggan memakai link pribadi (/script/…), bukan menu ini.
+    userVisible: false,
+    devMode: false,
+    requireLogin: true,
+  },
+  {
+    id: "ai-engineer",
+    group: "Konfigurasi",
+    builtin: true,
+    title: "AI Mikrotik Engineer",
+    description: "Chat dengan AI untuk bertanya, menyusun script, dan menjalankan perintah di router lewat API (IP publik atau domain).",
+    href: "/ai-engineer",
+    icon: "wand",
+    visible: true,
+    // Memakai API key AI dan akses ke router: admin yang memutuskan apakah user biasa boleh memakainya.
     userVisible: false,
     devMode: false,
     requireLogin: true,

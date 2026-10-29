@@ -25,8 +25,8 @@ import {
   type StaticRoutingConfig,
 } from "@/lib/static-routing";
 
-// v2: bawaan berubah (NAT, FastTrack, dan blokir QUIC nonaktif; metode content), jadi isian lama tidak dipulihkan.
-const STORAGE_KEY = "static-routing-v2";
+// v3: ada opsi rentang IP (bawaan aktif) dan FQDN kini nonaktif, jadi isian lama tidak dipulihkan.
+const STORAGE_KEY = "static-routing-v3";
 const MAX_ISPS = 8;
 
 /** Pulihkan isian tersimpan; bentuk yang rusak atau lama kembali ke bawaan. */
@@ -71,6 +71,7 @@ function restore(raw: unknown): StaticRoutingConfig {
     timeout: pick<ListTimeout>(r.timeout, ["6h", "1d", "3d", "7d"], "1d"),
     nat: typeof r.nat === "boolean" ? r.nat : base.nat,
     fasttrack: typeof r.fasttrack === "boolean" ? r.fasttrack : base.fasttrack,
+    ranges: typeof r.ranges === "boolean" ? r.ranges : base.ranges,
     seed: typeof r.seed === "boolean" ? r.seed : base.seed,
     blockQuic: typeof r.blockQuic === "boolean" ? r.blockQuic : base.blockQuic,
     fallback: typeof r.fallback === "boolean" ? r.fallback : base.fallback,
@@ -327,8 +328,8 @@ export function StaticRoutingBuilder() {
                 label="Cara RAW mengenali domain"
                 hint={
                   config.matchMode === "content"
-                    ? "content: mencari teks domain di isi paket TCP. Berjalan di RouterOS 6 dan 7, tetapi lebih berat bagi CPU."
-                    : "tls-host: membaca nama host TLS (tls-host=*.domain). Lebih ringan; butuh RouterOS 6.41+ dan tidak membaca TLS yang terfragmentasi atau memakai ECH."
+                    ? "content: mencari potongan teks domain di isi paket TCP. Berjalan di RouterOS 6 dan 7, tetapi lebih berat bagi CPU."
+                    : "tls-host: membaca nama host TLS dengan pola seperti script Buananet (mis. tls-host=*.youtube.*). Lebih ringan; butuh RouterOS 6.41+ dan tidak membaca TLS yang terfragmentasi atau memakai ECH."
                 }
               >
                 <Select
@@ -349,7 +350,8 @@ export function StaticRoutingBuilder() {
                   options={(Object.keys(TIMEOUT_LABEL) as ListTimeout[]).map((k) => ({ value: k, label: TIMEOUT_LABEL[k] }))}
                 />
               </Field>
-              <Toggle checked={config.seed} onChange={(seed) => patch({ seed })} label="Isi address-list dari domain utama (FQDN)" hint="Domain utama aplikasi di-resolve router lebih dulu, jadi koneksi pertama pun sudah lewat ISP yang benar." />
+              <Toggle checked={config.ranges} onChange={(ranges) => patch({ ranges })} label="Isi address-list dengan rentang IP aplikasi (CIDR)" hint="Rentang IP YouTube/Google, TikTok, Meta, dan WhatsApp dimasukkan lebih dulu, jadi routing sudah berlaku sejak paket pertama (seperti script Buananet). Rule RAW tetap menambah IP baru yang terbaca." />
+              <Toggle checked={config.seed} onChange={(seed) => patch({ seed })} label="Tambah juga domain utama (FQDN)" hint="Domain utama aplikasi di-resolve router lewat DNS dan ikut masuk address-list." />
               <Toggle checked={config.blockQuic} onChange={(blockQuic) => patch({ blockQuic })} label="Blokir QUIC (UDP 443) ke IP aplikasi" hint="QUIC tidak bisa dibaca SNI-nya. Dengan memblokirnya, klien beralih ke TCP/TLS sehingga IP aplikasi terus terdeteksi." />
               <Toggle checked={config.nat} onChange={(nat) => patch({ nat })} label="Buat NAT masquerade per interface ISP" hint="Dilewati bila rule yang sama sudah ada (mis. dari Setup atau Load Balance)." />
               <Toggle checked={config.fasttrack} onChange={(fasttrack) => patch({ fasttrack })} label="Batasi FastTrack ke koneksi tanpa mark" hint="FastTrack melewati mangle; tanpa ini routing per aplikasi bisa tidak berlaku." />
@@ -468,7 +470,7 @@ export function StaticRoutingBuilder() {
             <h3 className="text-sm font-semibold text-ink">Perlu diketahui</h3>
             <ul className="mt-2.5 space-y-2 text-xs leading-relaxed text-muted">
               <li>• Domain hanya terbaca pada TLS/TCP. Trafik QUIC (HTTP/3) tidak bisa dibaca; bila aplikasi tetap lewat jalur utama, aktifkan opsi blokir QUIC agar klien pindah ke TCP.</li>
-              <li>• Koneksi pertama ke IP yang belum dikenal bisa putus sekali sebelum IP itu masuk daftar; mengisi address-list dari domain utama (FQDN) mengurangi hal ini.</li>
+              <li>• IP di luar rentang bawaan baru dikenal setelah paket TLS pertamanya terbaca, jadi koneksi pertama ke IP baru bisa putus sekali; rentang IP bawaan mengurangi hal ini.</li>
               <li>• Satu rule RAW dibuat per domain dan memeriksa paket TCP dari LAN (tanpa batas port). Pada router kecil dengan trafik besar, pilih aplikasi seperlunya atau pakai tls-host yang lebih ringan.</li>
               <li>• Facebook dan WhatsApp sama-sama milik Meta dan berbagi banyak IP; sebaiknya pakai ISP yang sama untuk keduanya.</li>
             </ul>

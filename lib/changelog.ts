@@ -27,6 +27,21 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.45.0",
+    date: "2026-10-29",
+    title: "Static Routing: disamakan dengan script RAW acuan Buananet agar routing berlaku",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Address-list tiap aplikasi kini diisi lebih dulu dengan rentang IP (CIDR) YouTube/Google, TikTok, Facebook/Meta, dan WhatsApp, seperti script acuan. Sebelumnya daftar hanya terisi lewat rule RAW yang membaca TLS, sehingga koneksi awal belum ter-routing. Rule RAW tetap menambah IP baru yang terbaca. Opsi baru \"Isi address-list dengan rentang IP aplikasi (CIDR)\" aktif secara bawaan; opsi domain (FQDN) kini nonaktif secara bawaan.",
+          "Pola nama host mengikuti acuan: tls-host=*youtube.com*, *.youtube.*, *.googlevideo.*, *.youtu.*, *.ytimg.*, *yt3.ggpht.com*, *youtubei.googleapis.com* (dan pola setara untuk TikTok, Facebook, WhatsApp) yang cocok untuk semua TLD. Mode content memakai potongan teks dari pola yang sama (mis. .youtube., .googlevideo.). Urutan argumen rule RAW sama dengan acuan: protocol=tcp, pencocok, dst-address-list=!LOCAL-IP, src-address-list=LOCAL-IP.",
+          "Script kini aman dijalankan berulang: address-list, rule RAW, rute, dan rule mangle lama dihapus dulu sebelum ditambah (seperti rem [find …] pada acuan). Rule mangle dipindah ke paling atas dengan move … destination=0 menggantikan place-before=0, yang ditolak router bila daftar mangle masih kosong sehingga rule routing tidak terpasang.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.44.0",
     date: "2026-10-29",
     title: "Halaman script pelanggan: pilih SSTP/L2TP/OVPN, petunjuk laptop, dan dropdown per script",

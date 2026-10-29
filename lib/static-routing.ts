@@ -23,48 +23,125 @@ export interface AppDef {
   label: string;
   /** Warna penanda di antarmuka. */
   color: string;
-  /** Potongan nama domain yang dicari di SNI (content=). */
-  domains: string[];
+  /**
+   * Pola nama host TLS (tls-host=). Pola `*.nama.*` cocok untuk semua TLD (mis. youtube.co.id).
+   * Untuk mode content, tanda * di ujung dibuang sehingga tersisa potongan teks yang dicari.
+   */
+  tlsHosts: string[];
+  /** Rentang IP (CIDR) yang dimasukkan ke address-list lebih dulu, agar routing berlaku sejak paket pertama. */
+  ranges: string[];
   /** Domain (FQDN) utama yang dimasukkan ke address-list; di-resolve router lewat DNS. */
   seeds: string[];
   note: string;
 }
 
+/** Daftar pola dan rentang IP mengikuti script acuan RAW Buananet (tls-host + address-list statis). */
 export const APPS: AppDef[] = [
   {
     id: "youtube",
     label: "YouTube",
     color: "#e53935",
-    domains: ["youtube.com", "googlevideo.com", "ytimg.com", "youtu.be", "youtube-nocookie.com"],
+    tlsHosts: ["*youtube.com*", "*.youtube.*", "*.googlevideo.*", "*.youtu.*", "*.ytimg.*", "*yt3.ggpht.com*", "*youtubei.googleapis.com*"],
+    ranges: [
+      "64.18.0.0/20",
+      "64.233.160.0/19",
+      "66.102.0.0/20",
+      "66.249.80.0/20",
+      "72.14.192.0/18",
+      "74.125.0.0/16",
+      "173.194.0.0/16",
+      "207.126.144.0/20",
+      "209.85.128.0/17",
+      "216.58.208.0/20",
+      "216.239.32.0/19",
+    ],
     seeds: ["www.youtube.com", "m.youtube.com", "i.ytimg.com", "youtu.be"],
-    note: "Video dilayani dari googlevideo.com (banyak subdomain) — dikenali lewat SNI.",
+    note: "Video dilayani dari googlevideo (banyak subdomain) dan rentang IP Google.",
   },
   {
     id: "tiktok",
     label: "TikTok",
     color: "#111827",
-    domains: ["tiktok.com", "tiktokv.com", "tiktokcdn.com", "byteoversea.com", "ibytedtos.com", "muscdn.com"],
+    tlsHosts: ["*tiktok.com*", "*.tiktok.*", "*.tiktoktv.*", "*.e.tiktok.*", "*.tiktokcdn.*", "*.musical.*"],
+    ranges: [
+      "147.160.176.0/24",
+      "147.160.177.0/24",
+      "147.160.178.0/24",
+      "147.160.179.0/24",
+      "147.160.180.0/24",
+      "147.160.181.0/24",
+      "147.160.182.0/24",
+      "147.160.183.0/24",
+      "147.160.184.0/24",
+      "147.160.185.0/24",
+      "147.160.187.0/24",
+      "147.160.188.0/24",
+      "147.160.189.0/24",
+      "147.160.190.0/24",
+      "147.160.191.0/24",
+      "103.136.221.0/24",
+      "103.136.220.0/24",
+      "103.136.220.0/23",
+      "192.64.14.0/24",
+      "199.103.24.0/24",
+      "199.103.25.0/24",
+      "130.44.212.0/24",
+      "130.44.213.0/24",
+      "130.44.214.0/24",
+      "130.44.215.0/24",
+      "139.177.224.0/24",
+      "139.177.225.0/24",
+      "139.177.226.0/24",
+      "139.177.254.0/24",
+      "139.177.255.0/24",
+    ],
     seeds: ["www.tiktok.com", "m.tiktok.com"],
-    note: "Konten video lewat CDN tiktokcdn / byteoversea.",
+    note: "Konten video lewat CDN tiktokcdn dan rentang IP ByteDance.",
   },
   {
     id: "facebook",
     label: "Facebook",
     color: "#1877f2",
-    domains: ["facebook.com", "fbcdn.net", "fb.com", "facebook.net", "fbsbx.com", "messenger.com", "instagram.com", "cdninstagram.com"],
-    seeds: ["www.facebook.com", "m.facebook.com", "static.xx.fbcdn.net", "www.instagram.com"],
-    note: "Termasuk Messenger dan Instagram (satu jaringan Meta).",
+    tlsHosts: ["*facebook.com*", "*.facebook.*", "*.m.me*", "*.fb.me*", "*.msngr.*", "*.messenger.*", "*.fbcdn.*", "*.fbsbx.*"],
+    ranges: [
+      "31.13.24.0/21",
+      "31.13.64.0/18",
+      "45.64.40.0/22",
+      "66.220.144.0/21",
+      "66.220.152.0/21",
+      "69.63.176.0/21",
+      "69.63.184.0/21",
+      "74.119.76.0/22",
+      "102.132.96.0/20",
+      "103.4.96.0/22",
+      "129.134.0.0/16",
+      "157.240.0.0/17",
+      "163.70.128.0/17",
+      "163.114.128.0/20",
+      "173.252.64.0/19",
+      "179.60.192.0/22",
+      "185.60.216.0/22",
+      "185.89.216.0/22",
+      "204.15.20.0/22",
+    ],
+    seeds: ["www.facebook.com", "m.facebook.com", "static.xx.fbcdn.net"],
+    note: "Termasuk Messenger; memakai rentang IP Meta.",
   },
   {
     id: "whatsapp",
     label: "WhatsApp",
     color: "#25d366",
-    domains: ["whatsapp.com", "whatsapp.net", "wa.me"],
+    tlsHosts: ["*whatsapp.com*", "*.whatsapp.*", "*wa.me*", "*.wa.*"],
+    ranges: ["66.111.48.0/22"],
     seeds: ["web.whatsapp.com", "g.whatsapp.net", "mmg.whatsapp.net"],
     note: "Pesan, panggilan, dan WhatsApp Web.",
   },
 ];
 
+/** Pola tls-host → potongan teks untuk mode content: *.youtube.* → .youtube. ; *youtube.com* → youtube.com */
+export function contentOf(pattern: string): string {
+  return pattern.replace(/^\*/, "").replace(/\*$/, "");
+}
 export interface IspRow {
   id: string;
   /** Nama routing mark jalur ini (v7: juga nama tabel routing), dipakai apa adanya, mis. to-ISP1. */
@@ -106,7 +183,9 @@ export interface StaticRoutingConfig {
   nat: boolean;
   /** Batasi FastTrack ke koneksi tanpa mark supaya mangle tetap berlaku. */
   fasttrack: boolean;
-  /** Isi address-list lebih dulu dengan nama host utama (di-resolve DNS router). */
+  /** Isi address-list lebih dulu dengan rentang IP aplikasi (CIDR), agar routing berlaku sejak paket pertama. */
+  ranges: boolean;
+  /** Isi address-list juga dengan nama host utama (di-resolve DNS router). */
   seed: boolean;
   /** Buang paket QUIC (UDP 443) ke IP aplikasi agar klien pindah ke TCP/TLS yang bisa dibaca SNI-nya. */
   blockQuic: boolean;
@@ -157,7 +236,8 @@ export function defaultStaticRouting(): StaticRoutingConfig {
     timeout: "1d",
     nat: false,
     fasttrack: false,
-    seed: true,
+    ranges: true,
+    seed: false,
     blockQuic: false,
     fallback: false,
     top: true,
@@ -190,7 +270,8 @@ interface ResolvedApp {
   id: AppId;
   label: string;
   list: string;
-  domains: string[];
+  tlsHosts: string[];
+  ranges: string[];
   seeds: string[];
   isp: IspRow;
   ispIndex: number;
@@ -210,7 +291,8 @@ function resolveApps(config: StaticRoutingConfig): ResolvedApp[] {
         id: "custom",
         label: sel.customName.trim() || "Kustom",
         list: `SR-${name.toUpperCase()}`,
-        domains,
+        tlsHosts: domains.map((d) => `*${d}*`),
+        ranges: [],
         seeds: domains.slice(0, 3).map((d) => (d.startsWith("www.") ? d : `www.${d}`)),
         isp: config.isps[ispIndex],
         ispIndex,
@@ -223,7 +305,8 @@ function resolveApps(config: StaticRoutingConfig): ResolvedApp[] {
       id: def.id,
       label: def.label,
       list: `SR-${def.id.toUpperCase()}`,
-      domains: def.domains,
+      tlsHosts: def.tlsHosts,
+      ranges: def.ranges,
       seeds: def.seeds,
       isp: config.isps[ispIndex],
       ispIndex,
@@ -274,7 +357,9 @@ export function validateStaticRouting(config: StaticRoutingConfig): SrIssue[] {
     );
   }
   if (config.fallback && config.isps.length < 2) warn("Rute cadangan butuh minimal dua jalur ISP; opsi diabaikan.");
-  if (!config.seed) warn("Tanpa entri domain (FQDN), koneksi pertama ke IP baru lewat jalur utama dulu; daftar IP baru terisi setelah paket TLS pertama terbaca.");
+  if (!config.ranges && !config.seed) {
+    warn("Tanpa rentang IP maupun domain bawaan, address-list kosong di awal: koneksi pertama ke IP baru lewat jalur utama dulu, dan daftar baru terisi setelah paket TLS pertama terbaca.");
+  }
   return issues;
 }
 
@@ -337,8 +422,9 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
   const mark = (index: number) => markOf(config.isps[index]);
 
   // ------------------------------------------------------- address-list
+  // Tiap daftar dibersihkan dulu lalu diisi ulang, jadi script aman dijalankan berkali-kali.
   s.blank();
-  s.comment("1) Address-list: daftar IP tiap aplikasi (diisi otomatis oleh rule RAW di bawah)");
+  s.comment("1) Address-list: daftar IP tiap aplikasi (rentang IP bawaan + IP yang dipelajari rule RAW)");
   if (config.localMode === "addresslist") {
     for (const cidr of ["192.168.0.0/16", "172.16.0.0/12", "10.0.0.0/8"]) {
       s.addIfMissing(
@@ -348,9 +434,13 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
       );
     }
   }
-  if (config.seed) {
-    menu("/ip firewall address-list");
-    for (const app of apps) {
+  menu("/ip firewall address-list");
+  for (const app of apps) {
+    s.line(`remove [find where list=${app.list}]`);
+    if (config.ranges) {
+      for (const cidr of app.ranges) add([["address", cidr], ["list", app.list]]);
+    }
+    if (config.seed) {
       for (const host of app.seeds) {
         add([["list", app.list], ["address", host], ["comment", tag(`SR domain ${app.label}`)]]);
       }
@@ -358,24 +448,26 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
   }
 
   // ----------------------------------------------------------------- RAW
-  // Satu rule per domain, tanpa dst-port; comment hanya di rule pertama tiap aplikasi
-  // (judul grup di Winbox), mis. "youtube - mikrosetting.com".
+  // Satu rule per pola; comment hanya di rule pertama tiap aplikasi (judul grup di Winbox).
+  // Rule lama untuk address-list yang sama dihapus dulu.
   menu("/ip firewall raw");
   const local = localMatch(config);
   const notLocal: Array<[string, ArgValue]> =
     config.localMode === "addresslist" ? [["dst-address-list", raw("!LOCAL-IP")]] : [];
   for (const app of apps) {
-    app.domains.forEach((domain, di) => {
+    s.line(`remove [find where address-list=${app.list}]`);
+    app.tlsHosts.forEach((pattern, di) => {
+      // tls-host dan content ditulis tanpa kutip (pola berbintang), seperti script acuan.
       const matcher: [string, ArgValue] =
-        config.matchMode === "tlshost" ? ["tls-host", `*.${domain}`] : ["content", domain];
+        config.matchMode === "tlshost" ? ["tls-host", raw(pattern)] : ["content", contentOf(pattern)];
       add([
         ["action", "add-dst-to-address-list"],
         ["address-list", app.list],
         ["address-list-timeout", config.timeout],
         ["chain", "prerouting"],
+        ["protocol", "tcp"],
         matcher,
         ...notLocal,
-        ["protocol", "tcp"],
         ...local,
         ...(di === 0 ? ([["comment", `${app.label.toLowerCase()} - mikrosetting.com`]] as Array<[string, ArgValue]>) : []),
       ]);
@@ -383,6 +475,8 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
   }
   if (config.blockQuic) {
     for (const app of apps) {
+      const c = `${app.label.toLowerCase()} blokir quic - mikrosetting.com`;
+      s.line(`remove [find where comment="${c}"]`);
       add([
         ["action", "drop"],
         ["chain", "prerouting"],
@@ -390,7 +484,7 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
         ["dst-port", 443],
         ["protocol", "udp"],
         ...local,
-        ["comment", `${app.label.toLowerCase()} blokir quic - mikrosetting.com`],
+        ["comment", c],
       ]);
     }
   }
@@ -411,27 +505,36 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
   // ---------------------------------------------------------------- route
   menu("/ip route");
   const markKey = v7 ? "routing-table" : "routing-mark";
+  /** Hapus rute lama berkomentar sama lalu tambah lagi — aman dijalankan ulang. */
+  const addRoute = (pairs: Array<[string, ArgValue]>, comment: string) => {
+    s.line(`remove [find where comment="${comment}"]`);
+    add([...pairs, ["comment", comment]]);
+  };
   for (const { isp, index } of usedIsps) {
-    add([
-      ["dst-address", "0.0.0.0/0"],
-      ["gateway", isp.gateway.trim()],
-      [markKey, mark(index)],
-      ["distance", 1],
-      ["check-gateway", "ping"],
-      ["comment", tag(`SR rute ${markOf(isp)}`)],
-    ]);
+    addRoute(
+      [
+        ["dst-address", "0.0.0.0/0"],
+        ["gateway", isp.gateway.trim()],
+        [markKey, mark(index)],
+        ["distance", 1],
+        ["check-gateway", "ping"],
+      ],
+      tag(`SR rute ${markOf(isp)}`),
+    );
   }
   if (config.fallback && config.isps.length > 1) {
     for (const { index } of usedIsps) {
       const other = config.isps.find((_, i) => i !== index)!;
-      add([
-        ["dst-address", "0.0.0.0/0"],
-        ["gateway", other.gateway.trim()],
-        [markKey, mark(index)],
-        ["distance", 2],
-        ["check-gateway", "ping"],
-        ["comment", tag(`SR cadangan ${mark(index)} via ${markOf(other)}`)],
-      ]);
+      addRoute(
+        [
+          ["dst-address", "0.0.0.0/0"],
+          ["gateway", other.gateway.trim()],
+          [markKey, mark(index)],
+          ["distance", 2],
+          ["check-gateway", "ping"],
+        ],
+        tag(`SR cadangan ${mark(index)} via ${markOf(other)}`),
+      );
     }
   }
 
@@ -449,22 +552,23 @@ export function generateStaticRouting(config: StaticRoutingConfig): string {
   }
 
   // --------------------------------------------------------------- mangle
+  // Rule dihapus dulu lalu ditambah, kemudian dipindah ke paling atas dengan `move` — bukan
+  // `place-before=0`, yang ditolak router bila daftar mangle masih kosong.
   menu("/ip firewall mangle");
   for (const app of apps) {
-    add(
-      [
-        ["chain", "prerouting"],
-        ...local,
-        ["dst-address-list", app.list],
-        ["action", "mark-routing"],
-        ["new-routing-mark", mark(app.ispIndex)],
-        ["passthrough", false],
-        ["comment", tag(`SR ${app.label} lewat ${markOf(app.isp)}`)],
-      ],
-      config.top ? " place-before=0" : "",
-    );
+    const c = tag(`SR ${app.label} lewat ${markOf(app.isp)}`);
+    s.line(`remove [find where comment="${c}"]`);
+    add([
+      ["action", "mark-routing"],
+      ["chain", "prerouting"],
+      ...local,
+      ["dst-address-list", app.list],
+      ["new-routing-mark", mark(app.ispIndex)],
+      ["passthrough", false],
+      ["comment", c],
+    ]);
+    if (config.top) s.line(`move [find where comment="${c}"] destination=0`);
   }
-
   // ------------------------------------------------------------ fasttrack
   if (config.fasttrack) {
     s.blank();

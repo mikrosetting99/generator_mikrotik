@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isGuardResponse, requireAiUser } from "@/lib/ai-guard";
 import { resolvePublicHost } from "@/lib/net-guard";
-import { formatRows, openRouter, prepareCommand, runPrepared, type RouterTarget } from "@/lib/routeros-api";
+import { formatRows, monitorSnapshot, openRouter, prepareCommand, runPrepared, type RouterTarget } from "@/lib/routeros-api";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -36,8 +36,9 @@ async function target(b: Record<string, unknown>): Promise<RouterTarget> {
 export async function POST(request: Request) {
   const b = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   if (!b) return NextResponse.json({ error: "Permintaan tidak valid." }, { status: 400 });
-  const action = b.action === "exec" ? "exec" : "connect";
-  const guard = await requireAiUser(action === "exec" ? "exec" : "connect", action === "exec" ? 120 : 20);
+  const action = b.action === "exec" ? "exec" : b.action === "monitor" ? "monitor" : "connect";
+  // Monitoring dipanggil berkala dari browser, jadi batasnya jauh lebih longgar.
+  const guard = await requireAiUser(action, action === "exec" ? 120 : action === "monitor" ? 1500 : 40);
   if (isGuardResponse(guard)) return guard;
 
   let t: RouterTarget;
@@ -45,6 +46,19 @@ export async function POST(request: Request) {
     t = await target(b);
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Alamat router tidak valid." }, { status: 400 });
+  }
+
+  if (action === "monitor") {
+    try {
+      const conn = await openRouter(t);
+      try {
+        return NextResponse.json({ snapshot: await monitorSnapshot(conn) });
+      } finally {
+        conn.close();
+      }
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Gagal membaca router." }, { status: 502 });
+    }
   }
 
   if (action === "connect") {

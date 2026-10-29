@@ -27,6 +27,28 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.54.0",
+    date: "2026-10-29",
+    title: "AI Mikrotik Engineer: monitoring, banyak router, semua model; tampilan lebih rapi",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Tab Monitoring di AI Mikrotik Engineer: pembacaan langsung tiap 3/5/10/30 detik untuk semua router yang tersambung. Menampilkan CPU, memori, penyimpanan, suhu dan tegangan (bila ada sensor), jumlah hotspot aktif, PPP aktif, lease DHCP, dan koneksi firewall, grafik trafik unduh/unggah per interface, serta tabel semua interface dengan Rx/Tx. Bisa dijeda.",
+          "Bisa menambah beberapa Mikrotik: daftar router (nama, IP publik/domain, port, TLS, username) dengan tombol Hubungkan, Putuskan, Ubah, dan Hapus. Router bertanda aktif menjadi sasaran perintah dari chat dan bisa diganti lewat pilihan di atas chat. Password tidak disimpan kecuali dicentang Simpan password. Pengaturan satu-router versi lama dipindahkan otomatis.",
+          "Tombol Muat semua model memuat seluruh model yang tersedia untuk API key pada penyedia terpilih (Anthropic, OpenAI, Gemini, OpenRouter, DeepSeek, Groq, dan penyedia kompatibel OpenAI). Daftar tersimpan di browser dan dipakai sebagai saran pada kolom model.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Dashboard Admin disamakan dengan aplikasi Pengaturan Odoo Enterprise: menu bagian di bilah atas, sidebar dengan ikon berwarna tiap menu dan penanda aktif, serta breadcrumb di panel kontrol.",
+          "Beranda dan chat tidak lagi serba di tengah: sapaan, judul grup, ikon aplikasi, dan pesan chat kini rata kiri memakai lebar layar.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.53.0",
     date: "2026-10-29",
     title: "Tampilan seluruh aplikasi disamakan dengan Odoo 17 Enterprise",

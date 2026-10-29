@@ -122,14 +122,14 @@ export default async function Home() {
         </div>
       </header>
 
-      <div className="relative mx-auto w-full max-w-[1000px] px-5 pb-12 pt-6 sm:pt-10">
+      <div className="relative w-full px-4 pb-12 pt-6 sm:pt-8 lg:px-8">
         {/* ----------------------------------------------------- sapaan */}
-        <div className="animate-rise text-center">
+        <div className="animate-rise">
           <h1 className="text-2xl font-medium leading-tight tracking-tight text-white sm:text-[2rem]">
             {settings.heroTitle} <span className="text-white/80">{settings.heroAccent}</span>
           </h1>
-          <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">{settings.heroText}</p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75 sm:text-base">{settings.heroText}</p>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
             <Link
               href="/setup"
               className="inline-flex min-h-10 items-center gap-2 rounded-md bg-white px-5 text-sm font-semibold text-[color:var(--nav-bg)] shadow-sm transition-all duration-200 hover:bg-white/90 active:scale-[0.98]"
@@ -149,7 +149,7 @@ export default async function Home() {
               </a>
             )}
           </div>
-          <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-white/60">
+          <p className="mt-3 flex items-center gap-1.5 text-xs text-white/60">
             <Lock className="h-3.5 w-3.5" />
             Diproses di browser, tanpa kirim data
           </p>
@@ -160,9 +160,9 @@ export default async function Home() {
           {sections.map((section) => (
             <div key={section.name || "menu"}>
               {section.name && (
-                <h3 className="animate-rise mb-2 px-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">{section.name}</h3>
+                <h3 className="animate-rise mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">{section.name}</h3>
               )}
-              <div className="flex flex-wrap justify-center gap-x-2 gap-y-3">
+              <div className="flex flex-wrap gap-x-2 gap-y-3">
                 {section.menus.map((menu) => {
                   // Urutan tile di seluruh grup: dipakai sebagai jeda animasi muncul bertahap.
                   const order = cardOrder++;

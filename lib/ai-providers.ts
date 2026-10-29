@@ -112,6 +112,38 @@ export async function chatOnce(req: ChatRequest, signal?: AbortSignal): Promise<
   return text;
 }
 
+/**
+ * Daftar semua model milik akun pada sebuah penyedia (memakai API key pengguna).
+ * Anthropic: GET /v1/models; penyedia OpenAI-compatible: GET /models.
+ */
+export async function listModels(req: { provider: AiProviderId; apiKey: string; baseUrl?: string }, signal?: AbortSignal): Promise<string[]> {
+  const info = AI_PROVIDERS.find((p) => p.id === req.provider);
+  if (!info) throw new Error("Penyedia AI tidak dikenal.");
+  const key = req.apiKey.trim();
+  // OpenRouter menyediakan daftar model tanpa key; yang lain wajib.
+  if (!key && info.id !== "openrouter") throw new Error("Isi API key dulu untuk memuat daftar model.");
+  const base = await resolveBaseUrl(info, req.baseUrl);
+
+  const res =
+    info.kind === "anthropic"
+      ? await fetch(`${base}/v1/models?limit=1000`, { headers: { "x-api-key": key, "anthropic-version": "2023-06-01" }, signal })
+      : await fetch(`${base}/models`, { headers: key ? { authorization: `Bearer ${key}` } : {}, signal });
+  const raw = await res.text();
+  if (!res.ok) throw new Error(`${info.label} menjawab ${res.status}${res.status === 401 || res.status === 403 ? " (cek API key)" : ""}: ${errorText(raw, key)}`);
+
+  let data: { data?: Array<{ id?: string }>; models?: Array<{ name?: string }> };
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(`${info.label} mengirim daftar model yang tidak bisa dibaca.`);
+  }
+  let ids = (data.data ?? []).map((m) => m.id ?? "").concat((data.models ?? []).map((m) => m.name ?? ""));
+  ids = ids.map((id) => id.replace(/^models\//, "")).filter(Boolean);
+  // OpenAI mencampur model non-chat; sembunyikan yang jelas bukan untuk percakapan.
+  if (info.id === "openai") ids = ids.filter((id) => !/embed|whisper|tts|dall-e|moderation|davinci|babbage|audio|realtime|transcribe|image|search/i.test(id));
+  return [...new Set(ids)].sort((a, b) => a.localeCompare(b));
+}
+
 /* ------------------------------------------------------------- prompt sistem */
 
 export const BASE_SYSTEM_PROMPT = `Kamu adalah "AI Mikrotik Engineer": insinyur jaringan senior yang ahli MikroTik RouterOS 6 dan 7 (firewall, NAT, mangle, routing, load balance, hotspot, PPPoE, DHCP, VPN, queue/bandwidth, wireless, dan troubleshooting).

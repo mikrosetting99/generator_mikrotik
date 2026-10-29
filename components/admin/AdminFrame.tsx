@@ -15,6 +15,9 @@ export const ADMIN_NAV = [
   { id: "versi", label: "Versi & Changelog", href: "/admin?tab=versi", icon: Terminal },
 ] as const;
 
+/** Warna ikon tiap menu pengaturan (palet aplikasi Odoo). */
+const NAV_COLORS = ["#714b67", "#017e84", "#e0902b", "#5b7fa6", "#c4567f", "#4e9f6e", "#8a6fc9", "#d9644a"];
+
 export type AdminTab = (typeof ADMIN_NAV)[number]["id"];
 
 /**
@@ -40,6 +43,17 @@ export function AdminFrame({ active, children }: { active: AdminTab; children: R
               </svg>
             </Link>
             <h1 className="truncate text-sm font-semibold text-ink">Dashboard Admin</h1>
+            <nav aria-label="Bagian admin" className="ml-2 hidden items-center gap-0.5 xl:flex">
+              {ADMIN_NAV.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={`rounded px-2.5 py-1.5 text-[13px] transition-colors ${item.id === active ? "bg-brand/10 font-semibold text-brand" : "text-muted hover:bg-raised hover:text-ink"}`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
           </div>
           <ThemeToggle />
         </div>
@@ -47,7 +61,7 @@ export function AdminFrame({ active, children }: { active: AdminTab; children: R
 
       {/* Panel kontrol: breadcrumb di kiri, aksi cepat di kanan */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-4 py-2.5 lg:px-6">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-base">
           <Link href="/admin" className="font-medium text-brand hover:underline">
             Dashboard Admin
           </Link>
@@ -67,12 +81,13 @@ export function AdminFrame({ active, children }: { active: AdminTab; children: R
 
       <div className="grid lg:grid-cols-[240px_minmax(0,1fr)]">
         {/* Sidebar menu (di layar kecil menjadi deretan tab yang bisa digeser) */}
-        <aside className="border-b border-line bg-surface lg:min-h-[calc(100vh-7rem)] lg:border-b-0 lg:border-r">
+        <aside className="border-b border-line bg-raised lg:min-h-[calc(100vh-7rem)] lg:border-b-0 lg:border-r">
+          <p className="hidden px-4 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-faint lg:block">Pengaturan</p>
           <nav
             aria-label="Menu admin"
             className="flex gap-1 overflow-x-auto p-2 lg:flex-col lg:gap-0 lg:overflow-visible lg:p-0 lg:py-2"
           >
-            {ADMIN_NAV.map((item) => {
+            {ADMIN_NAV.map((item, idx) => {
               const Glyph = item.icon;
               const on = item.id === active;
               return (
@@ -80,13 +95,15 @@ export function AdminFrame({ active, children }: { active: AdminTab; children: R
                   key={item.id}
                   href={item.href}
                   aria-current={on ? "page" : undefined}
-                  className={`flex shrink-0 items-center gap-3 whitespace-nowrap px-4 py-2.5 text-sm transition-colors lg:border-l-4 ${
+                  className={`flex shrink-0 items-center gap-3 whitespace-nowrap px-4 py-2 text-sm transition-colors lg:border-l-[3px] ${
                     on
-                      ? "bg-brand/10 font-semibold text-brand lg:border-brand"
-                      : "text-muted hover:bg-raised hover:text-ink lg:border-transparent"
+                      ? "bg-surface font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-soft)] lg:border-brand"
+                      : "text-muted hover:bg-surface hover:text-ink lg:border-transparent"
                   }`}
                 >
-                  <Glyph className="h-4 w-4 shrink-0" />
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-white" style={{ background: NAV_COLORS[idx % NAV_COLORS.length] }}>
+                    <Glyph className="h-4 w-4" />
+                  </span>
                   {item.label}
                 </Link>
               );

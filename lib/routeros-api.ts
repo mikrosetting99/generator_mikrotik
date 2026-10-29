@@ -464,3 +464,119 @@ export function formatRows(rows: Row[], maxChars = 6000): string {
   const text = out.join("\n");
   return text.length > maxChars ? `${text.slice(0, maxChars)}\n… (dipotong, ${rows.length} baris)` : text;
 }
+
+/* ----------------------------------------------------------------- monitoring */
+
+export interface MonitorInterface {
+  name: string;
+  type: string;
+  running: boolean;
+  disabled: boolean;
+  /** bit per detik (0 bila tidak diukur). */
+  rxBps: number;
+  txBps: number;
+}
+
+export interface MonitorSnapshot {
+  at: number;
+  identity: string;
+  version: string;
+  board: string;
+  uptime: string;
+  cpuLoad: number;
+  cpuCount: number;
+  freeMemory: number;
+  totalMemory: number;
+  freeHdd: number;
+  totalHdd: number;
+  /** suhu, tegangan, dll. dari /system/health (nama → nilai). */
+  health: Record<string, number>;
+  interfaces: MonitorInterface[];
+  /** jumlah hotspot aktif, PPP aktif, lease DHCP, koneksi firewall; kosong bila fiturnya tidak ada. */
+  counts: Record<string, number>;
+}
+
+const num = (v: string | undefined) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const COUNTS: Array<[string, string]> = [
+  ["hotspotActive", "/ip/hotspot/active/print"],
+  ["pppActive", "/ppp/active/print"],
+  ["dhcpLeases", "/ip/dhcp-server/lease/print"],
+  ["connections", "/ip/firewall/connection/print"],
+];
+
+/** Satu pembacaan lengkap kondisi router: CPU, memori, disk, suhu, trafik tiap interface, dan jumlah pengguna. */
+export async function monitorSnapshot(conn: RouterOsConnection): Promise<MonitorSnapshot> {
+  const quick = { timeoutMs: 8000 };
+  const [identity] = await conn.talk(["/system/identity/print"], quick);
+  const [res] = await conn.talk(["/system/resource/print"], quick);
+
+  const all = await conn.talk(["/interface/print", "=.proplist=name,type,running,disabled"], { ...quick, maxRows: 200 });
+  const interfaces: MonitorInterface[] = all.map((i) => ({
+    name: i.name ?? "",
+    type: i.type ?? "",
+    running: i.running === "true",
+    disabled: i.disabled === "true",
+    rxBps: 0,
+    txBps: 0,
+  }));
+
+  // Trafik hanya diukur untuk interface yang aktif (maks 24) lewat monitor-traffic sekali baca.
+  const live = interfaces.filter((i) => i.running && !i.disabled).slice(0, 24);
+  if (live.length) {
+    try {
+      const rows = await conn.talk(["/interface/monitor-traffic", `=interface=${live.map((i) => i.name).join(",")}`, "=once="], quick);
+      rows.forEach((r, idx) => {
+        const target = (r.name && live.find((i) => i.name === r.name)) || (rows.length === live.length ? live[idx] : undefined);
+        if (target) {
+          target.rxBps = num(r["rx-bits-per-second"]);
+          target.txBps = num(r["tx-bits-per-second"]);
+        }
+      });
+    } catch {
+      // trafik tidak tersedia: tampilkan sisanya
+    }
+  }
+
+  const health: Record<string, number> = {};
+  try {
+    for (const r of await conn.talk(["/system/health/print"], quick)) {
+      if (r.name) health[r.name] = num(r.value);
+      else
+        for (const [k, v] of Object.entries(r)) if (k !== ".id" && v !== "" && Number.isFinite(Number(v))) health[k] = Number(v);
+    }
+  } catch {
+    // perangkat tanpa sensor (mis. CHR)
+  }
+
+  const counts: Record<string, number> = {};
+  for (const [key, path] of COUNTS) {
+    try {
+      const rows = await conn.talk([path, "=count-only="], quick);
+      const ret = rows.find((r) => r.ret !== undefined)?.ret;
+      if (ret !== undefined) counts[key] = num(ret);
+    } catch {
+      // paket/fitur tidak ada di router ini
+    }
+  }
+
+  return {
+    at: Date.now(),
+    identity: identity?.name ?? "",
+    version: res?.version ?? "",
+    board: res?.["board-name"] ?? "",
+    uptime: res?.uptime ?? "",
+    cpuLoad: num(res?.["cpu-load"]),
+    cpuCount: num(res?.["cpu-count"]) || 1,
+    freeMemory: num(res?.["free-memory"]),
+    totalMemory: num(res?.["total-memory"]),
+    freeHdd: num(res?.["free-hdd-space"]),
+    totalHdd: num(res?.["total-hdd-space"]),
+    health,
+    interfaces,
+    counts,
+  };
+}

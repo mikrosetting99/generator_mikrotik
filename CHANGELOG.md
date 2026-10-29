@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.47.0] - 2026-10-29
+
+_Script VPN: daftar link di samping form_
+
+### Diubah
+
+- Daftar link script kini berada di sebelah kanan form Tambah/Ubah (layar lebar), bukan di bawahnya. Baris daftar berbentuk kartu ringkas: judul, tipe VPN, nomor HP, pelanggan, kategori, tanggal, dan tombol Link/WA/Ubah/Hapus. Di layar sempit daftar tetap di bawah form.
+
 ## [1.46.1] - 2026-10-29
 
 _Script VPN: form admin dirapatkan_

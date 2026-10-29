@@ -350,7 +350,8 @@ export function VpnAdmin() {
         </div>
       </AdminSection>
 
-      {/* ------------------------------------------------------ formulir */}
+      {/* ------------------------------------- formulir + daftar berdampingan */}
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <AdminSection
         title={form.id ? "Ubah link script" : "Tambah link script"}
         description="Pilih tipe VPN lalu isi username dan password VPN dari app.mikrosetting.com. Password disimpan terenkripsi di database."
@@ -562,7 +563,7 @@ export function VpnAdmin() {
         badge={scripts && <span className="font-mono text-[11px] text-muted">{scripts.length} link</span>}
       >
         <div className="space-y-4 p-5">
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,260px)_1fr]">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Kategori">
               <Select
                 value={filterCat}
@@ -581,65 +582,56 @@ export function VpnAdmin() {
           ) : scripts.length === 0 ? (
             <EmptyState>Belum ada link script{query || filterCat ? " yang cocok" : ""}.</EmptyState>
           ) : (
-            <div className="overflow-x-auto rounded-md border border-line">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-line bg-raised/60 text-[11px] uppercase tracking-[0.08em] text-muted">
-                  <tr>
-                    <th className="px-4 py-2.5 font-semibold">Nomor HP</th>
-                    <th className="px-4 py-2.5 font-semibold">Pelanggan</th>
-                    <th className="px-4 py-2.5 font-semibold">Kategori</th>
-                    <th className="px-4 py-2.5 font-semibold">Judul</th>
-                    <th className="px-4 py-2.5 font-semibold">Dibuat</th>
-                    <th className="px-4 py-2.5 text-right font-semibold">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scripts.map((row) => (
-                    <tr key={row.id} className="border-b border-line-soft last:border-0 hover:bg-brand/[0.05]">
-                      <td className="whitespace-nowrap px-4 py-2.5 font-mono text-ink">{formatPhone(row.phone)}</td>
-                      <td className="px-4 py-2.5 text-muted">{row.customer || "—"}</td>
-                      <td className="px-4 py-2.5">
-                        <span className="rounded-md bg-brand/12 px-2 py-0.5 text-[11px] font-medium text-brand">{row.category}</span>
-                      </td>
-                      <td className="px-4 py-2.5 text-ink">
+            <ul className="divide-y divide-line-soft overflow-hidden rounded-md border border-line">
+              {scripts.map((row) => (
+                <li key={row.id} className={`space-y-2 px-3 py-2.5 hover:bg-brand/[0.05] ${form.id === row.id ? "bg-brand/[0.08]" : ""}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-ink">
                         {row.title}
                         {row.protocol && (
                           <span className="ml-2 rounded-md bg-raised px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted">{row.protocol}</span>
                         )}
                         {row.hasMikhmon && <span className="ml-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-accent">mikhmon</span>}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-muted">{fmtDate(row.createdAt)}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex flex-wrap justify-end gap-1.5">
-                          <Button size="sm" onClick={() => copy(row.id, linkFor(row.token))} title="Salin link pelanggan">
-                            {copied === row.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                            {copied === row.id ? "Tersalin" : "Link"}
-                          </Button>
-                          <a
-                            href={waUrl(row.phone, messageFor(row, linkFor(row.token)))}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex min-h-9 items-center rounded-lg border border-[#25D366]/50 bg-[#25D366]/10 px-2.5 text-xs font-semibold text-[#128c4a] hover:bg-[#25D366]/20"
-                            title="Kirim link lewat WhatsApp"
-                          >
-                            WA
-                          </a>
-                          <Button size="sm" onClick={() => edit(row)}>
-                            Ubah
-                          </Button>
-                          <Button size="sm" variant="danger" className="px-2" ariaLabel={`Hapus ${row.title}`} title="Hapus" onClick={() => remove(row)}>
-                            <Trash className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-muted">
+                        <span className="font-mono text-ink">{formatPhone(row.phone)}</span>
+                        {row.customer && <> · {row.customer}</>}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-md bg-brand/12 px-2 py-0.5 text-[11px] font-medium text-brand">{row.category}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] text-faint">{fmtDate(row.createdAt)}</span>
+                    <div className="flex flex-wrap justify-end gap-1.5">
+                      <Button size="sm" onClick={() => copy(row.id, linkFor(row.token))} title="Salin link pelanggan">
+                        {copied === row.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        {copied === row.id ? "Tersalin" : "Link"}
+                      </Button>
+                      <a
+                        href={waUrl(row.phone, messageFor(row, linkFor(row.token)))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-9 items-center rounded-lg border border-[#25D366]/50 bg-[#25D366]/10 px-2.5 text-xs font-semibold text-[#128c4a] hover:bg-[#25D366]/20"
+                        title="Kirim link lewat WhatsApp"
+                      >
+                        WA
+                      </a>
+                      <Button size="sm" onClick={() => edit(row)}>
+                        Ubah
+                      </Button>
+                      <Button size="sm" variant="danger" className="px-2" ariaLabel={`Hapus ${row.title}`} title="Hapus" onClick={() => remove(row)}>
+                        <Trash className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </AdminSection>
+      </div>
     </div>
   );
 }
@@ -663,7 +655,7 @@ function FormRow({ label, required, hint, children }: { label: string; required?
 /** Kotak bergaris dengan judul, seperti tab/grup pengaturan Mikrotik. */
 function Group({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
-    <section className="max-w-3xl overflow-hidden rounded-md border border-line bg-surface">
+    <section className="overflow-hidden rounded-md border border-line bg-surface">
       <header className="border-b border-line-soft bg-raised/60 px-4 py-2">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.09em] text-brand">{title}</h3>
         {note && <p className="mt-0.5 text-xs text-faint">{note}</p>}

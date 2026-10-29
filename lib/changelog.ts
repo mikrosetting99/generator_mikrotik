@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.50.2",
+    date: "2026-10-29",
+    title: "Script VPN: section form dipertegas",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Kotak section pada form Script VPN dan kelompok nomor HP di daftar kini lebih tegas: border 2px, garis aksen tebal berwarna brand di sisi kiri, kepala section berlatar warna brand dengan garis bawah tebal, dan bayangan tipis. Garis pemisah antar baris, label (tebal dan lebih gelap), kartu rule port forward, dan hasil akses juga dipertegas agar jelas terlihat di mode terang.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.50.1",
     date: "2026-10-29",
     title: "Script VPN: IP lokal (gateway tunnel) mengikuti server yang dipilih",

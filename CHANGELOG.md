@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.50.2] - 2026-10-29
+
+_Script VPN: section form dipertegas_
+
+### Diubah
+
+- Kotak section pada form Script VPN dan kelompok nomor HP di daftar kini lebih tegas: border 2px, garis aksen tebal berwarna brand di sisi kiri, kepala section berlatar warna brand dengan garis bawah tebal, dan bayangan tipis. Garis pemisah antar baris, label (tebal dan lebih gelap), kartu rule port forward, dan hasil akses juga dipertegas agar jelas terlihat di mode terang.
+
 ## [1.50.1] - 2026-10-29
 
 _Script VPN: IP lokal (gateway tunnel) mengikuti server yang dipilih_

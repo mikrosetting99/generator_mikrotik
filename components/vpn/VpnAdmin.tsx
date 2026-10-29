@@ -490,11 +490,11 @@ export function VpnAdmin() {
                     <Button onClick={() => setShowPassword((v) => !v)}>{showPassword ? "Sembunyikan" : "Tampilkan"}</Button>
                   </div>
                 </FormRow>
-                <details className="border-t border-line-soft">
-                  <summary className="cursor-pointer px-4 py-2.5 text-xs font-medium text-muted hover:text-ink">
+                <details className="border-t border-line">
+                  <summary className="cursor-pointer bg-raised/60 px-4 py-2.5 text-xs font-semibold text-ink hover:text-brand">
                     Pengaturan lanjutan (bawaan sudah sesuai)
                   </summary>
-                  <div className="border-t border-line-soft">
+                  <div className="border-t border-line">
                     <FormRow label="Versi RouterOS">
                       <Select
                         value={form.rosVersion}
@@ -597,7 +597,7 @@ export function VpnAdmin() {
               <FormRow label="Rule" hint="Port akses = port di server VPN yang dibuka pelanggan. Port tunnel → IP tujuan di LAN : port tujuan (kosong = sama dengan port tunnel).">
                 <div className="space-y-2">
                   {form.nat.map((r, i) => (
-                    <div key={i} className="flex flex-wrap items-end gap-1.5 rounded-md border border-line-soft bg-raised/40 p-2">
+                    <div key={i} className="flex flex-wrap items-end gap-1.5 rounded-md border border-line bg-raised p-2">
                       <label className="w-24 text-[11px] text-muted">
                         Port akses
                         <TextInput mono value={r.publicPort} onChange={(publicPort) => patchNat(i, { publicPort: publicPort.replace(/\D/g, "") })} placeholder="20017" />
@@ -632,7 +632,7 @@ export function VpnAdmin() {
                 {accessList.length === 0 ? (
                   <p className="rounded-md border border-dashed border-line px-3 py-2 text-xs text-faint">Isi Port akses pada rule untuk memunculkan alamat akses.</p>
                 ) : (
-                  <ul className="divide-y divide-line-soft overflow-hidden rounded-md border border-line-soft">
+                  <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-raised/50">
                     {accessList.map((a) => (
                       <li key={a.rule.publicPort} className="space-y-1 px-3 py-2 text-xs">
                         <p className="text-muted">
@@ -742,15 +742,15 @@ export function VpnAdmin() {
           ) : (
             <div className="space-y-3">
               {phoneGroups.map((g) => (
-                <section key={g.phone} className="overflow-hidden rounded-md border border-line">
-                  <header className="flex items-center justify-between gap-2 border-b border-line bg-raised/60 px-3 py-2">
+                <section key={g.phone} className="overflow-hidden rounded-md border-2 border-l-[6px] border-line border-l-brand bg-surface">
+                  <header className="flex items-center justify-between gap-2 border-b-2 border-line bg-brand/10 px-3 py-2">
                     <div className="min-w-0">
                       <p className="truncate font-mono text-sm font-semibold text-ink">{formatPhone(g.phone)}</p>
                       {g.customer && <p className="truncate text-xs text-muted">{g.customer}</p>}
                     </div>
                     <span className="shrink-0 rounded-md bg-brand/12 px-2 py-0.5 text-[11px] font-medium text-brand">{g.rows.length} script</span>
                   </header>
-                  <ul className="divide-y divide-line-soft">
+                  <ul className="divide-y divide-line">
               {g.rows.map((row) => (
                 <li key={row.id} className={`space-y-2 px-3 py-2.5 hover:bg-brand/[0.05] ${form.id === row.id ? "bg-brand/[0.08]" : ""}`}>
                   <div className="flex items-start justify-between gap-2">
@@ -805,8 +805,8 @@ export function VpnAdmin() {
 /** Satu baris ala jendela Winbox: label di kiri, kontrol di kanan. */
 function FormRow({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-1 border-b border-line-soft px-4 py-2 last:border-b-0 sm:grid-cols-[170px_minmax(0,1fr)] sm:items-start sm:gap-3">
-      <label className="text-[12.5px] font-medium text-muted sm:pt-[10px] sm:text-right">
+    <div className="grid gap-1 border-b border-line px-4 py-2.5 last:border-b-0 sm:grid-cols-[170px_minmax(0,1fr)] sm:items-start sm:gap-3">
+      <label className="text-[12.5px] font-semibold text-ink sm:pt-[10px] sm:text-right">
         {label}
         {required && <span className="text-bad"> *</span>}
         <span className="hidden sm:inline">:</span>
@@ -822,10 +822,10 @@ function FormRow({ label, required, hint, children }: { label: string; required?
 /** Kotak bergaris dengan judul, seperti tab/grup pengaturan Mikrotik. */
 function Group({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-md border border-line bg-surface">
-      <header className="border-b border-line-soft bg-raised/60 px-4 py-2">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.09em] text-brand">{title}</h3>
-        {note && <p className="mt-0.5 text-xs text-faint">{note}</p>}
+    <section className="overflow-hidden rounded-md border-2 border-l-[6px] border-line border-l-brand bg-surface shadow-sm">
+      <header className="border-b-2 border-line bg-brand/10 px-4 py-2.5">
+        <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-brand">{title}</h3>
+        {note && <p className="mt-0.5 text-xs text-muted">{note}</p>}
       </header>
       {children}
     </section>

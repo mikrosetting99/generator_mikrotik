@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.42.0] - 2026-10-29
+
+_Menu baru: Script VPN & Mikhmon Online (link pribadi per nomor HP)_
+
+### Ditambahkan
+
+- Menu Script VPN & Mikhmon Online (/vpn, grup Alat) untuk admin menyimpan username, password, dan script dari app.mikrosetting.com, lalu membuat link pribadi untuk pelanggan. Menu ini hanya untuk admin (disembunyikan dari user dan tamu) dan juga ada di sidebar Dashboard Admin.
+- Kategori script dikelola admin: bawaan "Mikhmon online" dan "VPN Remote", bisa ditambah, diganti nama, dan dihapus (kategori yang masih dipakai tidak bisa dihapus). Hanya admin yang bisa menambah kategori dan link.
+- Formulir admin: nomor HP (08…, +62…, atau 62… dianggap sama), nama pelanggan, kategori, judul, username, password, script, dan catatan. Setelah disimpan muncul link pelanggan dengan tombol Salin link, Salin pesan, dan Kirim lewat WhatsApp (pesan siap kirim ke nomor pelanggan). Daftar link bisa difilter per kategori dan dicari dengan nomor HP, nama, judul, atau username; tiap link bisa disalin, dikirim lewat WA, diubah (link tidak berubah), atau dihapus.
+- Halaman pelanggan /script/<kode-acak>: pelanggan membuka link lalu memasukkan nomor HP-nya. Bila cocok, tampil seluruh script milik nomor itu (satu nomor boleh punya banyak link) dikelompokkan per kategori, dengan tombol salin untuk username, password, dan script serta unduh .rsc. Nomor HP yang tidak cocok ditolak dengan pesan yang sama dengan link salah, dan percobaan gagal dibatasi (8 kali per 15 menit per alamat IP dan per link). Halaman tidak diindeks mesin pencari.
+- Password dan isi script disimpan terenkripsi (AES-256-GCM) di database. Kuncinya diturunkan dari VPN_SECRET di .env, atau NEXTAUTH_SECRET bila tidak diisi — jangan mengganti rahasia itu setelah data tersimpan karena data lama tidak akan bisa dibuka. Tabel baru dibuat otomatis oleh update.sh (prisma migrate deploy).
+
 ## [1.41.0] - 2026-10-27
 
 _Static Routing: format RAW seperti Buananet, pilihan content/tls-host, bawaan baru_

@@ -181,6 +181,20 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     requireLogin: false,
   },
   {
+    id: "vpn-script",
+    group: "Alat",
+    builtin: true,
+    title: "Script VPN & Mikhmon Online",
+    description: "Admin menyimpan script VPN Remote dan Mikhmon online per nomor HP lalu mengirim link-nya ke pelanggan.",
+    href: "/vpn",
+    icon: "lock",
+    visible: true,
+    // Pengelolaan hanya untuk admin; pelanggan memakai link pribadi (/script/…), bukan menu ini.
+    userVisible: false,
+    devMode: false,
+    requireLogin: true,
+  },
+  {
     id: "bandwidth",
     group: "Alat",
     builtin: true,

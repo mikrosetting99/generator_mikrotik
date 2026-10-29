@@ -189,3 +189,38 @@ model LicensePackage {
   @@index([orderId, posisi])
   @@map("license_packages")
 }
+
+/// Kategori script pelanggan (mis. Mikhmon online, VPN Remote). Hanya admin yang mengelola.
+model VpnCategory {
+  id        String      @id @default(cuid())
+  name      String      @unique @db.VarChar(80)
+  sortOrder Int         @default(0)
+  createdAt DateTime    @default(now())
+  scripts   VpnScript[]
+
+  @@map("vpn_categories")
+}
+
+/// Satu link script untuk pelanggan: dibuka lewat /script/<token> dan dikunci dengan nomor HP.
+/// Password dan isi script disimpan terenkripsi (lib/vault.ts).
+model VpnScript {
+  id          String      @id @default(cuid())
+  /// Bagian acak di link pelanggan; tidak bisa ditebak.
+  token       String      @unique @db.VarChar(40)
+  /// Nomor HP ternormalisasi (62812...). Satu nomor boleh punya banyak link.
+  phone       String      @db.VarChar(20)
+  customer    String      @default("") @db.VarChar(120)
+  categoryId  String
+  category    VpnCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  title       String      @db.VarChar(160)
+  username    String      @default("") @db.VarChar(160)
+  passwordEnc String      @db.Text
+  scriptEnc   String      @db.LongText
+  note        String      @default("") @db.VarChar(500)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([phone])
+  @@index([categoryId])
+  @@map("vpn_scripts")
+}

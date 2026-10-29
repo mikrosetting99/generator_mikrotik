@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Cpu, Database, FileText, Shield, Terminal, Users, Wand } from "@/components/icons";
+import { Cpu, Database, FileText, Lock, Shield, Terminal, Users, Wand } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
 
@@ -11,6 +11,7 @@ export const ADMIN_NAV = [
   { id: "template", label: "Template Login", href: "/admin?tab=template", icon: FileText },
   { id: "galeri", label: "Galeri Gambar", href: "/admin?tab=galeri", icon: Database },
   { id: "pengguna", label: "Pengguna", href: "/admin/users", icon: Users },
+  { id: "vpn", label: "Script VPN & Mikhmon", href: "/vpn", icon: Lock },
   { id: "versi", label: "Versi & Changelog", href: "/admin?tab=versi", icon: Terminal },
 ] as const;
 

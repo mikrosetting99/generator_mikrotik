@@ -14,10 +14,16 @@ export const VPN_PROTOCOLS: Array<{ id: VpnProtocol; label: string }> = [
 ];
 
 /** Server VPN yang bisa dipilih admin: domain untuk connect-to dan alamat akses, IP publik untuk akses via IP. */
-export const VPN_SERVERS: Array<{ domain: string; ip: string; label: string }> = [
-  { domain: "vpn-id1.mikrosetting.com", ip: "103.181.143.233", label: "Indonesia 1 (vpn-id1)" },
-  { domain: "vpn-sg1.mikrosetting.com", ip: "103.250.11.78", label: "Singapura 1 (vpn-sg1)" },
+export const VPN_SERVERS: Array<{ domain: string; ip: string; gateway: string; label: string }> = [
+  { domain: "vpn-id1.mikrosetting.com", ip: "103.181.143.233", gateway: "10.202.0.1", label: "Indonesia 1 (vpn-id1)" },
+  { domain: "vpn-sg1.mikrosetting.com", ip: "103.250.11.78", gateway: "10.102.0.1", label: "Singapura 1 (vpn-sg1)" },
 ];
+
+/** IP lokal server di dalam tunnel (dipantau Netwatch); server yang tidak dikenal memakai bawaan. */
+export function serverGateway(server: string): string {
+  const domain = (server || VPN_SERVERS[0].domain).trim();
+  return VPN_SERVERS.find((s) => s.domain === domain)?.gateway ?? DEFAULT_VPN_GATEWAY;
+}
 
 export const DEFAULT_VPN_SERVER = VPN_SERVERS[0].domain;
 export const DEFAULT_VPN_GATEWAY = "10.202.0.1";
@@ -141,7 +147,7 @@ export function checkVpnParams(p: VpnScriptParams): string {
   if (!HOST_OK.test(server)) return "Alamat server VPN tidak valid.";
   const tunnel = (p.tunnel || defaultTunnelName(p.user)).trim();
   if (!NAME_OK.test(tunnel)) return "Nama tunnel hanya boleh huruf, angka, titik, strip, dan underscore.";
-  if (!IPV4.test((p.gateway || DEFAULT_VPN_GATEWAY).trim())) return "Gateway tunnel harus berupa alamat IPv4, mis. 10.202.0.1.";
+  if (!IPV4.test((p.gateway || serverGateway(p.server)).trim())) return "Gateway tunnel harus berupa alamat IPv4, mis. 10.202.0.1.";
   if (p.protocol === "ovpn" && p.port !== 0 && (p.port < 1 || p.port > 65535)) return "Port OVPN harus 1–65535.";
   return checkNat(p);
 }
@@ -149,7 +155,7 @@ export function checkVpnParams(p: VpnScriptParams): string {
 export function generateVpnScript(p: VpnScriptParams): string {
   const server = (p.server || DEFAULT_VPN_SERVER).trim();
   const tunnel = (p.tunnel || defaultTunnelName(p.user)).trim();
-  const gateway = (p.gateway || DEFAULT_VPN_GATEWAY).trim();
+  const gateway = (p.gateway || serverGateway(server)).trim();
   const label = { sstp: "SSTP", l2tp: "L2TP", ovpn: "OVPN" }[p.protocol];
   const menu = `/interface ${p.protocol}-client`;
   const schedulerName = `tunnel-scheduler-${tunnel.replace(/^tunnel[_-]/, "").replace(/_/g, "-")}`;

@@ -7,7 +7,7 @@ import { Button, CheckPill, EmptyState, Field, Note, Select, TextInput } from "@
 import { formatPhone, isValidPhone, normalizePhone } from "@/lib/phone";
 import {
   checkVpnParams,
-  DEFAULT_VPN_GATEWAY,
+  serverGateway,
   DEFAULT_VPN_SERVER,
   defaultTunnelName,
   generateVpnScript,
@@ -182,6 +182,8 @@ export function VpnAdmin() {
   const knownServer = VPN_SERVERS.find((s) => s.domain === (form.vpnServer || VPN_SERVERS[0].domain)) ?? null;
   const serverPreset = customServer ? null : knownServer;
   const accessList = showNat ? natAccess(toNatRules(form.nat).filter((r) => r.publicPort > 0), form.vpnServer, form.publicIp) : [];
+  // contoh IP tunnel mengikuti jaringan lokal server terpilih (10.202.0.x untuk id1, 10.102.0.x untuk sg1)
+  const tunnelExample = (form.gatewayIp.trim() || serverGateway(form.vpnServer)).replace(/\.\d+$/, ".17");
   const resetForm = () => {
     setForm({ ...EMPTY, categoryId: form.categoryId });
     setCustomServer(false);
@@ -451,7 +453,7 @@ export function VpnAdmin() {
                 <FormRow
                   label="Server VPN"
                   required
-                  hint={serverPreset ? `connect-to ${serverPreset.domain} · IP publik ${serverPreset.ip}` : "Isi domain dan IP publik server sendiri."}
+                  hint={serverPreset ? `connect-to ${serverPreset.domain} · IP publik ${serverPreset.ip} · IP lokal ${serverPreset.gateway}` : "Isi domain dan IP publik server sendiri."}
                 >
                   <Select
                     value={serverPreset ? serverPreset.domain : "__custom"}
@@ -504,8 +506,8 @@ export function VpnAdmin() {
                         ]}
                       />
                     </FormRow>
-                    <FormRow label="Gateway tunnel" hint={`Dipantau Netwatch. Bawaan ${DEFAULT_VPN_GATEWAY}`}>
-                      <TextInput mono value={form.gatewayIp} onChange={(gatewayIp) => patch({ gatewayIp })} placeholder={DEFAULT_VPN_GATEWAY} />
+                    <FormRow label="Gateway tunnel" hint={`Dipantau Netwatch. Bawaan ${serverGateway(form.vpnServer)} (IP lokal server terpilih)`}>
+                      <TextInput mono value={form.gatewayIp} onChange={(gatewayIp) => patch({ gatewayIp })} placeholder={serverGateway(form.vpnServer)} />
                     </FormRow>
                     <FormRow label="Nama tunnel" hint="Kosong = dibuat dari username.">
                       <TextInput mono value={form.tunnelName} onChange={(tunnelName) => patch({ tunnelName })} placeholder={defaultTunnelName(form.username)} />
@@ -589,8 +591,8 @@ export function VpnAdmin() {
 
           {form.protocol && showNat && (
             <Group title="Port forward (dst-nat)" note="Khusus VPN Remote. Router pelanggan meneruskan akses ke IP tunnel:port menuju perangkat di LAN-nya.">
-              <FormRow label="IP tunnel pelanggan" required={form.nat.length > 0} hint="IP pelanggan di dalam tunnel VPN, mis. 10.202.0.17.">
-                <TextInput mono value={form.tunnelIp} onChange={(tunnelIp) => patch({ tunnelIp: tunnelIp.replace(/\s+/g, "") })} placeholder="10.202.0.17" />
+              <FormRow label="IP tunnel pelanggan" required={form.nat.length > 0} hint={`IP pelanggan di dalam tunnel VPN, mis. ${tunnelExample}.`}>
+                <TextInput mono value={form.tunnelIp} onChange={(tunnelIp) => patch({ tunnelIp: tunnelIp.replace(/\s+/g, "") })} placeholder={tunnelExample} />
               </FormRow>
               <FormRow label="Rule" hint="Port akses = port di server VPN yang dibuka pelanggan. Port tunnel → IP tujuan di LAN : port tujuan (kosong = sama dengan port tunnel).">
                 <div className="space-y-2">

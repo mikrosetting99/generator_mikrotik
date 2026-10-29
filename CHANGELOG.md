@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.50.1] - 2026-10-29
+
+_Script VPN: IP lokal (gateway tunnel) mengikuti server yang dipilih_
+
+### Diperbaiki
+
+- Gateway tunnel yang dipantau Netwatch dan scheduler kini mengikuti server VPN: vpn-id1 memakai 10.202.0.1 dan vpn-sg1 memakai 10.102.0.1. Sebelumnya semua server memakai 10.202.0.1. Server manual tetap memakai 10.202.0.1 kecuali diisi sendiri di Pengaturan lanjutan. Contoh IP tunnel pelanggan pada port forward juga mengikuti jaringan server (10.102.0.17 untuk sg1).
+
 ## [1.50.0] - 2026-10-29
 
 _Script VPN: pilih server VPN (domain dan IP publik)_

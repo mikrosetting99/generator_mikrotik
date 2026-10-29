@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.50.1",
+    date: "2026-10-29",
+    title: "Script VPN: IP lokal (gateway tunnel) mengikuti server yang dipilih",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Gateway tunnel yang dipantau Netwatch dan scheduler kini mengikuti server VPN: vpn-id1 memakai 10.202.0.1 dan vpn-sg1 memakai 10.102.0.1. Sebelumnya semua server memakai 10.202.0.1. Server manual tetap memakai 10.202.0.1 kecuali diisi sendiri di Pengaturan lanjutan. Contoh IP tunnel pelanggan pada port forward juga mengikuti jaringan server (10.102.0.17 untuk sg1).",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.50.0",
     date: "2026-10-29",
     title: "Script VPN: pilih server VPN (domain dan IP publik)",

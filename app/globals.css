@@ -21,10 +21,10 @@
   --color-faint: #8f97a3;
 
   /* Ungu Odoo (terangkan agar terbaca di latar gelap) + teal sebagai aksen aksi */
-  --color-brand: #c58fb5;
-  --color-brand-dim: #5e3d56;
-  --color-brand-ink: #1a0f17;
-  --color-accent: #20b2b8;
+  --color-brand: #b3a8da;
+  --color-brand-dim: #3e3760;
+  --color-brand-ink: #17132a;
+  --color-accent: #3bb0d4;
   --color-accent-ink: #04282a;
   --color-warn: #f0ad4e;
   --color-bad: #f1707d;
@@ -33,14 +33,14 @@
   --edge-highlight: rgba(255, 255, 255, 0.06);
   --grid-line: transparent;
   --scrollbar-hover: #4a505c;
-  --nav-bg: #4a3043;
+  --nav-bg: #4a4170;
 
-  --font-sans: var(--font-inter), "Segoe UI", Roboto, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, "Noto Sans", Arial, sans-serif;
   --font-mono: var(--font-mono-code), ui-monospace, "Cascadia Code", Consolas, monospace;
 
   /* Sudut kecil seperti Odoo (bawaan Tailwind jauh lebih bulat). */
   --radius-md: 0.25rem;
-  --radius-lg: 0.3125rem;
+  --radius-lg: 0.25rem;
   --radius-xl: 0.375rem;
   --radius-2xl: 0.5rem;
   --radius-3xl: 0.625rem;
@@ -50,97 +50,77 @@
 
 /* Tema terang Odoo: latar abu muda, kartu putih, ungu #714B67, teal #017E84. */
 :root[data-theme="light"] {
-  --color-canvas: #eef0f3;
+  --color-canvas: #f8f9fa;
   --color-surface: #ffffff;
-  --color-raised: #f4f5f7;
-  --color-line: #c3c8d0;
-  --color-line-soft: #dde0e5;
-  --color-code: #f6f7f9;
+  --color-raised: #f2f3f5;
+  --color-line: #ced4da;
+  --color-line-soft: #dee2e6;
+  --color-code: #f8f9fa;
 
-  --color-ink: #1f2328;
-  --color-muted: #4a5159;
-  --color-faint: #636b75;
+  --color-ink: #212529;
+  --color-muted: #495057;
+  --color-faint: #6c757d;
 
-  --color-brand: #714b67;
-  --color-brand-dim: #d9c5d3;
+  --color-brand: #71639e;
+  --color-brand-dim: #efedf5;
   --color-brand-ink: #ffffff;
-  --color-accent: #017e84;
+  --color-accent: #0180a5;
   --color-accent-ink: #ffffff;
-  --color-warn: #b45309;
-  --color-bad: #c62828;
-  --color-ok: #198754;
+  --color-warn: #9a6b01;
+  --color-bad: #d23f3a;
+  --color-ok: #008818;
 
   --edge-highlight: rgba(15, 27, 45, 0.06);
   --grid-line: transparent;
-  --scrollbar-hover: #aab1bc;
-  --nav-bg: #714b67;
+  --scrollbar-hover: #adb5bd;
+  --nav-bg: #71639e;
 }
-
 /* Tanpa JavaScript, ikuti setelan perangkat. */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
-    --color-canvas: #eef0f3;
+    --color-canvas: #f8f9fa;
     --color-surface: #ffffff;
-    --color-raised: #f4f5f7;
-    --color-line: #c3c8d0;
-    --color-line-soft: #dde0e5;
-    --color-code: #f6f7f9;
-    --color-ink: #1f2328;
-    --color-muted: #4a5159;
-    --color-faint: #636b75;
-    --color-brand: #714b67;
-    --color-brand-dim: #d9c5d3;
+    --color-raised: #f2f3f5;
+    --color-line: #ced4da;
+    --color-line-soft: #dee2e6;
+    --color-code: #f8f9fa;
+    --color-ink: #212529;
+    --color-muted: #495057;
+    --color-faint: #6c757d;
+    --color-brand: #71639e;
+    --color-brand-dim: #efedf5;
     --color-brand-ink: #ffffff;
-    --color-accent: #017e84;
+    --color-accent: #0180a5;
     --color-accent-ink: #ffffff;
-    --color-warn: #b45309;
-    --color-bad: #c62828;
-  --color-ok: #198754;
+    --color-warn: #9a6b01;
+    --color-bad: #d23f3a;
+    --color-ok: #008818;
     --edge-highlight: rgba(15, 27, 45, 0.06);
     --grid-line: transparent;
-    --scrollbar-hover: #aab1bc;
-    --nav-bg: #714b67;
+    --scrollbar-hover: #adb5bd;
+    --nav-bg: #71639e;
   }
 }
-
 /*
- * Bilah navigasi Odoo 17 Enterprise: putih, garis tipis di bawah, ikon aplikasi dan
- * judul di kiri, alat (tema, pengguna) di kanan. Berlaku untuk semua header halaman
- * yang menempel di atas.
+ * Bilah navigasi seperti wyn.mikrosetting.com (Odoo): ungu #71639e setinggi 46px dengan
+ * tulisan putih; hover menggelapkan latar sedikit. Warna di dalamnya dibalik lewat
+ * variabel, jadi teks, ikon, tombol, dan lencana di header otomatis putih di atas ungu
+ * tanpa mengubah komponennya satu per satu.
  */
 header.sticky {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-line);
-  box-shadow: 0 1px 2px rgba(15, 27, 45, 0.05);
+  background: var(--nav-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--nav-bg) 82%, #000);
+  box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-}
-
-/*
- * Menu aplikasi (beranda) ala Odoo Enterprise: latar ungu bergradasi memenuhi layar,
- * bilah navigasi transparan dengan tulisan putih, ikon aplikasi berbentuk kotak membulat.
- * Warna di dalam bilah dibalik lewat variabel, jadi komponennya tidak perlu diubah.
- */
-.o-home {
-  background:
-    radial-gradient(1100px 520px at 18% -8%, rgba(255, 255, 255, 0.16), transparent 62%),
-    radial-gradient(900px 480px at 92% 8%, rgba(1, 126, 132, 0.18), transparent 60%),
-    linear-gradient(180deg, color-mix(in srgb, var(--nav-bg) 88%, #fff) 0%, var(--nav-bg) 38%, color-mix(in srgb, var(--nav-bg) 62%, #000) 100%);
-  color: #fff;
-}
-.o-home.o-home-photo {
-  background: color-mix(in srgb, var(--nav-bg) 72%, transparent);
-}
-.o-home header.sticky {
-  background: transparent;
-  border-bottom: 0;
-  box-shadow: none;
-  color: #fff;
+  min-height: 46px;
+  color: rgba(255, 255, 255, 0.9);
   --color-ink: #ffffff;
-  --color-muted: rgba(255, 255, 255, 0.85);
-  --color-faint: rgba(255, 255, 255, 0.68);
+  --color-muted: rgba(255, 255, 255, 0.9);
+  --color-faint: rgba(255, 255, 255, 0.7);
   --color-brand: #ffffff;
   --color-accent: #ffffff;
+  /* Tombol utama di header: latar putih, teks ungu (bukan putih di atas putih). */
   --color-brand-ink: var(--nav-bg);
   --color-accent-ink: var(--nav-bg);
   --color-surface: rgba(255, 255, 255, 0.12);
@@ -149,32 +129,69 @@ header.sticky {
   --color-line: rgba(255, 255, 255, 0.34);
   --color-line-soft: rgba(255, 255, 255, 0.22);
 }
+
+/*
+ * Peluncur aplikasi (beranda) seperti wyn: latar abu muda, sapaan di tengah, ikon aplikasi
+ * solid 68px berpojok 16px dengan garis bawah gelap tipis, nama di bawah ikon.
+ */
+.o-launcher-page {
+  background: var(--color-canvas);
+  min-height: 100vh;
+}
+.o-launcher {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+.o-launcher-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  gap: 1.25rem 0.5rem;
+}
+@media (min-width: 640px) {
+  .o-launcher {
+    padding-top: 3.5rem;
+  }
+  .o-launcher-grid {
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 1.75rem 1rem;
+  }
+}
 .o-app-tile {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.55rem;
-  padding: 0.6rem 0.25rem;
-  border-radius: 10px;
-  color: #fff;
+  width: 100%;
+  max-width: 112px;
+  padding: 0.5rem 0.25rem;
+  border-radius: 6px;
+  color: var(--color-ink);
   text-align: center;
   transition: background-color 0.15s;
 }
-.o-app-tile:hover {
-  background: rgba(255, 255, 255, 0.12);
+.o-app-tile:hover,
+.o-app-tile:focus-visible {
+  background: color-mix(in srgb, var(--color-brand) 6%, transparent);
 }
 .o-app-icon {
-  display: grid;
-  place-items: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
   color: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  transition: transform 0.15s;
+  background: var(--app-color, var(--color-brand));
+  box-shadow: inset 0 -3px rgba(0, 0, 0, 0.12);
 }
-.o-app-tile:hover .o-app-icon {
-  transform: scale(1.06);
+@media (min-width: 640px) {
+  .o-app-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 16px;
+  }
 }
 html {
   scroll-behavior: smooth;

@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.56.0] - 2026-10-29
+
+_Tampilan seluruh aplikasi disamakan dengan wyn.mikrosetting.com_
+
+### Diubah
+
+- Warna dan token mengikuti CSS wyn: ungu utama #71639e (hover #5a4f7f), latar halaman abu muda #f8f9fa dengan permukaan putih, teks #212529, abu #6c757d, garis #ced4da/#dee2e6, aksen biru #0180a5, hijau #008818, merah #d23f3a, kuning #9a6b01, sudut 4px, dan font sistem (-apple-system, Segoe UI, Roboto). Tema gelap ikut diselaraskan dengan ungu yang sama.
+- Bilah navigasi kembali ungu #71639e setinggi 46px dengan tulisan putih seperti wyn (sebelumnya putih), berlaku di semua halaman.
+- Beranda menjadi peluncur aplikasi wyn: latar abu muda, sapaan di tengah, dan ikon aplikasi solid 68px berpojok 16px dengan garis bawah gelap tipis serta nama di bawahnya (3 kolom di HP, otomatis di layar lebar). Lencana kunci menandai menu yang perlu login.
+
 ## [1.55.0] - 2026-10-29
 
 _AI Mikrotik Engineer: Mikrotik tersimpan di akun dan status tersambung/offline otomatis_

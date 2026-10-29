@@ -32,7 +32,7 @@ const SAMPLE = [
 ];
 
 /** Warna ikon aplikasi di beranda (palet ala Odoo); dipilih stabil dari id menu. */
-const APP_COLORS = ["#714b67", "#017e84", "#e0902b", "#5b7fa6", "#c4567f", "#4e9f6e", "#8a6fc9", "#d9644a"];
+const APP_COLORS = ["#71639e", "#0180a5", "#e0902b", "#5b7fa6", "#c4567f", "#4e9f6e", "#8a6fc9", "#d9644a"];
 function appColor(id: string): string {
   let h = 0;
   for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) >>> 0;
@@ -67,13 +67,13 @@ export default async function Home() {
   const waUrl = settings.waEnabled ? waLink(settings.waNumber, settings.waMessage) : "";
 
   return (
-    <main className={`o-home relative min-h-screen ${settings.appBgId ? "o-home-photo" : ""}`}>
-      {/* Bilah navigasi Odoo Enterprise: transparan di atas menu aplikasi (gayanya dari .o-home di globals.css). */}
+    <main className="o-launcher-page relative">
+      {/* Bilah navigasi ungu seperti wyn (gayanya dari header.sticky di globals.css). */}
       <header className="sticky top-0 z-30">
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-2.5 lg:px-6">
-          <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/10 text-brand" aria-hidden>
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+        <div className="flex min-h-[46px] w-full flex-wrap items-center justify-between gap-3 px-3 lg:px-4">
+          <Link href="/" className="flex min-w-0 items-center gap-2">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-white/15 text-white" aria-hidden>
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                 <path d="M4 4h4v4H4V4Zm6 0h4v4h-4V4Zm6 0h4v4h-4V4ZM4 10h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4ZM4 16h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4Z" />
               </svg>
             </span>
@@ -82,36 +82,34 @@ export default async function Home() {
               <img
                 src={`/api/site-logo?v=${settings.logoVersion}`}
                 alt={settings.siteName}
-                className="h-8 w-auto max-w-[140px] rounded-sm bg-white/90 object-contain p-0.5"
+                className="h-7 w-auto max-w-[140px] rounded-sm bg-white/90 object-contain p-0.5"
               />
             )}
-            <span className="truncate text-sm font-semibold text-ink">{settings.siteName}</span>
+            <span className="truncate text-[1.1rem] text-ink">{settings.siteName}</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 py-1.5">
             {isAdmin && (
               <Link
                 href="/admin"
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-3 text-xs font-medium text-ink transition-colors hover:bg-raised"
+                className="inline-flex min-h-8 items-center gap-1.5 rounded border border-line px-3 text-xs font-medium text-ink transition-colors hover:bg-raised"
               >
                 <Shield className="h-3.5 w-3.5" />
                 Dashboard Admin
               </Link>
             )}
             {loggedIn ? (
-              <span className="inline-flex min-h-9 items-center gap-1 rounded-md border border-line bg-surface pl-3 pr-1 text-xs text-muted">
+              <span className="inline-flex min-h-8 items-center gap-1 rounded border border-line bg-surface pl-3 pr-1 text-xs text-muted">
                 <User className="h-3.5 w-3.5 text-brand" />
                 <span className="font-medium text-ink">{username}</span>
                 {isAdmin && (
-                  <span className="rounded-full border border-line px-1.5 text-[10px] uppercase tracking-wide text-ink">
-                    admin
-                  </span>
+                  <span className="rounded-full border border-line px-1.5 text-[10px] uppercase tracking-wide text-ink">admin</span>
                 )}
                 <SignOutButton />
               </span>
             ) : (
               <Link
                 href="/login"
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-3 text-xs font-medium text-ink transition-colors hover:bg-raised"
+                className="inline-flex min-h-8 items-center gap-1.5 rounded border border-line px-3 text-xs font-medium text-ink transition-colors hover:bg-raised"
               >
                 <LogIn className="h-3.5 w-3.5" />
                 Masuk
@@ -122,17 +120,17 @@ export default async function Home() {
         </div>
       </header>
 
-      <div className="relative w-full px-4 pb-12 pt-6 sm:pt-8 lg:px-8">
+      <div className="o-launcher">
         {/* ----------------------------------------------------- sapaan */}
-        <div className="animate-rise">
-          <h1 className="text-2xl font-medium leading-tight tracking-tight text-white sm:text-[2rem]">
-            {settings.heroTitle} <span className="text-white/80">{settings.heroAccent}</span>
+        <div className="animate-rise mb-9 text-center">
+          <h1 className="mb-1 text-[1.35rem] font-semibold text-ink">
+            {settings.heroTitle} <span className="text-brand">{settings.heroAccent}</span>
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75 sm:text-base">{settings.heroText}</p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <p className="mx-auto max-w-xl text-sm leading-relaxed text-muted">{settings.heroText}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <Link
               href="/setup"
-              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-white px-5 text-sm font-semibold text-[color:var(--nav-bg)] shadow-sm transition-all duration-200 hover:bg-white/90 active:scale-[0.98]"
+              className="inline-flex min-h-9 items-center gap-2 rounded border border-brand bg-brand px-4 text-sm font-medium text-[color:var(--color-brand-ink)] transition-colors hover:brightness-90"
             >
               {settings.ctaLabel}
               <ArrowRight className="h-4 w-4" />
@@ -142,27 +140,29 @@ export default async function Home() {
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-10 items-center gap-2 rounded-md border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/20 active:scale-[0.98]"
+                className="inline-flex min-h-9 items-center gap-2 rounded border border-[#25D366]/50 bg-[#25D366]/10 px-4 text-sm font-medium text-[#128c4a] transition-colors hover:bg-[#25D366]/20"
               >
                 <WhatsappIcon className="h-4 w-4" />
                 {settings.waLabel}
               </a>
             )}
           </div>
-          <p className="mt-3 flex items-center gap-1.5 text-xs text-white/60">
+          <p className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-faint">
             <Lock className="h-3.5 w-3.5" />
             Diproses di browser, tanpa kirim data
           </p>
         </div>
 
         {/* ------------------------------------------------ menu aplikasi */}
-        <div className="mt-8 space-y-8">
+        <div className="space-y-8">
           {sections.map((section) => (
             <div key={section.name || "menu"}>
               {section.name && (
-                <h3 className="animate-rise mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">{section.name}</h3>
+                <h3 className="animate-rise mb-3 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-faint before:h-px before:flex-1 before:bg-line-soft after:h-px after:flex-1 after:bg-line-soft">
+                  {section.name}
+                </h3>
               )}
-              <div className="flex flex-wrap gap-x-2 gap-y-3">
+              <div className="o-launcher-grid">
                 {section.menus.map((menu) => {
                   // Urutan tile di seluruh grup: dipakai sebagai jeda animasi muncul bertahap.
                   const order = cardOrder++;
@@ -174,7 +174,6 @@ export default async function Home() {
                     menu.requireLogin && !loggedIn
                       ? `/login?callbackUrl=${encodeURIComponent(external ? "/" : menu.href)}`
                       : menu.href;
-                  const color = appColor(menu.id);
                   const note = [
                     menu.description,
                     `${(usage[menu.id] ?? 0).toLocaleString("id-ID")}× dipakai`,
@@ -187,20 +186,17 @@ export default async function Home() {
 
                   const body = (
                     <>
-                      <span
-                        className="o-app-icon relative"
-                        style={{ background: `linear-gradient(150deg, color-mix(in srgb, ${color} 82%, #fff), ${color} 55%, color-mix(in srgb, ${color} 72%, #000))` }}
-                      >
-                        <MenuIcon name={menu.icon} className="h-9 w-9" />
+                      <span className="o-app-icon relative" style={{ "--app-color": appColor(menu.id) } as React.CSSProperties}>
+                        <MenuIcon name={menu.icon} className="h-8 w-8" />
                         {(menu.requireLogin || locked) && (
-                          <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-white text-[color:var(--nav-bg)] shadow" aria-hidden>
+                          <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full border border-line bg-surface text-muted shadow-sm" aria-hidden>
                             <Lock className="h-3 w-3" />
                           </span>
                         )}
                       </span>
-                      <span className="line-clamp-2 w-full min-w-0 text-[13px] font-medium leading-snug text-white">{menu.title}</span>
+                      <span className="line-clamp-2 w-full min-w-0 text-sm font-medium leading-tight text-ink">{menu.title}</span>
                       {(!menu.userVisible || menu.devMode) && (
-                        <span className="-mt-1 rounded-full bg-black/25 px-2 py-px text-[10px] font-medium uppercase tracking-wide text-white/80">
+                        <span className="-mt-1 rounded-full bg-raised px-2 py-px text-[10px] font-medium uppercase tracking-wide text-muted">
                           {menu.devMode ? (locked ? "dev" : "dev · admin") : "admin"}
                         </span>
                       )}
@@ -227,7 +223,7 @@ export default async function Home() {
                   );
 
                   return (
-                    <div key={menu.id} className="animate-card w-[112px] sm:w-[128px]" style={{ "--i": Math.min(order, 14) } as React.CSSProperties}>
+                    <div key={menu.id} className="animate-card w-full" style={{ "--i": Math.min(order, 14) } as React.CSSProperties}>
                       {tile}
                     </div>
                   );
@@ -239,8 +235,8 @@ export default async function Home() {
 
         {/* ------------------------------------------- cuplikan & jaminan */}
         {settings.showSample && (
-          <div className="animate-rise mt-12 overflow-hidden rounded-lg border border-white/20 bg-surface text-ink shadow-lg">
-            <div className="flex items-center gap-3 border-b border-line-soft bg-raised px-4 py-2.5">
+          <div className="animate-rise mt-12 overflow-hidden rounded-md border border-line bg-surface text-ink shadow-sm">
+            <div className="flex items-center gap-3 border-b border-line bg-raised px-4 py-2">
               <span className="flex gap-1.5" aria-hidden>
                 <span className="h-2.5 w-2.5 rounded-full bg-bad/60" />
                 <span className="h-2.5 w-2.5 rounded-full bg-warn/60" />
@@ -265,7 +261,7 @@ export default async function Home() {
         )}
 
         {settings.showFeatures && (
-          <section className="mt-8 grid gap-6 rounded-lg border border-white/20 bg-surface p-6 text-ink shadow-lg sm:grid-cols-3 sm:p-8">
+          <section className="mt-6 grid gap-6 rounded-md border border-line bg-surface p-6 text-ink shadow-sm sm:grid-cols-3">
             {[
               {
                 icon: Shield,
@@ -295,12 +291,12 @@ export default async function Home() {
           </section>
         )}
 
-        <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-white/20 pt-5 text-xs text-white/65">
+        <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-xs text-faint">
           <span>{settings.footerNote}</span>
           <div className="flex items-center gap-3">
             <span>
               {settings.siteName} by{" "}
-              <a href="https://mikrosetting.com" target="_blank" rel="noopener noreferrer" className="text-white/85 transition-colors hover:text-white">
+              <a href="https://mikrosetting.com" target="_blank" rel="noopener noreferrer" className="text-muted transition-colors hover:text-brand">
                 Mikrosetting.com
               </a>
             </span>

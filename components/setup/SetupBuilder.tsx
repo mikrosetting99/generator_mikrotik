@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { AppSwitcher } from "@/components/AppSwitcher";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -213,14 +214,7 @@ export function SetupBuilder() {
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
         <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 lg:px-8 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href="/"
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-sm text-muted transition-colors hover:bg-raised hover:text-ink"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Menu</span>
-            </Link>
-            <span className="h-5 w-px bg-line" />
+            <AppSwitcher />
             <div className="flex min-w-0 items-center gap-2">
               <Cpu className="h-4 w-4 text-brand" />
               <h1 className="truncate text-sm font-semibold text-ink">Setup Mikrotik Baru</h1>

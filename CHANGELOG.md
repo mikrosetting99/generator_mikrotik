@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.57.0] - 2026-10-29
+
+_Konsep aplikasi/modul ala Odoo, Dashboard Admin tanpa sidebar, AI Engineer ala wyn_
+
+### Diubah
+
+- Menu diubah menjadi konsep aplikasi/modul: tiap halaman punya pengalih aplikasi (ikon grid) di kiri bilah atas yang membawa ke peluncur, diikuti nama aplikasinya, seperti Odoo. Tombol Menu lama dihapus. Peluncur kini datar tanpa judul grup (urutan tetap mengikuti pengaturan admin), dan istilah Menu di Dashboard Admin dan pesan akses diganti Aplikasi.
+- Dashboard Admin mengikuti aplikasi Pengaturan Odoo: sidebar kiri dihapus karena navigasi antarbagian sudah ada di bilah atas (menu bagian bisa digeser di layar kecil), isi pengaturan memakai lebar penuh, dan Situs & Menu menjadi Situs & Aplikasi.
+
+### Ditambahkan
+
+- AI Mikrotik Engineer disamakan dengan fitur AI Network Engineer di wyn (berdasarkan CSS dan JavaScript publik wyn): perubahan konfigurasi dari AI tampil sebagai kartu Rencana perubahan dengan tingkat risiko rendah/sedang/tinggi, daftar perintah, dan tombol Setujui & terapkan atau Tolak. Saat disetujui, backup dibuat di router lebih dulu (/system backup save, bisa dimatikan) lalu perubahan diterapkan dan hasilnya dianalisis AI; rencana berisiko tinggi butuh centang pengertian.
+- Aksi cepat Pemeriksaan lengkap router (identity, resource, interface, IP/route, DHCP, firewall/NAT, log) dan semua saran pertanyaan langsung terkirim saat diklik. Penyedia AI dipilih lewat tombol radio dan model lewat daftar pilihan dengan opsi model sendiri. Pemberitahuan toast untuk salin, penerapan, dan galat; pesan galat per kode HTTP (login berakhir, terlalu banyak pesan, server terlalu lama); indikator proses AI sedang memeriksa router.
+
 ## [1.56.0] - 2026-10-29
 
 _Tampilan seluruh aplikasi disamakan dengan wyn.mikrosetting.com_

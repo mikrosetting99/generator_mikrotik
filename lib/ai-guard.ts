@@ -16,7 +16,7 @@ export async function requireAiUser(bucket: string, limit: number, windowMs = 10
   if (session.user.role !== "ADMIN") {
     const menu = (await getSiteSettings()).menus.find((m) => m.id === "ai-engineer");
     if (!menu || !menu.visible || !menu.userVisible || menu.devMode) {
-      return NextResponse.json({ error: "Menu ini tidak tersedia untuk pengguna." }, { status: 403 });
+      return NextResponse.json({ error: "Aplikasi ini tidak tersedia untuk pengguna." }, { status: 403 });
     }
   }
   if (registerFailure(`ai:${bucket}:${userId}`, limit, windowMs)) {

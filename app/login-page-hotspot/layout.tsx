@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { ArrowLeft, Lock, Users } from "@/components/icons";
+import { AppSwitcher } from "@/components/AppSwitcher";
+import { Lock, Users } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { authOptions } from "@/lib/auth";
 import { SignOutButton } from "@/components/login-page-hotspot/SignOutButton";
@@ -19,18 +20,12 @@ export default async function LoginPageHotspotLayout({ children }: { children: R
     <div className="min-h-dvh bg-canvas">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 lg:px-8 py-3">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-brand"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Beranda
-          </Link>
-
-          <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-ink">
+          <AppSwitcher />
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink">
             <Lock className="h-4 w-4 text-brand" />
             Login Page Hotspot
           </span>
+          <span className="ml-auto" />
 
           <ThemeToggle />
 

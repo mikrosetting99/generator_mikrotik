@@ -24,9 +24,9 @@ export async function MenuGate({ id, children }: { id: string; children: ReactNo
           <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-line bg-surface text-muted">
             <Lock className="h-5 w-5" />
           </span>
-          <h1 className="mt-5 text-lg font-semibold text-ink">Menu tidak tersedia</h1>
+          <h1 className="mt-5 text-lg font-semibold text-ink">Aplikasi tidak tersedia</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Menu ini tidak ditampilkan untuk pengguna. Hubungi admin bila Anda memerlukannya.
+            Aplikasi ini tidak ditampilkan untuk pengguna. Hubungi admin bila Anda memerlukannya.
           </p>
           <Link
             href="/"
@@ -52,7 +52,7 @@ export async function MenuGate({ id, children }: { id: string; children: ReactNo
           </span>
           <h1 className="mt-5 text-lg font-semibold text-ink">{menu.title}</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Menu ini sedang dalam pengembangan dan belum bisa dibuka. Silakan coba lagi nanti.
+            Aplikasi ini sedang dalam pengembangan dan belum bisa dibuka. Silakan coba lagi nanti.
           </p>
           <Link
             href="/"

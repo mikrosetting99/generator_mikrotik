@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { RouterMonitor, type MonitorTarget } from "@/components/ai-engineer/RouterMonitor";
 import { Check, ChevronDown, Copy, Plus, Terminal, Trash, Wand, X } from "@/components/icons";
 import { Button, Field, Note, Select, TextInput } from "@/components/ui";
@@ -100,7 +100,11 @@ const SKILLS_CHAR_LIMIT = 90_000;
 const DEFAULT_AI: AiSettings = { provider: "anthropic", model: AI_PROVIDERS[0].models[0], apiKey: "", baseUrl: "" };
 const BLANK_ROUTER: RouterForm = { id: "", name: "", host: "", port: "8728", tls: false, username: "", password: "" };
 
+const FULL_CHECK =
+  "Lakukan pemeriksaan lengkap router ini: identity dan versi, resource (CPU, memori, disk), interface dan trafik, IP address dan route, DHCP, firewall dan NAT, serta log error terbaru. Lalu ringkas masalah yang ditemukan dan beri rekomendasi.";
+
 const STARTERS = [
+  FULL_CHECK,
   "Periksa konfigurasi firewall dan NAT router ini, lalu beri catatan keamanan.",
   "Kenapa koneksi internet lambat? Cek interface, queue, dan resource router.",
   "Buatkan setup load balance 2 ISP dengan failover untuk router ini.",
@@ -127,7 +131,15 @@ function save(key: string, value: unknown) {
 let counter = 0;
 const newId = () => `m${Date.now().toString(36)}${(counter++).toString(36)}`;
 
-async function post<T>(url: string, body: unknown, signal?: AbortSignal): Promise<{ ok: boolean; data: T & { error?: string } }> {
+/** Pesan galat berbahasa Indonesia untuk kode HTTP, dipakai bila server tidak memberi pesan sendiri. */
+function httpMessage(status: number): string {
+  if (status === 401) return "Sesi login berakhir. Muat ulang halaman, login kembali, lalu kirim lagi.";
+  if (status === 429) return "Terlalu banyak pesan dalam waktu singkat. Tunggu sebentar lalu coba lagi.";
+  if (status === 502 || status === 503 || status === 504) return `Server memutus permintaan karena terlalu lama (HTTP ${status}). Coba lagi sebentar lagi.`;
+  return `Gagal memproses permintaan (HTTP ${status}). Silakan coba lagi.`;
+}
+
+async function post<T>(url: string, body: unknown, signal?: AbortSignal): Promise<{ ok: boolean; status: number; data: T & { error?: string } }> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -136,7 +148,37 @@ async function post<T>(url: string, body: unknown, signal?: AbortSignal): Promis
     signal,
   });
   const data = (await res.json().catch(() => ({}))) as T & { error?: string };
-  return { ok: res.ok, data };
+  if (!res.ok && !data.error) data.error = httpMessage(res.status);
+  return { ok: res.ok, status: res.status, data };
+}
+
+/* ------------------------------------------------------------- rencana perubahan */
+
+type Risk = "low" | "medium" | "high";
+
+/** Tingkat risiko sebuah rencana perubahan: tinggi bila bisa memutus akses atau menghapus/menonaktifkan hal penting. */
+function planRisk(cmds: string[]): Risk {
+  const high =
+    cmds.some(isDangerLine) ||
+    cmds.some((l) => /\b(remove|disable)\b/.test(l) && /^\/(ip\s+firewall|interface|ip\s+address|ip\/address|ip\s+route|routing|ip\s+dhcp-server)/.test(l)) ||
+    cmds.some((l) => /chain=input/.test(l) && /action=(drop|reject)/.test(l));
+  if (high) return "high";
+  if (cmds.some((l) => /(^|\s)(set|remove|disable|enable|move|unset)(\s|$)/.test(l))) return "medium";
+  return "low";
+}
+
+const RISK_LABEL: Record<Risk, string> = { low: "rendah", medium: "sedang", high: "tinggi" };
+const RISK_BORDER: Record<Risk, string> = { low: "border-l-accent", medium: "border-l-warn", high: "border-l-bad" };
+
+const backupName = () => {
+  const d = new Date();
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  return `ai-engineer-${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}`;
+};
+
+interface PlanState {
+  status: "applying" | "done" | "failed" | "rejected";
+  backup?: string;
 }
 
 /* ------------------------------------------------------- pemecah jawaban AI */
@@ -266,10 +308,21 @@ export function AiEngineer() {
   const [copied, setCopied] = useState("");
   const [drawer, setDrawer] = useState(false);
   const [sidebar, setSidebar] = useState(false);
+  const [plans, setPlans] = useState<Record<string, PlanState>>({});
+  const [ack, setAck] = useState<Record<string, boolean>>({});
+  const [autoBackup, setAutoBackup] = useState(true);
+  const [toasts, setToasts] = useState<Array<{ id: string; tone: "info" | "warn" | "bad" | "ok"; text: string }>>([]);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const messagesRef = useRef<Msg[]>([]);
   messagesRef.current = messages;
+
+  /** Pemberitahuan singkat di pojok kanan bawah; hilang sendiri (galat lebih lama). */
+  const toast = useCallback((text: string, tone: "info" | "warn" | "bad" | "ok" = "info") => {
+    const id = newId();
+    setToasts((t) => [...t, { id, tone, text }]);
+    window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), tone === "bad" ? 8000 : 4500);
+  }, []);
 
   useEffect(() => {
     setAi(load(AI_KEY, DEFAULT_AI));
@@ -466,18 +519,18 @@ export function AiEngineer() {
     if (activeId === r.id) setActiveId(routers.find((x) => x.id !== r.id)?.id ?? "");
   };
   /** Menjalankan daftar perintah di router aktif; hasilnya ditambahkan ke chat dan dikembalikan agar bisa dikirim ke AI. */
-  const execCommands = async (commands: string[], opts: { confirmed: boolean }): Promise<Msg | null> => {
+  const execCommands = async (commands: string[], opts: { confirmed: boolean; approved?: boolean }): Promise<Msg | null> => {
     if (!active || !info) {
       setFlash({ tone: "warn", text: "Sambungkan router dulu (Pengaturan > Router)." });
       return null;
     }
     const writes = commands.filter((l) => !isReadLine(l));
     const dangers = commands.filter(isDangerLine);
-    if (writes.length && !opts.confirmed) {
+    if (writes.length && !opts.confirmed && !opts.approved) {
       const ok = window.confirm(`Jalankan ${writes.length} perintah yang MENGUBAH konfigurasi di ${routerLabel(active)}?\n\n${writes.join("\n")}`);
       if (!ok) return null;
     }
-    if (dangers.length) {
+    if (dangers.length && !opts.approved) {
       const ok = window.confirm(`PERINGATAN: perintah berikut berisiko (bisa memutus akses atau mengubah akun/layanan router):\n\n${dangers.join("\n")}\n\nTetap jalankan?`);
       if (!ok) return null;
     }
@@ -579,6 +632,31 @@ export function AiEngineer() {
     await converse([...before, resultMsg]);
   };
 
+  /** Setujui rencana: buat backup di router (bila dipilih), terapkan perubahan, lalu kirim hasilnya ke AI. */
+  const applyPlan = async (key: string, commands: string[]) => {
+    if (busy || !active) return;
+    const name = autoBackup ? backupName() : "";
+    setPlans((p) => ({ ...p, [key]: { status: "applying", backup: name || undefined } }));
+    setBusy(true);
+    const before = messagesRef.current;
+    const list = name ? [`/system backup save name=${name}`, ...commands] : commands;
+    const resultMsg = await execCommands(list, { confirmed: true, approved: true });
+    setBusy(false);
+    if (!resultMsg) {
+      setPlans((p) => ({ ...p, [key]: { status: "failed", backup: name || undefined } }));
+      return;
+    }
+    setPlans((p) => ({ ...p, [key]: { status: resultMsg.error ? "failed" : "done", backup: name || undefined } }));
+    if (resultMsg.error) toast("Perubahan tidak seluruhnya diterapkan. Lihat hasil di router.", "bad");
+    else toast(name ? `Perubahan diterapkan. Backup: ${name}.backup` : "Perubahan diterapkan.", "ok");
+    await converse([...before, resultMsg]);
+  };
+
+  const rejectPlan = (key: string) => {
+    setPlans((p) => ({ ...p, [key]: { status: "rejected" } }));
+    toast("Rencana ditolak. Tidak ada perubahan yang diterapkan.", "info");
+  };
+
   const stop = () => abortRef.current?.abort();
 
   const newChat = () => {
@@ -615,8 +693,9 @@ export function AiEngineer() {
       await navigator.clipboard.writeText(text);
       setCopied(key);
       setTimeout(() => setCopied(""), 1500);
+      toast("Script disalin.", "ok");
     } catch {
-      setFlash({ tone: "bad", text: "Clipboard diblokir browser — salin manual." });
+      toast("Gagal menyalin. Pilih teks lalu salin manual.", "warn");
     }
   };
 
@@ -644,7 +723,6 @@ export function AiEngineer() {
   /* --------------------------------------------------------------- tampilan */
 
   const aiReady = Boolean(ai.apiKey.trim() && ai.model.trim());
-  const modelListId = useMemo(() => `models-${ai.provider}`, [ai.provider]);
   const draftRows = Math.min(6, Math.max(1, draft.split("\n").length));
   const monitorTargets: MonitorTarget[] = onlineRouters.map((r) => ({ id: r.id, name: routerLabel(r), body: bodyFor(r) }));
 
@@ -664,17 +742,24 @@ export function AiEngineer() {
         <h2 className={`${blockHead} text-[15px] font-semibold text-ink`}>Koneksi AI</h2>
         <div className="space-y-3 p-4">
           <Field label="Penyedia API">
-            <Select
-              value={ai.provider}
-              placeholder=""
-              onChange={(v) => {
-                const p = AI_PROVIDERS.find((x) => x.id === v) ?? AI_PROVIDERS[0];
-                setAi({ ...ai, provider: p.id, model: (models[p.id]?.[0] ?? p.models[0]) || "", baseUrl: p.id === "custom" ? ai.baseUrl : "" });
-              }}
-              options={AI_PROVIDERS.map((p) => ({ value: p.id, label: p.label }))}
-            />
-          </Field>
-          {ai.provider === "custom" && (
+            <div role="radiogroup" aria-label="Penyedia API" className="grid gap-1.5 sm:grid-cols-2">
+              {AI_PROVIDERS.map((p) => (
+                <label
+                  key={p.id}
+                  className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${ai.provider === p.id ? "border-brand bg-brand/10 font-medium text-brand" : "border-line bg-surface text-ink hover:bg-raised"}`}
+                >
+                  <input
+                    type="radio"
+                    name="ai-provider"
+                    checked={ai.provider === p.id}
+                    onChange={() => setAi({ ...ai, provider: p.id, model: (models[p.id]?.[0] ?? p.models[0]) || "", baseUrl: p.id === "custom" ? ai.baseUrl : "" })}
+                    className="h-4 w-4 accent-[var(--color-brand)]"
+                  />
+                  {p.label}
+                </label>
+              ))}
+            </div>
+          </Field>          {ai.provider === "custom" && (
             <Field label="Base URL" hint="Harus https. Contoh: https://api.contoh.com/v1">
               <TextInput mono value={ai.baseUrl} onChange={(baseUrl) => setAi({ ...ai, baseUrl })} placeholder="https://api.contoh.com/v1" />
             </Field>
@@ -691,33 +776,29 @@ export function AiEngineer() {
             label="Model"
             hint={
               models[ai.provider]?.length
-                ? `${models[ai.provider]?.length} model tersedia dari ${provider.label}. Ketik untuk menyaring atau pilih dari daftar.`
+                ? `${models[ai.provider]?.length} model tersedia dari ${provider.label}.`
                 : "Saran bawaan. Tekan Muat semua model untuk melihat seluruh model yang bisa dipakai API key Anda."
             }
           >
-            <>
+            <div className="space-y-2">
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <input
-                    list={modelListId}
-                    value={ai.model}
-                    onChange={(e) => setAi({ ...ai, model: e.target.value })}
-                    spellCheck={false}
-                    className="h-11 w-full rounded-none border-0 border-b border-line bg-transparent px-1 font-mono text-sm text-ink outline-none hover:border-brand/50 focus:border-brand focus:shadow-[0_1px_0_0_var(--color-brand)] sm:h-10"
+                  <Select
+                    value={modelList.includes(ai.model) ? ai.model : "__custom"}
+                    placeholder=""
+                    onChange={(v) => setAi({ ...ai, model: v === "__custom" ? "" : v })}
+                    options={[...modelList.map((m) => ({ value: m, label: m })), { value: "__custom", label: "Lainnya (ketik nama model sendiri)" }]}
                   />
-                  <datalist id={modelListId}>
-                    {modelList.map((m) => (
-                      <option key={m} value={m} />
-                    ))}
-                  </datalist>
                 </div>
                 <Button onClick={loadModels} disabled={modelsBusy || (!ai.apiKey.trim() && ai.provider !== "openrouter")}>
                   {modelsBusy ? "Memuat…" : "Muat semua model"}
                 </Button>
               </div>
-            </>
-          </Field>
-          <p className="text-[11px] leading-relaxed text-faint">
+              {!modelList.includes(ai.model) && (
+                <TextInput mono value={ai.model} onChange={(model) => setAi({ ...ai, model: model.trim() })} placeholder="nama model, mis. gpt-4o-mini" />
+              )}
+            </div>
+          </Field>          <p className="text-[11px] leading-relaxed text-faint">
             API key disimpan di browser ini saja. Server hanya meneruskannya ke penyedia AI saat Anda chat atau memuat daftar model dan tidak menyimpannya.
           </p>
         </div>
@@ -1079,7 +1160,7 @@ export function AiEngineer() {
                         <button
                           key={s}
                           type="button"
-                          onClick={() => setDraft(s)}
+                          onClick={() => void send(s)}
                           className="rounded-full border border-line bg-surface px-3 py-1.5 text-left text-xs text-muted transition-colors hover:border-brand/50 hover:text-brand"
                         >
                           {s}
@@ -1138,6 +1219,63 @@ export function AiEngineer() {
                         const cmds = extractCommands(seg.lang, seg.code);
                         const key = `${m.id}:${i}`;
                         const writes = cmds.filter((l) => !isReadLine(l)).length;
+                        if (writes > 0) {
+                          const risk = planRisk(cmds);
+                          const st = plans[key];
+                          return (
+                            <div key={i} className={`my-2 rounded-md border border-l-4 border-line bg-surface p-3 text-ink ${RISK_BORDER[risk]}`}>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm font-semibold">Rencana perubahan</span>
+                                <span className={`rounded-full px-2 py-px text-[11px] font-semibold ${risk === "high" ? "bg-bad/15 text-bad" : risk === "medium" ? "bg-warn/15 text-warn" : "bg-accent/15 text-accent"}`}>
+                                  risiko {RISK_LABEL[risk]}
+                                </span>
+                                <span className="text-xs text-muted">
+                                  {cmds.length} perintah{active ? ` · ${routerLabel(active)}` : ""}
+                                </span>
+                              </div>
+                              <pre className="my-2 max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-md bg-[#1f2933] px-3 py-2.5 font-mono text-[12.5px] leading-relaxed text-[#e5e7eb]">{seg.code}</pre>
+                              {!st ? (
+                                <div className="space-y-2">
+                                  <label className="flex items-center gap-2 text-xs text-muted">
+                                    <input type="checkbox" checked={autoBackup} onChange={(e) => setAutoBackup(e.target.checked)} className="h-4 w-4 accent-[var(--color-brand)]" />
+                                    Buat backup otomatis di router sebelum menerapkan
+                                  </label>
+                                  {risk === "high" && (
+                                    <label className="flex items-start gap-2 text-xs text-bad">
+                                      <input type="checkbox" checked={Boolean(ack[key])} onChange={(e) => setAck((a) => ({ ...a, [key]: e.target.checked }))} className="mt-0.5 h-4 w-4 accent-[var(--color-brand)]" />
+                                      Saya mengerti perubahan ini berisiko memutus akses atau menghapus konfigurasi.
+                                    </label>
+                                  )}
+                                  <div className="flex flex-wrap gap-2">
+                                    <Button variant="primary" size="sm" disabled={busy || !info || (risk === "high" && !ack[key])} onClick={() => applyPlan(key, cmds)}>
+                                      Setujui &amp; terapkan
+                                    </Button>
+                                    <Button size="sm" onClick={() => rejectPlan(key)} disabled={busy}>
+                                      Tolak
+                                    </Button>
+                                    <Button size="sm" onClick={() => copy(key, seg.code)}>
+                                      {copied === key ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                      Salin
+                                    </Button>
+                                  </div>
+                                  {!info && <p className="text-xs text-warn">Sambungkan router dulu untuk menerapkan rencana ini.</p>}
+                                </div>
+                              ) : (
+                                <p className={`text-[13px] ${st.status === "failed" ? "text-bad" : st.status === "rejected" ? "text-muted" : "text-ink"}`}>
+                                  {st.status === "applying" && (
+                                    <>
+                                      <span className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border-2 border-brand border-t-transparent align-[-2px]" />
+                                      Membuat backup &amp; menerapkan perubahan…
+                                    </>
+                                  )}
+                                  {st.status === "done" && `Diterapkan${st.backup ? ` · backup ${st.backup}.backup` : ""}.`}
+                                  {st.status === "failed" && "Gagal diterapkan. Lihat hasil di router di bawah."}
+                                  {st.status === "rejected" && "Ditolak. Tidak ada perubahan yang diterapkan."}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        }
                         return (
                           <div key={i} className="my-2 overflow-hidden rounded-md bg-[#1f2933] text-[#e5e7eb]">
                             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-3 py-1.5">
@@ -1176,7 +1314,7 @@ export function AiEngineer() {
                       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.15s]" />
                       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand" />
                     </span>
-                    AI sedang bekerja…
+                    {info ? "AI sedang memeriksa router… (pemeriksaan lengkap bisa 1–2 menit)" : "AI sedang bekerja…"}
                     <button type="button" onClick={stop} className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-0.5 text-[11px] text-muted hover:text-ink">
                       <X className="h-3 w-3" />
                       Hentikan
@@ -1215,6 +1353,23 @@ export function AiEngineer() {
           </>
         )}
       </section>
+
+      {/* ------------------------------------------------------------- toast */}
+      <div className="pointer-events-none fixed bottom-4 right-4 z-[90] flex flex-col gap-2 max-sm:left-3 max-sm:right-3" aria-live="polite">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            role={t.tone === "bad" ? "alert" : "status"}
+            className={`pointer-events-auto flex max-w-sm items-start gap-2 rounded-md border bg-surface px-3 py-2.5 text-sm text-ink shadow-lg ${t.tone === "bad" ? "border-bad/40" : t.tone === "ok" ? "border-ok/40" : t.tone === "warn" ? "border-warn/40" : "border-line"}`}
+          >
+            <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${t.tone === "bad" ? "bg-bad" : t.tone === "ok" ? "bg-ok" : t.tone === "warn" ? "bg-warn" : "bg-brand"}`} />
+            <span className="min-w-0 break-words">{t.text}</span>
+            <button type="button" aria-label="Tutup" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))} className="ml-1 text-faint hover:text-ink">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
 
       {/* ------------------------------------------- pengaturan (panel kanan) */}
       {drawer && (

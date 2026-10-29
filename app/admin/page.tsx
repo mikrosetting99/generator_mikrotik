@@ -77,11 +77,11 @@ export default async function AdminDashboardPage({
             </div>
           </AdminSection>
 
-          <AdminSection title="Pemakaian menu" description="Berapa kali tiap menu dibuka.">
+          <AdminSection title="Pemakaian aplikasi" description="Berapa kali tiap aplikasi dibuka.">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-line bg-raised/60 text-[11px] uppercase tracking-[0.08em] text-muted">
                 <tr>
-                  <th className="px-5 py-2.5 font-semibold">Menu</th>
+                  <th className="px-5 py-2.5 font-semibold">Aplikasi</th>
                   <th className="px-5 py-2.5 font-semibold">Grup</th>
                   <th className="px-5 py-2.5 text-right font-semibold">Dipakai</th>
                   <th className="hidden w-1/3 px-5 py-2.5 sm:table-cell" />
@@ -114,7 +114,7 @@ export default async function AdminDashboardPage({
             <ul className="divide-y divide-line-soft">
               {[
                 { href: "/admin/users", title: "Kelola Pengguna", body: "Tambah akun dan lihat daftar pengguna." },
-                { href: "/admin?tab=situs", title: "Situs & Menu", body: "Logo, WhatsApp, teks beranda, serta tampil/sembunyi menu untuk user." },
+                { href: "/admin?tab=situs", title: "Situs & Aplikasi", body: "Logo, WhatsApp, teks beranda, serta tampil/sembunyi aplikasi untuk user." },
                 { href: "/admin?tab=tema", title: "Tema & Tampilan", body: "Warna tema aplikasi dan background aplikasi." },
                 { href: "/admin?tab=template", title: "Template Login", body: "Template halaman login hotspot untuk semua pengguna." },
               ].map((item) => (

@@ -154,14 +154,9 @@ export default async function Home() {
         </div>
 
         {/* ------------------------------------------------ menu aplikasi */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {sections.map((section) => (
             <div key={section.name || "menu"}>
-              {section.name && (
-                <h3 className="animate-rise mb-3 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-faint before:h-px before:flex-1 before:bg-line-soft after:h-px after:flex-1 after:bg-line-soft">
-                  {section.name}
-                </h3>
-              )}
               <div className="o-launcher-grid">
                 {section.menus.map((menu) => {
                   // Urutan tile di seluruh grup: dipakai sebagai jeda animasi muncul bertahap.

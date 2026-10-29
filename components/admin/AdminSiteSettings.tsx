@@ -186,7 +186,7 @@ export function AdminSiteSettings({
 
   const removeGroup = (index: number) => {
     const name = settings.groups[index];
-    if (!confirm(`Hapus grup "${name}"? Menu di dalamnya jadi tanpa grup.`)) return;
+    if (!confirm(`Hapus grup "${name}"? Aplikasi di dalamnya jadi tanpa grup.`)) return;
     setSettings((s) => ({
       ...s,
       groups: s.groups.filter((_, i) => i !== index),
@@ -247,7 +247,7 @@ export function AdminSiteSettings({
   };
 
   const removeMenu = (menu: MenuSetting) => {
-    if (!confirm(`Hapus menu "${menu.title}"?`)) return;
+    if (!confirm(`Hapus aplikasi "${menu.title}"?`)) return;
     patch({ menus: settings.menus.filter((m) => m.id !== menu.id) });
   };
 
@@ -267,7 +267,7 @@ export function AdminSiteSettings({
       setOpen(badLink.id);
       setFlash({
         tone: "bad",
-        text: `Alamat menu "${badLink.title}" harus diawali "/" (halaman di situs ini) atau "https://".`,
+        text: `Alamat aplikasi "${badLink.title}" harus diawali "/" (halaman di situs ini) atau "https://".`,
       });
       return;
     }
@@ -333,7 +333,7 @@ export function AdminSiteSettings({
             <Button size="sm" className="px-2" ariaLabel="Turunkan" title="Turunkan" onClick={() => move(menu.id, 1)} disabled={!canMove(menu.id, 1)}>
               ↓
             </Button>
-            <Button size="sm" className="px-2" ariaLabel="Edit" title="Edit menu" onClick={() => setOpen(expanded ? null : menu.id)}>
+            <Button size="sm" className="px-2" ariaLabel="Edit" title="Edit aplikasi" onClick={() => setOpen(expanded ? null : menu.id)}>
               <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
             </Button>
           </div>
@@ -550,15 +550,15 @@ export function AdminSiteSettings({
 
       {/* -------------------------------------------------------- menu */}
       <AdminSection
-        title="Menu & grup"
-        description="Atur grup dan menu di beranda: tampil, pengembangan, wajib login, urutan."
+        title="Aplikasi & grup"
+        description="Atur aplikasi (modul) di beranda: tampil, pengembangan, wajib login, urutan, dan grup."
         defaultOpen
         badge={<span className="font-mono text-[11px] text-faint">{settings.menus.length} menu</span>}
       >
         <div className="space-y-3 p-4">
           <p className="text-xs leading-relaxed text-muted">
             Panah ↑↓ menggeser menu; di ujung grup, menu pindah ke grup tetangga. Ubah nama grup langsung di
-            judulnya. <b className="font-medium text-ink">User</b>: mati = menu disembunyikan dari pengguna biasa dan tamu (hanya admin yang melihat dan bisa membukanya). <b className="font-medium text-ink">Dev</b>: hanya admin yang bisa membuka.{" "}
+            judulnya. <b className="font-medium text-ink">User</b>: mati = aplikasi disembunyikan dari pengguna biasa dan tamu (hanya admin yang melihat dan bisa membukanya). <b className="font-medium text-ink">Dev</b>: hanya admin yang bisa membuka.{" "}
             <b className="font-medium text-ink">Login</b>: wajib masuk dulu (mati = bebas, yang sudah login selalu bisa).
           </p>
 
@@ -603,7 +603,7 @@ export function AdminSiteSettings({
                   <div
                     className={`hidden items-end gap-2 border-b border-line-soft px-4 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.09em] text-faint sm:grid ${COLS}`}
                   >
-                    <span className="text-left">Menu</span>
+                    <span className="text-left">Aplikasi</span>
                     <span>Tampil</span>
                     <span>User</span>
                     <span>Dev</span>

@@ -6,7 +6,7 @@ import { VersionBadge } from "@/components/VersionBadge";
 
 export const ADMIN_NAV = [
   { id: "ringkasan", label: "Ringkasan", href: "/admin", icon: Shield },
-  { id: "situs", label: "Situs & Menu", href: "/admin?tab=situs", icon: Cpu },
+  { id: "situs", label: "Situs & Aplikasi", href: "/admin?tab=situs", icon: Cpu },
   { id: "tema", label: "Tema & Tampilan", href: "/admin?tab=tema", icon: Wand },
   { id: "template", label: "Template Login", href: "/admin?tab=template", icon: FileText },
   { id: "galeri", label: "Galeri Gambar", href: "/admin?tab=galeri", icon: Database },
@@ -15,14 +15,11 @@ export const ADMIN_NAV = [
   { id: "versi", label: "Versi & Changelog", href: "/admin?tab=versi", icon: Terminal },
 ] as const;
 
-/** Warna ikon tiap menu pengaturan (palet aplikasi Odoo). */
-const NAV_COLORS = ["#714b67", "#017e84", "#e0902b", "#5b7fa6", "#c4567f", "#4e9f6e", "#8a6fc9", "#d9644a"];
-
 export type AdminTab = (typeof ADMIN_NAV)[number]["id"];
 
 /**
  * Kerangka Dashboard Admin ala aplikasi Pengaturan Odoo: bilah ungu di atas,
- * panel kontrol berisi breadcrumb, sidebar menu di kiri, dan isi di kanan.
+ * panel kontrol berisi breadcrumb, dan isi pengaturan; menu bagian ada di bilah atas.
  */
 export function AdminFrame({ active, children }: { active: AdminTab; children: ReactNode }) {
   const current = ADMIN_NAV.find((n) => n.id === active) ?? ADMIN_NAV[0];
@@ -43,12 +40,12 @@ export function AdminFrame({ active, children }: { active: AdminTab; children: R
               </svg>
             </Link>
             <h1 className="truncate text-sm font-semibold text-ink">Dashboard Admin</h1>
-            <nav aria-label="Bagian admin" className="ml-2 hidden items-center gap-0.5 xl:flex">
+            <nav aria-label="Bagian admin" className="ml-2 flex min-w-0 items-center gap-0.5 overflow-x-auto">
               {ADMIN_NAV.map((item) => (
                 <Link
                   key={item.id}
                   href={item.href}
-                  className={`rounded px-2.5 py-1.5 text-[13px] transition-colors ${item.id === active ? "bg-brand/10 font-semibold text-brand" : "text-muted hover:bg-raised hover:text-ink"}`}
+                  className={`shrink-0 whitespace-nowrap rounded px-2.5 py-1.5 text-[13px] transition-colors ${item.id === active ? "bg-brand/15 font-semibold text-brand" : "text-muted hover:bg-white/10 hover:text-ink"}`}
                 >
                   {item.label}
                 </Link>
@@ -79,40 +76,8 @@ export function AdminFrame({ active, children }: { active: AdminTab; children: R
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-[240px_minmax(0,1fr)]">
-        {/* Sidebar menu (di layar kecil menjadi deretan tab yang bisa digeser) */}
-        <aside className="border-b border-line bg-raised lg:min-h-[calc(100vh-7rem)] lg:border-b-0 lg:border-r">
-          <p className="hidden px-4 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-faint lg:block">Pengaturan</p>
-          <nav
-            aria-label="Menu admin"
-            className="flex gap-1 overflow-x-auto p-2 lg:flex-col lg:gap-0 lg:overflow-visible lg:p-0 lg:py-2"
-          >
-            {ADMIN_NAV.map((item, idx) => {
-              const Glyph = item.icon;
-              const on = item.id === active;
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  aria-current={on ? "page" : undefined}
-                  className={`flex shrink-0 items-center gap-3 whitespace-nowrap px-4 py-2 text-sm transition-colors lg:border-l-[3px] ${
-                    on
-                      ? "bg-surface font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-soft)] lg:border-brand"
-                      : "text-muted hover:bg-surface hover:text-ink lg:border-transparent"
-                  }`}
-                >
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-white" style={{ background: NAV_COLORS[idx % NAV_COLORS.length] }}>
-                    <Glyph className="h-4 w-4" />
-                  </span>
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
-
-        <div className="min-w-0 px-4 py-5 lg:px-8">{children}</div>
-      </div>
+      {/* Isi pengaturan: navigasi antarbagian ada di bilah atas, seperti aplikasi Pengaturan Odoo. */}
+      <div className="min-w-0 px-4 py-5 lg:px-6">{children}</div>
     </main>
   );
 }

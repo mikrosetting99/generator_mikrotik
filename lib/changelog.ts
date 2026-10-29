@@ -27,6 +27,27 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.57.0",
+    date: "2026-10-29",
+    title: "Konsep aplikasi/modul ala Odoo, Dashboard Admin tanpa sidebar, AI Engineer ala wyn",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Menu diubah menjadi konsep aplikasi/modul: tiap halaman punya pengalih aplikasi (ikon grid) di kiri bilah atas yang membawa ke peluncur, diikuti nama aplikasinya, seperti Odoo. Tombol Menu lama dihapus. Peluncur kini datar tanpa judul grup (urutan tetap mengikuti pengaturan admin), dan istilah Menu di Dashboard Admin dan pesan akses diganti Aplikasi.",
+          "Dashboard Admin mengikuti aplikasi Pengaturan Odoo: sidebar kiri dihapus karena navigasi antarbagian sudah ada di bilah atas (menu bagian bisa digeser di layar kecil), isi pengaturan memakai lebar penuh, dan Situs & Menu menjadi Situs & Aplikasi.",
+        ],
+      },
+      {
+        type: "added",
+        items: [
+          "AI Mikrotik Engineer disamakan dengan fitur AI Network Engineer di wyn (berdasarkan CSS dan JavaScript publik wyn): perubahan konfigurasi dari AI tampil sebagai kartu Rencana perubahan dengan tingkat risiko rendah/sedang/tinggi, daftar perintah, dan tombol Setujui & terapkan atau Tolak. Saat disetujui, backup dibuat di router lebih dulu (/system backup save, bisa dimatikan) lalu perubahan diterapkan dan hasilnya dianalisis AI; rencana berisiko tinggi butuh centang pengertian.",
+          "Aksi cepat Pemeriksaan lengkap router (identity, resource, interface, IP/route, DHCP, firewall/NAT, log) dan semua saran pertanyaan langsung terkirim saat diklik. Penyedia AI dipilih lewat tombol radio dan model lewat daftar pilihan dengan opsi model sendiri. Pemberitahuan toast untuk salin, penerapan, dan galat; pesan galat per kode HTTP (login berakhir, terlalu banyak pesan, server terlalu lama); indikator proses AI sedang memeriksa router.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.56.0",
     date: "2026-10-29",
     title: "Tampilan seluruh aplikasi disamakan dengan wyn.mikrosetting.com",

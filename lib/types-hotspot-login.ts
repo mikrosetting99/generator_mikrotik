@@ -6,7 +6,7 @@ export const BG_FITS: { value: BgFit; label: string; hint: string; css: string }
   {
     value: "blur",
     label: "Utuh + kabur",
-    hint: "Seluruh gambar terlihat di tengah; sisi layar yang kosong diisi gambar yang sama dalam keadaan kabur. Cocok untuk layar laptop.",
+    hint: "Seluruh gambar terlihat di tengah; sisi layar yang kosong diisi gambar yang sama dalam keadaan kabur. Cocok untuk layar laptop; di HP tegak gambar otomatis memenuhi layar.",
     css: "contain",
   },
   { value: "cover", label: "Penuh", hint: "Menutupi seluruh layar, tepi gambar bisa terpotong.", css: "cover" },

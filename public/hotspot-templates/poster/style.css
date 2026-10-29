@@ -82,6 +82,13 @@ body {
 }
 
 .bg i { z-index: 2; }
+
+/* HP tegak (layar lebih tinggi daripada lebar): foto utuh hanya jadi pita kecil di
+   tengah, jadi gambar dibuat memenuhi layar. Laptop dan HP mendatar tetap utuh + kabur. */
+@media (max-aspect-ratio: 1/1) {
+  .bg::before { display: none; }
+  .bg::after { background-size: cover; }
+}
 {{/BG_BLUR}}
 {{/BG_IMAGE}}
 

@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.51.1] - 2026-10-29
+
+_Halaman Login Hotspot: latar menyesuaikan ukuran HP_
+
+### Diperbaiki
+
+- Mode latar "Utuh + kabur" kini otomatis memenuhi layar saat HP dipegang tegak (layar lebih tinggi daripada lebar), pada desain Minimal dan Poster. Sebelumnya foto landscape hanya tampil sebagai pita kecil di tengah dengan sisa layar kabur. Laptop dan HP mendatar tetap utuh + kabur. Keterangan mode di editor diperbarui. Paket halaman login perlu diunduh ulang dan diunggah lagi ke router agar perubahan ini berlaku.
+
 ## [1.51.0] - 2026-10-29
 
 _Menu baru: AI Mikrotik Engineer_

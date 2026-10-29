@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.51.1",
+    date: "2026-10-29",
+    title: "Halaman Login Hotspot: latar menyesuaikan ukuran HP",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Mode latar \"Utuh + kabur\" kini otomatis memenuhi layar saat HP dipegang tegak (layar lebih tinggi daripada lebar), pada desain Minimal dan Poster. Sebelumnya foto landscape hanya tampil sebagai pita kecil di tengah dengan sisa layar kabur. Laptop dan HP mendatar tetap utuh + kabur. Keterangan mode di editor diperbarui. Paket halaman login perlu diunduh ulang dan diunggah lagi ke router agar perubahan ini berlaku.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.51.0",
     date: "2026-10-29",
     title: "Menu baru: AI Mikrotik Engineer",

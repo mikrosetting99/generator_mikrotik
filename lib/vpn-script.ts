@@ -15,6 +15,8 @@ export const VPN_PROTOCOLS: Array<{ id: VpnProtocol; label: string }> = [
 
 export const DEFAULT_VPN_SERVER = "vpn-id1.mikrosetting.com";
 export const DEFAULT_VPN_GATEWAY = "10.202.0.1";
+/** Alamat IP publik server bawaan (A record dari DEFAULT_VPN_SERVER). */
+export const DEFAULT_VPN_PUBLIC_IP = "103.181.143.233";
 
 export interface VpnScriptParams {
   protocol: VpnProtocol;
@@ -38,12 +40,31 @@ export interface VpnScriptParams {
 
 /** Satu rule dst-nat: akses ke IP tunnel:port diteruskan ke perangkat di LAN pelanggan. */
 export interface VpnNatRule {
+  /** Port di server VPN yang dipakai pelanggan untuk mengakses (0 = tidak ditampilkan). */
+  publicPort: number;
   port: number;
   toAddress: string;
   toPort: number;
 }
 
 export const MAX_NAT_RULES = 12;
+
+export interface VpnNatAccess {
+  rule: VpnNatRule;
+  /** IP publik:port, kosong bila IP publik server tidak diketahui. */
+  viaIp: string;
+  /** domain:port */
+  viaDomain: string;
+}
+
+/** Alamat akses per rule dst-nat: lewat IP publik dan lewat domain server VPN. Hanya rule yang punya port akses. */
+export function natAccess(rules: VpnNatRule[], server: string, publicIp: string): VpnNatAccess[] {
+  const domain = (server || DEFAULT_VPN_SERVER).trim();
+  const ip = (publicIp || (domain === DEFAULT_VPN_SERVER ? DEFAULT_VPN_PUBLIC_IP : "")).trim();
+  return rules
+    .filter((r) => r.publicPort > 0)
+    .map((rule) => ({ rule, viaIp: ip ? `${ip}:${rule.publicPort}` : "", viaDomain: `${domain}:${rule.publicPort}` }));
+}
 
 export type VpnCategoryKind = "mikhmon" | "remote" | "other";
 
@@ -60,7 +81,7 @@ export function parseNatRules(json: string): VpnNatRule[] {
     const raw: unknown = JSON.parse(json || "[]");
     if (!Array.isArray(raw)) return [];
     return raw
-      .map((r) => ({ port: Math.round(Number(r?.port)), toAddress: String(r?.toAddress ?? "").trim(), toPort: Math.round(Number(r?.toPort)) }))
+      .map((r) => ({ publicPort: Math.max(0, Math.round(Number(r?.publicPort)) || 0), port: Math.round(Number(r?.port)), toAddress: String(r?.toAddress ?? "").trim(), toPort: Math.round(Number(r?.toPort)) }))
       .filter((r) => r.port > 0 && r.toAddress)
       .slice(0, MAX_NAT_RULES);
   } catch {
@@ -91,7 +112,13 @@ function checkNat(p: VpnScriptParams): string {
   if (rules.length > MAX_NAT_RULES) return `Maksimal ${MAX_NAT_RULES} port-forward.`;
   if (!IPV4.test((p.tunnelIp ?? "").trim())) return "Isi IP tunnel pelanggan (mis. 10.202.0.17) untuk port-forward dst-nat.";
   const seen = new Set<number>();
+  const seenPublic = new Set<number>();
   for (const r of rules) {
+    if (r.publicPort !== 0) {
+      if (!Number.isInteger(r.publicPort) || r.publicPort < 1 || r.publicPort > 65535) return "Port akses (publik) harus 1–65535.";
+      if (seenPublic.has(r.publicPort)) return `Port akses ${r.publicPort} dipakai dua kali.`;
+      seenPublic.add(r.publicPort);
+    }
     if (!Number.isInteger(r.port) || r.port < 1 || r.port > 65535) return "Port tunnel pada dst-nat harus 1–65535.";
     if (seen.has(r.port)) return `Port tunnel ${r.port} dipakai dua kali pada dst-nat.`;
     seen.add(r.port);

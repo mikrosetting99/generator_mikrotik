@@ -87,6 +87,7 @@ export async function POST(request: Request) {
       api: d.api,
       mikhmonUrl: d.mikhmonUrl,
       tunnelIp: d.tunnelIp,
+      publicIp: d.publicIp,
       natRules: d.nat.length ? JSON.stringify(d.nat) : "",
       note: d.note,
     },

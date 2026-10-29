@@ -27,6 +27,21 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.49.0",
+    date: "2026-10-29",
+    title: "VPN Remote: alamat akses via IP dan via domain muncul otomatis dari port forward",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Pada kategori VPN Remote, kolom Winbox/API manual diganti hasil otomatis dari rule port forward. Tiap rule kini punya Port akses (port di server VPN yang dibuka pelanggan), Port tunnel, IP tujuan LAN, dan Port tujuan. Bagian Hasil akses di form menampilkan Akses via IP (IP publik server:port) dan Akses via domain (domain server:port) langsung saat rule diisi.",
+          "IP publik server bisa diisi per link; kosong = 103.181.143.233 untuk server bawaan vpn-id1.mikrosetting.com. Domain mengikuti kolom Server VPN di Pengaturan lanjutan.",
+          "Halaman pelanggan menampilkan kartu Akses via IP dan Akses via domain untuk tiap rule, masing-masing dengan tombol salin. Kategori lain tetap memakai kolom Winbox/API.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.48.0",
     date: "2026-10-29",
     title: "Script VPN: form menyesuaikan kategori, port forward dst-nat untuk VPN Remote",

@@ -71,6 +71,7 @@ export async function POST(request: Request) {
         mikhmonUrl: full.mikhmonUrl,
         tunnelIp: full.tunnelIp,
         nat: full.nat,
+        publicIp: full.publicIp,
         note: full.note,
         createdAt: full.createdAt,
       };

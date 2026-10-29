@@ -52,6 +52,7 @@ export async function PUT(request: Request, { params }: Ctx) {
       api: d.api,
       mikhmonUrl: d.mikhmonUrl,
       tunnelIp: d.tunnelIp,
+      publicIp: d.publicIp,
       natRules: d.nat.length ? JSON.stringify(d.nat) : "",
       note: d.note,
     },

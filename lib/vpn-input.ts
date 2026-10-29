@@ -43,6 +43,8 @@ export interface VpnScriptInput {
   /** Kategori VPN Remote: IP tunnel pelanggan dan port-forward dst-nat. */
   tunnelIp: string;
   nat: VpnNatRule[];
+  /** IP publik server VPN untuk alamat akses; kosong = bawaan. */
+  publicIp: string;
   note: string;
 }
 
@@ -78,9 +80,9 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
         .map((r: Record<string, unknown>) => {
           const port = Math.round(Number(r?.port));
           const toPort = Math.round(Number(r?.toPort)) || port;
-          return { port, toAddress: str(r?.toAddress, 45).trim(), toPort };
+          return { publicPort: Math.round(Number(r?.publicPort)) || 0, port, toAddress: str(r?.toAddress, 45).trim(), toPort };
         })
-        .filter((r) => r.port || r.toAddress)
+        .filter((r) => r.port || r.toAddress || r.publicPort)
     : [];
 
   const data: VpnScriptInput = {
@@ -104,6 +106,7 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
     mikhmonUrl: str(b.mikhmonUrl, VPN_LIMITS.url).trim(),
     tunnelIp: str(b.tunnelIp, 45).trim(),
     nat,
+    publicIp: str(b.publicIp, 45).trim(),
     note: str(b.note, VPN_LIMITS.note).trim(),
   };
 
@@ -130,6 +133,9 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
     if (problem) return { ok: false, error: problem };
   } else if (!data.username && !data.password && !data.script.trim() && !data.winbox && !data.api && !data.mikhmonUrl) {
     return { ok: false, error: "Isi minimal salah satu: username/password, script, IP Winbox, IP API, atau link Mikhmon." };
+  }
+  if (data.publicIp && !/^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/.test(data.publicIp)) {
+    return { ok: false, error: "IP publik server VPN harus berupa alamat IPv4, mis. 103.181.143.233." };
   }
   if (!protocol) {
     data.nat = [];

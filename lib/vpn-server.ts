@@ -45,6 +45,7 @@ export interface VpnScriptFull {
   mikhmonUrl: string;
   tunnelIp: string;
   nat: VpnNatRule[];
+  publicIp: string;
   note: string;
   createdAt: string;
   updatedAt: string;
@@ -74,6 +75,7 @@ type Row = {
   mikhmonUrl: string;
   tunnelIp: string;
   natRules: string;
+  publicIp: string;
   note: string;
   createdAt: Date;
   updatedAt: Date;
@@ -127,6 +129,7 @@ export function toFull(row: Row): VpnScriptFull {
     mikhmonUrl: row.mikhmonUrl,
     tunnelIp: row.tunnelIp,
     nat,
+    publicIp: row.publicIp,
     note: row.note,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

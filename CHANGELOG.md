@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.49.0] - 2026-10-29
+
+_VPN Remote: alamat akses via IP dan via domain muncul otomatis dari port forward_
+
+### Diubah
+
+- Pada kategori VPN Remote, kolom Winbox/API manual diganti hasil otomatis dari rule port forward. Tiap rule kini punya Port akses (port di server VPN yang dibuka pelanggan), Port tunnel, IP tujuan LAN, dan Port tujuan. Bagian Hasil akses di form menampilkan Akses via IP (IP publik server:port) dan Akses via domain (domain server:port) langsung saat rule diisi.
+- IP publik server bisa diisi per link; kosong = 103.181.143.233 untuk server bawaan vpn-id1.mikrosetting.com. Domain mengikuti kolom Server VPN di Pengaturan lanjutan.
+- Halaman pelanggan menampilkan kartu Akses via IP dan Akses via domain untuk tiap rule, masing-masing dengan tombol salin. Kategori lain tetap memakai kolom Winbox/API.
+
 ## [1.48.0] - 2026-10-29
 
 _Script VPN: form menyesuaikan kategori, port forward dst-nat untuk VPN Remote_

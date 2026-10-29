@@ -5,7 +5,7 @@ import { Check, ChevronDown, Copy, Download, Lock, Terminal } from "@/components
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button, Field, Note, TextInput } from "@/components/ui";
 import { downloadBlob } from "@/lib/download";
-import { generateVpnScript, VPN_PROTOCOLS, type VpnNatRule, type VpnProtocol } from "@/lib/vpn-script";
+import { generateVpnScript, natAccess, VPN_PROTOCOLS, type VpnNatRule, type VpnProtocol } from "@/lib/vpn-script";
 
 interface Entry {
   token: string;
@@ -28,6 +28,7 @@ interface Entry {
   mikhmonUrl: string;
   tunnelIp: string;
   nat: VpnNatRule[];
+  publicIp: string;
   note: string;
   createdAt: string;
 }
@@ -99,6 +100,8 @@ function EntryDropdown({ entry, opened }: { entry: Entry; opened: boolean }) {
     [isVpn, choice, entry],
   );
 
+  const access = useMemo(() => natAccess(entry.nat ?? [], entry.vpnServer, entry.publicIp ?? ""), [entry]);
+
   const fileName = `${entry.title.replace(/[^A-Za-z0-9_-]+/g, "-").toLowerCase() || "script"}${isVpn ? `-${choice}` : ""}.rsc`;
 
   return (
@@ -142,6 +145,20 @@ function EntryDropdown({ entry, opened }: { entry: Entry; opened: boolean }) {
           <div className="grid gap-3 sm:grid-cols-2">
             {entry.winbox && <Credential label="Alamat Winbox" value={entry.winbox} />}
             {entry.api && <Credential label="Alamat API" value={entry.api} />}
+          </div>
+        )}
+
+        {access.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+          {access.map((a) => (
+            <div key={a.rule.publicPort} className="space-y-2 rounded-md border border-line bg-surface p-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                Akses port {a.rule.publicPort} <span className="normal-case tracking-normal text-faint">(ke {a.rule.toAddress}:{a.rule.toPort})</span>
+              </p>
+              {a.viaIp && <Credential label="Akses via IP" value={a.viaIp} />}
+              <Credential label="Akses via domain" value={a.viaDomain} />
+            </div>
+          ))}
           </div>
         )}
 

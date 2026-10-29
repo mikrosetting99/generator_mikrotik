@@ -234,6 +234,8 @@ model VpnScript {
   /// Kategori VPN Remote: IP tunnel pelanggan dan port-forward dst-nat (JSON [{port,toAddress,toPort}]).
   tunnelIp    String      @default("") @db.VarChar(45)
   natRules    String      @default("") @db.VarChar(1500)
+  /// IP publik server VPN untuk alamat akses VPN Remote; kosong = bawaan bila server bawaan.
+  publicIp    String      @default("") @db.VarChar(45)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

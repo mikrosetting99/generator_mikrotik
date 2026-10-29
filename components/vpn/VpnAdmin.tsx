@@ -11,7 +11,9 @@ import {
   DEFAULT_VPN_SERVER,
   defaultTunnelName,
   generateVpnScript,
+  DEFAULT_VPN_PUBLIC_IP,
   MAX_NAT_RULES,
+  natAccess,
   vpnCategoryKind,
   VPN_PROTOCOLS,
   type VpnNatRule,
@@ -62,7 +64,9 @@ interface FormState {
   mikhmonUrl: string;
   /** VPN Remote: IP tunnel pelanggan dan rule port-forward dst-nat (diisi sebagai teks). */
   tunnelIp: string;
-  nat: Array<{ port: string; toAddress: string; toPort: string }>;
+  nat: Array<{ publicPort: string; port: string; toAddress: string; toPort: string }>;
+  /** IP publik server VPN; kosong = bawaan. */
+  publicIp: string;
   note: string;
 }
 
@@ -88,16 +92,17 @@ const EMPTY: FormState = {
   mikhmonUrl: "",
   tunnelIp: "",
   nat: [],
+  publicIp: "",
   note: "",
 };
 
 /** Rule dari teks isian → angka; baris kosong dibuang, port tujuan kosong = sama dengan port tunnel. */
 const toNatRules = (rows: FormState["nat"]): VpnNatRule[] =>
   rows
-    .filter((r) => r.port.trim() || r.toAddress.trim())
+    .filter((r) => r.port.trim() || r.toAddress.trim() || r.publicPort.trim())
     .map((r) => {
       const port = Math.round(Number(r.port));
-      return { port, toAddress: r.toAddress.trim(), toPort: Math.round(Number(r.toPort)) || port };
+      return { publicPort: Math.round(Number(r.publicPort)) || 0, port, toAddress: r.toAddress.trim(), toPort: Math.round(Number(r.toPort)) || port };
     });
 
 const linkFor = (token: string) => `${window.location.origin}/script/${token}`;
@@ -171,6 +176,8 @@ export function VpnAdmin() {
   const kind = vpnCategoryKind((categories ?? []).find((c) => c.id === form.categoryId)?.name ?? "");
   const showNat = kind !== "mikhmon";
   const showMikhmon = kind !== "remote";
+  // alamat akses hasil rule: lewat IP publik dan lewat domain server VPN
+  const accessList = showNat ? natAccess(toNatRules(form.nat).filter((r) => r.publicPort > 0), form.vpnServer, form.publicIp) : [];
   const patchNat = (i: number, partial: Partial<FormState["nat"][number]>) =>
     setForm((f) => ({ ...f, nat: f.nat.map((r, idx) => (idx === i ? { ...r, ...partial } : r)) }));
 
@@ -260,6 +267,7 @@ export function VpnAdmin() {
         mikhmonUrl: showMikhmon ? form.mikhmonUrl : "",
         tunnelIp: showNat ? form.tunnelIp : "",
         nat: showNat ? toNatRules(form.nat) : [],
+        publicIp: form.publicIp,
         note: form.note,
       });
       const r = form.id
@@ -309,7 +317,8 @@ export function VpnAdmin() {
       api: s.api,
       mikhmonUrl: s.mikhmonUrl,
       tunnelIp: s.tunnelIp ?? "",
-      nat: (s.nat ?? []).map((n) => ({ port: String(n.port), toAddress: n.toAddress, toPort: String(n.toPort) })),
+      nat: (s.nat ?? []).map((n) => ({ publicPort: n.publicPort ? String(n.publicPort) : "", port: String(n.port), toAddress: n.toAddress, toPort: String(n.toPort) })),
+      publicIp: s.publicIp ?? "",
       note: s.note,
     });
     setLastLink(null);
@@ -548,37 +557,69 @@ export function VpnAdmin() {
               <FormRow label="IP tunnel pelanggan" required={form.nat.length > 0} hint="IP pelanggan di dalam tunnel VPN, mis. 10.202.0.17.">
                 <TextInput mono value={form.tunnelIp} onChange={(tunnelIp) => patch({ tunnelIp: tunnelIp.replace(/\s+/g, "") })} placeholder="10.202.0.17" />
               </FormRow>
-              <FormRow label="Rule" hint="Port tunnel → IP tujuan di LAN : port tujuan. Port tujuan kosong = sama dengan port tunnel.">
+              <FormRow label="IP publik server" hint={`Dipakai untuk alamat akses via IP. Kosong = ${DEFAULT_VPN_PUBLIC_IP} (server bawaan). Domain mengikuti Server VPN di Pengaturan lanjutan.`}>
+                <TextInput mono value={form.publicIp} onChange={(publicIp) => patch({ publicIp: publicIp.replace(/\s+/g, "") })} placeholder={DEFAULT_VPN_PUBLIC_IP} />
+              </FormRow>
+              <FormRow label="Rule" hint="Port akses = port di server VPN yang dibuka pelanggan. Port tunnel → IP tujuan di LAN : port tujuan (kosong = sama dengan port tunnel).">
                 <div className="space-y-2">
                   {form.nat.map((r, i) => (
-                    <div key={i} className="flex flex-wrap items-center gap-1.5">
-                      <div className="w-24">
-                        <TextInput mono value={r.port} onChange={(port) => patchNat(i, { port: port.replace(/\D/g, "") })} placeholder="8728" />
-                      </div>
-                      <span className="text-muted">→</span>
-                      <div className="min-w-[140px] flex-1">
+                    <div key={i} className="flex flex-wrap items-end gap-1.5 rounded-md border border-line-soft bg-raised/40 p-2">
+                      <label className="w-24 text-[11px] text-muted">
+                        Port akses
+                        <TextInput mono value={r.publicPort} onChange={(publicPort) => patchNat(i, { publicPort: publicPort.replace(/\D/g, "") })} placeholder="20017" />
+                      </label>
+                      <label className="w-24 text-[11px] text-muted">
+                        Port tunnel
+                        <TextInput mono value={r.port} onChange={(port) => patchNat(i, { port: port.replace(/\D/g, "") })} placeholder="8291" />
+                      </label>
+                      <span className="pb-2.5 text-muted">→</span>
+                      <label className="min-w-[140px] flex-1 text-[11px] text-muted">
+                        IP tujuan LAN
                         <TextInput mono value={r.toAddress} onChange={(toAddress) => patchNat(i, { toAddress: toAddress.replace(/\s+/g, "") })} placeholder="192.168.0.88" />
-                      </div>
-                      <span className="text-muted">:</span>
-                      <div className="w-24">
-                        <TextInput mono value={r.toPort} onChange={(toPort) => patchNat(i, { toPort: toPort.replace(/\D/g, "") })} placeholder="80" />
-                      </div>
-                      <Button size="sm" variant="danger" className="px-2" ariaLabel="Hapus rule" title="Hapus rule" onClick={() => patch({ nat: form.nat.filter((_, idx) => idx !== i) })}>
+                      </label>
+                      <label className="w-24 text-[11px] text-muted">
+                        Port tujuan
+                        <TextInput mono value={r.toPort} onChange={(toPort) => patchNat(i, { toPort: toPort.replace(/\D/g, "") })} placeholder="8291" />
+                      </label>
+                      <Button size="sm" variant="danger" className="mb-0.5 px-2" ariaLabel="Hapus rule" title="Hapus rule" onClick={() => patch({ nat: form.nat.filter((_, idx) => idx !== i) })}>
                         <Trash className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   ))}
                   {form.nat.length < MAX_NAT_RULES && (
-                    <Button size="sm" onClick={() => patch({ nat: [...form.nat, { port: "", toAddress: "", toPort: "" }] })}>
+                    <Button size="sm" onClick={() => patch({ nat: [...form.nat, { publicPort: "", port: "", toAddress: "", toPort: "" }] })}>
                       <Plus className="h-3.5 w-3.5" />
                       Tambah port forward
                     </Button>
                   )}
                 </div>
               </FormRow>
-            </Group>
+              <FormRow label="Hasil akses" hint="Otomatis dari rule di atas; ini yang dilihat pelanggan.">
+                {accessList.length === 0 ? (
+                  <p className="rounded-md border border-dashed border-line px-3 py-2 text-xs text-faint">Isi Port akses pada rule untuk memunculkan alamat akses.</p>
+                ) : (
+                  <ul className="divide-y divide-line-soft overflow-hidden rounded-md border border-line-soft">
+                    {accessList.map((a) => (
+                      <li key={a.rule.publicPort} className="space-y-1 px-3 py-2 text-xs">
+                        <p className="text-muted">
+                          Port {a.rule.publicPort} → {a.rule.toAddress || "…"}:{a.rule.toPort || "…"}
+                        </p>
+                        <p>
+                          <span className="inline-block w-28 text-muted">Akses via IP</span>
+                          <code className="font-mono text-ink">{a.viaIp || "isi IP publik server"}</code>
+                        </p>
+                        <p>
+                          <span className="inline-block w-28 text-muted">Akses via domain</span>
+                          <code className="font-mono text-ink">{a.viaDomain}</code>
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </FormRow>            </Group>
           )}
 
+          {kind !== "remote" && (
           <Group
             title="Akses router untuk pelanggan"
             note={`Opsional. Boleh IP publik atau domain, dengan port${showMikhmon ? ". Link Mikhmon online juga ditampilkan di halaman pelanggan" : ""}.`}
@@ -595,6 +636,7 @@ export function VpnAdmin() {
               </FormRow>
             )}
           </Group>
+          )}
 
           <Group title="Catatan">
             <FormRow label="Catatan pelanggan">

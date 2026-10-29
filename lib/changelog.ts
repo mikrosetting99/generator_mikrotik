@@ -27,6 +27,21 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.53.0",
+    date: "2026-10-29",
+    title: "Tampilan seluruh aplikasi disamakan dengan Odoo 17 Enterprise",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Bilah navigasi kini putih dengan garis tipis di bawah seperti Odoo Enterprise (sebelumnya ungu), lengkap dengan ikon grid aplikasi di kiri pada beranda dan Dashboard Admin. Berlaku di semua halaman, baik tema terang maupun gelap.",
+          "Beranda menjadi menu aplikasi Odoo Enterprise: latar ungu bergradasi memenuhi layar, bilah navigasi transparan, dan tiap menu berupa ikon aplikasi kotak membulat berwarna dengan nama di bawahnya, tersusun di tengah per grup. Keterangan, jumlah pemakaian, dan status menu pindah ke tooltip; lencana kunci menandai menu yang perlu login. Sapaan, tombol CTA, cuplikan, dan keunggulan tetap mengikuti pengaturan admin.",
+          "Kolom isian bergaya form Odoo: hanya garis bawah dengan latar transparan, garis menebal berwarna ungu saat fokus. Tombol memakai sudut kecil Odoo; tombol utama ungu solid dengan hover menggelap, tombol sekunder putih berpinggir tipis.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.52.0",
     date: "2026-10-29",
     title: "AI Mikrotik Engineer: tampilan chat disamakan dengan wyn.mikrosetting.com",

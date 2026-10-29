@@ -101,32 +101,78 @@
 }
 
 /*
- * Bilah navigasi ungu ala Odoo untuk semua header halaman (yang menempel di atas).
- * Warna di dalamnya dibalik lewat variabel, jadi teks, ikon, tombol, dan lencana di
- * header otomatis putih di atas ungu tanpa mengubah komponennya satu per satu.
+ * Bilah navigasi Odoo 17 Enterprise: putih, garis tipis di bawah, ikon aplikasi dan
+ * judul di kiri, alat (tema, pengguna) di kanan. Berlaku untuk semua header halaman
+ * yang menempel di atas.
  */
 header.sticky {
-  background: var(--nav-bg);
-  border-bottom: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-line);
+  box-shadow: 0 1px 2px rgba(15, 27, 45, 0.05);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+
+/*
+ * Menu aplikasi (beranda) ala Odoo Enterprise: latar ungu bergradasi memenuhi layar,
+ * bilah navigasi transparan dengan tulisan putih, ikon aplikasi berbentuk kotak membulat.
+ * Warna di dalam bilah dibalik lewat variabel, jadi komponennya tidak perlu diubah.
+ */
+.o-home {
+  background:
+    radial-gradient(1100px 520px at 18% -8%, rgba(255, 255, 255, 0.16), transparent 62%),
+    radial-gradient(900px 480px at 92% 8%, rgba(1, 126, 132, 0.18), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--nav-bg) 88%, #fff) 0%, var(--nav-bg) 38%, color-mix(in srgb, var(--nav-bg) 62%, #000) 100%);
+  color: #fff;
+}
+.o-home.o-home-photo {
+  background: color-mix(in srgb, var(--nav-bg) 72%, transparent);
+}
+.o-home header.sticky {
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
   color: #fff;
   --color-ink: #ffffff;
   --color-muted: rgba(255, 255, 255, 0.85);
   --color-faint: rgba(255, 255, 255, 0.68);
   --color-brand: #ffffff;
   --color-accent: #ffffff;
-  /* Tombol utama di header: latar putih, teks ungu (bukan putih di atas putih). */
   --color-brand-ink: var(--nav-bg);
   --color-accent-ink: var(--nav-bg);
   --color-surface: rgba(255, 255, 255, 0.12);
-  --color-raised: rgba(255, 255, 255, 0.14);
+  --color-raised: rgba(255, 255, 255, 0.16);
   --color-canvas: rgba(255, 255, 255, 0.1);
   --color-line: rgba(255, 255, 255, 0.34);
   --color-line-soft: rgba(255, 255, 255, 0.22);
 }
-
+.o-app-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 0.25rem;
+  border-radius: 10px;
+  color: #fff;
+  text-align: center;
+  transition: background-color 0.15s;
+}
+.o-app-tile:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.o-app-icon {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: transform 0.15s;
+}
+.o-app-tile:hover .o-app-icon {
+  transform: scale(1.06);
+}
 html {
   scroll-behavior: smooth;
 }

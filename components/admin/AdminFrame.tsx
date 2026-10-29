@@ -33,9 +33,9 @@ export function AdminFrame({ active, children }: { active: AdminTab; children: R
               href="/"
               aria-label="Kembali ke beranda"
               title="Beranda"
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-white/15 transition-colors hover:bg-white/25"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/10 text-brand transition-colors hover:bg-brand/20"
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="currentColor" aria-hidden>
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
                 <path d="M4 4h4v4H4V4Zm6 0h4v4h-4V4Zm6 0h4v4h-4V4ZM4 10h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4ZM4 16h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4Z" />
               </svg>
             </Link>

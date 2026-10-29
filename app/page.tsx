@@ -67,13 +67,13 @@ export default async function Home() {
   const waUrl = settings.waEnabled ? waLink(settings.waNumber, settings.waMessage) : "";
 
   return (
-    <main className="relative min-h-screen">
-      {/* Bilah navigasi ungu ala Odoo (gayanya dari header.sticky di globals.css). */}
-      <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-xl">
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-5 lg:px-8 py-2.5">
+    <main className={`o-home relative min-h-screen ${settings.appBgId ? "o-home-photo" : ""}`}>
+      {/* Bilah navigasi Odoo Enterprise: transparan di atas menu aplikasi (gayanya dari .o-home di globals.css). */}
+      <header className="sticky top-0 z-30">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-2.5 lg:px-6">
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-white/15" aria-hidden>
-              <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="currentColor">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/10 text-brand" aria-hidden>
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
                 <path d="M4 4h4v4H4V4Zm6 0h4v4h-4V4Zm6 0h4v4h-4V4ZM4 10h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4ZM4 16h4v4H4v-4Zm6 0h4v4h-4v-4Zm6 0h4v4h-4v-4Z" />
               </svg>
             </span>
@@ -122,60 +122,125 @@ export default async function Home() {
         </div>
       </header>
 
-      <div className="relative w-full px-5 lg:px-8 py-8 sm:py-10">
-        {/* ---------------------------------------------------------- hero */}
-        <div className="grid gap-8 rounded-lg border border-line bg-surface p-6 shadow-sm sm:p-8 lg:grid-cols-[1.15fr_1fr] lg:items-center">
-          <header className="animate-rise">
-            <h1 className="text-3xl font-medium leading-[1.15] tracking-tight text-ink sm:text-[2.75rem]">
-              {settings.heroTitle}
-              <span className="block text-brand">{settings.heroAccent}</span>
-            </h1>
-            <p className="mt-2.5 text-sm text-faint">
-              by{" "}
+      <div className="relative mx-auto w-full max-w-[1000px] px-5 pb-12 pt-6 sm:pt-10">
+        {/* ----------------------------------------------------- sapaan */}
+        <div className="animate-rise text-center">
+          <h1 className="text-2xl font-medium leading-tight tracking-tight text-white sm:text-[2rem]">
+            {settings.heroTitle} <span className="text-white/80">{settings.heroAccent}</span>
+          </h1>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">{settings.heroText}</p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/setup"
+              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-white px-5 text-sm font-semibold text-[color:var(--nav-bg)] shadow-sm transition-all duration-200 hover:bg-white/90 active:scale-[0.98]"
+            >
+              {settings.ctaLabel}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            {waUrl && (
               <a
-                href="https://mikrosetting.com"
+                href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted underline decoration-line underline-offset-4 transition-colors hover:text-brand hover:decoration-brand/50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-md border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/20 active:scale-[0.98]"
               >
-                Mikrosetting.com
+                <WhatsappIcon className="h-4 w-4" />
+                {settings.waLabel}
               </a>
-            </p>
+            )}
+          </div>
+          <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-white/60">
+            <Lock className="h-3.5 w-3.5" />
+            Diproses di browser, tanpa kirim data
+          </p>
+        </div>
 
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-              {settings.heroText}
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                href="/setup"
-                className="inline-flex min-h-11 items-center gap-2 rounded-md bg-brand px-5 text-sm font-semibold text-[color:var(--color-brand-ink)] transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
-              >
-                {settings.ctaLabel}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              {waUrl && (
-                <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#25D366]/50 bg-[#25D366]/10 px-5 text-sm font-semibold text-[#25D366] transition-all duration-200 hover:bg-[#25D366]/20 active:scale-[0.98]"
-                >
-                  <WhatsappIcon className="h-4 w-4" />
-                  {settings.waLabel}
-                </a>
+        {/* ------------------------------------------------ menu aplikasi */}
+        <div className="mt-8 space-y-8">
+          {sections.map((section) => (
+            <div key={section.name || "menu"}>
+              {section.name && (
+                <h3 className="animate-rise mb-2 px-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">{section.name}</h3>
               )}
-              <span className="inline-flex items-center gap-2 text-xs text-faint">
-                <Lock className="h-3.5 w-3.5" />
-                Diproses di browser, tanpa kirim data
-              </span>
-            </div>
-          </header>
+              <div className="flex flex-wrap justify-center gap-x-2 gap-y-3">
+                {section.menus.map((menu) => {
+                  // Urutan tile di seluruh grup: dipakai sebagai jeda animasi muncul bertahap.
+                  const order = cardOrder++;
+                  const external = isExternalHref(menu.href);
+                  // Menu pengembangan hanya bisa dibuka admin; yang lain melihat tile nonaktif.
+                  const locked = menu.devMode && !isAdmin;
+                  // Menu yang wajib login mengarahkan tamu ke halaman login dulu.
+                  const href =
+                    menu.requireLogin && !loggedIn
+                      ? `/login?callbackUrl=${encodeURIComponent(external ? "/" : menu.href)}`
+                      : menu.href;
+                  const color = appColor(menu.id);
+                  const note = [
+                    menu.description,
+                    `${(usage[menu.id] ?? 0).toLocaleString("id-ID")}× dipakai`,
+                    menu.requireLogin ? "perlu login" : "",
+                    !menu.userVisible ? "disembunyikan dari user" : "",
+                    menu.devMode ? (locked ? "dalam pengembangan" : "pengembangan · hanya admin") : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ");
 
-          {/* Cuplikan hasil */}
-          {settings.showSample && (
-          <div className="animate-rise overflow-hidden rounded-lg border border-line bg-surface shadow-sm">
-            <div className="flex items-center gap-3 border-b border-line-soft bg-canvas/60 px-4 py-2.5">
+                  const body = (
+                    <>
+                      <span
+                        className="o-app-icon relative"
+                        style={{ background: `linear-gradient(150deg, color-mix(in srgb, ${color} 82%, #fff), ${color} 55%, color-mix(in srgb, ${color} 72%, #000))` }}
+                      >
+                        <MenuIcon name={menu.icon} className="h-9 w-9" />
+                        {(menu.requireLogin || locked) && (
+                          <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-white text-[color:var(--nav-bg)] shadow" aria-hidden>
+                            <Lock className="h-3 w-3" />
+                          </span>
+                        )}
+                      </span>
+                      <span className="line-clamp-2 w-full min-w-0 text-[13px] font-medium leading-snug text-white">{menu.title}</span>
+                      {(!menu.userVisible || menu.devMode) && (
+                        <span className="-mt-1 rounded-full bg-black/25 px-2 py-px text-[10px] font-medium uppercase tracking-wide text-white/80">
+                          {menu.devMode ? (locked ? "dev" : "dev · admin") : "admin"}
+                        </span>
+                      )}
+                    </>
+                  );
+
+                  const props = {
+                    href,
+                    title: note,
+                    className: "o-app-tile",
+                    ...(external && href === menu.href ? { target: "_blank", rel: "noopener noreferrer" } : {}),
+                  };
+                  const tile = locked ? (
+                    <div className="o-app-tile opacity-60" title={note}>
+                      {body}
+                    </div>
+                  ) : menu.builtin ? (
+                    // Menu bawaan dihitung di halamannya sendiri; menu tambahan dihitung saat diklik.
+                    <Link {...props}>{body}</Link>
+                  ) : (
+                    <TrackedLink menuId={menu.id} {...props}>
+                      {body}
+                    </TrackedLink>
+                  );
+
+                  return (
+                    <div key={menu.id} className="animate-card w-[112px] sm:w-[128px]" style={{ "--i": Math.min(order, 14) } as React.CSSProperties}>
+                      {tile}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ------------------------------------------- cuplikan & jaminan */}
+        {settings.showSample && (
+          <div className="animate-rise mt-12 overflow-hidden rounded-lg border border-white/20 bg-surface text-ink shadow-lg">
+            <div className="flex items-center gap-3 border-b border-line-soft bg-raised px-4 py-2.5">
               <span className="flex gap-1.5" aria-hidden>
                 <span className="h-2.5 w-2.5 rounded-full bg-bad/60" />
                 <span className="h-2.5 w-2.5 rounded-full bg-warn/60" />
@@ -190,179 +255,52 @@ export default async function Home() {
               {SAMPLE.map((line, i) => (
                 <div key={i} className="flex gap-3">
                   <span className="w-4 shrink-0 select-none text-right text-faint/40">{i + 1}</span>
-                  <span
-                    className={
-                      line.kind === "comment"
-                        ? "text-faint/80"
-                        : line.kind === "path"
-                          ? "text-brand"
-                          : "text-muted"
-                    }
-                  >
+                  <span className={line.kind === "comment" ? "text-faint/80" : line.kind === "path" ? "text-brand" : "text-muted"}>
                     {line.text || " "}
                   </span>
                 </div>
               ))}
             </pre>
           </div>
-          )}
-        </div>
-
-        {/* --------------------------------------------------------- menu */}
-        <h2 className="animate-rise mt-10 text-lg font-medium text-ink">Aplikasi</h2>
-        <div className="mt-4 space-y-7">
-          {sections.map((section) => (
-            <div key={section.name || "menu"}>
-              {section.name && (
-                <h3 className="animate-rise mb-3 border-b border-line pb-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted">{section.name}</h3>
-              )}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-          {section.menus.map((menu) => {
-            // Urutan kartu di seluruh grup: dipakai sebagai jeda animasi muncul bertahap.
-            const order = cardOrder++;
-            const external = isExternalHref(menu.href);
-            // Menu pengembangan hanya bisa dibuka admin; yang lain melihat kartu nonaktif.
-            const locked = menu.devMode && !isAdmin;
-            // Menu yang wajib login mengarahkan tamu ke halaman login dulu.
-            const href =
-              menu.requireLogin && !loggedIn
-                ? `/login?callbackUrl=${encodeURIComponent(external ? "/" : menu.href)}`
-                : menu.href;
-
-            const body = (
-              <>
-                <span
-                  className="grid h-16 w-16 shrink-0 place-items-center rounded-[14px] text-white shadow-sm transition-transform duration-200 group-hover:scale-105"
-                  style={{ background: appColor(menu.id) }}
-                >
-                  <MenuIcon name={menu.icon} className="h-8 w-8" />
-                </span>
-                <span className="mt-3.5 flex w-full min-w-0 flex-col items-center text-center">
-                  <span className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                    {menu.title}
-                    {locked && <Lock className="h-3.5 w-3.5 shrink-0 text-faint" />}
-                  </span>
-                  {menu.description && (
-                    <span className="mt-1 line-clamp-3 text-xs leading-relaxed text-muted">{menu.description}</span>
-                  )}
-                  <span className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
-                    <span className="font-mono text-[10px] text-faint">
-                      {(usage[menu.id] ?? 0).toLocaleString("id-ID")}× dipakai
-                    </span>
-                    {menu.requireLogin && (
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                          loggedIn
-                            ? "border-line text-faint"
-                            : "border-brand/40 bg-brand/10 text-brand"
-                        }`}
-                        title={loggedIn ? "Menu ini perlu login — Anda sudah masuk" : "Menu ini perlu login"}
-                      >
-                        <Lock className="h-2.5 w-2.5" />
-                        perlu login
-                      </span>
-                    )}
-                  </span>
-                  {!menu.userVisible && (
-                    <span className="mt-1.5 inline-block rounded-full border border-line px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
-                      disembunyikan dari user
-                    </span>
-                  )}
-                  {menu.devMode && (
-                    <span className="mt-1.5 inline-block rounded-full border border-warn/40 bg-warn/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warn">
-                      {locked ? "dalam pengembangan" : "pengembangan · hanya admin"}
-                    </span>
-                  )}
-                </span>
-              </>
-            );
-
-            const cardClass =
-              "group flex h-full flex-col items-center rounded-lg border border-line bg-surface p-5 shadow-sm transition-all duration-200";
-
-            const card = locked ? (
-              <div key={menu.id} className={`${cardClass} opacity-60`}>
-                {body}
-              </div>
-            ) : (
-              (() => {
-                const props = {
-                  href,
-                  className: `${cardClass} hover:-translate-y-0.5 hover:border-brand/60 hover:shadow-md`,
-                  ...(external && href === menu.href
-                    ? { target: "_blank", rel: "noopener noreferrer" }
-                    : {}),
-                };
-                // Menu bawaan dihitung di halamannya sendiri; menu tambahan dihitung saat diklik.
-                return menu.builtin ? (
-                  <Link key={menu.id} {...props}>
-                    {body}
-                  </Link>
-                ) : (
-                  <TrackedLink key={menu.id} menuId={menu.id} {...props}>
-                    {body}
-                  </TrackedLink>
-                );
-              })()
-            );
-
-            return (
-              <div
-                key={menu.id}
-                className="animate-card h-full"
-                style={{ "--i": Math.min(order, 14) } as React.CSSProperties}
-              >
-                {card}
-              </div>
-            );
-          })}
-              </div>
-            </div>
-          ))}
-        </div>
-        {/* ------------------------------------------------------ jaminan */}
-        {settings.showFeatures && (
-        <section className="mt-16 grid gap-6 rounded-2xl border border-line bg-surface p-6 sm:grid-cols-3 sm:p-8">
-          {[
-            {
-              icon: Shield,
-              title: "Validasi otomatis",
-              body: "Format IP/CIDR, VLAN ID 1–4094, pool yang dirujuk, dan bentrok interface diperiksa sebelum script dibuat.",
-            },
-            {
-              icon: Terminal,
-              title: "Script berkomentar",
-              body: "Setiap blok perintah diberi penjelasan bahasa Indonesia, plus daftar perintah untuk memverifikasi hasil.",
-            },
-            {
-              icon: Lock,
-              title: "Data tidak dikirim",
-              body: "Seluruh proses generate berjalan di browser. IP, password, dan konfigurasi tidak pernah meninggalkan perangkat Anda.",
-            },
-          ].map((item) => {
-            const Glyph = item.icon;
-            return (
-              <div key={item.title}>
-                <Glyph className="h-5 w-5 text-brand" />
-                <h3 className="mt-3 text-sm font-semibold text-ink">{item.title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted">{item.body}</p>
-              </div>
-            );
-          })}
-        </section>
         )}
 
-        <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-line-soft pt-6 text-xs text-faint">
+        {settings.showFeatures && (
+          <section className="mt-8 grid gap-6 rounded-lg border border-white/20 bg-surface p-6 text-ink shadow-lg sm:grid-cols-3 sm:p-8">
+            {[
+              {
+                icon: Shield,
+                title: "Validasi otomatis",
+                body: "Format IP/CIDR, VLAN ID 1–4094, pool yang dirujuk, dan bentrok interface diperiksa sebelum script dibuat.",
+              },
+              {
+                icon: Terminal,
+                title: "Script berkomentar",
+                body: "Setiap blok perintah diberi penjelasan bahasa Indonesia, plus daftar perintah untuk memverifikasi hasil.",
+              },
+              {
+                icon: Lock,
+                title: "Data tidak dikirim",
+                body: "Seluruh proses generate berjalan di browser. IP, password, dan konfigurasi tidak pernah meninggalkan perangkat Anda.",
+              },
+            ].map((item) => {
+              const Glyph = item.icon;
+              return (
+                <div key={item.title}>
+                  <Glyph className="h-5 w-5 text-brand" />
+                  <h3 className="mt-3 text-sm font-semibold text-ink">{item.title}</h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted">{item.body}</p>
+                </div>
+              );
+            })}
+          </section>
+        )}
+
+        <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-white/20 pt-5 text-xs text-white/65">
           <span>{settings.footerNote}</span>
           <div className="flex items-center gap-3">
             <span>
               {settings.siteName} by{" "}
-              <a
-                href="https://mikrosetting.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted transition-colors hover:text-brand"
-              >
+              <a href="https://mikrosetting.com" target="_blank" rel="noopener noreferrer" className="text-white/85 transition-colors hover:text-white">
                 Mikrosetting.com
               </a>
             </span>

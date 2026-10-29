@@ -375,11 +375,11 @@ export function Button({
 }) {
   const variants = {
     default:
-      "border border-line bg-surface text-ink hover:border-brand/60 hover:bg-raised hover:text-brand active:scale-[0.98]",
+      "border border-line bg-surface text-ink hover:bg-raised active:bg-line-soft",
     primary:
-      "border border-brand bg-brand text-[color:var(--color-brand-ink)] font-semibold hover:brightness-110 active:scale-[0.98]",
+      "border border-brand bg-brand text-[color:var(--color-brand-ink)] font-medium hover:brightness-90 active:brightness-75",
     brand:
-      "border border-accent bg-accent text-[color:var(--color-accent-ink)] font-semibold hover:brightness-110 active:scale-[0.98]",
+      "border border-accent bg-accent text-[color:var(--color-accent-ink)] font-medium hover:brightness-90 active:brightness-75",
     ghost: "border border-transparent text-muted hover:bg-raised hover:text-ink",
     danger: "border border-transparent text-faint hover:bg-bad/10 hover:text-bad",
   };
@@ -391,7 +391,7 @@ export function Button({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex select-none items-center justify-center gap-1.5 rounded-lg font-medium",
+        "inline-flex select-none items-center justify-center gap-1.5 rounded-md font-medium",
         "transition-all duration-200 disabled:pointer-events-none disabled:opacity-40",
         size === "sm" ? "min-h-9 px-3 text-xs" : "min-h-11 px-4 text-sm sm:min-h-10",
         variants[variant],

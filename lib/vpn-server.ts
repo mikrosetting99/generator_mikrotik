@@ -32,6 +32,8 @@ export interface VpnScriptFull {
   /** Script yang ditampilkan: dibuat otomatis bila protocol terisi, selain itu script manual. */
   script: string;
   protocol: "" | VpnProtocol;
+  /** Tipe yang boleh dipilih pelanggan (kosong bila mode manual). */
+  offered: VpnProtocol[];
   rosVersion: "v6" | "v7";
   vpnServer: string;
   gatewayIp: string;
@@ -58,6 +60,7 @@ type Row = {
   passwordEnc: string;
   scriptEnc: string;
   protocol: string;
+  offered: string;
   rosVersion: string;
   vpnServer: string;
   gatewayIp: string;
@@ -77,6 +80,9 @@ export function toFull(row: Row): VpnScriptFull {
   const password = open(row.passwordEnc);
   const protocol: "" | VpnProtocol = VPN_PROTOCOLS.some((p) => p.id === row.protocol) ? (row.protocol as VpnProtocol) : "";
   const rosVersion: "v6" | "v7" = row.rosVersion === "v7" ? "v7" : "v6";
+  // Data lama tanpa daftar tawaran: pelanggan boleh memilih ketiganya.
+  const offeredList = row.offered.split(",").filter((x) => VPN_PROTOCOLS.some((p) => p.id === x)) as VpnProtocol[];
+  const offered: VpnProtocol[] = protocol ? (offeredList.length ? offeredList : VPN_PROTOCOLS.map((p) => p.id)) : [];
   const ipsecSecret = row.ipsecEnc ? open(row.ipsecEnc) : "";
   return {
     id: row.id,
@@ -102,6 +108,7 @@ export function toFull(row: Row): VpnScriptFull {
         })
       : open(row.scriptEnc),
     protocol,
+    offered,
     rosVersion,
     vpnServer: row.vpnServer,
     gatewayIp: row.gatewayIp,

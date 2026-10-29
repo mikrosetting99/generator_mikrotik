@@ -219,6 +219,8 @@ model VpnScript {
   note        String      @default("") @db.VarChar(500)
   /// Tipe script VPN yang dibuat otomatis: "sstp", "l2tp", "ovpn", atau "" (script manual di scriptEnc).
   protocol    String      @default("") @db.VarChar(10)
+  /// Tipe yang boleh dipilih pelanggan, dipisah koma (mis. "sstp,l2tp,ovpn"); kosong = ketiganya.
+  offered     String      @default("") @db.VarChar(20)
   rosVersion  String      @default("v6") @db.VarChar(4)
   vpnServer   String      @default("") @db.VarChar(160)
   gatewayIp   String      @default("") @db.VarChar(45)

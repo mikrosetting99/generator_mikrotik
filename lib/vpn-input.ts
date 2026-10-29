@@ -24,8 +24,10 @@ export interface VpnScriptInput {
   /** Untuk script VPN otomatis: username dan password VPN. */
   username: string;
   password: string;
-  /** "" = script manual (tempel sendiri); selain itu script dibuat otomatis. */
+  /** "" = script manual (tempel sendiri); selain itu script dibuat otomatis. Ini pilihan awal pelanggan. */
   protocol: "" | VpnProtocol;
+  /** Tipe yang boleh dipilih pelanggan (urut SSTP, L2TP, OVPN); kosong bila mode manual. */
+  offered: VpnProtocol[];
   rosVersion: "v6" | "v7";
   vpnServer: string;
   gatewayIp: string;
@@ -54,7 +56,15 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
   if (!categoryId) return { ok: false, error: "Pilih kategori." };
 
   const protocolRaw = str(b.protocol, 10);
-  const protocol = VPN_PROTOCOLS.some((p) => p.id === protocolRaw) ? (protocolRaw as VpnProtocol) : "";
+  const offeredRaw: string[] = Array.isArray(b.offered)
+    ? b.offered.filter((x): x is string => typeof x === "string")
+    : typeof b.offered === "string"
+      ? b.offered.split(",")
+      : [];
+  const picked = VPN_PROTOCOLS.map((p) => p.id).filter((id) => offeredRaw.includes(id) || id === protocolRaw);
+  // Mode VPN bila ada tipe yang ditawarkan; pilihan awal = tipe pertama yang ditawarkan.
+  const offered: VpnProtocol[] = picked;
+  const protocol: "" | VpnProtocol = offered[0] ?? "";
   const portNum = Math.round(Number(b.vpnPort));
 
   const data: VpnScriptInput = {
@@ -65,6 +75,7 @@ export function parseVpnScriptInput(body: unknown): { ok: true; data: VpnScriptI
     username: str(b.username, VPN_LIMITS.username).trim(),
     password: str(b.password, VPN_LIMITS.password),
     protocol,
+    offered,
     rosVersion: b.rosVersion === "v7" ? "v7" : "v6",
     vpnServer: str(b.vpnServer, VPN_LIMITS.server).trim(),
     gatewayIp: str(b.gatewayIp, 45).trim(),

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Check, Copy, Download, Lock, Terminal } from "@/components/icons";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, Copy, Download, Lock, Terminal } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button, Field, Note, TextInput } from "@/components/ui";
 import { downloadBlob } from "@/lib/download";
+import { generateVpnScript, VPN_PROTOCOLS, type VpnProtocol } from "@/lib/vpn-script";
 
 interface Entry {
   token: string;
@@ -12,8 +13,16 @@ interface Entry {
   title: string;
   username: string;
   password: string;
+  /** Script manual, atau script bawaan admin untuk tipe VPN. */
   script: string;
-  protocol: string;
+  protocol: "" | VpnProtocol;
+  offered: VpnProtocol[];
+  ros: "v6" | "v7";
+  vpnServer: string;
+  gatewayIp: string;
+  tunnelName: string;
+  vpnPort: number;
+  ipsecSecret: string;
   winbox: string;
   api: string;
   mikhmonUrl: string;
@@ -59,6 +68,132 @@ function Credential({ label, value, secret }: { label: string; value: string; se
         <CopyButton text={value} />
       </div>
     </div>
+  );
+}
+
+/** Satu script sebagai dropdown: judul di kepala, isi (kredensial, pilihan tipe VPN, script) di dalam. */
+function EntryDropdown({ entry, opened }: { entry: Entry; opened: boolean }) {
+  const isVpn = Boolean(entry.protocol);
+  const [choice, setChoice] = useState<VpnProtocol>(entry.protocol || "sstp");
+
+  // Script dibuat di browser dengan fungsi yang sama dengan server, sesuai tipe yang dipilih pelanggan.
+  const script = useMemo(
+    () =>
+      isVpn
+        ? generateVpnScript({
+            protocol: choice,
+            ros: entry.ros,
+            server: entry.vpnServer,
+            tunnel: entry.tunnelName,
+            gateway: entry.gatewayIp,
+            user: entry.username,
+            password: entry.password,
+            ipsecSecret: entry.ipsecSecret,
+            port: entry.vpnPort,
+          })
+        : entry.script,
+    [isVpn, choice, entry],
+  );
+
+  const fileName = `${entry.title.replace(/[^A-Za-z0-9_-]+/g, "-").toLowerCase() || "script"}${isVpn ? `-${choice}` : ""}.rsc`;
+
+  return (
+    <details open={opened} className="group border-b border-line-soft last:border-0">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-brand/[0.05] [&::-webkit-details-marker]:hidden">
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="text-base font-semibold text-ink">{entry.title}</span>
+          {isVpn && (
+            <span className="rounded-md bg-raised px-2 py-0.5 font-mono text-[11px] font-medium uppercase text-muted">VPN</span>
+          )}
+          {entry.mikhmonUrl && <span className="rounded-md bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">Mikhmon</span>}
+          {opened && <span className="rounded-md bg-brand/15 px-2 py-0.5 text-[11px] font-medium text-brand">link ini</span>}
+        </span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+
+      <div className="space-y-3 border-t border-line-soft bg-canvas/40 px-5 py-4">
+        {entry.mikhmonUrl && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-brand/40 bg-brand/[0.06] p-3">
+            <a
+              href={entry.mikhmonUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-[color:var(--color-brand-ink)] transition-all hover:brightness-110"
+            >
+              Buka Mikhmon Online
+            </a>
+            <CopyButton text={entry.mikhmonUrl} label="Salin link" />
+            <span className="min-w-0 basis-full break-all font-mono text-[11px] text-muted sm:basis-auto">{entry.mikhmonUrl}</span>
+          </div>
+        )}
+
+        {(entry.username || entry.password) && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {entry.username && <Credential label={isVpn ? "Username VPN" : "Username"} value={entry.username} />}
+            {entry.password && <Credential label={isVpn ? "Password VPN" : "Password"} value={entry.password} secret />}
+          </div>
+        )}
+
+        {(entry.winbox || entry.api) && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {entry.winbox && <Credential label="IP Winbox" value={entry.winbox} />}
+            {entry.api && <Credential label="IP API" value={entry.api} />}
+          </div>
+        )}
+
+        {script.trim() && (
+          <div className="space-y-3">
+            {isVpn && entry.offered.length > 1 && (
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Pilih tipe VPN</p>
+                <div role="radiogroup" aria-label="Tipe VPN" className="flex flex-wrap gap-2">
+                  {VPN_PROTOCOLS.filter((p) => entry.offered.includes(p.id)).map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={choice === p.id}
+                      onClick={() => setChoice(p.id)}
+                      className={`min-h-10 rounded-full border px-5 font-mono text-sm font-semibold transition-colors ${
+                        choice === p.id
+                          ? "border-brand bg-brand text-[color:var(--color-brand-ink)]"
+                          : "border-line bg-surface text-muted hover:border-brand/50 hover:text-ink"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-md border border-warn/40 bg-warn/[0.08] px-3.5 py-3 text-sm leading-relaxed text-ink">
+              Silahkan copy dan paste script berikut ke <b className="font-semibold">New Terminal Mikrotik</b> Anda,{" "}
+              <b className="font-semibold">wajib pakai laptop</b>.
+            </div>
+
+            <div>
+              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                  <Terminal className="h-3.5 w-3.5" /> Script{isVpn ? ` ${choice.toUpperCase()}` : ""}
+                </span>
+                <span className="flex gap-2">
+                  <CopyButton text={script} label="Salin script" />
+                  <Button size="sm" onClick={() => downloadBlob(new Blob([script], { type: "text/plain;charset=utf-8" }), fileName)}>
+                    <Download className="h-3.5 w-3.5" /> .rsc
+                  </Button>
+                </span>
+              </div>
+              <pre className="max-h-72 overflow-auto rounded-md border border-line-soft bg-code px-3 py-3 font-mono text-[12px] leading-relaxed text-ink">
+                {script}
+              </pre>
+            </div>
+          </div>
+        )}
+
+        {entry.note && <p className="text-xs leading-relaxed text-muted">{entry.note}</p>}
+      </div>
+    </details>
   );
 }
 
@@ -157,14 +292,7 @@ export function CustomerScriptView({ token, siteName }: { token: string; siteNam
               }}
             >
               <Field label="Nomor HP" hint="Nomor yang didaftarkan ke admin, mis. 081234567890.">
-                <TextInput
-                  type="text"
-                  mono
-                  value={phone}
-                  onChange={setPhone}
-                  placeholder="08xxxxxxxxxx"
-                  className="h-11"
-                />
+                <TextInput type="text" mono value={phone} onChange={setPhone} placeholder="08xxxxxxxxxx" className="h-11" />
               </Field>
               {error && <Note tone="bad">{error}</Note>}
               <Button type="submit" variant="primary" className="w-full" disabled={busy || !phone.trim()}>
@@ -178,13 +306,8 @@ export function CustomerScriptView({ token, siteName }: { token: string; siteNam
         ) : (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-ink">
-                {data.customer ? `Halo, ${data.customer}` : "Script Anda"}
-              </h2>
-              <p className="mt-1 text-sm text-muted">
-                Salin username, password, dan script di bawah ini. Untuk script RouterOS: buka Winbox, klik{" "}
-                <b className="font-semibold text-ink">New Terminal</b>, tempel script, lalu tekan Enter.
-              </p>
+              <h2 className="text-xl font-semibold text-ink">{data.customer ? `Halo, ${data.customer}` : "Script Anda"}</h2>
+              <p className="mt-1 text-sm text-muted">Klik judul script untuk membuka atau menutup isinya.</p>
             </div>
 
             {groups.map((group) => (
@@ -192,72 +315,9 @@ export function CustomerScriptView({ token, siteName }: { token: string; siteNam
                 <div className="border-b border-line bg-raised px-5 py-2.5">
                   <h3 className="text-sm font-bold text-ink">{group.category}</h3>
                 </div>
-                <div className="divide-y divide-line-soft">
+                <div>
                   {group.entries.map((entry) => (
-                    <article key={entry.token} className="space-y-3 p-5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="text-base font-semibold text-ink">{entry.title}</h4>
-                        {entry.protocol && (
-                          <span className="rounded-md bg-raised px-2 py-0.5 font-mono text-[11px] font-medium uppercase text-muted">{entry.protocol}</span>
-                        )}
-                        {entry.token === data.opened && (
-                          <span className="rounded-md bg-brand/15 px-2 py-0.5 text-[11px] font-medium text-brand">link ini</span>
-                        )}
-                      </div>
-                      {entry.mikhmonUrl && (
-                        <div className="flex flex-wrap items-center gap-2 rounded-md border border-brand/40 bg-brand/[0.06] p-3">
-                          <a
-                            href={entry.mikhmonUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-[color:var(--color-brand-ink)] transition-all hover:brightness-110"
-                          >
-                            Buka Mikhmon Online
-                          </a>
-                          <CopyButton text={entry.mikhmonUrl} label="Salin link" />
-                          <span className="min-w-0 basis-full break-all font-mono text-[11px] text-muted sm:basis-auto">{entry.mikhmonUrl}</span>
-                        </div>
-                      )}
-                      {(entry.username || entry.password) && (
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          {entry.username && <Credential label={entry.protocol ? "Username VPN" : "Username"} value={entry.username} />}
-                          {entry.password && <Credential label={entry.protocol ? "Password VPN" : "Password"} value={entry.password} secret />}
-                        </div>
-                      )}
-                      {(entry.winbox || entry.api) && (
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          {entry.winbox && <Credential label="IP Winbox" value={entry.winbox} />}
-                          {entry.api && <Credential label="IP API" value={entry.api} />}
-                        </div>
-                      )}
-                      {entry.script.trim() && (
-                        <div>
-                          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                            <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
-                              <Terminal className="h-3.5 w-3.5" /> Script
-                            </span>
-                            <span className="flex gap-2">
-                              <CopyButton text={entry.script} label="Salin script" />
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  downloadBlob(
-                                    new Blob([entry.script], { type: "text/plain;charset=utf-8" }),
-                                    `${entry.title.replace(/[^A-Za-z0-9_-]+/g, "-").toLowerCase() || "script"}.rsc`,
-                                  )
-                                }
-                              >
-                                <Download className="h-3.5 w-3.5" /> .rsc
-                              </Button>
-                            </span>
-                          </div>
-                          <pre className="max-h-72 overflow-auto rounded-md border border-line-soft bg-code px-3 py-3 font-mono text-[12px] leading-relaxed text-ink">
-                            {entry.script}
-                          </pre>
-                        </div>
-                      )}
-                      {entry.note && <p className="text-xs leading-relaxed text-muted">{entry.note}</p>}
-                    </article>
+                    <EntryDropdown key={entry.token} entry={entry} opened={entry.token === data.opened} />
                   ))}
                 </div>
               </section>

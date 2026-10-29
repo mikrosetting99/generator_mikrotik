@@ -8,6 +8,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.44.0] - 2026-10-29
+
+_Halaman script pelanggan: pilih SSTP/L2TP/OVPN, petunjuk laptop, dan dropdown per script_
+
+### Ditambahkan
+
+- Pelanggan bisa memilih sendiri tipe VPN (SSTP, L2TP, atau OVPN) di halaman link-nya; script dibuat ulang langsung sesuai pilihan, termasuk tombol salin dan unduh .rsc dengan nama berakhiran tipe yang dipilih. Admin menentukan tipe mana yang ditawarkan lewat tombol SSTP / L2TP / OVPN di formulir (bawaan ketiganya; tipe pertama menjadi pilihan awal), dan pratinjau di formulir punya pilihan tipe yang sama. Data lama otomatis menawarkan ketiganya.
+- Di atas setiap script tampil petunjuk: "Silahkan copy dan paste script berikut ke New Terminal Mikrotik Anda, wajib pakai laptop."
+
+### Diubah
+
+- Tiap script di halaman pelanggan kini berupa dropdown: judul, penanda VPN/Mikhmon, dan panah di kepala; klik untuk membuka atau menutup isi (Mikhmon, kredensial, IP Winbox/API, pilihan tipe, dan script). Script yang dibuka lewat link langsung terbuka, yang lain tertutup.
+
 ## [1.43.0] - 2026-10-29
 
 _Script VPN dibuat otomatis (SSTP/L2TP/OVPN), plus IP Winbox, IP API, dan link Mikhmon_

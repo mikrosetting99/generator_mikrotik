@@ -43,8 +43,10 @@ interface FormState {
   title: string;
   username: string;
   password: string;
-  /** "" = script manual. */
+  /** "" = script manual; selain itu tipe pertama yang ditawarkan (pilihan awal pelanggan). */
   protocol: "" | VpnProtocol;
+  /** Tipe yang boleh dipilih pelanggan; kosong = mode manual. */
+  offered: VpnProtocol[];
   rosVersion: "v6" | "v7";
   vpnServer: string;
   gatewayIp: string;
@@ -67,6 +69,7 @@ const EMPTY: FormState = {
   username: "",
   password: "",
   protocol: "sstp",
+  offered: ["sstp", "l2tp", "ovpn"],
   rosVersion: "v6",
   vpnServer: "",
   gatewayIp: "",
@@ -114,6 +117,7 @@ export function VpnAdmin() {
   const [showPassword, setShowPassword] = useState(false);
   const [lastLink, setLastLink] = useState<{ url: string; message: string; phone: string } | null>(null);
   const [copied, setCopied] = useState("");
+  const [previewProto, setPreviewProto] = useState<VpnProtocol>("sstp");
 
   const loadCategories = useCallback(async () => {
     const r = await api<{ categories: Category[] }>("/api/admin/vpn/categories");
@@ -147,10 +151,11 @@ export function VpnAdmin() {
   const patch = (partial: Partial<FormState>) => setForm((f) => ({ ...f, ...partial }));
 
   // Pratinjau script VPN yang akan dilihat pelanggan (dibuat di browser dengan fungsi yang sama dengan server).
+  const shownProto: VpnProtocol | "" = form.offered.includes(previewProto) ? previewProto : (form.offered[0] ?? "");
   const vpnPreview = useMemo(() => {
-    if (!form.protocol) return { error: "", script: "" };
+    if (!shownProto) return { error: "", script: "" };
     const params = {
-      protocol: form.protocol,
+      protocol: shownProto,
       ros: form.rosVersion,
       server: form.vpnServer,
       tunnel: form.tunnelName,
@@ -162,7 +167,13 @@ export function VpnAdmin() {
     };
     const error = checkVpnParams(params);
     return { error, script: error ? "" : generateVpnScript(params) };
-  }, [form]);
+  }, [form, shownProto]);
+
+  /** Menyalakan/mematikan satu tipe yang ditawarkan; urutannya selalu SSTP, L2TP, OVPN. */
+  const toggleOffered = (id: VpnProtocol) => {
+    const next = VPN_PROTOCOLS.map((p) => p.id).filter((p) => (p === id ? !form.offered.includes(p) : form.offered.includes(p)));
+    patch({ offered: next, protocol: next[0] ?? "" });
+  };
 
   /* ------------------------------------------------------------ kategori */
 
@@ -210,6 +221,7 @@ export function VpnAdmin() {
         username: form.username,
         password: form.password,
         protocol: form.protocol,
+        offered: form.offered,
         rosVersion: form.rosVersion,
         vpnServer: form.vpnServer,
         gatewayIp: form.gatewayIp,
@@ -256,6 +268,7 @@ export function VpnAdmin() {
       username: s.username,
       password: s.password,
       protocol: s.protocol,
+      offered: s.offered ?? [],
       rosVersion: s.rosVersion,
       vpnServer: s.vpnServer,
       gatewayIp: s.gatewayIp,
@@ -359,13 +372,13 @@ export function VpnAdmin() {
           {/* ------------------------------------------------- script VPN */}
           <div className="space-y-3 rounded-md border border-line-soft bg-raised/40 p-4 sm:col-span-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-1 text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Tipe script</span>
+              <span className="mr-1 text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Tipe VPN yang ditawarkan</span>
               {VPN_PROTOCOLS.map((p) => (
-                <CheckPill key={p.id} active={form.protocol === p.id} onClick={() => patch({ protocol: p.id })}>
+                <CheckPill key={p.id} active={form.offered.includes(p.id)} onClick={() => toggleOffered(p.id)}>
                   {p.label}
                 </CheckPill>
               ))}
-              <CheckPill active={form.protocol === ""} onClick={() => patch({ protocol: "" })}>
+              <CheckPill active={form.offered.length === 0} onClick={() => patch({ offered: [], protocol: "" })}>
                 Manual / tanpa VPN
               </CheckPill>
             </div>
@@ -373,8 +386,9 @@ export function VpnAdmin() {
             {form.protocol ? (
               <>
                 <p className="text-xs text-muted">
-                  Cukup isi username dan password VPN — script {form.protocol.toUpperCase()} (interface client, Netwatch, dan
-                  scheduler) dibuat otomatis.
+                  Cukup isi username dan password VPN. Pelanggan memilih sendiri tipe{" "}
+                  {form.offered.map((p) => p.toUpperCase()).join(", ")} di halaman link-nya; script (interface client, Netwatch, dan
+                  scheduler) dibuat otomatis. Pilihan awal: {form.offered[0]?.toUpperCase()}.
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Username VPN" required>
@@ -428,7 +442,22 @@ export function VpnAdmin() {
                 </details>
                 <div>
                   <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Script yang dilihat pelanggan</span>
+                    <span className="flex flex-wrap items-center gap-2 text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+                      Pratinjau script
+                      {form.offered.length > 1 &&
+                        form.offered.map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setPreviewProto(p)}
+                            className={`rounded-md px-2 py-0.5 font-mono text-[11px] normal-case ${
+                              shownProto === p ? "bg-brand/15 text-brand" : "text-muted hover:text-ink"
+                            }`}
+                          >
+                            {p.toUpperCase()}
+                          </button>
+                        ))}
+                    </span>
                     {vpnPreview.script && (
                       <Button size="sm" onClick={() => copy("preview", vpnPreview.script)}>
                         {copied === "preview" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}

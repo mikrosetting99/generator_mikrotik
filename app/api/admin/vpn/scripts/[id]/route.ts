@@ -41,6 +41,7 @@ export async function PUT(request: Request, { params }: Ctx) {
       passwordEnc: seal(d.password),
       scriptEnc: seal(d.script),
       protocol: d.protocol,
+      offered: d.offered.join(","),
       rosVersion: d.rosVersion,
       vpnServer: d.vpnServer,
       gatewayIp: d.gatewayIp,

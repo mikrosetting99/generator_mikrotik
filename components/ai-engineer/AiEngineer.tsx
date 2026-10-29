@@ -15,18 +15,37 @@ interface AiSettings {
   baseUrl: string;
 }
 
-/** Satu Mikrotik yang disimpan di browser. Password hanya ikut tersimpan bila savePass dicentang. */
+/** Satu Mikrotik yang disimpan di server (password terenkripsi, tidak pernah dikirim balik). */
 interface RouterProfile {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  tls: boolean;
+  username: string;
+}
+
+/** Bentuk isian form router; password kosong saat mengubah = tetap memakai yang lama. */
+interface RouterForm {
   id: string;
   name: string;
   host: string;
   port: string;
   tls: boolean;
   username: string;
-  savePass: boolean;
-  pass?: string;
+  password: string;
 }
 
+type RouterState = "online" | "offline" | "auth" | "timeout" | "blocked" | "checking";
+
+interface RouterStatus {
+  id: string;
+  state: RouterState;
+  message: string;
+  latencyMs: number;
+  checkedAt: number;
+  info?: RouterInfo;
+}
 interface RouterInfo {
   identity: string;
   version: string;
@@ -67,20 +86,19 @@ interface ExecResult {
 }
 
 const AI_KEY = "ai-eng-ai-v1";
-const ROUTER_KEY = "ai-eng-router-v1"; // format lama (satu router), dipindahkan ke ROUTERS_KEY
-const ROUTERS_KEY = "ai-eng-routers-v2";
+const ROUTERS_KEY = "ai-eng-routers-v2"; // format lama (di browser): diimpor ke server sekali lalu dihapus
+const STATUS_EVERY_MS = 60_000;
 const ACTIVE_KEY = "ai-eng-active-router-v1";
 const SKILLS_KEY = "ai-eng-skills-v1";
 const CONVS_KEY = "ai-eng-convs-v1";
 const MODELS_KEY = "ai-eng-models-v1";
 const MAX_CONVS = 30;
-const MAX_ROUTERS = 20;
 const MAX_STORED_MESSAGES = 80;
 const MAX_AUTO_STEPS = 4;
 const SKILLS_CHAR_LIMIT = 90_000;
 
 const DEFAULT_AI: AiSettings = { provider: "anthropic", model: AI_PROVIDERS[0].models[0], apiKey: "", baseUrl: "" };
-const BLANK_ROUTER: RouterProfile = { id: "", name: "", host: "", port: "8728", tls: false, username: "", savePass: false };
+const BLANK_ROUTER: RouterForm = { id: "", name: "", host: "", port: "8728", tls: false, username: "", password: "" };
 
 const STARTERS = [
   "Periksa konfigurasi firewall dan NAT router ini, lalu beri catatan keamanan.",
@@ -191,7 +209,27 @@ const timeLabel = (ts: number) => {
     : d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 };
 
-const routerLabel = (r: RouterProfile) => r.name.trim() || r.host || "Router";
+const routerLabel = (r: { name: string; host: string }) => r.name.trim() || r.host || "Router";
+
+/** Teks dan warna lencana status koneksi sebuah router. */
+function statusBadge(st: { state: RouterState } | null | undefined): { label: string; cls: string; dot: string } {
+  switch (st?.state) {
+    case "online":
+      return { label: "Tersambung", cls: "bg-ok/15 text-ok", dot: "bg-ok" };
+    case "offline":
+      return { label: "Offline", cls: "bg-bad/15 text-bad", dot: "bg-bad" };
+    case "timeout":
+      return { label: "Tidak merespons", cls: "bg-bad/15 text-bad", dot: "bg-bad" };
+    case "auth":
+      return { label: "Login gagal", cls: "bg-warn/15 text-warn", dot: "bg-warn" };
+    case "blocked":
+      return { label: "Alamat ditolak", cls: "bg-warn/15 text-warn", dot: "bg-warn" };
+    case "checking":
+      return { label: "Memeriksa…", cls: "bg-raised text-muted", dot: "animate-pulse bg-faint" };
+    default:
+      return { label: "Belum diperiksa", cls: "bg-raised text-muted", dot: "bg-faint" };
+  }
+}
 
 /* ---------------------------------------------------------------- komponen */
 
@@ -202,11 +240,14 @@ export function AiEngineer() {
   const [modelsBusy, setModelsBusy] = useState(false);
 
   const [routers, setRouters] = useState<RouterProfile[]>([]);
-  const [passwords, setPasswords] = useState<Record<string, string>>({});
-  const [infos, setInfos] = useState<Record<string, RouterInfo>>({});
+  const [statuses, setStatuses] = useState<Record<string, RouterStatus>>({});
   const [activeId, setActiveId] = useState("");
-  const [editing, setEditing] = useState<RouterProfile | null>(null);
-  const [connectingId, setConnectingId] = useState("");
+  const [editing, setEditing] = useState<RouterForm | null>(null);
+  const [routerBusy, setRouterBusy] = useState(false);
+  const [testResult, setTestResult] = useState<RouterStatus | null>(null);
+  const [checking, setChecking] = useState(false);
+  const routersRef = useRef<RouterProfile[]>([]);
+  routersRef.current = routers;
 
   const [skills, setSkills] = useState<Skill[]>([]);
   const [skillRef, setSkillRef] = useState("");
@@ -240,25 +281,12 @@ export function AiEngineer() {
       const c = window.localStorage.getItem(CONVS_KEY);
       if (c) setConvs(JSON.parse(c));
 
-      let list: RouterProfile[] = [];
-      const r2 = window.localStorage.getItem(ROUTERS_KEY);
-      if (r2) list = JSON.parse(r2);
-      else {
-        // Pindahkan pengaturan satu-router versi lama menjadi router pertama.
-        const old = window.localStorage.getItem(ROUTER_KEY);
-        if (old) {
-          const o = JSON.parse(old) as Partial<RouterProfile>;
-          if (o.host) list = [{ ...BLANK_ROUTER, id: newId(), name: o.host, host: o.host, port: o.port ?? "8728", tls: Boolean(o.tls), username: o.username ?? "" }];
-        }
-      }
-      setRouters(list);
-      setPasswords(Object.fromEntries(list.filter((r) => r.savePass && r.pass).map((r) => [r.id, r.pass as string])));
-      const act = window.localStorage.getItem(ACTIVE_KEY) ?? "";
-      setActiveId(list.some((r) => r.id === act) ? act : (list[0]?.id ?? ""));
-    } catch {
+      setActiveId(window.localStorage.getItem(ACTIVE_KEY) ?? "");    } catch {
       // abaikan simpanan rusak
     }
     setReady(true);
+    void initRouters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     if (ready) save(AI_KEY, ai);
@@ -266,10 +294,6 @@ export function AiEngineer() {
   useEffect(() => {
     if (ready) save(MODELS_KEY, models);
   }, [models, ready]);
-  useEffect(() => {
-    // Password hanya disimpan untuk router yang dicentang "Simpan password".
-    if (ready) save(ROUTERS_KEY, routers.map((r) => (r.savePass ? { ...r, pass: passwords[r.id] ?? r.pass ?? "" } : { ...r, pass: undefined })));
-  }, [routers, passwords, ready]);
   useEffect(() => {
     if (ready) save(ACTIVE_KEY, activeId);
   }, [activeId, ready]);
@@ -299,13 +323,14 @@ export function AiEngineer() {
   const skillChars = enabledSkills.reduce((n, s) => n + s.content.length, 0);
 
   const active = routers.find((r) => r.id === activeId) ?? null;
-  const info = active ? (infos[active.id] ?? null) : null;
+  const activeStatus = active ? statuses[active.id] : undefined;
+  const info = activeStatus?.state === "online" ? (activeStatus.info ?? null) : null;
   const routerInfoText = info
     ? `nama=${routerLabel(active as RouterProfile)} identity=${info.identity} versi RouterOS=${info.version} board=${info.board} uptime=${info.uptime} cpu-load=${info.cpuLoad}%`
     : "";
-  const connectedCount = routers.filter((r) => infos[r.id]).length;
+  const onlineRouters = routers.filter((r) => statuses[r.id]?.state === "online");
+  const connectedCount = onlineRouters.length;
 
-  const note = useCallback((content: string, error = false) => setMessages((m) => [...m, { id: newId(), role: "system", content, error }]), []);
 
   /* ------------------------------------------------------------------ model */
 
@@ -326,78 +351,120 @@ export function AiEngineer() {
 
   /* ------------------------------------------------------------------ router */
 
-  const bodyFor = useCallback(
-    (r: RouterProfile) => ({ host: r.host.trim(), port: Number(r.port) || 8728, tls: r.tls, username: r.username, password: passwords[r.id] ?? "" }),
-    [passwords],
-  );
+  const bodyFor = useCallback((r: RouterProfile) => ({ routerId: r.id }), []);
 
-  const saveRouter = () => {
-    if (!editing) return;
-    const e = { ...editing, host: editing.host.trim(), username: editing.username.trim(), name: editing.name.trim() };
-    if (!e.host || !e.username) return setFlash({ tone: "bad", text: "Isi alamat router dan username dulu." });
-    if (!e.id) {
-      if (routers.length >= MAX_ROUTERS) return setFlash({ tone: "bad", text: `Maksimal ${MAX_ROUTERS} router.` });
-      e.id = newId();
-    }
-    setFlash(null);
-    setRouters((list) => (list.some((r) => r.id === e.id) ? list.map((r) => (r.id === e.id ? { ...e, pass: undefined } : r)) : [...list, { ...e, pass: undefined }]));
-    // Password kosong saat mengubah = tetap memakai yang sudah ada.
-    if (editing.pass) setPasswords((p) => ({ ...p, [e.id]: editing.pass as string }));
-    if (!activeId) setActiveId(e.id);
-    // Data koneksi berubah: sesi lama tidak berlaku lagi.
-    setInfos((i) => {
-      const { [e.id]: _drop, ...rest } = i;
-      void _drop;
-      return rest;
+  /** Memeriksa tersambung atau tidaknya router (kosong = semua) dan memperbarui lencana statusnya. */
+  const checkStatuses = useCallback(async (ids?: string[]) => {
+    const targets = ids ?? routersRef.current.map((r) => r.id);
+    if (targets.length === 0) return;
+    setChecking(true);
+    setStatuses((s) => {
+      const next = { ...s };
+      for (const id of targets) next[id] = { ...(s[id] ?? { id, message: "", latencyMs: 0, checkedAt: 0 }), state: s[id]?.state === "online" ? "online" : "checking" };
+      return next;
     });
-    setEditing(null);
-  };
-
-  const removeRouter = (id: string) => {
-    if (!window.confirm("Hapus router ini dari daftar?")) return;
-    setRouters((list) => list.filter((r) => r.id !== id));
-    setInfos((i) => {
-      const { [id]: _drop, ...rest } = i;
-      void _drop;
-      return rest;
-    });
-    setPasswords((p) => {
-      const { [id]: _drop, ...rest } = p;
-      void _drop;
-      return rest;
-    });
-    if (activeId === id) setActiveId(routers.find((r) => r.id !== id)?.id ?? "");
-  };
-
-  const connectRouter = async (r: RouterProfile) => {
-    setFlash(null);
-    if (passwords[r.id] === undefined || passwords[r.id] === "") {
-      setEditing({ ...r, pass: "" });
-      return setFlash({ tone: "warn", text: `Masukkan password untuk ${routerLabel(r)} lalu simpan.` });
-    }
-    setConnectingId(r.id);
     try {
-      const res = await post<{ info: RouterInfo }>("/api/ai/router", { action: "connect", ...bodyFor(r) });
-      if (!res.ok) return setFlash({ tone: "bad", text: `${routerLabel(r)}: ${res.data.error ?? "Gagal tersambung ke router."}` });
-      setInfos((i) => ({ ...i, [r.id]: res.data.info }));
-      if (!activeId) setActiveId(r.id);
-      note(`Tersambung ke ${routerLabel(r)} · RouterOS ${res.data.info.version}`);
+      const r = await post<{ statuses: RouterStatus[] }>("/api/ai/routers/status", { ids: targets });
+      if (r.ok && r.data.statuses) setStatuses((s) => ({ ...s, ...Object.fromEntries(r.data.statuses.map((x) => [x.id, x])) }));
+    } catch {
+      // jaringan putus: status lama dipertahankan
+    } finally {
+      setChecking(false);
+    }
+  }, []);
+
+  /** Memuat daftar router dari server (dan mengimpor router lama dari browser sekali saja), lalu memeriksa statusnya. */
+  const initRouters = async () => {
+    try {
+      let res = await fetch("/api/ai/routers", { cache: "no-store" });
+      let list: RouterProfile[] = res.ok ? ((await res.json()) as { routers: RouterProfile[] }).routers : [];
+      const old = window.localStorage.getItem(ROUTERS_KEY);
+      if (old && list.length === 0) {
+        try {
+          const legacy = JSON.parse(old) as Array<{ name?: string; host?: string; port?: string; tls?: boolean; username?: string; pass?: string }>;
+          for (const o of legacy.filter((x) => x.host && x.username && x.pass)) {
+            await post("/api/ai/routers", { name: o.name, host: o.host, port: o.port, tls: o.tls, username: o.username, password: o.pass });
+          }
+          res = await fetch("/api/ai/routers", { cache: "no-store" });
+          list = res.ok ? ((await res.json()) as { routers: RouterProfile[] }).routers : [];
+        } catch {
+          // impor gagal: abaikan
+        }
+      }
+      if (old) window.localStorage.removeItem(ROUTERS_KEY);
+      setRouters(list);
+      routersRef.current = list;
+      const act = window.localStorage.getItem(ACTIVE_KEY) ?? "";
+      setActiveId(list.some((r) => r.id === act) ? act : (list[0]?.id ?? ""));
+      void checkStatuses(list.map((r) => r.id));
+    } catch {
+      // server tidak terjangkau
+    }
+  };
+
+  // Status diperiksa ulang berkala selama halaman terbuka.
+  useEffect(() => {
+    if (!ready) return;
+    const timer = window.setInterval(() => {
+      if (!document.hidden) void checkStatuses();
+    }, STATUS_EVERY_MS);
+    return () => window.clearInterval(timer);
+  }, [ready, checkStatuses]);
+
+  const formBody = (f: RouterForm) => ({ name: f.name, host: f.host, port: Number(f.port) || 8728, tls: f.tls, username: f.username, password: f.password });
+
+  const saveRouter = async () => {
+    if (!editing) return;
+    setFlash(null);
+    setRouterBusy(true);
+    try {
+      const r = editing.id
+        ? await fetch(`/api/ai/routers/${editing.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formBody(editing)) })
+        : await fetch("/api/ai/routers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formBody(editing)) });
+      const data = (await r.json().catch(() => ({}))) as { router?: RouterProfile; error?: string };
+      if (!r.ok || !data.router) return setFlash({ tone: "bad", text: data.error ?? "Gagal menyimpan router." });
+      const saved = data.router;
+      setRouters((list) => (list.some((x) => x.id === saved.id) ? list.map((x) => (x.id === saved.id ? saved : x)) : [...list, saved]));
+      routersRef.current = routersRef.current.some((x) => x.id === saved.id) ? routersRef.current.map((x) => (x.id === saved.id ? saved : x)) : [...routersRef.current, saved];
+      if (!activeId) setActiveId(saved.id);
+      setEditing(null);
+      setTestResult(null);
+      setFlash({ tone: "info", text: `${saved.name} disimpan. Memeriksa koneksi…` });
+      void checkStatuses([saved.id]);
     } catch {
       setFlash({ tone: "bad", text: "Gagal menghubungi server." });
     } finally {
-      setConnectingId("");
+      setRouterBusy(false);
     }
   };
 
-  const disconnectRouter = (r: RouterProfile) => {
-    setInfos((i) => {
-      const { [r.id]: _drop, ...rest } = i;
+  const testRouter = async () => {
+    if (!editing) return;
+    setFlash(null);
+    setTestResult(null);
+    setRouterBusy(true);
+    try {
+      const r = await post<{ statuses: RouterStatus[] }>("/api/ai/routers/status", { test: formBody(editing), id: editing.id || undefined });
+      if (!r.ok || !r.data.statuses?.[0]) return setFlash({ tone: "bad", text: r.data.error ?? "Gagal menguji koneksi." });
+      setTestResult(r.data.statuses[0]);
+    } catch {
+      setFlash({ tone: "bad", text: "Gagal menghubungi server." });
+    } finally {
+      setRouterBusy(false);
+    }
+  };
+
+  const removeRouter = async (r: RouterProfile) => {
+    if (!window.confirm(`Hapus ${routerLabel(r)} dari daftar?`)) return;
+    await fetch(`/api/ai/routers/${r.id}`, { method: "DELETE" }).catch(() => undefined);
+    setRouters((list) => list.filter((x) => x.id !== r.id));
+    setStatuses((s) => {
+      const { [r.id]: _drop, ...rest } = s;
       void _drop;
       return rest;
     });
-    note(`${routerLabel(r)} diputuskan.`);
+    if (activeId === r.id) setActiveId(routers.find((x) => x.id !== r.id)?.id ?? "");
   };
-
   /** Menjalankan daftar perintah di router aktif; hasilnya ditambahkan ke chat dan dikembalikan agar bisa dikirim ke AI. */
   const execCommands = async (commands: string[], opts: { confirmed: boolean }): Promise<Msg | null> => {
     if (!active || !info) {
@@ -579,7 +646,7 @@ export function AiEngineer() {
   const aiReady = Boolean(ai.apiKey.trim() && ai.model.trim());
   const modelListId = useMemo(() => `models-${ai.provider}`, [ai.provider]);
   const draftRows = Math.min(6, Math.max(1, draft.split("\n").length));
-  const monitorTargets: MonitorTarget[] = routers.filter((r) => infos[r.id]).map((r) => ({ id: r.id, name: routerLabel(r), body: bodyFor(r) }));
+  const monitorTargets: MonitorTarget[] = onlineRouters.map((r) => ({ id: r.id, name: routerLabel(r), body: bodyFor(r) }));
 
   const block = "mb-4 rounded-[10px] border border-line bg-surface";
   const blockHead = "rounded-t-[10px] border-b border-line bg-raised px-4 py-2.5";
@@ -660,22 +727,32 @@ export function AiEngineer() {
       <section className={block}>
         <div className={`${blockHead} flex items-center justify-between gap-2`}>
           <h2 className="text-[15px] font-semibold text-ink">Router Mikrotik ({routers.length})</h2>
-          {!editing && (
-            <Button size="sm" onClick={() => setEditing({ ...BLANK_ROUTER, pass: "" })}>
-              <Plus className="h-3.5 w-3.5" />
-              Tambah router
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {routers.length > 0 && (
+              <Button size="sm" onClick={() => checkStatuses()} disabled={checking}>
+                {checking ? "Memeriksa…" : "Periksa semua"}
+              </Button>
+            )}
+            {!editing && (
+              <Button size="sm" variant="primary" onClick={() => { setEditing({ ...BLANK_ROUTER }); setTestResult(null); }}>
+                <Plus className="h-3.5 w-3.5" />
+                Tambah Mikrotik
+              </Button>
+            )}
+          </div>
         </div>
         <div className="space-y-3 p-4">
           {routers.length === 0 && !editing && (
-            <p className="rounded-md border border-dashed border-line px-3 py-3 text-xs text-faint">Belum ada router. Tambahkan Mikrotik Anda (IP publik atau domain) lalu hubungkan. Bisa lebih dari satu.</p>
+            <p className="rounded-md border border-dashed border-line px-3 py-3 text-xs text-faint">
+              Belum ada Mikrotik. Tambahkan IP publik atau domain-nya; router disimpan di akun Anda dan statusnya (tersambung atau tidak) diperiksa otomatis tiap menit.
+            </p>
           )}
 
           {routers.length > 0 && (
             <ul className="divide-y divide-line overflow-hidden rounded-md border border-line">
               {routers.map((r) => {
-                const i = infos[r.id];
+                const st = statuses[r.id];
+                const badge = statusBadge(st);
                 return (
                   <li key={r.id} className={`space-y-2 px-3 py-2.5 ${r.id === activeId ? "bg-brand/[0.06]" : ""}`}>
                     <div className="flex items-start gap-2.5">
@@ -689,37 +766,36 @@ export function AiEngineer() {
                         className="mt-1 h-4 w-4 accent-[var(--color-brand)]"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="flex items-center gap-2 truncate text-sm font-medium text-ink">
-                          <span className={`h-2 w-2 shrink-0 rounded-full ${i ? "bg-ok" : "bg-faint"}`} />
-                          {routerLabel(r)}
+                        <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
+                          <span className="truncate">{routerLabel(r)}</span>
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-px text-[11px] font-semibold ${badge.cls}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+                            {badge.label}
+                            {st?.state === "online" && st.latencyMs > 0 ? ` · ${st.latencyMs} ms` : ""}
+                          </span>
                           {r.id === activeId && <span className="rounded-full bg-brand/15 px-1.5 text-[10px] font-semibold uppercase text-brand">aktif</span>}
                         </p>
                         <p className="truncate font-mono text-[11px] text-muted">
                           {r.username}@{r.host}:{r.port}
                           {r.tls ? " · TLS" : ""}
                         </p>
-                        {i && (
+                        {st?.state === "online" && st.info && (
                           <p className="truncate font-mono text-[11px] text-faint">
-                            {i.identity} · RouterOS {i.version} · {i.board} · CPU {i.cpuLoad}%
+                            {st.info.identity} · RouterOS {st.info.version} · {st.info.board} · CPU {st.info.cpuLoad}%
                           </p>
                         )}
+                        {st && st.state !== "online" && st.state !== "checking" && <p className="text-[11px] text-bad">{st.message}</p>}
+                        {st && st.checkedAt > 0 && <p className="text-[10px] text-faint">Diperiksa {new Date(st.checkedAt).toLocaleTimeString("id-ID")}</p>}
                       </div>
                     </div>
                     <div className="flex flex-wrap justify-end gap-1.5">
-                      {i ? (
-                        <Button size="sm" onClick={() => disconnectRouter(r)}>
-                          Putuskan
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="primary" onClick={() => connectRouter(r)} disabled={connectingId === r.id}>
-                          <Terminal className="h-3.5 w-3.5" />
-                          {connectingId === r.id ? "Menyambung…" : "Hubungkan"}
-                        </Button>
-                      )}
-                      <Button size="sm" onClick={() => setEditing({ ...r, pass: passwords[r.id] ?? "" })} disabled={Boolean(i)} title={i ? "Putuskan dulu untuk mengubah" : "Ubah"}>
+                      <Button size="sm" onClick={() => checkStatuses([r.id])} disabled={st?.state === "checking"}>
+                        Periksa
+                      </Button>
+                      <Button size="sm" onClick={() => { setEditing({ id: r.id, name: r.name, host: r.host, port: String(r.port), tls: r.tls, username: r.username, password: "" }); setTestResult(null); }}>
                         Ubah
                       </Button>
-                      <Button size="sm" variant="danger" className="px-2" ariaLabel={`Hapus ${routerLabel(r)}`} title="Hapus" onClick={() => removeRouter(r.id)}>
+                      <Button size="sm" variant="danger" className="px-2" ariaLabel={`Hapus ${routerLabel(r)}`} title="Hapus" onClick={() => removeRouter(r)}>
                         <Trash className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -731,12 +807,12 @@ export function AiEngineer() {
 
           {editing && (
             <div className="space-y-3 rounded-md border border-brand/40 bg-brand/[0.04] p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.09em] text-brand">{editing.id ? "Ubah router" : "Router baru"}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.09em] text-brand">{editing.id ? "Ubah Mikrotik" : "Mikrotik baru"}</p>
               <Field label="Nama">
                 <TextInput value={editing.name} onChange={(name) => setEditing({ ...editing, name })} placeholder="mis. Kantor Pusat" />
               </Field>
               <div className="grid grid-cols-[minmax(0,1fr)_92px] gap-2">
-                <Field label="IP publik / domain">
+                <Field label="IP publik / domain" required>
                   <TextInput mono value={editing.host} onChange={(host) => setEditing({ ...editing, host: host.replace(/\s+/g, "") })} placeholder="103.1.2.3 atau router.contoh.com" />
                 </Field>
                 <Field label="Port API">
@@ -753,33 +829,39 @@ export function AiEngineer() {
                 Pakai TLS (api-ssl, biasanya port 8729)
               </label>
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Username">
+                <Field label="Username" required>
                   <TextInput mono value={editing.username} onChange={(username) => setEditing({ ...editing, username: username.trim() })} placeholder="ai-engineer" />
                 </Field>
-                <Field label="Password">
-                  <TextInput mono type="password" value={editing.pass ?? ""} onChange={(pass) => setEditing({ ...editing, pass })} placeholder="••••••" />
+                <Field label="Password" required={!editing.id} hint={editing.id ? "Kosongkan untuk tetap memakai password lama." : undefined}>
+                  <TextInput mono type="password" value={editing.password} onChange={(password) => setEditing({ ...editing, password })} placeholder="••••••" />
                 </Field>
               </div>
-              <label className="flex items-center gap-2 text-xs text-muted">
-                <input type="checkbox" checked={editing.savePass} onChange={(e) => setEditing({ ...editing, savePass: e.target.checked })} className="h-4 w-4 accent-[var(--color-brand)]" />
-                Simpan password di browser ini (tidak disarankan di komputer bersama)
-              </label>
+              {testResult && (
+                <div className={`rounded-md border px-3 py-2 text-xs ${testResult.state === "online" ? "border-ok/40 bg-ok/10 text-ok" : "border-bad/30 bg-bad/10 text-bad"}`}>
+                  {testResult.state === "online"
+                    ? `Tersambung · ${testResult.info?.identity} · RouterOS ${testResult.info?.version} · ${testResult.latencyMs} ms`
+                    : `${statusBadge(testResult).label}: ${testResult.message}`}
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
-                <Button variant="primary" onClick={saveRouter}>
-                  Simpan
+                <Button variant="primary" onClick={saveRouter} disabled={routerBusy}>
+                  {routerBusy ? "Memproses…" : "Simpan"}
                 </Button>
-                <Button onClick={() => setEditing(null)}>Batal</Button>
+                <Button onClick={testRouter} disabled={routerBusy}>
+                  Uji koneksi
+                </Button>
+                <Button onClick={() => { setEditing(null); setTestResult(null); }}>Batal</Button>
               </div>
             </div>
           )}
 
           <p className="text-[11px] leading-relaxed text-faint">
-            Aktifkan <b>/ip service api</b> (atau api-ssl) dan batasi alamat yang diizinkan. Disarankan membuat user khusus di router dengan hak seperlunya. Router bertanda
-            <b> aktif</b> menjadi sasaran perintah dari chat; semua router yang tersambung dipantau di tab Monitoring. Password tidak disimpan kecuali Anda mencentangnya.
+            Aktifkan <b>/ip service api</b> (atau api-ssl) dan izinkan IP server aplikasi ini. Disarankan membuat user khusus di router dengan hak seperlunya. Password disimpan
+            terenkripsi di server dan tidak pernah dikirim kembali ke browser. Router bertanda <b>aktif</b> menjadi sasaran perintah dari chat; semua router yang online
+            dipantau di tab Monitoring.
           </p>
         </div>
       </section>
-
       {/* --------------------------------------------------------------- skill */}
       <section className={block}>
         <h2 className={`${blockHead} text-[15px] font-semibold text-ink`}>Skill (skills.sh)</h2>
@@ -926,8 +1008,8 @@ export function AiEngineer() {
               {aiReady ? `${provider.label.split(" (")[0]} · ${ai.model}` : "Isi API key"}
             </button>
             {routers.length > 0 ? (
-              <label className={`${chip} ${info ? "border-ok/40 bg-ok/10 text-ok" : "border-line bg-raised text-muted"}`} title="Router aktif untuk chat">
-                <span className={`h-1.5 w-1.5 rounded-full ${info ? "bg-ok" : "bg-faint"}`} />
+              <label className={`${chip} ${info ? "border-ok/40 bg-ok/10 text-ok" : activeStatus && activeStatus.state !== "checking" ? "border-bad/40 bg-bad/10 text-bad" : "border-line bg-raised text-muted"}`} title={`Router aktif untuk chat · ${statusBadge(activeStatus).label}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${statusBadge(activeStatus).dot}`} />
                 <select
                   value={activeId}
                   onChange={(e) => setActiveId(e.target.value)}
@@ -936,8 +1018,8 @@ export function AiEngineer() {
                 >
                   {routers.map((r) => (
                     <option key={r.id} value={r.id} className="text-ink">
+                      {statuses[r.id]?.state === "online" ? "● " : "○ "}
                       {routerLabel(r)}
-                      {infos[r.id] ? " ●" : ""}
                     </option>
                   ))}
                 </select>
@@ -971,7 +1053,12 @@ export function AiEngineer() {
         )}
 
         {view === "monitor" ? (
-          <RouterMonitor targets={monitorTargets} />
+          <RouterMonitor
+            targets={monitorTargets}
+            statusList={routers.map((r) => ({ id: r.id, name: routerLabel(r), host: r.host, state: statuses[r.id]?.state ?? "checking", message: statuses[r.id]?.message ?? "", latencyMs: statuses[r.id]?.latencyMs ?? 0, checkedAt: statuses[r.id]?.checkedAt ?? 0 }))}
+            onCheck={() => checkStatuses()}
+            checking={checking}
+          />
         ) : (
           <>
             <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">

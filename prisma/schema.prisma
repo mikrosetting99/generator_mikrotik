@@ -25,8 +25,28 @@ model User {
 
   configs SavedConfig[]
   loginPages SavedLoginPage[]
+  aiRouters AiRouter[]
 
   @@map("users")
+}
+
+/// Mikrotik milik pengguna untuk menu AI Mikrotik Engineer. Password disimpan terenkripsi (lib/vault.ts)
+/// dan tidak pernah dikirim balik ke browser.
+model AiRouter {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String   @db.VarChar(80)
+  host        String   @db.VarChar(253)
+  port        Int      @default(8728)
+  tls         Boolean  @default(false)
+  username    String   @db.VarChar(100)
+  passwordEnc String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@map("ai_routers")
 }
 
 /// Satu baris = satu konfigurasi Setup Mikrotik Baru yang disimpan pengguna.

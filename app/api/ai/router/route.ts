@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isGuardResponse, requireAiUser } from "@/lib/ai-guard";
-import { resolvePublicHost } from "@/lib/net-guard";
+import { loadTarget } from "@/lib/ai-routers";
 import { formatRows, monitorSnapshot, openRouter, prepareCommand, runPrepared, type RouterTarget } from "@/lib/routeros-api";
 
 export const dynamic = "force-dynamic";
@@ -15,23 +15,12 @@ interface CommandResult {
   output: string;
 }
 
-async function target(b: Record<string, unknown>): Promise<RouterTarget> {
-  const host = String(b.host ?? "").trim();
-  const port = Math.round(Number(b.port)) || 8728;
-  if (port < 1 || port > 65535) throw new Error("Port API tidak valid.");
-  const username = String(b.username ?? "").slice(0, 100);
-  const password = String(b.password ?? "").slice(0, 200);
-  if (!username) throw new Error("Username router belum diisi.");
-  const ip = await resolvePublicHost(host);
-  return { ip, host, port, tls: Boolean(b.tls), username, password };
-}
-
 /**
  * Sambung ke router lewat API (IP publik atau domain).
  *  - action "connect": uji login dan ambil identitas/versi.
  *  - action "exec": jalankan daftar perintah berurutan (berhenti di galat pertama). Perintah baca
  *    (print) boleh langsung; perubahan wajib confirmWrite dari pengguna.
- * Kredensial router hanya dipakai selama permintaan ini dan tidak disimpan.
+ * Router dipilih lewat routerId (milik pengguna); password diambil dari penyimpanan terenkripsi di server.
  */
 export async function POST(request: Request) {
   const b = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -43,7 +32,7 @@ export async function POST(request: Request) {
 
   let t: RouterTarget;
   try {
-    t = await target(b);
+    t = (await loadTarget(guard.userId, String(b.routerId ?? ""))).target;
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Alamat router tidak valid." }, { status: 400 });
   }

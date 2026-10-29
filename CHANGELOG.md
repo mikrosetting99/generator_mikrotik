@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.55.0] - 2026-10-29
+
+_AI Mikrotik Engineer: Mikrotik tersimpan di akun dan status tersambung/offline otomatis_
+
+### Ditambahkan
+
+- Tambah Mikrotik disimpan di server per akun pengguna (tabel baru ai_routers): nama, IP publik atau domain, port, TLS, username, dan password. Password dienkripsi AES-256-GCM, tidak pernah dikirim kembali ke browser, dan router milik pengguna lain tidak bisa diakses. Tersedia tombol Uji koneksi sebelum menyimpan; saat mengubah, password boleh dikosongkan agar tetap memakai yang lama.
+- Status tersambung atau tidak untuk semua Mikrotik diperiksa otomatis saat halaman dibuka dan tiap menit, juga lewat Periksa/Periksa semua. Statusnya: Tersambung (dengan waktu respons ms, identity, versi RouterOS, board, dan CPU), Offline (port ditolak atau tidak terjangkau), Tidak merespons (waktu habis), Login gagal, atau Alamat ditolak. Lencana tampil di daftar router, pilihan router aktif di atas chat, dan baris status di tab Monitoring beserta alasan kegagalannya.
+- Tab Monitoring otomatis memantau semua router yang online tanpa perlu menekan Hubungkan. Router yang dipakai sebelumnya (disimpan di browser) diimpor otomatis ke akun satu kali.
+
+### Diubah
+
+- Perintah dan monitoring kini memakai routerId milik pengguna; kredensial router tidak lagi dikirim dari browser pada setiap permintaan. Menambah tema warna ok (hijau) untuk lencana tersambung.
+
 ## [1.54.0] - 2026-10-29
 
 _AI Mikrotik Engineer: monitoring, banyak router, semua model; tampilan lebih rapi_

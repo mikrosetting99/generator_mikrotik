@@ -4,6 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Select } from "@/components/ui";
 import type { MonitorSnapshot } from "@/lib/routeros-api";
 
+/** Status koneksi sebuah router tersimpan (tersambung atau tidak). */
+export interface RouterStatusItem {
+  id: string;
+  name: string;
+  host: string;
+  state: "online" | "offline" | "auth" | "timeout" | "blocked" | "checking";
+  message: string;
+  latencyMs: number;
+  checkedAt: number;
+}
+
 /** Router yang sedang tersambung dan siap dipantau. */
 export interface MonitorTarget {
   id: string;
@@ -120,7 +131,67 @@ function Stat({ label, value, sub, pct, spark }: { label: string; value: string;
 
 /* ----------------------------------------------------------------- komponen */
 
-export function RouterMonitor({ targets }: { targets: MonitorTarget[] }) {
+const STATE_LABEL: Record<RouterStatusItem["state"], string> = {
+  online: "Tersambung",
+  offline: "Offline",
+  auth: "Login gagal",
+  timeout: "Tidak merespons",
+  blocked: "Alamat ditolak",
+  checking: "Memeriksa…",
+};
+
+/** Baris status semua router tersimpan: tersambung/offline, waktu respons, dan alasan bila gagal. */
+function StatusStrip({ items, onCheck, checking }: { items: RouterStatusItem[]; onCheck: () => void; checking: boolean }) {
+  const online = items.filter((i) => i.state === "online").length;
+  return (
+    <div className="space-y-2 border-b border-line bg-surface px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+        <span className="font-semibold text-ink">
+          {online} dari {items.length} router tersambung
+        </span>
+        <button type="button" onClick={onCheck} disabled={checking} className="rounded-md border border-line px-2.5 py-1 font-medium text-ink hover:bg-raised disabled:opacity-50">
+          {checking ? "Memeriksa…" : "Periksa sekarang"}
+        </button>
+        <span className="text-faint">Diperiksa otomatis tiap menit</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {items.map((i) => {
+          const ok = i.state === "online";
+          const wait = i.state === "checking";
+          return (
+            <div
+              key={i.id}
+              title={i.message || i.host}
+              className={`flex min-w-[170px] items-center gap-2 rounded-md border px-3 py-1.5 text-xs ${ok ? "border-ok/40 bg-ok/10" : wait ? "border-line bg-raised" : "border-bad/40 bg-bad/10"}`}
+            >
+              <span className={`h-2 w-2 shrink-0 rounded-full ${ok ? "bg-ok" : wait ? "animate-pulse bg-faint" : "bg-bad"}`} />
+              <span className="min-w-0">
+                <span className="block truncate font-medium text-ink">{i.name}</span>
+                <span className={`block truncate ${ok ? "text-ok" : wait ? "text-muted" : "text-bad"}`}>
+                  {STATE_LABEL[i.state]}
+                  {ok && i.latencyMs > 0 ? ` · ${i.latencyMs} ms` : ""}
+                  {!ok && !wait && i.message ? ` · ${i.message}` : ""}
+                </span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function RouterMonitor({
+  targets,
+  statusList,
+  onCheck,
+  checking,
+}: {
+  targets: MonitorTarget[];
+  statusList: RouterStatusItem[];
+  onCheck: () => void;
+  checking: boolean;
+}) {
   const [state, setState] = useState<Record<string, RouterState>>({});
   const [every, setEvery] = useState("5");
   const [paused, setPaused] = useState(false);
@@ -171,15 +242,23 @@ export function RouterMonitor({ targets }: { targets: MonitorTarget[] }) {
 
   if (targets.length === 0) {
     return (
-      <div className="m-auto max-w-md space-y-2 px-4 py-12 text-center">
-        <p className="text-base font-semibold text-ink">Belum ada router tersambung</p>
-        <p className="text-sm leading-relaxed text-muted">Buka Pengaturan &gt; Router, tambahkan Mikrotik lalu tekan Hubungkan. Router yang tersambung otomatis dipantau di sini.</p>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {statusList.length > 0 && <StatusStrip items={statusList} onCheck={onCheck} checking={checking} />}
+        <div className="m-auto max-w-md space-y-2 px-4 py-12">
+          <p className="text-base font-semibold text-ink">{statusList.length ? "Tidak ada router yang tersambung" : "Belum ada Mikrotik"}</p>
+          <p className="text-sm leading-relaxed text-muted">
+            {statusList.length
+              ? "Periksa alamat, port, dan service API router yang offline, lalu tekan Periksa sekarang."
+              : "Buka Pengaturan > Router Mikrotik dan tekan Tambah Mikrotik. Router yang tersambung otomatis dipantau di sini."}
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <StatusStrip items={statusList} onCheck={onCheck} checking={checking} />
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 text-xs text-muted">
         <span className="flex items-center gap-1.5">
           <span className={`h-2 w-2 rounded-full ${paused ? "bg-faint" : "animate-pulse bg-ok"}`} />

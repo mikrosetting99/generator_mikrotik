@@ -28,6 +28,7 @@
   --color-accent-ink: #04282a;
   --color-warn: #f0ad4e;
   --color-bad: #f1707d;
+  --color-ok: #4cc38a;
 
   --edge-highlight: rgba(255, 255, 255, 0.06);
   --grid-line: transparent;
@@ -67,6 +68,7 @@
   --color-accent-ink: #ffffff;
   --color-warn: #b45309;
   --color-bad: #c62828;
+  --color-ok: #198754;
 
   --edge-highlight: rgba(15, 27, 45, 0.06);
   --grid-line: transparent;
@@ -93,6 +95,7 @@
     --color-accent-ink: #ffffff;
     --color-warn: #b45309;
     --color-bad: #c62828;
+  --color-ok: #198754;
     --edge-highlight: rgba(15, 27, 45, 0.06);
     --grid-line: transparent;
     --scrollbar-hover: #aab1bc;

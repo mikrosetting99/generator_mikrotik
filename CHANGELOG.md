@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.47.1] - 2026-10-29
+
+_Script VPN: daftar link dikelompokkan per nomor HP_
+
+### Diubah
+
+- Daftar link script kini dikelompokkan per nomor HP: tiap nomor punya kotak sendiri berisi nama pelanggan, jumlah script, dan semua link miliknya (judul, tipe VPN, kategori, tombol Link/WA/Ubah/Hapus).
+
 ## [1.47.0] - 2026-10-29
 
 _Script VPN: daftar link di samping form_

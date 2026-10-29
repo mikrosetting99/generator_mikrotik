@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.47.1",
+    date: "2026-10-29",
+    title: "Script VPN: daftar link dikelompokkan per nomor HP",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Daftar link script kini dikelompokkan per nomor HP: tiap nomor punya kotak sendiri berisi nama pelanggan, jumlah script, dan semua link miliknya (judul, tipe VPN, kategori, tombol Link/WA/Ubah/Hapus).",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.47.0",
     date: "2026-10-29",
     title: "Script VPN: daftar link di samping form",

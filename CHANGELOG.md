@@ -8,6 +8,17 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.52.0] - 2026-10-29
+
+_AI Mikrotik Engineer: tampilan chat disamakan dengan wyn.mikrosetting.com_
+
+### Diubah
+
+- Tata letak dua panel seperti wyn: riwayat percakapan di kiri (tombol Percakapan baru, daftar dengan judul dan jam, hapus per percakapan, tersimpan di browser) dan chat memenuhi layar di kanan. Di HP riwayat muncul sebagai panel geser lewat tombol Riwayat.
+- Gelembung chat gaya wyn pada kolom tengah maksimal 860px: pesan pengguna berwarna brand di kanan, jawaban AI berlatar abu muda dengan garis tipis di kiri, blok kode gelap dengan tombol Jalankan dan Salin, serta catatan sistem berbentuk pil di tengah.
+- Hasil perintah di router kini berupa baris yang bisa dilipat (Hasil di router · N perintah) dan terbuka otomatis bila ada yang gagal.
+- Pengaturan Koneksi AI, Router, dan Skill pindah ke panel geser di kanan yang dibuka lewat tombol Pengaturan atau lencana di bagian atas chat (penyedia/model, status router, jumlah skill). Halaman chat memakai lebar penuh dan bar kirim di bawah dengan kolom yang membesar otomatis.
+
 ## [1.51.1] - 2026-10-29
 
 _Halaman Login Hotspot: latar menyesuaikan ukuran HP_

@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Copy, Plus, Terminal, Trash, X } from "@/components/icons";
+import { Check, ChevronDown, Copy, Plus, Terminal, Trash, Wand, X } from "@/components/icons";
 import { Button, Field, Note, Select, TextInput } from "@/components/ui";
 import { AI_PROVIDERS, type AiProviderId } from "@/lib/ai-catalog";
 
@@ -40,9 +40,17 @@ interface Skill {
 
 interface Msg {
   id: string;
-  role: "user" | "assistant" | "result";
+  /** "result" = hasil perintah di router (dikirim ke AI sebagai pesan user); "system" = catatan, tidak dikirim ke AI. */
+  role: "user" | "assistant" | "result" | "system";
   content: string;
   error?: boolean;
+}
+
+interface Conversation {
+  id: string;
+  title: string;
+  updatedAt: number;
+  messages: Msg[];
 }
 
 interface ExecResult {
@@ -55,6 +63,9 @@ interface ExecResult {
 const AI_KEY = "ai-eng-ai-v1";
 const ROUTER_KEY = "ai-eng-router-v1";
 const SKILLS_KEY = "ai-eng-skills-v1";
+const CONVS_KEY = "ai-eng-convs-v1";
+const MAX_CONVS = 30;
+const MAX_STORED_MESSAGES = 80;
 const MAX_AUTO_STEPS = 4;
 const SKILLS_CHAR_LIMIT = 90_000;
 
@@ -81,7 +92,7 @@ function save(key: string, value: unknown) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // penyimpanan diblokir: pengaturan hanya berlaku selama halaman terbuka
+    // penyimpanan diblokir atau penuh: data hanya berlaku selama halaman terbuka
   }
 }
 
@@ -142,11 +153,11 @@ function Inline({ text }: { text: string }) {
     <>
       {parts.map((p, i) =>
         p.startsWith("**") && p.endsWith("**") && p.length > 4 ? (
-          <strong key={i} className="font-semibold text-ink">
+          <strong key={i} className="font-semibold">
             {p.slice(2, -2)}
           </strong>
         ) : p.startsWith("`") && p.endsWith("`") && p.length > 2 ? (
-          <code key={i} className="rounded bg-raised px-1 py-0.5 font-mono text-[12px] text-brand">
+          <code key={i} className="rounded bg-brand/10 px-1 py-px font-mono text-[0.85em] text-brand">
             {p.slice(1, -1)}
           </code>
         ) : (
@@ -157,12 +168,23 @@ function Inline({ text }: { text: string }) {
   );
 }
 
+const convTitle = (messages: Msg[]) => {
+  const first = messages.find((m) => m.role === "user")?.content.trim().replace(/\s+/g, " ") ?? "";
+  return first ? (first.length > 48 ? `${first.slice(0, 48)}…` : first) : "Percakapan baru";
+};
+
+const timeLabel = (ts: number) => {
+  const d = new Date(ts);
+  const today = new Date();
+  return d.toDateString() === today.toDateString()
+    ? d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+};
+
 /* ---------------------------------------------------------------- komponen */
 
 export function AiEngineer() {
   const [ready, setReady] = useState(false);
-  // Layar lebar: panel pengaturan di kolom kiri; layar sempit: dilipat di atas chat.
-  const [wide, setWide] = useState(true);
   const [ai, setAi] = useState<AiSettings>(DEFAULT_AI);
   const [router, setRouter] = useState<RouterSettings>(DEFAULT_ROUTER);
   const [routerPass, setRouterPass] = useState("");
@@ -174,12 +196,16 @@ export function AiEngineer() {
   const [showKey, setShowKey] = useState(false);
   const [flash, setFlash] = useState<{ tone: "info" | "warn" | "bad"; text: string } | null>(null);
 
+  const [convs, setConvs] = useState<Conversation[]>([]);
+  const [convId, setConvId] = useState(() => newId());
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [autoRead, setAutoRead] = useState(true);
   const [done, setDone] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState("");
+  const [drawer, setDrawer] = useState(false);
+  const [sidebar, setSidebar] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const messagesRef = useRef<Msg[]>([]);
@@ -191,15 +217,12 @@ export function AiEngineer() {
     try {
       const raw = window.localStorage.getItem(SKILLS_KEY);
       if (raw) setSkills(JSON.parse(raw));
+      const c = window.localStorage.getItem(CONVS_KEY);
+      if (c) setConvs(JSON.parse(c));
     } catch {
       // abaikan simpanan rusak
     }
     setReady(true);
-    const mq = window.matchMedia("(min-width: 1280px)");
-    const sync = () => setWide(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
   }, []);
   useEffect(() => {
     if (ready) save(AI_KEY, ai);
@@ -211,8 +234,21 @@ export function AiEngineer() {
     if (ready) save(SKILLS_KEY, skills);
   }, [skills, ready]);
   useEffect(() => {
+    if (ready) save(CONVS_KEY, convs);
+  }, [convs, ready]);
+  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
+
+  // Percakapan aktif ikut tersimpan di riwayat setiap ada pesan baru.
+  useEffect(() => {
+    if (!ready || messages.length === 0) return;
+    setConvs((list) => {
+      const rest = list.filter((c) => c.id !== convId);
+      const conv: Conversation = { id: convId, title: convTitle(messages), updatedAt: Date.now(), messages: messages.slice(-MAX_STORED_MESSAGES) };
+      return [conv, ...rest].slice(0, MAX_CONVS);
+    });
+  }, [messages, convId, ready]);
 
   const provider = AI_PROVIDERS.find((p) => p.id === ai.provider) ?? AI_PROVIDERS[0];
   const enabledSkills = skills.filter((s) => s.enabled);
@@ -220,6 +256,8 @@ export function AiEngineer() {
   const routerInfoText = info
     ? `identity=${info.identity} versi RouterOS=${info.version} board=${info.board} uptime=${info.uptime} cpu-load=${info.cpuLoad}%`
     : "";
+
+  const note = useCallback((content: string, error = false) => setMessages((m) => [...m, { id: newId(), role: "system", content, error }]), []);
 
   /* ------------------------------------------------------------------ router */
 
@@ -239,7 +277,8 @@ export function AiEngineer() {
         return setFlash({ tone: "bad", text: r.data.error ?? "Gagal tersambung ke router." });
       }
       setInfo(r.data.info);
-      setFlash({ tone: "info", text: `Tersambung ke ${r.data.info.identity || router.host}. AI sekarang bisa membaca dan (dengan persetujuan Anda) mengubah konfigurasi.` });
+      note(`Tersambung ke ${r.data.info.identity || router.host} · RouterOS ${r.data.info.version}`);
+      setDrawer(false);
     } catch {
       setFlash({ tone: "bad", text: "Gagal menghubungi server." });
     } finally {
@@ -250,12 +289,13 @@ export function AiEngineer() {
   const disconnect = () => {
     setInfo(null);
     setRouterPass("");
+    note("Router diputuskan.");
   };
 
   /** Menjalankan daftar perintah di router; hasilnya ditambahkan ke chat dan dikembalikan agar bisa dikirim ke AI. */
   const execCommands = async (commands: string[], opts: { confirmed: boolean }): Promise<Msg | null> => {
     if (!info) {
-      setFlash({ tone: "warn", text: "Sambungkan router dulu (panel Router)." });
+      setFlash({ tone: "warn", text: "Sambungkan router dulu (Pengaturan > Router)." });
       return null;
     }
     const writes = commands.filter((l) => !isReadLine(l));
@@ -294,7 +334,8 @@ export function AiEngineer() {
   /** Satu putaran ke AI dengan seluruh riwayat; bila AI menyarankan perintah baca, jalankan otomatis (maks beberapa kali). */
   const converse = async (history: Msg[], step = 0): Promise<void> => {
     if (!ai.apiKey.trim()) {
-      setFlash({ tone: "bad", text: "Isi API key AI dulu (panel Koneksi AI)." });
+      setFlash({ tone: "bad", text: "Isi API key AI dulu (Pengaturan > Koneksi AI)." });
+      setDrawer(true);
       return;
     }
     const controller = new AbortController();
@@ -302,7 +343,7 @@ export function AiEngineer() {
     setBusy(true);
     try {
       const payload = history
-        .filter((m) => !m.error || m.role !== "assistant")
+        .filter((m) => m.role !== "system" && !(m.error && m.role === "assistant"))
         .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.role === "result" ? `[Hasil eksekusi]\n${m.content}` : m.content }));
       const r = await post<{ text: string }>(
         "/api/ai/chat",
@@ -367,6 +408,33 @@ export function AiEngineer() {
 
   const stop = () => abortRef.current?.abort();
 
+  const newChat = () => {
+    if (busy) return;
+    setConvId(newId());
+    setMessages([]);
+    setDone({});
+    setFlash(null);
+    setSidebar(false);
+  };
+
+  const openChat = (c: Conversation) => {
+    if (busy) return;
+    setConvId(c.id);
+    setMessages(c.messages);
+    setDone({});
+    setFlash(null);
+    setSidebar(false);
+  };
+
+  const deleteChat = (id: string) => {
+    if (busy) return;
+    setConvs((list) => list.filter((c) => c.id !== id));
+    if (id === convId) {
+      setConvId(newId());
+      setMessages([]);
+    }
+  };
+
   const copy = async (key: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -402,19 +470,21 @@ export function AiEngineer() {
 
   const aiReady = Boolean(ai.apiKey.trim() && ai.model.trim());
   const modelListId = useMemo(() => `models-${ai.provider}`, [ai.provider]);
+  const draftRows = Math.min(6, Math.max(1, draft.split("\n").length));
 
-  const card = "overflow-hidden rounded-md border-2 border-l-[6px] border-line border-l-brand bg-surface shadow-sm";
-  const cardHead = "border-b-2 border-line bg-brand/10 px-4 py-2.5";
-  const cardTitle = "text-xs font-bold uppercase tracking-[0.1em] text-brand";
+  const block = "mb-4 rounded-[10px] border border-line bg-surface";
+  const blockHead = "rounded-t-[10px] border-b border-line bg-raised px-4 py-2.5";
 
-  const settingsPanel = (
-    <div className="space-y-4">
-      {/* ----------------------------------------------------- koneksi AI */}
-      <section className={card}>
-        <header className={cardHead}>
-          <h2 className={cardTitle}>Koneksi AI</h2>
-          <p className="mt-0.5 text-xs text-muted">Pilih penyedia, model, dan isi API key milik Anda.</p>
-        </header>
+  const settings = (
+    <>
+      {flash && (
+        <div className="mb-4">
+          <Note tone={flash.tone}>{flash.text}</Note>
+        </div>
+      )}
+
+      <section className={block}>
+        <h2 className={`${blockHead} text-[15px] font-semibold text-ink`}>Koneksi AI</h2>
         <div className="space-y-3 p-4">
           <Field label="Penyedia API">
             <Select
@@ -462,12 +532,8 @@ export function AiEngineer() {
         </div>
       </section>
 
-      {/* -------------------------------------------------------- router */}
-      <section className={card}>
-        <header className={cardHead}>
-          <h2 className={cardTitle}>Router (API)</h2>
-          <p className="mt-0.5 text-xs text-muted">Sambung lewat IP publik atau domain.</p>
-        </header>
+      <section className={block}>
+        <h2 className={`${blockHead} text-[15px] font-semibold text-ink`}>Router (API)</h2>
         <div className="space-y-3 p-4">
           <div className="grid grid-cols-[minmax(0,1fr)_92px] gap-2">
             <Field label="IP publik / domain">
@@ -518,12 +584,8 @@ export function AiEngineer() {
         </div>
       </section>
 
-      {/* ---------------------------------------------------------- skill */}
-      <section className={card}>
-        <header className={cardHead}>
-          <h2 className={cardTitle}>Skill (skills.sh)</h2>
-          <p className="mt-0.5 text-xs text-muted">Tambahkan keahlian tambahan untuk AI dari skills.sh atau GitHub.</p>
-        </header>
+      <section className={block}>
+        <h2 className={`${blockHead} text-[15px] font-semibold text-ink`}>Skill (skills.sh)</h2>
         <div className="space-y-3 p-4">
           <Field label="Link atau perintah skill" hint="Contoh: https://skills.sh/pemilik/repo/skill · pemilik/repo --skill nama · npx skills add pemilik/repo --skill nama">
             <div className="flex gap-2">
@@ -568,166 +630,280 @@ export function AiEngineer() {
           )}
         </div>
       </section>
-    </div>
+    </>
+  );
+
+  const chip = "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium";
+
+  const sidebarEl = (
+    <aside className="flex h-full min-h-0 flex-col border-r border-line bg-raised">
+      <div className="grid gap-2 border-b border-line p-3">
+        <Button variant="primary" onClick={newChat} disabled={busy}>
+          <Plus className="h-4 w-4" />
+          Percakapan baru
+        </Button>
+      </div>
+      <nav className="min-h-0 flex-1 overflow-y-auto" aria-label="Riwayat percakapan">
+        {convs.length === 0 ? (
+          <p className="px-4 py-6 text-center text-xs text-faint">Riwayat percakapan akan muncul di sini.</p>
+        ) : (
+          convs.map((c) => (
+            <div key={c.id} className={`group flex items-center border-b border-line ${c.id === convId ? "bg-brand/10" : "hover:bg-brand/[0.05]"}`}>
+              <button type="button" onClick={() => openChat(c)} className={`min-w-0 flex-1 px-4 py-2.5 text-left ${c.id === convId ? "font-medium text-brand" : "text-ink"}`}>
+                <span className="block truncate text-sm">{c.title}</span>
+                <span className="block text-[11px] font-normal text-faint">{timeLabel(c.updatedAt)}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteChat(c.id)}
+                aria-label={`Hapus percakapan ${c.title}`}
+                title="Hapus"
+                className="mr-2 rounded-md p-1.5 text-faint opacity-0 transition-opacity hover:bg-bad/10 hover:text-bad focus:opacity-100 group-hover:opacity-100 max-xl:opacity-100"
+              >
+                <Trash className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))
+        )}
+      </nav>
+      <div className="border-t border-line p-3">
+        <Button onClick={() => setDrawer(true)} className="w-full">
+          Pengaturan
+        </Button>
+      </div>
+    </aside>
   );
 
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
-      <div className="xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:pr-1">
-        {wide ? (
-          settingsPanel
-        ) : (
-          <details open={!aiReady}>
-            <summary className="mb-3 cursor-pointer rounded-md border-2 border-line bg-brand/10 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-brand">
-              Pengaturan AI, router, dan skill
-            </summary>
-            {settingsPanel}
-          </details>
-        )}
-      </div>
+    <div className="relative grid h-[calc(100dvh-48px)] min-h-[480px] xl:grid-cols-[270px_minmax(0,1fr)]">
+      {/* ----------------------------------------------------- riwayat (kiri) */}
+      <div className="hidden min-h-0 xl:block">{sidebarEl}</div>
+      {sidebar && (
+        <div className="absolute inset-0 z-30 xl:hidden">
+          <button type="button" aria-label="Tutup riwayat" className="absolute inset-0 bg-black/40" onClick={() => setSidebar(false)} />
+          <div className="relative h-full w-[290px] max-w-[85vw] shadow-xl">{sidebarEl}</div>
+        </div>
+      )}
 
-      {/* --------------------------------------------------------------- chat */}
-      <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-md border-2 border-line bg-surface shadow-sm xl:h-[calc(100vh-6rem)]">
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-line bg-brand/10 px-4 py-2.5">
-          <div className="min-w-0">
-            <h2 className="text-xs font-bold uppercase tracking-[0.1em] text-brand">Chat</h2>
-            <p className="truncate text-xs text-muted">
-              {aiReady ? `${provider.label} · ${ai.model}` : "Isi API key untuk mulai"} · {info ? `router: ${info.identity || router.host}` : "router belum tersambung"}
-              {enabledSkills.length > 0 && ` · ${enabledSkills.length} skill`}
-            </p>
+      {/* ------------------------------------------------------------ chat */}
+      <section className="flex min-h-0 min-w-0 flex-col bg-surface">
+        <header className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
+          <button
+            type="button"
+            onClick={() => setSidebar(true)}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-2.5 text-xs text-muted hover:text-ink xl:hidden"
+          >
+            Riwayat
+            <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
+          </button>
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <Wand className="h-4 w-4 text-brand" />
+            <span className="max-w-[40vw] truncate">{messages.length ? convTitle(messages) : "AI Mikrotik Engineer"}</span>
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button type="button" onClick={() => setDrawer(true)} className={`${chip} ${aiReady ? "border-brand/30 bg-brand/10 text-brand" : "border-warn/40 bg-warn/10 text-warn"}`}>
+              {aiReady ? `${provider.label.split(" (")[0]} · ${ai.model}` : "Isi API key"}
+            </button>
+            <button type="button" onClick={() => setDrawer(true)} className={`${chip} ${info ? "border-ok/40 bg-ok/10 text-ok" : "border-line bg-raised text-muted"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${info ? "bg-ok" : "bg-faint"}`} />
+              {info ? info.identity || router.host : "Router belum tersambung"}
+            </button>
+            {enabledSkills.length > 0 && <span className={`${chip} border-line bg-raised text-muted`}>{enabledSkills.length} skill</span>}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-3">
             <label className="flex items-center gap-1.5 text-xs text-muted" title="Perintah print dijalankan otomatis dan hasilnya langsung dianalisis AI">
               <input type="checkbox" checked={autoRead} onChange={(e) => setAutoRead(e.target.checked)} className="h-4 w-4 accent-[var(--color-brand)]" />
-              Jalankan otomatis perintah baca
+              <span className="hidden sm:inline">Jalankan otomatis perintah baca</span>
+              <span className="sm:hidden">Auto baca</span>
             </label>
-            <Button size="sm" onClick={() => setMessages([])} disabled={busy || messages.length === 0}>
-              Hapus chat
+            <Button size="sm" onClick={() => setDrawer(true)} className="xl:hidden">
+              Pengaturan
             </Button>
           </div>
         </header>
 
-        {flash && (
+        {flash && !drawer && (
           <div className="border-b border-line px-4 py-2">
             <Note tone={flash.tone}>{flash.text}</Note>
           </div>
         )}
 
-        <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-canvas/40 px-4 py-4">
-          {messages.length === 0 && (
-            <div className="mx-auto max-w-xl space-y-4 py-6 text-center">
-              <p className="text-base font-semibold text-ink">Tanya apa saja soal Mikrotik</p>
-              <p className="text-sm leading-relaxed text-muted">
-                Minta AI menjelaskan, menyusun script, atau memeriksa router. Perintah yang mengubah konfigurasi baru dijalankan setelah Anda menyetujuinya.
-              </p>
-              <div className="flex flex-col gap-2">
-                {STARTERS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setDraft(s)}
-                    className="rounded-md border border-line bg-surface px-3 py-2 text-left text-sm text-muted transition-colors hover:border-brand/50 hover:text-ink"
-                  >
-                    {s}
-                  </button>
-                ))}
+        <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+          <div className="mx-auto flex w-full max-w-[860px] flex-1 flex-col gap-2.5">
+            {messages.length === 0 && (
+              <div className="m-auto w-full space-y-4 py-8 text-center">
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-brand/10 text-brand">
+                  <Wand className="h-6 w-6" />
+                </span>
+                <div>
+                  <h3 className="text-[17px] font-semibold text-ink">Tanya apa saja soal Mikrotik</h3>
+                  <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-muted">
+                    Minta AI menjelaskan, menyusun script, atau memeriksa router. Perintah yang mengubah konfigurasi baru dijalankan setelah Anda menyetujuinya.
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {STARTERS.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setDraft(s)}
+                      className="rounded-full border border-line bg-surface px-3 py-1.5 text-left text-xs text-muted transition-colors hover:border-brand/50 hover:text-brand"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {messages.map((m) =>
-            m.role === "user" ? (
-              <div key={m.id} className="flex justify-end">
-                <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-sm bg-brand px-4 py-2.5 text-sm text-brand-ink">
-                  {m.content}
-                </div>
-              </div>
-            ) : m.role === "result" ? (
-              <div key={m.id} className="mx-auto w-full max-w-3xl">
-                <div className={`rounded-md border ${m.error ? "border-bad/40" : "border-line"} bg-code`}>
-                  <p className={`border-b px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.09em] ${m.error ? "border-bad/40 text-bad" : "border-line text-muted"}`}>Hasil di router</p>
-                  <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words px-3 py-2 font-mono text-[11.5px] leading-relaxed text-ink">{m.content}</pre>
-                </div>
-              </div>
-            ) : (
-              <div key={m.id} className="max-w-3xl space-y-2">
-                {splitSegments(m.content).map((seg, i) => {
-                  if (seg.type === "text") {
-                    return seg.text.trim() ? (
-                      <p key={i} className={`whitespace-pre-wrap break-words text-sm leading-relaxed ${m.error ? "text-bad" : "text-muted"}`}>
-                        <Inline text={seg.text.trim()} />
-                      </p>
-                    ) : null;
-                  }
-                  const cmds = extractCommands(seg.lang, seg.code);
-                  const key = `${m.id}:${i}`;
-                  const writes = cmds.filter((l) => !isReadLine(l)).length;
-                  return (
-                    <div key={i} className="overflow-hidden rounded-md border border-line bg-code">
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-1.5">
-                        <span className="font-mono text-[11px] uppercase tracking-[0.09em] text-muted">{seg.lang || "kode"}</span>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {cmds.length > 0 && (
-                            <Button size="sm" variant={writes ? "primary" : "default"} disabled={busy || !info || Boolean(done[key])} onClick={() => runBlock(key, cmds)} title={info ? "Jalankan di router" : "Sambungkan router dulu"}>
-                              <Terminal className="h-3.5 w-3.5" />
-                              {done[key] ?? (writes ? `Jalankan (${writes} perubahan)` : "Jalankan")}
-                            </Button>
-                          )}
-                          <Button size="sm" onClick={() => copy(key, seg.code)}>
-                            {copied === key ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                            {copied === key ? "Tersalin" : "Salin"}
-                          </Button>
+            {messages.map((m) => {
+              if (m.role === "system") {
+                return (
+                  <div key={m.id} className={`max-w-[90%] self-center whitespace-pre-wrap rounded-full px-3 py-1 text-center text-[13px] ${m.error ? "bg-bad/10 text-bad" : "bg-raised text-muted"}`}>
+                    {m.content}
+                  </div>
+                );
+              }
+              if (m.role === "user") {
+                return (
+                  <div key={m.id} className="max-w-[85%] self-end whitespace-pre-wrap break-words rounded-xl rounded-br-[4px] bg-brand px-3.5 py-2.5 leading-relaxed text-brand-ink">
+                    {m.content}
+                  </div>
+                );
+              }
+              if (m.role === "result") {
+                const count = m.content.split("\n").filter((l) => l.startsWith("✔") || l.startsWith("✘")).length;
+                return (
+                  <details key={m.id} open={m.error} className="max-w-[760px] self-start text-[13px] text-muted">
+                    <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 [&::-webkit-details-marker]:hidden">
+                      <Terminal className={`h-3.5 w-3.5 ${m.error ? "text-bad" : "text-brand"}`} />
+                      <span className={m.error ? "text-bad" : ""}>
+                        {m.error ? "Perintah gagal" : "Hasil di router"}
+                        {count > 0 ? ` · ${count} perintah` : ""}
+                      </span>
+                      <ChevronDown className="h-3 w-3" />
+                    </summary>
+                    <pre className="mt-1.5 max-h-64 max-w-[min(760px,85vw)] overflow-auto whitespace-pre-wrap break-words rounded-md border border-line bg-raised p-2 font-mono text-[12px] leading-relaxed text-ink">
+                      {m.content}
+                    </pre>
+                  </details>
+                );
+              }
+              return (
+                <div
+                  key={m.id}
+                  className={`max-w-[85%] self-start break-words rounded-xl rounded-bl-[4px] border px-3.5 py-2.5 leading-relaxed ${m.error ? "border-bad/30 bg-bad/10 text-bad" : "border-line bg-raised text-ink"}`}
+                >
+                  {splitSegments(m.content).map((seg, i) => {
+                    if (seg.type === "text") {
+                      return seg.text.trim() ? (
+                        <p key={i} className="whitespace-pre-wrap [&:not(:first-child)]:mt-2">
+                          <Inline text={seg.text.trim()} />
+                        </p>
+                      ) : null;
+                    }
+                    const cmds = extractCommands(seg.lang, seg.code);
+                    const key = `${m.id}:${i}`;
+                    const writes = cmds.filter((l) => !isReadLine(l)).length;
+                    return (
+                      <div key={i} className="my-2 overflow-hidden rounded-md bg-[#1f2933] text-[#e5e7eb]">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-3 py-1.5">
+                          <span className="font-mono text-[11px] uppercase tracking-[0.09em] text-[#9aa5b1]">{seg.lang || "kode"}</span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {cmds.length > 0 && (
+                              <button
+                                type="button"
+                                disabled={busy || !info || Boolean(done[key])}
+                                onClick={() => runBlock(key, cmds)}
+                                title={info ? "Jalankan di router" : "Sambungkan router dulu"}
+                                className={`inline-flex min-h-7 items-center gap-1 rounded-md px-2.5 text-xs font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${writes ? "bg-brand text-brand-ink" : "bg-white/10 text-white hover:bg-white/20"}`}
+                              >
+                                <Terminal className="h-3.5 w-3.5" />
+                                {done[key] ?? (writes ? `Jalankan (${writes} perubahan)` : "Jalankan")}
+                              </button>
+                            )}
+                            <button type="button" onClick={() => copy(key, seg.code)} className="inline-flex min-h-7 items-center gap-1 rounded-md bg-white/10 px-2.5 text-xs font-medium text-white hover:bg-white/20">
+                              {copied === key ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                              {copied === key ? "Tersalin" : "Salin"}
+                            </button>
+                          </div>
                         </div>
+                        <pre className="max-h-80 overflow-auto px-3 py-2.5 font-mono text-[12.5px] leading-relaxed">{seg.code}</pre>
                       </div>
-                      <pre className="max-h-80 overflow-auto px-3 py-2.5 font-mono text-[12px] leading-relaxed text-ink">{seg.code}</pre>
-                    </div>
-                  );
-                })}
-              </div>
-            ),
-          )}
+                    );
+                  })}
+                </div>
+              );
+            })}
 
-          {busy && (
-            <div className="flex items-center gap-2 text-xs text-muted">
-              <span className="inline-flex gap-1">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.3s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.15s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand" />
-              </span>
-              AI sedang bekerja…
-              <button type="button" onClick={stop} className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-0.5 text-[11px] text-muted hover:text-ink">
-                <X className="h-3 w-3" />
-                Hentikan
-              </button>
-            </div>
-          )}
+            {busy && (
+              <div className="flex items-center gap-2 self-start text-xs text-muted">
+                <span className="inline-flex gap-1">
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.3s]" />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.15s]" />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand" />
+                </span>
+                AI sedang bekerja…
+                <button type="button" onClick={stop} className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-0.5 text-[11px] text-muted hover:text-ink">
+                  <X className="h-3 w-3" />
+                  Hentikan
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void send();
-          }}
-          className="flex items-end gap-2 border-t-2 border-line bg-surface p-3"
-        >
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                void send();
-              }
+        <div className="border-t border-line bg-surface px-4 py-3">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void send();
             }}
-            rows={2}
-            placeholder="Tanya atau beri instruksi, mis. “Buatkan rule NAT masquerade untuk ether1”. Enter kirim, Shift+Enter baris baru."
-            className="min-h-[3.25rem] flex-1 resize-y rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink outline-none focus:border-brand"
-          />
-          <Button variant="primary" type="submit" disabled={busy || !draft.trim()}>
-            Kirim
-          </Button>
-        </form>
+            className="mx-auto flex max-w-[860px] items-end gap-2"
+          >
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
+              rows={draftRows}
+              placeholder="Tanya atau beri instruksi… (Enter kirim, Shift+Enter baris baru)"
+              className="max-h-[180px] min-h-[42px] flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+            />
+            <Button variant="primary" type="submit" disabled={busy || !draft.trim()}>
+              Kirim
+            </Button>
+          </form>
+        </div>
       </section>
+
+      {/* ------------------------------------------- pengaturan (panel kanan) */}
+      {drawer && (
+        <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Pengaturan AI Mikrotik Engineer">
+          <button type="button" aria-label="Tutup pengaturan" className="absolute inset-0 bg-black/40" onClick={() => setDrawer(false)} />
+          <div className="absolute inset-y-0 right-0 flex w-[620px] max-w-full flex-col bg-canvas shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line bg-surface px-4 py-3">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
+                <Wand className="h-4 w-4 text-brand" />
+                Pengaturan
+              </h2>
+              <button type="button" onClick={() => setDrawer(false)} aria-label="Tutup" className="rounded-md p-1.5 text-muted hover:bg-raised hover:text-ink">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">{settings}</div>
+            <div className="flex justify-end border-t border-line bg-surface px-4 py-3">
+              <Button variant="primary" onClick={() => setDrawer(false)}>
+                Selesai
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -37,9 +37,7 @@ export default function AiEngineerPage() {
         </div>
       </header>
 
-      <div className="w-full px-5 py-5 lg:px-8">
-        <AiEngineer />
-      </div>
+      <AiEngineer />
     </main>
   );
 }

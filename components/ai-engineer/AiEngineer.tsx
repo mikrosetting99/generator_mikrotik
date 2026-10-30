@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { DiagResult } from "@/lib/ai-routers";
 import { ConnTest, type DiagState } from "@/components/ai-engineer/ConnTest";
 import { RouterMonitor, type MonitorTarget } from "@/components/ai-engineer/RouterMonitor";
@@ -97,6 +98,7 @@ const SKILLS_KEY = "ai-eng-skills-v1";
 const CONVS_KEY = "ai-eng-convs-v1";
 const MODELS_KEY = "ai-eng-models-v1";
 const MAX_CONVS = 30;
+const VIEW_LABEL = { chat: "Chat", monitor: "Monitoring", routers: "Mikrotik", ai: "Koneksi AI", skills: "Skill" } as const;
 const MAX_STORED_MESSAGES = 80;
 const MAX_AUTO_STEPS = 4;
 const SKILLS_CHAR_LIMIT = 90_000;
@@ -305,6 +307,8 @@ export function AiEngineer() {
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [convId, setConvId] = useState(() => newId());
   const [convRouter, setConvRouter] = useState("");
+  const [navSlot, setNavSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => setNavSlot(document.getElementById("ai-nav-slot")), []);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -540,7 +544,11 @@ export function AiEngineer() {
   /** Menjalankan daftar perintah di router aktif; hasilnya ditambahkan ke chat dan dikembalikan agar bisa dikirim ke AI. */
   const execCommands = async (commands: string[], opts: { confirmed: boolean; approved?: boolean }): Promise<Msg | null> => {
     if (!active || !info) {
-      setFlash({ tone: "warn", text: "Sambungkan router dulu (Pengaturan > Router)." });
+      setFlash({ tone: "warn", text: "Sambungkan router dulu di tab Mikrotik." });
+      return null;
+    }
+    if (convRouter !== active.id) {
+      setFlash({ tone: "bad", text: "Chat ini milik Mikrotik lain. Satu chat hanya boleh menjalankan perintah di satu Mikrotik." });
       return null;
     }
     const writes = commands.filter((l) => !isReadLine(l));
@@ -709,6 +717,7 @@ export function AiEngineer() {
   const openChat = (c: Conversation) => {
     if (busy) return;
     setConvRouter(c.routerId ?? "");
+    if ((c.routerId ?? "") !== activeId) setActiveId(c.routerId ?? "");
     setConvId(c.id);
     setMessages(c.messages);
     setDone({});
@@ -1023,7 +1032,6 @@ export function AiEngineer() {
       </section>
   );
 
-  const chip = "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium";
 
   const routerConvs = convs.filter((c) => (c.routerId ?? "") === activeId).slice(0, MAX_CONVS);
 
@@ -1064,8 +1072,33 @@ export function AiEngineer() {
     </aside>
   );
 
+  const navItems = [
+    ["chat", "Chat"],
+    ["monitor", `Monitoring${connectedCount ? ` (${connectedCount})` : ""}`],
+    ["routers", `Mikrotik (${routers.length})`],
+    ["ai", "Koneksi AI"],
+    ["skills", `Skill${skills.length ? ` (${skills.length})` : ""}`],
+  ] as const;
+  // Menu aplikasi ditaruh di bilah atas (seperti menu bagian di Odoo).
+  const navbar =
+    navSlot &&
+    createPortal(
+      navItems.map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          aria-current={view === id ? "page" : undefined}
+          onClick={() => setView(id)}
+          className={`h-[46px] shrink-0 px-3 text-sm transition-colors ${view === id ? "bg-black/15 font-medium text-white" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+        >
+          {label}
+        </button>
+      )),
+      navSlot,
+    );
   return (
-    <div className={`relative grid h-[calc(100dvh-48px)] min-h-[480px] ${view === "chat" ? "xl:grid-cols-[270px_minmax(0,1fr)]" : ""}`}>
+    <div className={`relative grid h-[calc(100dvh-46px)] min-h-[480px] ${view === "chat" ? "xl:grid-cols-[270px_minmax(0,1fr)]" : ""}`}>
+      {navbar}
       {/* ----------------------------------------------------- riwayat (kiri) */}
       {view === "chat" && <div className="hidden min-h-0 xl:block">{sidebarEl}</div>}
       {view === "chat" && sidebar && (
@@ -1077,38 +1110,17 @@ export function AiEngineer() {
 
       {/* ------------------------------------------------------------ chat */}
       <section className="flex min-h-0 min-w-0 flex-col bg-surface">
-        <header className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
-          {view === "chat" && <button
-            type="button"
-            onClick={() => setSidebar(true)}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-2.5 text-xs text-muted hover:text-ink xl:hidden"
-          >
-            Riwayat
-            <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
-          </button>}
-
-          <nav aria-label="Menu AI Mikrotik Engineer" className="flex max-w-full gap-1 overflow-x-auto text-sm font-medium">
-            {(
-              [
-                ["chat", "Chat"],
-                ["monitor", `Monitoring${connectedCount ? ` (${connectedCount})` : ""}`],
-                ["routers", `Mikrotik (${routers.length})`],
-                ["ai", "Koneksi AI"],
-                ["skills", `Skill${skills.length ? ` (${skills.length})` : ""}`],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                aria-current={view === id ? "page" : undefined}
-                onClick={() => setView(id)}
-                className={`min-h-9 shrink-0 rounded-md px-3 transition-colors ${view === id ? "bg-brand/15 text-brand" : "text-muted hover:bg-raised hover:text-ink"}`}
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
-
+        <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface px-4 py-2">
+          {view === "chat" && (
+            <button
+              type="button"
+              onClick={() => setSidebar(true)}
+              className="inline-flex min-h-8 items-center gap-1 rounded-md border border-line px-2.5 text-xs text-muted hover:text-ink xl:hidden"
+            >
+              Riwayat
+              <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
+            </button>
+          )}
           <Button
             size="sm"
             variant="primary"
@@ -1118,48 +1130,37 @@ export function AiEngineer() {
               clearDiag("form");
             }}
           >
-            <Plus className="h-3.5 w-3.5" />
             Tambah Mikrotik
           </Button>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => setView("ai")} className={`${chip} ${aiReady ? "border-brand/30 bg-brand/10 text-brand" : "border-warn/40 bg-warn/10 text-warn"}`}>
-              {aiReady ? `${provider.label.split(" (")[0]} · ${ai.model}` : "Isi API key"}
-            </button>
-            {routers.length > 0 ? (
-              <label className={`${chip} ${info ? "border-ok/40 bg-ok/10 text-ok" : activeStatus && activeStatus.state !== "checking" ? "border-bad/40 bg-bad/10 text-bad" : "border-line bg-raised text-muted"}`} title={`Router aktif untuk chat · ${statusBadge(activeStatus).label}`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${statusBadge(activeStatus).dot}`} />
-                <select
-                  value={activeId}
-                  onChange={(e) => selectRouter(e.target.value)}
-                  aria-label="Router aktif"
-                  className="max-w-[160px] cursor-pointer bg-transparent text-xs font-medium outline-none"
-                >
-                  {routers.map((r) => (
-                    <option key={r.id} value={r.id} className="text-ink">
-                      {statuses[r.id]?.state === "online" ? "● " : "○ "}
-                      {routerLabel(r)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <button type="button" onClick={() => setView("routers")} className={`${chip} border-line bg-raised text-muted`}>
-                <span className="h-1.5 w-1.5 rounded-full bg-faint" />
-                Belum ada router
-              </button>
-            )}
-            {enabledSkills.length > 0 && <span className={`${chip} border-line bg-raised text-muted`}>{enabledSkills.length} skill</span>}
-          </div>
-          <div className="ml-auto flex items-center gap-3">
-            {view === "chat" && (
-              <label className="flex items-center gap-1.5 text-xs text-muted" title="Perintah print dijalankan otomatis dan hasilnya langsung dianalisis AI">
-                <input type="checkbox" checked={autoRead} onChange={(e) => setAutoRead(e.target.checked)} className="h-4 w-4 accent-[var(--color-brand)]" />
-                <span className="hidden sm:inline">Jalankan otomatis perintah baca</span>
-                <span className="sm:hidden">Auto baca</span>
-              </label>
+          <div className="flex min-w-0 items-center gap-2 text-sm">
+            <span className="text-muted">{VIEW_LABEL[view]}</span>
+            {routers.length > 0 && (view === "chat" || view === "monitor") && view === "chat" && (
+              <>
+                <span className="text-faint">/</span>
+                <label className="flex items-center gap-1.5" title={`Satu chat untuk satu Mikrotik · ${statusBadge(activeStatus).label}`}>
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${statusBadge(activeStatus).dot}`} />
+                  <select
+                    value={activeId}
+                    onChange={(e) => selectRouter(e.target.value)}
+                    aria-label="Mikrotik untuk chat ini"
+                    className="max-w-[200px] cursor-pointer truncate bg-transparent font-medium text-ink outline-none"
+                  >
+                    {routers.map((r) => (
+                      <option key={r.id} value={r.id} className="text-ink">
+                        {routerLabel(r)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
             )}
           </div>
+          {view === "chat" && (
+            <label className="ml-auto flex items-center gap-1.5 text-xs text-muted" title="Perintah print dijalankan otomatis dan hasilnya langsung dianalisis AI">
+              <input type="checkbox" checked={autoRead} onChange={(e) => setAutoRead(e.target.checked)} className="h-4 w-4 accent-[var(--color-brand)]" />
+              <span>Baca otomatis</span>
+            </label>
+          )}
         </header>
 
         {flash && (
@@ -1194,6 +1195,14 @@ export function AiEngineer() {
                         Minta AI menjelaskan, menyusun script, atau memeriksa router. Perintah yang mengubah konfigurasi baru dijalankan setelah Anda menyetujuinya.
                       </p>
                     </div>
+                    {!aiReady && (
+                      <p className="text-sm text-warn">
+                        API key AI belum diisi.{" "}
+                        <button type="button" onClick={() => setView("ai")} className="font-medium underline">
+                          Buka Koneksi AI
+                        </button>
+                      </p>
+                    )}
                     <div className="flex flex-wrap justify-center gap-1.5">
                       {STARTERS.map((s) => (
                         <button

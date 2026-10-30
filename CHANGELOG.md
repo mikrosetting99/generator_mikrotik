@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.60.0] - 2026-10-30
+
+_AI Engineer: tampilan lebih sederhana ala Odoo, satu chat satu Mikrotik_
+
+### Diubah
+
+- Menu (Chat, Monitoring, Mikrotik, Koneksi AI, Skill) pindah ke bilah ungu di atas seperti menu bagian Odoo; baris kontrol hanya berisi tombol Tambah Mikrotik, breadcrumb dengan pilihan Mikrotik, dan Baca otomatis.
+- Chip API key dan skill dihapus dari header; peringatan API key belum diisi tampil di halaman chat.
+- Satu chat hanya untuk satu Mikrotik: membuka chat lama otomatis memilih routernya, perintah ditolak bila chat bukan milik router yang aktif, dan AI diinstruksikan tidak membahas atau menjalankan perintah untuk router lain.
+
 ## [1.59.0] - 2026-10-30
 
 _AI Engineer: chat per Mikrotik, Download/Upload terpisah, test koneksi API_

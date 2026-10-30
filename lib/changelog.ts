@@ -27,6 +27,21 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.60.0",
+    date: "2026-10-30",
+    title: "AI Engineer: tampilan lebih sederhana ala Odoo, satu chat satu Mikrotik",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Menu (Chat, Monitoring, Mikrotik, Koneksi AI, Skill) pindah ke bilah ungu di atas seperti menu bagian Odoo; baris kontrol hanya berisi tombol Tambah Mikrotik, breadcrumb dengan pilihan Mikrotik, dan Baca otomatis.",
+          "Chip API key dan skill dihapus dari header; peringatan API key belum diisi tampil di halaman chat.",
+          "Satu chat hanya untuk satu Mikrotik: membuka chat lama otomatis memilih routernya, perintah ditolak bila chat bukan milik router yang aktif, dan AI diinstruksikan tidak membahas atau menjalankan perintah untuk router lain.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.59.0",
     date: "2026-10-30",
     title: "AI Engineer: chat per Mikrotik, Download/Upload terpisah, test koneksi API",

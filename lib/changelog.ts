@@ -27,6 +27,20 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.58.1",
+    date: "2026-10-30",
+    title: "AI Engineer: perintah baca tidak lagi ditolak sebagai perubahan konfigurasi",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Perintah print yang gagal diurai (mis. filter regex pada /log print) dulu dianggap perubahan konfigurasi sehingga seluruh kelompok perintah ditolak; kini tetap dianggap baca dan galatnya dilaporkan per baris.",
+          "print mendukung filter regex nama~\"pola\" (mis. /log print where message~\"dhcp|keepalive\"); disaring di sisi aplikasi.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.58.0",
     date: "2026-10-30",
     title: "AI Mikrotik Engineer: menu atas, tambah Mikrotik, monitoring banyak router",

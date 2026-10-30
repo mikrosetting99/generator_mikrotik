@@ -299,6 +299,8 @@ export interface Prepared {
   attrs: string[];
   /** Kata query (?k=v) untuk print. */
   queries: string[];
+  /** Filter regex (key~pola) untuk print; API tidak mendukungnya, jadi dijalankan di sisi aplikasi. */
+  filters?: Array<{ key: string; pattern: string }>;
   /** Untuk set/remove/enable/disable/…: item yang dituju. */
   selector: null | { ids: string[]; queries: string[]; all: boolean };
   error?: string;
@@ -390,7 +392,16 @@ export function prepareCommand(line: string): Prepared {
         else if (/^[A-Za-z0-9_.-]+!=/.test(t)) {
           const i = t.indexOf("!=");
           p.queries.push(`?${t.slice(0, i)}=${t.slice(i + 2)}`, "?#!");
-        } else if (/~/.test(t) || /^[<>]/.test(t)) throw new Error(`Filter tidak didukung lewat API: ${t}. Pakai kondisi sederhana seperti name=ether1.`);
+        } else if (/^[A-Za-z0-9_.-]+~/.test(t)) {
+          const i = t.indexOf("~");
+          const pattern = t.slice(i + 1).replace(/^"(.*)"$/, "$1");
+          try {
+            new RegExp(pattern);
+          } catch {
+            throw new Error(`Pola regex tidak valid: ${t}`);
+          }
+          (p.filters ??= []).push({ key: t.slice(0, i), pattern });
+        } else if (/~/.test(t) || /^[<>]/.test(t)) throw new Error(`Filter tidak didukung lewat API: ${t}. Pakai kondisi sederhana seperti name=ether1 atau key~pola.`);
         else if (ATTR.test(t)) p.queries.push(`?${t}`);
         else if (where) throw new Error(`Kondisi where tidak dikenali: ${t}`);
         else if (t.startsWith("[")) throw new Error("Pakai print where nama=nilai, bukan [find].");
@@ -432,7 +443,11 @@ export function prepareCommand(line: string): Prepared {
     }
     return p;
   } catch (e) {
-    return { ...base, safety: "write", error: e instanceof Error ? e.message : "Perintah tidak valid." };
+    // Baris yang gagal diurai tetap dianggap baca bila jelas hanya "print": galat dilaporkan per baris,
+    // bukan memaksa seluruh kelompok perintah baca minta persetujuan.
+    const words = line.replace(/"[^"]*"/g, " ").split(/[\s/]+/);
+    const readOnly = words.includes("print") && !words.some((w) => VERBS.has(w) && w !== "print" && w !== "get");
+    return { ...base, safety: readOnly ? "read" : "write", error: e instanceof Error ? e.message : "Perintah tidak valid." };
   }
 }
 
@@ -450,7 +465,10 @@ export async function runPrepared(conn: RouterOsConnection, p: Prepared): Promis
     }
     words.splice(1, 0, `=.id=${ids.join(",")}`);
   }
-  return conn.talk(words);
+  const rows = await conn.talk(words);
+  if (!p.filters?.length) return rows;
+  const res = p.filters.map((f) => ({ key: f.key, re: new RegExp(f.pattern, "i") }));
+  return rows.filter((r) => res.every((f) => f.re.test(r[f.key] ?? "")));
 }
 
 /** Baris hasil → teks ringkas untuk dibaca pengguna dan AI. */

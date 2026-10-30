@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.58.1] - 2026-10-30
+
+_AI Engineer: perintah baca tidak lagi ditolak sebagai perubahan konfigurasi_
+
+### Diperbaiki
+
+- Perintah print yang gagal diurai (mis. filter regex pada /log print) dulu dianggap perubahan konfigurasi sehingga seluruh kelompok perintah ditolak; kini tetap dianggap baca dan galatnya dilaporkan per baris.
+- print mendukung filter regex nama~"pola" (mis. /log print where message~"dhcp|keepalive"); disaring di sisi aplikasi.
+
 ## [1.58.0] - 2026-10-30
 
 _AI Mikrotik Engineer: menu atas, tambah Mikrotik, monitoring banyak router_

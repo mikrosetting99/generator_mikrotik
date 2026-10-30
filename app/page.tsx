@@ -1,11 +1,10 @@
 import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { ArrowRight, Lock, LogIn, Shield, Terminal, User } from "@/components/icons";
+import { ArrowRight, Lock, LogIn, Shield, User } from "@/components/icons";
 import { MenuIcon } from "@/components/MenuIcon";
 import { SignOutButton } from "@/components/login-page-hotspot/SignOutButton";
 import { TrackedLink } from "@/components/TrackedLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { VersionBadge } from "@/components/VersionBadge";
 import { authOptions } from "@/lib/auth";
 import { isExternalHref, waLink } from "@/lib/site-settings";
 import { getMenuUsage, getSiteSettings } from "@/lib/site-settings-server";
@@ -18,18 +17,6 @@ function WhatsappIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-const SAMPLE = [
-  { text: "# NAT untuk semua WAN", kind: "comment" },
-  { text: "/ip firewall nat", kind: "path" },
-  { text: "add chain=srcnat action=masquerade \\", kind: "cmd" },
-  { text: "    out-interface-list=WAN", kind: "cmd" },
-  { text: "", kind: "blank" },
-  { text: "# Tolak akses dari internet ke router", kind: "comment" },
-  { text: "/ip firewall filter", kind: "path" },
-  { text: "add chain=input action=drop \\", kind: "cmd" },
-  { text: "    in-interface-list=WAN", kind: "cmd" },
-];
 
 /** Warna ikon aplikasi di beranda (palet ala Odoo); dipilih stabil dari id menu. */
 const APP_COLORS = ["#71639e", "#0180a5", "#e0902b", "#5b7fa6", "#c4567f", "#4e9f6e", "#8a6fc9", "#d9644a"];
@@ -227,77 +214,6 @@ export default async function Home() {
             </div>
           ))}
         </div>
-
-        {/* ------------------------------------------- cuplikan & jaminan */}
-        {settings.showSample && (
-          <div className="animate-rise mt-12 overflow-hidden rounded-md border border-line bg-surface text-ink shadow-sm">
-            <div className="flex items-center gap-3 border-b border-line bg-raised px-4 py-2">
-              <span className="flex gap-1.5" aria-hidden>
-                <span className="h-2.5 w-2.5 rounded-full bg-bad/60" />
-                <span className="h-2.5 w-2.5 rounded-full bg-warn/60" />
-                <span className="h-2.5 w-2.5 rounded-full bg-accent/60" />
-              </span>
-              <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted">
-                <Terminal className="h-3.5 w-3.5 text-faint" />
-                setup-mikrotik-kantor.rsc
-              </span>
-            </div>
-            <pre className="overflow-x-auto bg-code px-4 py-4 font-mono text-[11.5px] leading-[1.75]">
-              {SAMPLE.map((line, i) => (
-                <div key={i} className="flex gap-3">
-                  <span className="w-4 shrink-0 select-none text-right text-faint/40">{i + 1}</span>
-                  <span className={line.kind === "comment" ? "text-faint/80" : line.kind === "path" ? "text-brand" : "text-muted"}>
-                    {line.text || " "}
-                  </span>
-                </div>
-              ))}
-            </pre>
-          </div>
-        )}
-
-        {settings.showFeatures && (
-          <section className="mt-6 grid gap-6 rounded-md border border-line bg-surface p-6 text-ink shadow-sm sm:grid-cols-3">
-            {[
-              {
-                icon: Shield,
-                title: "Validasi otomatis",
-                body: "Format IP/CIDR, VLAN ID 1–4094, pool yang dirujuk, dan bentrok interface diperiksa sebelum script dibuat.",
-              },
-              {
-                icon: Terminal,
-                title: "Script berkomentar",
-                body: "Setiap blok perintah diberi penjelasan bahasa Indonesia, plus daftar perintah untuk memverifikasi hasil.",
-              },
-              {
-                icon: Lock,
-                title: "Data tidak dikirim",
-                body: "Seluruh proses generate berjalan di browser. IP, password, dan konfigurasi tidak pernah meninggalkan perangkat Anda.",
-              },
-            ].map((item) => {
-              const Glyph = item.icon;
-              return (
-                <div key={item.title}>
-                  <Glyph className="h-5 w-5 text-brand" />
-                  <h3 className="mt-3 text-sm font-semibold text-ink">{item.title}</h3>
-                  <p className="mt-1.5 text-xs leading-relaxed text-muted">{item.body}</p>
-                </div>
-              );
-            })}
-          </section>
-        )}
-
-        <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-xs text-faint">
-          <span>{settings.footerNote}</span>
-          <div className="flex items-center gap-3">
-            <span>
-              {settings.siteName} by{" "}
-              <a href="https://mikrosetting.com" target="_blank" rel="noopener noreferrer" className="text-muted transition-colors hover:text-brand">
-                Mikrosetting.com
-              </a>
-            </span>
-            <VersionBadge />
-          </div>
-        </footer>
       </div>
 
       {waUrl && settings.waFloating && (

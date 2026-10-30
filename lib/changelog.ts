@@ -27,6 +27,17 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.57.1",
+    date: "2026-10-30",
+    title: "Beranda lebih bersih",
+    changes: [
+      {
+        type: "changed",
+        items: ["Beranda hanya menampilkan daftar aplikasi: cuplikan script, tiga kartu keunggulan, dan footer dihapus."],
+      },
+    ],
+  },
+  {
     version: "1.57.0",
     date: "2026-10-29",
     title: "Konsep aplikasi/modul ala Odoo, Dashboard Admin tanpa sidebar, AI Engineer ala wyn",

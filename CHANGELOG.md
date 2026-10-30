@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.57.1] - 2026-10-30
+
+_Beranda lebih bersih_
+
+### Diubah
+
+- Beranda hanya menampilkan daftar aplikasi: cuplikan script, tiga kartu keunggulan, dan footer dihapus.
+
 ## [1.57.0] - 2026-10-29
 
 _Konsep aplikasi/modul ala Odoo, Dashboard Admin tanpa sidebar, AI Engineer ala wyn_

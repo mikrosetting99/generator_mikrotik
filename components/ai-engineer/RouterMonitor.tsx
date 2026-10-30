@@ -40,6 +40,7 @@ interface RouterState {
 }
 
 const MAX_POINTS = 90;
+const CONCURRENCY = 4;
 const INTERVALS = [
   { value: "3", label: "3 detik" },
   { value: "5", label: "5 detik" },
@@ -195,6 +196,10 @@ export function RouterMonitor({
   const [state, setState] = useState<Record<string, RouterState>>({});
   const [every, setEvery] = useState("5");
   const [paused, setPaused] = useState(false);
+  /** Router yang dibuka rinciannya; kosong = ringkasan semua router. */
+  const [selected, setSelected] = useState("");
+  const [filter, setFilter] = useState<"all" | "online" | "problem">("all");
+  const [query, setQuery] = useState("");
   const targetsRef = useRef(targets);
   targetsRef.current = targets;
   const busy = useRef(false);
@@ -203,7 +208,8 @@ export function RouterMonitor({
     if (busy.current) return;
     busy.current = true;
     try {
-      for (const t of targetsRef.current) {
+      const queue = [...targetsRef.current];
+      const one = async (t: MonitorTarget) => {
         try {
           const res = await fetch("/api/ai/router", {
             method: "POST",
@@ -224,7 +230,12 @@ export function RouterMonitor({
         } catch {
           setState((prev) => ({ ...prev, [t.id]: { ...(prev[t.id] ?? { snap: null, history: [], iface: "" }), error: "Gagal menghubungi server." } }));
         }
-      }
+      };
+      // Beberapa router dibaca bersamaan (maks. CONCURRENCY) supaya puluhan router tetap cepat.
+      const worker = async () => {
+        for (let t = queue.shift(); t; t = queue.shift()) await one(t);
+      };
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker));
     } finally {
       busy.current = false;
     }
@@ -249,20 +260,42 @@ export function RouterMonitor({
           <p className="text-sm leading-relaxed text-muted">
             {statusList.length
               ? "Periksa alamat, port, dan service API router yang offline, lalu tekan Periksa sekarang."
-              : "Buka Pengaturan > Router Mikrotik dan tekan Tambah Mikrotik. Router yang tersambung otomatis dipantau di sini."}
+              : "Buka tab Mikrotik di menu atas dan tekan Tambah Mikrotik. Router yang tersambung otomatis dipantau di sini."}
           </p>
         </div>
       </div>
     );
   }
 
+  const detail = targets.find((t) => t.id === selected) ?? null;
+  
+  const q = query.trim().toLowerCase();
+  const rows = statusList.map((item) => {
+    const st = state[item.id];
+    const s = st?.snap ?? null;
+    const live = item.state === "online";
+    const rx = s ? s.interfaces.filter((i) => i.running).reduce((n, i) => n + i.rxBps, 0) : 0;
+    const tx = s ? s.interfaces.filter((i) => i.running).reduce((n, i) => n + i.txBps, 0) : 0;
+    const mem = s && s.totalMemory ? ((s.totalMemory - s.freeMemory) / s.totalMemory) * 100 : 0;
+    return { item, st, s, live, rx, tx, mem, cpu: s?.cpuLoad ?? 0 };
+  });
+  const shown = rows.filter((r) => {
+    if (filter === "online" && !r.live) return false;
+    if (filter === "problem" && (r.live && r.cpu < 85 && r.mem < 90)) return false;
+    return !q || `${r.item.name} ${r.item.host} ${r.s?.identity ?? ""}`.toLowerCase().includes(q);
+  });
+  const onlineN = rows.filter((r) => r.live).length;
+  const offlineN = rows.filter((r) => !r.live && r.item.state !== "checking").length;
+  const totalRx = rows.reduce((n, r) => n + r.rx, 0);
+  const totalTx = rows.reduce((n, r) => n + r.tx, 0);
+  const hottest = rows.filter((r) => r.live && r.s).sort((x, y) => y.cpu - x.cpu)[0];
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <StatusStrip items={statusList} onCheck={onCheck} checking={checking} />
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 text-xs text-muted">
         <span className="flex items-center gap-1.5">
           <span className={`h-2 w-2 rounded-full ${paused ? "bg-faint" : "animate-pulse bg-ok"}`} />
-          {paused ? "Dijeda" : "Langsung"} · {targets.length} router
+          {paused ? "Dijeda" : "Langsung"} · {targets.length} router dipantau
         </span>
         <label className="flex items-center gap-1.5">
           Perbarui tiap
@@ -273,10 +306,120 @@ export function RouterMonitor({
         <button type="button" onClick={() => setPaused((p) => !p)} className="rounded-md border border-line px-2.5 py-1 font-medium text-ink hover:bg-raised">
           {paused ? "Lanjutkan" : "Jeda"}
         </button>
+        <button type="button" onClick={onCheck} disabled={checking} className="rounded-md border border-line px-2.5 py-1 font-medium text-ink hover:bg-raised disabled:opacity-50">
+          {checking ? "Memeriksa…" : "Periksa status"}
+        </button>
       </div>
 
-      <div className="grid gap-4 p-4 2xl:grid-cols-2">
-        {targets.map((t) => {
+      {!detail ? (
+        <div className="space-y-4 p-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Stat label="Tersambung" value={`${onlineN} / ${rows.length}`} sub={offlineN ? `${offlineN} router offline` : "Semua router normal"} />
+            <Stat label="Trafik total" value={fmtBps(totalRx + totalTx)} sub={`↓ ${fmtBps(totalRx)} · ↑ ${fmtBps(totalTx)}`} />
+            <Stat label="CPU tertinggi" value={hottest ? `${hottest.cpu}%` : "-"} sub={hottest?.item.name ?? "Belum ada data"} pct={hottest?.cpu ?? 0} />
+            <Stat label="Perlu perhatian" value={String(offlineN + rows.filter((r) => r.live && (r.cpu >= 85 || r.mem >= 90)).length)} sub="offline, CPU ≥ 85%, atau memori ≥ 90%" />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div role="tablist" aria-label="Filter router" className="inline-flex overflow-hidden rounded-md border border-line text-xs font-medium">
+              {(
+                [
+                  ["all", `Semua (${rows.length})`],
+                  ["online", `Tersambung (${onlineN})`],
+                  ["problem", "Bermasalah"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={filter === id}
+                  onClick={() => setFilter(id)}
+                  className={`min-h-8 px-3 ${filter === id ? "bg-brand text-brand-ink" : "bg-surface text-muted hover:bg-raised hover:text-ink"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {rows.length > 6 && (
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cari nama, host, atau identity…"
+                aria-label="Cari router"
+                className="min-h-8 w-64 max-w-full rounded-md border border-line bg-surface px-3 text-xs text-ink outline-none focus:border-brand"
+              />
+            )}
+          </div>
+
+          {shown.length === 0 ? (
+            <p className="rounded-md border border-dashed border-line px-3 py-6 text-center text-sm text-muted">Tidak ada router yang cocok dengan filter.</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {shown.map(({ item, st, s, live, rx, tx, mem, cpu }) => {
+                const wait = item.state === "checking";
+                const canOpen = live && targets.some((t) => t.id === item.id);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    disabled={!canOpen}
+                    onClick={() => setSelected(item.id)}
+                    title={canOpen ? "Buka rincian" : item.message || item.host}
+                    className={`flex flex-col justify-start rounded-[10px] border bg-surface p-3 text-left shadow-sm transition-colors ${canOpen ? "hover:border-brand" : "cursor-default"} ${live ? "border-line" : wait ? "border-line" : "border-bad/40"}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${live ? "bg-ok" : wait ? "animate-pulse bg-faint" : "bg-bad"}`} />
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{item.name}</span>
+                      <span className={`shrink-0 text-[11px] font-medium ${live ? "text-ok" : wait ? "text-muted" : "text-bad"}`}>
+                        {STATE_LABEL[item.state]}
+                        {live && item.latencyMs > 0 ? ` · ${item.latencyMs} ms` : ""}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block truncate font-mono text-[11px] text-faint">
+                      {s ? `${s.identity} · RouterOS ${s.version} · up ${s.uptime}` : item.host}
+                    </span>
+                    {live && s ? (
+                      <span className="mt-2.5 block space-y-1.5">
+                        <span className="block">
+                          <span className="flex justify-between text-[11px] text-muted"><span>CPU</span><span className="font-medium text-ink">{cpu}%</span></span>
+                          <span className="mt-0.5 block h-1.5 overflow-hidden rounded-full bg-raised"><span className="block h-full rounded-full" style={{ width: `${Math.min(100, cpu)}%`, background: pctColor(cpu) }} /></span>
+                        </span>
+                        <span className="block">
+                          <span className="flex justify-between text-[11px] text-muted"><span>Memori</span><span className="font-medium text-ink">{Math.round(mem)}%</span></span>
+                          <span className="mt-0.5 block h-1.5 overflow-hidden rounded-full bg-raised"><span className="block h-full rounded-full" style={{ width: `${Math.min(100, mem)}%`, background: pctColor(mem) }} /></span>
+                        </span>
+                        <span className="flex justify-between pt-0.5 font-mono text-[11px] text-ink">
+                          <span>↓ {fmtBps(rx)}</span>
+                          <span>↑ {fmtBps(tx)}</span>
+                        </span>
+                        <Spark values={st?.history.map((h) => h.cpu) ?? []} max={100} color={pctColor(cpu)} height={26} />
+                      </span>
+                    ) : (
+                      <span className="mt-2.5 block text-xs text-bad">{wait ? <span className="text-muted">Memeriksa…</span> : item.message || "Tidak tersambung."}</span>
+                    )}
+                    {st?.error && live && <span className="mt-1 block text-[11px] text-bad">{st.error}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 text-xs">
+            <button type="button" onClick={() => setSelected("")} className="rounded-md border border-line px-2.5 py-1 font-medium text-ink hover:bg-raised">
+              ← Semua router
+            </button>
+            <label className="flex items-center gap-1.5 text-muted">
+              Router
+              <span className="w-52">
+                <Select value={detail.id} placeholder="" onChange={setSelected} options={targets.map((t) => ({ value: t.id, label: t.name }))} className="!h-8 !text-xs" />
+              </span>
+            </label>
+          </div>
+      <div className="p-4">
+        {[detail].map((t) => {
           const st = state[t.id];
           const s = st?.snap;
           const live = s?.interfaces.filter((i) => i.running && !i.disabled) ?? [];
@@ -385,6 +528,8 @@ export function RouterMonitor({
           );
         })}
       </div>
+        </>
+      )}
     </div>
   );
 }

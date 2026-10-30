@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.58.0] - 2026-10-30
+
+_AI Mikrotik Engineer: menu atas, tambah Mikrotik, monitoring banyak router_
+
+### Ditambahkan
+
+- Menu atas di AI Mikrotik Engineer: Chat, Monitoring, Mikrotik, Koneksi AI, dan Skill, plus tombol Tambah Mikrotik yang selalu terlihat.
+- Monitoring untuk banyak router: ringkasan (jumlah tersambung, trafik total, CPU tertinggi, perlu perhatian), kartu per router, filter Semua/Tersambung/Bermasalah, pencarian, dan rincian per router.
+
+### Diubah
+
+- Panel Pengaturan di samping dihapus; isinya pindah ke tab Mikrotik, Koneksi AI, dan Skill. Form tambah/ubah Mikrotik tampil di atas daftar.
+- Router dibaca bersamaan (maks. 4) sehingga monitoring puluhan router tetap cepat.
+
 ## [1.57.2] - 2026-10-30
 
 _Perbaikan AI Engineer untuk model OpenAI terbaru_

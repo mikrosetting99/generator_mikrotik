@@ -27,6 +27,27 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.58.0",
+    date: "2026-10-30",
+    title: "AI Mikrotik Engineer: menu atas, tambah Mikrotik, monitoring banyak router",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Menu atas di AI Mikrotik Engineer: Chat, Monitoring, Mikrotik, Koneksi AI, dan Skill, plus tombol Tambah Mikrotik yang selalu terlihat.",
+          "Monitoring untuk banyak router: ringkasan (jumlah tersambung, trafik total, CPU tertinggi, perlu perhatian), kartu per router, filter Semua/Tersambung/Bermasalah, pencarian, dan rincian per router.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Panel Pengaturan di samping dihapus; isinya pindah ke tab Mikrotik, Koneksi AI, dan Skill. Form tambah/ubah Mikrotik tampil di atas daftar.",
+          "Router dibaca bersamaan (maks. 4) sehingga monitoring puluhan router tetap cepat.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.57.2",
     date: "2026-10-30",
     title: "Perbaikan AI Engineer untuk model OpenAI terbaru",

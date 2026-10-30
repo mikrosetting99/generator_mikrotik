@@ -297,7 +297,7 @@ export function AiEngineer() {
   const [showKey, setShowKey] = useState(false);
   const [flash, setFlash] = useState<{ tone: "info" | "warn" | "bad"; text: string } | null>(null);
 
-  const [view, setView] = useState<"chat" | "monitor">("chat");
+  const [view, setView] = useState<"chat" | "monitor" | "routers" | "ai" | "skills">("chat");
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [convId, setConvId] = useState(() => newId());
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -306,7 +306,6 @@ export function AiEngineer() {
   const [autoRead, setAutoRead] = useState(true);
   const [done, setDone] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState("");
-  const [drawer, setDrawer] = useState(false);
   const [sidebar, setSidebar] = useState(false);
   const [plans, setPlans] = useState<Record<string, PlanState>>({});
   const [ack, setAck] = useState<Record<string, boolean>>({});
@@ -560,8 +559,8 @@ export function AiEngineer() {
   /** Satu putaran ke AI dengan seluruh riwayat; bila AI menyarankan perintah baca, jalankan otomatis (maks beberapa kali). */
   const converse = async (history: Msg[], step = 0): Promise<void> => {
     if (!ai.apiKey.trim()) {
-      setFlash({ tone: "bad", text: "Isi API key AI dulu (Pengaturan > Koneksi AI)." });
-      setDrawer(true);
+      setFlash({ tone: "bad", text: "Isi API key AI dulu di tab Koneksi AI." });
+      setView("ai");
       return;
     }
     const controller = new AbortController();
@@ -729,15 +728,7 @@ export function AiEngineer() {
   const block = "mb-4 rounded-[10px] border border-line bg-surface";
   const blockHead = "rounded-t-[10px] border-b border-line bg-raised px-4 py-2.5";
 
-  const settings = (
-    <>
-      {flash && (
-        <div className="mb-4">
-          <Note tone={flash.tone}>{flash.text}</Note>
-        </div>
-      )}
-
-      {/* ---------------------------------------------------------- koneksi AI */}
+  const aiSection = (
       <section className={block}>
         <h2 className={`${blockHead} text-[15px] font-semibold text-ink`}>Koneksi AI</h2>
         <div className="space-y-3 p-4">
@@ -803,8 +794,9 @@ export function AiEngineer() {
           </p>
         </div>
       </section>
+  );
 
-      {/* -------------------------------------------------------------- router */}
+  const routersSection = (
       <section className={block}>
         <div className={`${blockHead} flex items-center justify-between gap-2`}>
           <h2 className="text-[15px] font-semibold text-ink">Router Mikrotik ({routers.length})</h2>
@@ -827,6 +819,56 @@ export function AiEngineer() {
             <p className="rounded-md border border-dashed border-line px-3 py-3 text-xs text-faint">
               Belum ada Mikrotik. Tambahkan IP publik atau domain-nya; router disimpan di akun Anda dan statusnya (tersambung atau tidak) diperiksa otomatis tiap menit.
             </p>
+          )}
+
+          {editing && (
+            <div className="space-y-3 rounded-md border border-brand/40 bg-brand/[0.04] p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.09em] text-brand">{editing.id ? "Ubah Mikrotik" : "Mikrotik baru"}</p>
+              <Field label="Nama">
+                <TextInput value={editing.name} onChange={(name) => setEditing({ ...editing, name })} placeholder="mis. Kantor Pusat" />
+              </Field>
+              <div className="grid grid-cols-[minmax(0,1fr)_92px] gap-2">
+                <Field label="IP publik / domain" required>
+                  <TextInput mono value={editing.host} onChange={(host) => setEditing({ ...editing, host: host.replace(/\s+/g, "") })} placeholder="103.1.2.3 atau router.contoh.com" />
+                </Field>
+                <Field label="Port API">
+                  <TextInput mono value={editing.port} onChange={(port) => setEditing({ ...editing, port: port.replace(/\D/g, "") })} placeholder="8728" />
+                </Field>
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted">
+                <input
+                  type="checkbox"
+                  checked={editing.tls}
+                  onChange={(e) => setEditing({ ...editing, tls: e.target.checked, port: e.target.checked && editing.port === "8728" ? "8729" : !e.target.checked && editing.port === "8729" ? "8728" : editing.port })}
+                  className="h-4 w-4 accent-[var(--color-brand)]"
+                />
+                Pakai TLS (api-ssl, biasanya port 8729)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Username" required>
+                  <TextInput mono value={editing.username} onChange={(username) => setEditing({ ...editing, username: username.trim() })} placeholder="ai-engineer" />
+                </Field>
+                <Field label="Password" required={!editing.id} hint={editing.id ? "Kosongkan untuk tetap memakai password lama." : undefined}>
+                  <TextInput mono type="password" value={editing.password} onChange={(password) => setEditing({ ...editing, password })} placeholder="••••••" />
+                </Field>
+              </div>
+              {testResult && (
+                <div className={`rounded-md border px-3 py-2 text-xs ${testResult.state === "online" ? "border-ok/40 bg-ok/10 text-ok" : "border-bad/30 bg-bad/10 text-bad"}`}>
+                  {testResult.state === "online"
+                    ? `Tersambung · ${testResult.info?.identity} · RouterOS ${testResult.info?.version} · ${testResult.latencyMs} ms`
+                    : `${statusBadge(testResult).label}: ${testResult.message}`}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Button variant="primary" onClick={saveRouter} disabled={routerBusy}>
+                  {routerBusy ? "Memproses…" : "Simpan"}
+                </Button>
+                <Button onClick={testRouter} disabled={routerBusy}>
+                  Uji koneksi
+                </Button>
+                <Button onClick={() => { setEditing(null); setTestResult(null); }}>Batal</Button>
+              </div>
+            </div>
           )}
 
           {routers.length > 0 && (
@@ -886,64 +928,16 @@ export function AiEngineer() {
             </ul>
           )}
 
-          {editing && (
-            <div className="space-y-3 rounded-md border border-brand/40 bg-brand/[0.04] p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.09em] text-brand">{editing.id ? "Ubah Mikrotik" : "Mikrotik baru"}</p>
-              <Field label="Nama">
-                <TextInput value={editing.name} onChange={(name) => setEditing({ ...editing, name })} placeholder="mis. Kantor Pusat" />
-              </Field>
-              <div className="grid grid-cols-[minmax(0,1fr)_92px] gap-2">
-                <Field label="IP publik / domain" required>
-                  <TextInput mono value={editing.host} onChange={(host) => setEditing({ ...editing, host: host.replace(/\s+/g, "") })} placeholder="103.1.2.3 atau router.contoh.com" />
-                </Field>
-                <Field label="Port API">
-                  <TextInput mono value={editing.port} onChange={(port) => setEditing({ ...editing, port: port.replace(/\D/g, "") })} placeholder="8728" />
-                </Field>
-              </div>
-              <label className="flex items-center gap-2 text-xs text-muted">
-                <input
-                  type="checkbox"
-                  checked={editing.tls}
-                  onChange={(e) => setEditing({ ...editing, tls: e.target.checked, port: e.target.checked && editing.port === "8728" ? "8729" : !e.target.checked && editing.port === "8729" ? "8728" : editing.port })}
-                  className="h-4 w-4 accent-[var(--color-brand)]"
-                />
-                Pakai TLS (api-ssl, biasanya port 8729)
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <Field label="Username" required>
-                  <TextInput mono value={editing.username} onChange={(username) => setEditing({ ...editing, username: username.trim() })} placeholder="ai-engineer" />
-                </Field>
-                <Field label="Password" required={!editing.id} hint={editing.id ? "Kosongkan untuk tetap memakai password lama." : undefined}>
-                  <TextInput mono type="password" value={editing.password} onChange={(password) => setEditing({ ...editing, password })} placeholder="••••••" />
-                </Field>
-              </div>
-              {testResult && (
-                <div className={`rounded-md border px-3 py-2 text-xs ${testResult.state === "online" ? "border-ok/40 bg-ok/10 text-ok" : "border-bad/30 bg-bad/10 text-bad"}`}>
-                  {testResult.state === "online"
-                    ? `Tersambung · ${testResult.info?.identity} · RouterOS ${testResult.info?.version} · ${testResult.latencyMs} ms`
-                    : `${statusBadge(testResult).label}: ${testResult.message}`}
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2">
-                <Button variant="primary" onClick={saveRouter} disabled={routerBusy}>
-                  {routerBusy ? "Memproses…" : "Simpan"}
-                </Button>
-                <Button onClick={testRouter} disabled={routerBusy}>
-                  Uji koneksi
-                </Button>
-                <Button onClick={() => { setEditing(null); setTestResult(null); }}>Batal</Button>
-              </div>
-            </div>
-          )}
-
           <p className="text-[11px] leading-relaxed text-faint">
             Aktifkan <b>/ip service api</b> (atau api-ssl) dan izinkan IP server aplikasi ini. Disarankan membuat user khusus di router dengan hak seperlunya. Password disimpan
             terenkripsi di server dan tidak pernah dikirim kembali ke browser. Router bertanda <b>aktif</b> menjadi sasaran perintah dari chat; semua router yang online
-            dipantau di tab Monitoring.
+            dipantau di menu Monitoring.
           </p>
         </div>
       </section>
-      {/* --------------------------------------------------------------- skill */}
+  );
+
+  const skillsSection = (
       <section className={block}>
         <h2 className={`${blockHead} text-[15px] font-semibold text-ink`}>Skill (skills.sh)</h2>
         <div className="space-y-3 p-4">
@@ -990,7 +984,6 @@ export function AiEngineer() {
           )}
         </div>
       </section>
-    </>
   );
 
   const chip = "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium";
@@ -1026,19 +1019,14 @@ export function AiEngineer() {
           ))
         )}
       </nav>
-      <div className="border-t border-line p-3">
-        <Button onClick={() => setDrawer(true)} className="w-full">
-          Pengaturan
-        </Button>
-      </div>
     </aside>
   );
 
   return (
-    <div className="relative grid h-[calc(100dvh-48px)] min-h-[480px] xl:grid-cols-[270px_minmax(0,1fr)]">
+    <div className={`relative grid h-[calc(100dvh-48px)] min-h-[480px] ${view === "chat" ? "xl:grid-cols-[270px_minmax(0,1fr)]" : ""}`}>
       {/* ----------------------------------------------------- riwayat (kiri) */}
-      <div className="hidden min-h-0 xl:block">{sidebarEl}</div>
-      {sidebar && (
+      {view === "chat" && <div className="hidden min-h-0 xl:block">{sidebarEl}</div>}
+      {view === "chat" && sidebar && (
         <div className="absolute inset-0 z-30 xl:hidden">
           <button type="button" aria-label="Tutup riwayat" className="absolute inset-0 bg-black/40" onClick={() => setSidebar(false)} />
           <div className="relative h-full w-[290px] max-w-[85vw] shadow-xl">{sidebarEl}</div>
@@ -1048,44 +1036,52 @@ export function AiEngineer() {
       {/* ------------------------------------------------------------ chat */}
       <section className="flex min-h-0 min-w-0 flex-col bg-surface">
         <header className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
-          <button
+          {view === "chat" && <button
             type="button"
             onClick={() => setSidebar(true)}
             className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-2.5 text-xs text-muted hover:text-ink xl:hidden"
           >
             Riwayat
             <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
-          </button>
+          </button>}
 
-          <div role="tablist" aria-label="Tampilan" className="inline-flex overflow-hidden rounded-md border border-line text-xs font-medium">
+          <nav aria-label="Menu AI Mikrotik Engineer" className="flex max-w-full gap-1 overflow-x-auto text-sm font-medium">
             {(
               [
                 ["chat", "Chat"],
                 ["monitor", `Monitoring${connectedCount ? ` (${connectedCount})` : ""}`],
+                ["routers", `Mikrotik (${routers.length})`],
+                ["ai", "Koneksi AI"],
+                ["skills", `Skill${skills.length ? ` (${skills.length})` : ""}`],
               ] as const
             ).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
-                role="tab"
-                aria-selected={view === id}
+                aria-current={view === id ? "page" : undefined}
                 onClick={() => setView(id)}
-                className={`min-h-8 px-3 transition-colors ${view === id ? "bg-brand text-brand-ink" : "bg-surface text-muted hover:bg-raised hover:text-ink"}`}
+                className={`min-h-9 shrink-0 rounded-md px-3 transition-colors ${view === id ? "bg-brand/15 text-brand" : "text-muted hover:bg-raised hover:text-ink"}`}
               >
                 {label}
               </button>
             ))}
-          </div>
+          </nav>
 
-          {view === "chat" && (
-            <span className="inline-flex min-w-0 items-center gap-1.5 text-sm font-semibold text-ink">
-              <Wand className="h-4 w-4 shrink-0 text-brand" />
-              <span className="max-w-[26vw] truncate">{messages.length ? convTitle(messages) : "AI Mikrotik Engineer"}</span>
-            </span>
-          )}
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => {
+              setView("routers");
+              setEditing({ ...BLANK_ROUTER });
+              setTestResult(null);
+            }}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Tambah Mikrotik
+          </Button>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => setDrawer(true)} className={`${chip} ${aiReady ? "border-brand/30 bg-brand/10 text-brand" : "border-warn/40 bg-warn/10 text-warn"}`}>
+            <button type="button" onClick={() => setView("ai")} className={`${chip} ${aiReady ? "border-brand/30 bg-brand/10 text-brand" : "border-warn/40 bg-warn/10 text-warn"}`}>
               {aiReady ? `${provider.label.split(" (")[0]} · ${ai.model}` : "Isi API key"}
             </button>
             {routers.length > 0 ? (
@@ -1106,9 +1102,9 @@ export function AiEngineer() {
                 </select>
               </label>
             ) : (
-              <button type="button" onClick={() => setDrawer(true)} className={`${chip} border-line bg-raised text-muted`}>
+              <button type="button" onClick={() => setView("routers")} className={`${chip} border-line bg-raised text-muted`}>
                 <span className="h-1.5 w-1.5 rounded-full bg-faint" />
-                Tambah router
+                Belum ada router
               </button>
             )}
             {enabledSkills.length > 0 && <span className={`${chip} border-line bg-raised text-muted`}>{enabledSkills.length} skill</span>}
@@ -1121,19 +1117,20 @@ export function AiEngineer() {
                 <span className="sm:hidden">Auto baca</span>
               </label>
             )}
-            <Button size="sm" onClick={() => setDrawer(true)} className="xl:hidden">
-              Pengaturan
-            </Button>
           </div>
         </header>
 
-        {flash && !drawer && (
+        {flash && (
           <div className="border-b border-line px-4 py-2">
             <Note tone={flash.tone}>{flash.text}</Note>
           </div>
         )}
 
-        {view === "monitor" ? (
+        {view === "routers" || view === "ai" || view === "skills" ? (
+          <div className="min-h-0 flex-1 overflow-y-auto bg-canvas p-4">
+            <div className="mx-auto w-full max-w-[860px]">{view === "routers" ? routersSection : view === "ai" ? aiSection : skillsSection}</div>
+          </div>
+        ) : view === "monitor" ? (
           <RouterMonitor
             targets={monitorTargets}
             statusList={routers.map((r) => ({ id: r.id, name: routerLabel(r), host: r.host, state: statuses[r.id]?.state ?? "checking", message: statuses[r.id]?.message ?? "", latencyMs: statuses[r.id]?.latencyMs ?? 0, checkedAt: statuses[r.id]?.checkedAt ?? 0 }))}
@@ -1371,29 +1368,6 @@ export function AiEngineer() {
         ))}
       </div>
 
-      {/* ------------------------------------------- pengaturan (panel kanan) */}
-      {drawer && (
-        <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Pengaturan AI Mikrotik Engineer">
-          <button type="button" aria-label="Tutup pengaturan" className="absolute inset-0 bg-black/40" onClick={() => setDrawer(false)} />
-          <div className="absolute inset-y-0 right-0 flex w-[620px] max-w-full flex-col bg-canvas shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line bg-surface px-4 py-3">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
-                <Wand className="h-4 w-4 text-brand" />
-                Pengaturan
-              </h2>
-              <button type="button" onClick={() => setDrawer(false)} aria-label="Tutup" className="rounded-md p-1.5 text-muted hover:bg-raised hover:text-ink">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">{settings}</div>
-            <div className="flex justify-end border-t border-line bg-surface px-4 py-3">
-              <Button variant="primary" onClick={() => setDrawer(false)}>
-                Selesai
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

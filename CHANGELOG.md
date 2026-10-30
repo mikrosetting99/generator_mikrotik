@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.57.2] - 2026-10-30
+
+_Perbaikan AI Engineer untuk model OpenAI terbaru_
+
+### Diperbaiki
+
+- AI Mikrotik Engineer: galat 400 "max_tokens is not supported" pada model OpenAI terbaru; kini memakai max_completion_tokens.
+
 ## [1.57.1] - 2026-10-30
 
 _Beranda lebih bersih_

@@ -27,6 +27,17 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.57.2",
+    date: "2026-10-30",
+    title: "Perbaikan AI Engineer untuk model OpenAI terbaru",
+    changes: [
+      {
+        type: "fixed",
+        items: ["AI Mikrotik Engineer: galat 400 \"max_tokens is not supported\" pada model OpenAI terbaru; kini memakai max_completion_tokens."],
+      },
+    ],
+  },
+  {
     version: "1.57.1",
     date: "2026-10-30",
     title: "Beranda lebih bersih",

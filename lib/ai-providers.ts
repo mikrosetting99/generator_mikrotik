@@ -81,7 +81,8 @@ export async function chatOnce(req: ChatRequest, signal?: AbortSignal): Promise<
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
       body: JSON.stringify({
         model: req.model,
-        max_tokens: maxTokens,
+        // Model OpenAI terbaru menolak max_tokens; max_completion_tokens diterima semua model OpenAI.
+        ...(info.id === "openai" ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
         messages: [{ role: "system", content: req.system }, ...req.messages],
       }),
       signal,

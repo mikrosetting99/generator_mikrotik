@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.59.0] - 2026-10-30
+
+_AI Engineer: chat per Mikrotik, Download/Upload terpisah, test koneksi API_
+
+### Ditambahkan
+
+- Test koneksi API langkah demi langkah (alamat, port TCP, login, baca data) dengan waktu tiap langkah dan saran perbaikan; tersedia di tiap router dan di form tambah/ubah.
+
+### Diubah
+
+- Tiap Mikrotik punya riwayat chat sendiri: memilih router otomatis membuka chat router itu, dan riwayat lama dipindahkan ke router aktif.
+- Monitoring memisahkan Download (Rx) dan Upload (Tx): grafik, warna, dan skala sendiri; total ringkasan memakai interface tersibuk agar tidak terhitung dua kali.
+- Tampilan chat mengikuti AI Network Engineer wyn: kolom tengah, status awal terpusat, dan catatan sistem di tengah.
+
 ## [1.58.1] - 2026-10-30
 
 _AI Engineer: perintah baca tidak lagi ditolak sebagai perubahan konfigurasi_

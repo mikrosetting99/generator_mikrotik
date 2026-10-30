@@ -84,40 +84,49 @@ function Spark({ values, max, color, height = 34 }: { values: number[]; max?: nu
   );
 }
 
-function TrafficChart({ rx, tx }: { rx: number[]; tx: number[] }) {
+const DL_COLOR = "var(--color-accent)";
+const UL_COLOR = "var(--color-ok)";
+
+/** Grafik satu arah trafik (Download atau Upload) dengan skala sendiri supaya selisihnya terlihat jelas. */
+function TrafficChart({ values, color, title, arrow }: { values: number[]; color: string; title: string; arrow: string }) {
   const w = 600;
-  const h = 150;
-  const top = Math.max(...rx, ...tx, 1000) * 1.15;
-  const step = w / (Math.max(rx.length, 30) - 1);
-  const line = (vals: number[]) => {
-    const x0 = w - (vals.length - 1) * step;
-    return { x0, pts: vals.map((v, i) => `${(x0 + i * step).toFixed(1)},${(h - 4 - (v / top) * (h - 8)).toFixed(1)}`) };
-  };
-  const a = line(rx);
-  const b = line(tx);
+  const h = 130;
+  const top = Math.max(...values, 1000) * 1.15;
+  const step = w / (Math.max(values.length, 30) - 1);
+  const x0 = w - (values.length - 1) * step;
+  const pts = values.map((v, i) => `${(x0 + i * step).toFixed(1)},${(h - 4 - (v / top) * (h - 8)).toFixed(1)}`);
+  const now = values[values.length - 1] ?? 0;
+  const peak = Math.max(...values, 0);
   return (
-    <div className="relative">
-      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="h-[150px] w-full rounded-md border border-line bg-surface" aria-hidden>
-        {[0.25, 0.5, 0.75].map((g) => (
-          <line key={g} x1={0} x2={w} y1={h * g} y2={h * g} stroke="var(--color-line-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
-        ))}
-        {rx.length > 1 && (
-          <>
-            <polygon points={`${a.x0.toFixed(1)},${h} ${a.pts.join(" ")} ${w},${h}`} fill="var(--color-brand)" opacity={0.12} />
-            <polyline points={a.pts.join(" ")} fill="none" stroke="var(--color-brand)" strokeWidth={1.8} vectorEffect="non-scaling-stroke" />
-            <polyline points={b.pts.join(" ")} fill="none" stroke="var(--color-accent)" strokeWidth={1.8} vectorEffect="non-scaling-stroke" />
-          </>
-        )}
-      </svg>
-      <span className="pointer-events-none absolute left-2 top-1 font-mono text-[10px] text-faint">{fmtBps(top)}</span>
+    <div className="rounded-md border border-line bg-surface p-3" style={{ borderTop: `3px solid ${color}` }}>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.09em]" style={{ color }}>
+          {arrow} {title}
+        </p>
+        <p className="text-[11px] text-faint">puncak {fmtBps(peak)}</p>
+      </div>
+      <p className="mt-0.5 text-xl font-semibold leading-none text-ink">{fmtBps(now)}</p>
+      <div className="relative mt-2">
+        <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="h-[110px] w-full rounded-md bg-canvas" aria-hidden>
+          {[0.25, 0.5, 0.75].map((g) => (
+            <line key={g} x1={0} x2={w} y1={h * g} y2={h * g} stroke="var(--color-line-soft)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+          ))}
+          {values.length > 1 && (
+            <>
+              <polygon points={`${x0.toFixed(1)},${h} ${pts.join(" ")} ${w},${h}`} fill={color} opacity={0.15} />
+              <polyline points={pts.join(" ")} fill="none" stroke={color} strokeWidth={1.8} vectorEffect="non-scaling-stroke" />
+            </>
+          )}
+        </svg>
+        <span className="pointer-events-none absolute left-2 top-1 font-mono text-[10px] text-faint">{fmtBps(top)}</span>
+      </div>
     </div>
   );
 }
-
-function Stat({ label, value, sub, pct, spark }: { label: string; value: string; sub?: string; pct?: number; spark?: number[] }) {
+function Stat({ label, value, sub, pct, spark, color }: { label: string; value: string; sub?: string; pct?: number; spark?: number[]; color?: string }) {
   return (
-    <div className="rounded-md border border-line bg-surface p-3">
-      <p className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">{label}</p>
+    <div className="rounded-md border border-line bg-surface p-3" style={color ? { borderTop: `3px solid ${color}` } : undefined}>
+      <p className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted" style={color ? { color } : undefined}>{label}</p>
       <p className="mt-1 text-xl font-semibold leading-none text-ink">{value}</p>
       {sub && <p className="mt-1 truncate text-[11px] text-faint">{sub}</p>}
       {pct !== undefined && (
@@ -274,8 +283,10 @@ export function RouterMonitor({
     const st = state[item.id];
     const s = st?.snap ?? null;
     const live = item.state === "online";
-    const rx = s ? s.interfaces.filter((i) => i.running).reduce((n, i) => n + i.rxBps, 0) : 0;
-    const tx = s ? s.interfaces.filter((i) => i.running).reduce((n, i) => n + i.txBps, 0) : 0;
+    // Interface tersibuk saja (bukan jumlah semua) supaya trafik WAN dan LAN tidak terhitung dua kali.
+    const top = s ? [...s.interfaces].filter((i) => i.running && !i.disabled).sort((x, y) => y.rxBps + y.txBps - (x.rxBps + x.txBps))[0] : undefined;
+    const rx = top?.rxBps ?? 0;
+    const tx = top?.txBps ?? 0;
     const mem = s && s.totalMemory ? ((s.totalMemory - s.freeMemory) / s.totalMemory) * 100 : 0;
     return { item, st, s, live, rx, tx, mem, cpu: s?.cpuLoad ?? 0 };
   });
@@ -313,9 +324,10 @@ export function RouterMonitor({
 
       {!detail ? (
         <div className="space-y-4 p-4">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <Stat label="Tersambung" value={`${onlineN} / ${rows.length}`} sub={offlineN ? `${offlineN} router offline` : "Semua router normal"} />
-            <Stat label="Trafik total" value={fmtBps(totalRx + totalTx)} sub={`↓ ${fmtBps(totalRx)} · ↑ ${fmtBps(totalTx)}`} />
+            <Stat label="↓ Download" value={fmtBps(totalRx)} sub="jumlah interface tersibuk tiap router" color={DL_COLOR} />
+            <Stat label="↑ Upload" value={fmtBps(totalTx)} sub="jumlah interface tersibuk tiap router" color={UL_COLOR} />
             <Stat label="CPU tertinggi" value={hottest ? `${hottest.cpu}%` : "-"} sub={hottest?.item.name ?? "Belum ada data"} pct={hottest?.cpu ?? 0} />
             <Stat label="Perlu perhatian" value={String(offlineN + rows.filter((r) => r.live && (r.cpu >= 85 || r.mem >= 90)).length)} sub="offline, CPU ≥ 85%, atau memori ≥ 90%" />
           </div>
@@ -390,8 +402,8 @@ export function RouterMonitor({
                           <span className="mt-0.5 block h-1.5 overflow-hidden rounded-full bg-raised"><span className="block h-full rounded-full" style={{ width: `${Math.min(100, mem)}%`, background: pctColor(mem) }} /></span>
                         </span>
                         <span className="flex justify-between pt-0.5 font-mono text-[11px] text-ink">
-                          <span>↓ {fmtBps(rx)}</span>
-                          <span>↑ {fmtBps(tx)}</span>
+                          <span style={{ color: DL_COLOR }}>↓ Download {fmtBps(rx)}</span>
+                          <span style={{ color: UL_COLOR }}>↑ Upload {fmtBps(tx)}</span>
                         </span>
                         <Spark values={st?.history.map((h) => h.cpu) ?? []} max={100} color={pctColor(cpu)} height={26} />
                       </span>
@@ -427,7 +439,6 @@ export function RouterMonitor({
           const chosen = st?.iface && live.some((i) => i.name === st.iface) ? st.iface : busiest;
           const rx = st?.history.map((p) => p.traffic[chosen]?.[0] ?? 0) ?? [];
           const tx = st?.history.map((p) => p.traffic[chosen]?.[1] ?? 0) ?? [];
-          const cur = live.find((i) => i.name === chosen);
           const memUsed = s ? s.totalMemory - s.freeMemory : 0;
           const diskUsed = s ? s.totalHdd - s.freeHdd : 0;
           const counts = s?.counts ?? {};
@@ -471,7 +482,7 @@ export function RouterMonitor({
 
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h4 className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">Trafik</h4>
+                      <h4 className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">Trafik interface</h4>
                       {live.length > 0 && (
                         <span className="w-44">
                           <Select
@@ -483,28 +494,21 @@ export function RouterMonitor({
                           />
                         </span>
                       )}
-                      <span className="flex items-center gap-3 text-xs">
-                        <span className="flex items-center gap-1 text-ink">
-                          <span className="h-2 w-2 rounded-full bg-brand" />
-                          Unduh {fmtBps(cur?.rxBps ?? 0)}
-                        </span>
-                        <span className="flex items-center gap-1 text-ink">
-                          <span className="h-2 w-2 rounded-full bg-accent" />
-                          Unggah {fmtBps(cur?.txBps ?? 0)}
-                        </span>
-                      </span>
+                      <span className="text-[11px] text-faint">Download = data masuk ke router (Rx), Upload = data keluar dari router (Tx), dihitung di interface ini.</span>
                     </div>
-                    <TrafficChart rx={rx} tx={tx} />
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <TrafficChart values={rx} color={DL_COLOR} title="Download" arrow="↓" />
+                      <TrafficChart values={tx} color={UL_COLOR} title="Upload" arrow="↑" />
+                    </div>
                   </div>
-
                   <div className="overflow-x-auto rounded-md border border-line">
                     <table className="w-full text-left text-sm">
                       <thead className="border-b border-line bg-raised text-[11px] uppercase tracking-[0.08em] text-muted">
                         <tr>
                           <th className="px-3 py-2 font-semibold">Interface</th>
                           <th className="px-3 py-2 font-semibold">Tipe</th>
-                          <th className="px-3 py-2 text-right font-semibold">Rx</th>
-                          <th className="px-3 py-2 text-right font-semibold">Tx</th>
+                          <th className="px-3 py-2 text-right font-semibold" style={{ color: DL_COLOR }}>↓ Download (Rx)</th>
+                          <th className="px-3 py-2 text-right font-semibold" style={{ color: UL_COLOR }}>↑ Upload (Tx)</th>
                         </tr>
                       </thead>
                       <tbody>

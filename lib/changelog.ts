@@ -27,6 +27,27 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.59.0",
+    date: "2026-10-30",
+    title: "AI Engineer: chat per Mikrotik, Download/Upload terpisah, test koneksi API",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Test koneksi API langkah demi langkah (alamat, port TCP, login, baca data) dengan waktu tiap langkah dan saran perbaikan; tersedia di tiap router dan di form tambah/ubah.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Tiap Mikrotik punya riwayat chat sendiri: memilih router otomatis membuka chat router itu, dan riwayat lama dipindahkan ke router aktif.",
+          "Monitoring memisahkan Download (Rx) dan Upload (Tx): grafik, warna, dan skala sendiri; total ringkasan memakai interface tersibuk agar tidak terhitung dua kali.",
+          "Tampilan chat mengikuti AI Network Engineer wyn: kolom tengah, status awal terpusat, dan catatan sistem di tengah.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.58.1",
     date: "2026-10-30",
     title: "AI Engineer: perintah baca tidak lagi ditolak sebagai perubahan konfigurasi",

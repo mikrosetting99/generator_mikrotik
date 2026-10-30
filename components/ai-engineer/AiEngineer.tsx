@@ -1,6 +1,8 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import type { DiagResult } from "@/lib/ai-routers";
+import { ConnTest, type DiagState } from "@/components/ai-engineer/ConnTest";
 import { RouterMonitor, type MonitorTarget } from "@/components/ai-engineer/RouterMonitor";
 import { Check, ChevronDown, Copy, Plus, Terminal, Trash, Wand, X } from "@/components/icons";
 import { Button, Field, Note, Select, TextInput } from "@/components/ui";
@@ -73,6 +75,8 @@ interface Msg {
 
 interface Conversation {
   id: string;
+  /** Router pemilik percakapan; "" = belum ada router. Tiap Mikrotik punya riwayat chat sendiri. */
+  routerId?: string;
   title: string;
   updatedAt: number;
   messages: Msg[];
@@ -286,7 +290,7 @@ export function AiEngineer() {
   const [activeId, setActiveId] = useState("");
   const [editing, setEditing] = useState<RouterForm | null>(null);
   const [routerBusy, setRouterBusy] = useState(false);
-  const [testResult, setTestResult] = useState<RouterStatus | null>(null);
+  const [diag, setDiag] = useState<Record<string, DiagState>>({});
   const [checking, setChecking] = useState(false);
   const routersRef = useRef<RouterProfile[]>([]);
   routersRef.current = routers;
@@ -300,6 +304,7 @@ export function AiEngineer() {
   const [view, setView] = useState<"chat" | "monitor" | "routers" | "ai" | "skills">("chat");
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [convId, setConvId] = useState(() => newId());
+  const [convRouter, setConvRouter] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -333,7 +338,8 @@ export function AiEngineer() {
       const c = window.localStorage.getItem(CONVS_KEY);
       if (c) setConvs(JSON.parse(c));
 
-      setActiveId(window.localStorage.getItem(ACTIVE_KEY) ?? "");    } catch {
+      setActiveId(window.localStorage.getItem(ACTIVE_KEY) ?? "");
+    } catch {
       // abaikan simpanan rusak
     }
     setReady(true);
@@ -364,10 +370,14 @@ export function AiEngineer() {
     if (!ready || messages.length === 0) return;
     setConvs((list) => {
       const rest = list.filter((c) => c.id !== convId);
-      const conv: Conversation = { id: convId, title: convTitle(messages), updatedAt: Date.now(), messages: messages.slice(-MAX_STORED_MESSAGES) };
-      return [conv, ...rest].slice(0, MAX_CONVS);
+      const conv: Conversation = { id: convId, routerId: convRouter, title: convTitle(messages), updatedAt: Date.now(), messages: messages.slice(-MAX_STORED_MESSAGES) };
+      return [conv, ...rest].slice(0, MAX_CONVS * 4);
     });
-  }, [messages, convId, ready]);
+  }, [messages, convId, convRouter, ready]);
+  // Chat kosong selalu milik router yang sedang dipilih.
+  useEffect(() => {
+    if (messages.length === 0) setConvRouter(activeId);
+  }, [messages.length, activeId]);
 
   const provider = AI_PROVIDERS.find((p) => p.id === ai.provider) ?? AI_PROVIDERS[0];
   const modelList = models[ai.provider]?.length ? (models[ai.provider] as string[]) : provider.models;
@@ -447,7 +457,10 @@ export function AiEngineer() {
       setRouters(list);
       routersRef.current = list;
       const act = window.localStorage.getItem(ACTIVE_KEY) ?? "";
-      setActiveId(list.some((r) => r.id === act) ? act : (list[0]?.id ?? ""));
+      const chosen = list.some((r) => r.id === act) ? act : (list[0]?.id ?? "");
+      setActiveId(chosen);
+      // Riwayat lama (sebelum chat dipisah per router) dipindahkan ke router yang aktif.
+      setConvs((cs) => cs.map((c) => (c.routerId === undefined ? { ...c, routerId: chosen } : c)));
       void checkStatuses(list.map((r) => r.id));
     } catch {
       // server tidak terjangkau
@@ -480,7 +493,7 @@ export function AiEngineer() {
       routersRef.current = routersRef.current.some((x) => x.id === saved.id) ? routersRef.current.map((x) => (x.id === saved.id ? saved : x)) : [...routersRef.current, saved];
       if (!activeId) setActiveId(saved.id);
       setEditing(null);
-      setTestResult(null);
+      clearDiag("form");
       setFlash({ tone: "info", text: `${saved.name} disimpan. Memeriksa koneksi…` });
       void checkStatuses([saved.id]);
     } catch {
@@ -490,22 +503,28 @@ export function AiEngineer() {
     }
   };
 
-  const testRouter = async () => {
-    if (!editing) return;
-    setFlash(null);
-    setTestResult(null);
-    setRouterBusy(true);
+  const clearDiag = (key: string) =>
+    setDiag((d) => {
+      const { [key]: _drop, ...rest } = d;
+      void _drop;
+      return rest;
+    });
+
+  /** Test koneksi API langkah demi langkah ("form" = isian form, selain itu = id router tersimpan). */
+  const runDiag = async (key: string) => {
+    let body: Record<string, unknown>;
+    if (key === "form") {
+      if (!editing) return;
+      body = { test: formBody(editing), id: editing.id || undefined, diagnose: true };
+    } else body = { id: key, diagnose: true };
+    setDiag((d) => ({ ...d, [key]: { busy: true } }));
     try {
-      const r = await post<{ statuses: RouterStatus[] }>("/api/ai/routers/status", { test: formBody(editing), id: editing.id || undefined });
-      if (!r.ok || !r.data.statuses?.[0]) return setFlash({ tone: "bad", text: r.data.error ?? "Gagal menguji koneksi." });
-      setTestResult(r.data.statuses[0]);
+      const r = await post<{ diagnosis: DiagResult }>("/api/ai/routers/status", body);
+      setDiag((d) => ({ ...d, [key]: r.ok && r.data.diagnosis ? { busy: false, result: r.data.diagnosis } : { busy: false, error: r.data.error ?? httpMessage(r.status) } }));
     } catch {
-      setFlash({ tone: "bad", text: "Gagal menghubungi server." });
-    } finally {
-      setRouterBusy(false);
+      setDiag((d) => ({ ...d, [key]: { busy: false, error: "Gagal menghubungi server." } }));
     }
   };
-
   const removeRouter = async (r: RouterProfile) => {
     if (!window.confirm(`Hapus ${routerLabel(r)} dari daftar?`)) return;
     await fetch(`/api/ai/routers/${r.id}`, { method: "DELETE" }).catch(() => undefined);
@@ -515,7 +534,8 @@ export function AiEngineer() {
       void _drop;
       return rest;
     });
-    if (activeId === r.id) setActiveId(routers.find((x) => x.id !== r.id)?.id ?? "");
+    setConvs((cs) => cs.filter((c) => c.routerId !== r.id));
+    if (activeId === r.id) selectRouter(routers.find((x) => x.id !== r.id)?.id ?? "", true);
   };
   /** Menjalankan daftar perintah di router aktif; hasilnya ditambahkan ke chat dan dikembalikan agar bisa dikirim ke AI. */
   const execCommands = async (commands: string[], opts: { confirmed: boolean; approved?: boolean }): Promise<Msg | null> => {
@@ -658,8 +678,26 @@ export function AiEngineer() {
 
   const stop = () => abortRef.current?.abort();
 
+  /** Memilih router untuk chat: tiap router punya riwayat sendiri, jadi chat ikut berganti. */
+  const selectRouter = (id: string, force = false) => {
+    if (id === activeId) return;
+    if (busy && !force) {
+      toast("Tunggu AI selesai sebelum berganti router.", "warn");
+      return;
+    }
+    setActiveId(id);
+    const last = convs.find((c) => (c.routerId ?? "") === id && c.messages.length > 0);
+    setConvId(last?.id ?? newId());
+    setConvRouter(id);
+    setMessages(last?.messages ?? []);
+    setDone({});
+    setPlans({});
+    setFlash(null);
+  };
+
   const newChat = () => {
     if (busy) return;
+    setConvRouter(activeId);
     setConvId(newId());
     setMessages([]);
     setDone({});
@@ -670,6 +708,7 @@ export function AiEngineer() {
 
   const openChat = (c: Conversation) => {
     if (busy) return;
+    setConvRouter(c.routerId ?? "");
     setConvId(c.id);
     setMessages(c.messages);
     setDone({});
@@ -807,7 +846,7 @@ export function AiEngineer() {
               </Button>
             )}
             {!editing && (
-              <Button size="sm" variant="primary" onClick={() => { setEditing({ ...BLANK_ROUTER }); setTestResult(null); }}>
+              <Button size="sm" variant="primary" onClick={() => { setEditing({ ...BLANK_ROUTER }); clearDiag("form"); }}>
                 <Plus className="h-3.5 w-3.5" />
                 Tambah Mikrotik
               </Button>
@@ -852,21 +891,15 @@ export function AiEngineer() {
                   <TextInput mono type="password" value={editing.password} onChange={(password) => setEditing({ ...editing, password })} placeholder="••••••" />
                 </Field>
               </div>
-              {testResult && (
-                <div className={`rounded-md border px-3 py-2 text-xs ${testResult.state === "online" ? "border-ok/40 bg-ok/10 text-ok" : "border-bad/30 bg-bad/10 text-bad"}`}>
-                  {testResult.state === "online"
-                    ? `Tersambung · ${testResult.info?.identity} · RouterOS ${testResult.info?.version} · ${testResult.latencyMs} ms`
-                    : `${statusBadge(testResult).label}: ${testResult.message}`}
-                </div>
-              )}
+              {diag.form && <ConnTest state={diag.form} />}
               <div className="flex flex-wrap gap-2">
                 <Button variant="primary" onClick={saveRouter} disabled={routerBusy}>
                   {routerBusy ? "Memproses…" : "Simpan"}
                 </Button>
-                <Button onClick={testRouter} disabled={routerBusy}>
-                  Uji koneksi
+                <Button onClick={() => runDiag("form")} disabled={routerBusy || diag.form?.busy}>
+                  Test koneksi API
                 </Button>
-                <Button onClick={() => { setEditing(null); setTestResult(null); }}>Batal</Button>
+                <Button onClick={() => { setEditing(null); clearDiag("form"); }}>Batal</Button>
               </div>
             </div>
           )}
@@ -883,7 +916,7 @@ export function AiEngineer() {
                         type="radio"
                         name="active-router"
                         checked={r.id === activeId}
-                        onChange={() => setActiveId(r.id)}
+                        onChange={() => selectRouter(r.id)}
                         aria-label={`Jadikan ${routerLabel(r)} router aktif untuk chat`}
                         title="Router aktif untuk chat"
                         className="mt-1 h-4 w-4 accent-[var(--color-brand)]"
@@ -915,13 +948,17 @@ export function AiEngineer() {
                       <Button size="sm" onClick={() => checkStatuses([r.id])} disabled={st?.state === "checking"}>
                         Periksa
                       </Button>
-                      <Button size="sm" onClick={() => { setEditing({ id: r.id, name: r.name, host: r.host, port: String(r.port), tls: r.tls, username: r.username, password: "" }); setTestResult(null); }}>
+                      <Button size="sm" onClick={() => runDiag(r.id)} disabled={diag[r.id]?.busy}>
+                        Test koneksi API
+                      </Button>
+                      <Button size="sm" onClick={() => { setEditing({ id: r.id, name: r.name, host: r.host, port: String(r.port), tls: r.tls, username: r.username, password: "" }); clearDiag("form"); }}>
                         Ubah
                       </Button>
                       <Button size="sm" variant="danger" className="px-2" ariaLabel={`Hapus ${routerLabel(r)}`} title="Hapus" onClick={() => removeRouter(r)}>
                         <Trash className="h-3.5 w-3.5" />
                       </Button>
                     </div>
+                    {diag[r.id] && <ConnTest state={diag[r.id]} />}
                   </li>
                 );
               })}
@@ -988,19 +1025,24 @@ export function AiEngineer() {
 
   const chip = "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium";
 
+  const routerConvs = convs.filter((c) => (c.routerId ?? "") === activeId).slice(0, MAX_CONVS);
+
   const sidebarEl = (
     <aside className="flex h-full min-h-0 flex-col border-r border-line bg-raised">
       <div className="grid gap-2 border-b border-line p-3">
+        <p className="truncate text-[11px] font-semibold uppercase tracking-[0.09em] text-muted" title="Tiap Mikrotik punya riwayat chat sendiri">
+          {active ? routerLabel(active) : "Tanpa router"}
+        </p>
         <Button variant="primary" onClick={newChat} disabled={busy}>
           <Plus className="h-4 w-4" />
           Percakapan baru
         </Button>
       </div>
       <nav className="min-h-0 flex-1 overflow-y-auto" aria-label="Riwayat percakapan">
-        {convs.length === 0 ? (
-          <p className="px-4 py-6 text-center text-xs text-faint">Riwayat percakapan akan muncul di sini.</p>
+        {routerConvs.length === 0 ? (
+          <p className="px-4 py-6 text-center text-xs text-faint">{active ? `Belum ada percakapan untuk ${routerLabel(active)}.` : "Riwayat percakapan akan muncul di sini."}</p>
         ) : (
-          convs.map((c) => (
+          routerConvs.map((c) => (
             <div key={c.id} className={`group flex items-center border-b border-line ${c.id === convId && view === "chat" ? "bg-brand/10" : "hover:bg-brand/[0.05]"}`}>
               <button type="button" onClick={() => openChat(c)} className={`min-w-0 flex-1 px-4 py-2.5 text-left ${c.id === convId && view === "chat" ? "font-medium text-brand" : "text-ink"}`}>
                 <span className="block truncate text-sm">{c.title}</span>
@@ -1073,7 +1115,7 @@ export function AiEngineer() {
             onClick={() => {
               setView("routers");
               setEditing({ ...BLANK_ROUTER });
-              setTestResult(null);
+              clearDiag("form");
             }}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -1089,7 +1131,7 @@ export function AiEngineer() {
                 <span className={`h-1.5 w-1.5 rounded-full ${statusBadge(activeStatus).dot}`} />
                 <select
                   value={activeId}
-                  onChange={(e) => setActiveId(e.target.value)}
+                  onChange={(e) => selectRouter(e.target.value)}
                   aria-label="Router aktif"
                   className="max-w-[160px] cursor-pointer bg-transparent text-xs font-medium outline-none"
                 >
@@ -1140,25 +1182,25 @@ export function AiEngineer() {
         ) : (
           <>
             <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
-              <div className="flex w-full max-w-[980px] flex-1 flex-col gap-2.5">
+              <div className="mx-auto flex w-full max-w-[860px] flex-1 flex-col gap-2.5">
                 {messages.length === 0 && (
-                  <div className="space-y-4 py-8">
-                    <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand/10 text-brand">
+                  <div className="space-y-4 px-2 py-12 text-center">
+                    <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-brand/10 text-brand">
                       <Wand className="h-6 w-6" />
                     </span>
                     <div>
-                      <h3 className="text-[17px] font-semibold text-ink">Tanya apa saja soal Mikrotik</h3>
-                      <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted">
+                      <h3 className="text-[17px] font-semibold text-ink">{active ? `Chat dengan ${routerLabel(active)}` : "Tanya apa saja soal Mikrotik"}</h3>
+                      <p className="mx-auto mt-1 max-w-xl text-sm leading-relaxed text-muted">
                         Minta AI menjelaskan, menyusun script, atau memeriksa router. Perintah yang mengubah konfigurasi baru dijalankan setelah Anda menyetujuinya.
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap justify-center gap-1.5">
                       {STARTERS.map((s) => (
                         <button
                           key={s}
                           type="button"
                           onClick={() => void send(s)}
-                          className="rounded-full border border-line bg-surface px-3 py-1.5 text-left text-xs text-muted transition-colors hover:border-brand/50 hover:text-brand"
+                          className="rounded-full border border-line bg-surface px-3 py-1.5 text-center text-xs text-muted transition-colors hover:border-brand/50 hover:text-brand"
                         >
                           {s}
                         </button>
@@ -1170,7 +1212,7 @@ export function AiEngineer() {
                 {messages.map((m) => {
                   if (m.role === "system") {
                     return (
-                      <div key={m.id} className={`max-w-[90%] self-start whitespace-pre-wrap rounded-full px-3 py-1 text-[13px] ${m.error ? "bg-bad/10 text-bad" : "bg-raised text-muted"}`}>
+                      <div key={m.id} className={`max-w-[90%] self-center whitespace-pre-wrap rounded-full px-3 py-1 text-center text-[13px] ${m.error ? "bg-bad/10 text-bad" : "bg-raised text-muted"}`}>
                         {m.content}
                       </div>
                     );
@@ -1203,7 +1245,7 @@ export function AiEngineer() {
                   return (
                     <div
                       key={m.id}
-                      className={`max-w-[85%] self-start break-words rounded-xl rounded-bl-[4px] border px-3.5 py-2.5 leading-relaxed ${m.error ? "border-bad/30 bg-bad/10 text-bad" : "border-line bg-raised text-ink"}`}
+                      className={`max-w-[85%] self-start break-words rounded-xl rounded-bl-[4px] border px-3.5 py-2.5 leading-relaxed ${m.error ? "border-bad/30 bg-bad/10 text-bad" : "border-line bg-canvas text-ink"}`}
                     >
                       {splitSegments(m.content).map((seg, i) => {
                         if (seg.type === "text") {
@@ -1327,7 +1369,7 @@ export function AiEngineer() {
                   e.preventDefault();
                   void send();
                 }}
-                className="flex max-w-[980px] items-end gap-2"
+                className="mx-auto flex max-w-[860px] items-end gap-2"
               >
                 <textarea
                   value={draft}

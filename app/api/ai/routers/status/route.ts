@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isGuardResponse, requireAiUser } from "@/lib/ai-guard";
-import { checkMany, checkTarget, loadTarget, parseRouterInput } from "@/lib/ai-routers";
+import { checkMany, checkTarget, diagnoseRouter, loadTarget, parseRouterInput } from "@/lib/ai-routers";
 import { resolvePublicHost } from "@/lib/net-guard";
 import { prisma } from "@/lib/prisma";
 import { open } from "@/lib/vault";
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       password = row ? open(row.passwordEnc) : "";
     }
     if (!password) return NextResponse.json({ error: "Isi password untuk menguji koneksi." }, { status: 400 });
+    if (b.diagnose) return NextResponse.json({ diagnosis: await diagnoseRouter({ host: d.host, port: d.port, tls: d.tls, username: d.username, password }) });
     try {
       const ip = await resolvePublicHost(d.host);
       const status = await checkTarget("test", { ip, host: d.host, port: d.port, tls: d.tls, username: d.username, password });
@@ -35,6 +36,13 @@ export async function POST(request: Request) {
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : "Alamat tidak boleh dituju." }, { status: 400 });
     }
+  }
+
+  // Test koneksi router tersimpan (tanpa mengirim password dari browser).
+  if (b?.diagnose && typeof b.id === "string") {
+    const row = await prisma.aiRouter.findFirst({ where: { id: b.id, userId: guard.userId } });
+    if (!row) return NextResponse.json({ error: "Router tidak ditemukan." }, { status: 404 });
+    return NextResponse.json({ diagnosis: await diagnoseRouter({ host: row.host, port: row.port, tls: row.tls, username: row.username, password: open(row.passwordEnc) }) });
   }
 
   const ids = Array.isArray(b?.ids) ? (b?.ids as unknown[]).map(String).slice(0, 40) : [];

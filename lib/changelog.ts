@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.60.1",
+    date: "2026-11-01",
+    title: "Script VPN: info login Member Area Mikrosetting di paling atas",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Halaman script pelanggan menampilkan kartu Login Member Area Mikrosetting di paling atas: link app.mikrosetting.com, user sesuai email pelanggan, password sesuai password pelanggan.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.60.0",
     date: "2026-10-30",
     title: "AI Engineer: tampilan lebih sederhana ala Odoo, satu chat satu Mikrotik",

@@ -326,6 +326,36 @@ export function CustomerScriptView({ token, siteName }: { token: string; siteNam
           </section>
         ) : (
           <div className="space-y-6">
+            <section className="overflow-hidden rounded-md border border-brand/40 bg-surface shadow-sm">
+              <div className="border-b border-line bg-raised px-5 py-2.5">
+                <h3 className="text-sm font-bold text-ink">Login Member Area Mikrosetting</h3>
+              </div>
+              <div className="space-y-3 p-5">
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface p-3">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Link</span>
+                  <a
+                    href="https://app.mikrosetting.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="min-w-0 flex-1 break-all font-mono text-sm font-semibold text-brand hover:underline"
+                  >
+                    app.mikrosetting.com
+                  </a>
+                  <CopyButton text="https://app.mikrosetting.com" label="Salin link" />
+                </div>
+                <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                  <div className="rounded-md border border-line bg-surface p-3">
+                    <dt className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">User</dt>
+                    <dd className="mt-1.5 text-ink">Sesuai email pelanggan</dd>
+                  </div>
+                  <div className="rounded-md border border-line bg-surface p-3">
+                    <dt className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Password</dt>
+                    <dd className="mt-1.5 text-ink">Sesuai password pelanggan</dd>
+                  </div>
+                </dl>
+              </div>
+            </section>
+
             <div>
               <h2 className="text-xl font-semibold text-ink">{data.customer ? `Halo, ${data.customer}` : "Script Anda"}</h2>
               <p className="mt-1 text-sm text-muted">Klik judul script untuk membuka atau menutup isinya.</p>

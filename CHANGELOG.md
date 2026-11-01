@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.60.1] - 2026-11-01
+
+_Script VPN: info login Member Area Mikrosetting di paling atas_
+
+### Ditambahkan
+
+- Halaman script pelanggan menampilkan kartu Login Member Area Mikrosetting di paling atas: link app.mikrosetting.com, user sesuai email pelanggan, password sesuai password pelanggan.
+
 ## [1.60.0] - 2026-10-30
 
 _AI Engineer: tampilan lebih sederhana ala Odoo, satu chat satu Mikrotik_

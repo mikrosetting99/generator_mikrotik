@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.60.2] - 2026-11-02
+
+_Perbaikan build produksi_
+
+### Diperbaiki
+
+- Build di server gagal karena font Roboto dari Google (Turbopack: next/font/google queries have exactly one entry). Font itu tidak terpakai, jadi dihapus; tampilan memakai font sistem seperti sebelumnya.
+
 ## [1.60.1] - 2026-11-01
 
 _Script VPN: info login Member Area Mikrosetting di paling atas_

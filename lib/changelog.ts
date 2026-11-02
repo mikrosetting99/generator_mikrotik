@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.60.2",
+    date: "2026-11-02",
+    title: "Perbaikan build produksi",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Build di server gagal karena font Roboto dari Google (Turbopack: next/font/google queries have exactly one entry). Font itu tidak terpakai, jadi dihapus; tampilan memakai font sistem seperti sebelumnya.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.60.1",
     date: "2026-11-01",
     title: "Script VPN: info login Member Area Mikrosetting di paling atas",

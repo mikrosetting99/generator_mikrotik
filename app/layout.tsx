@@ -1,18 +1,10 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Roboto } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/app/providers";
 import { themeBootScript } from "@/components/ThemeToggle";
 import { getSiteSettings } from "@/lib/site-settings-server";
 import { themeCss } from "@/lib/theme";
 import "./globals.css";
-
-/** Roboto, seperti Odoo. Nama variabelnya tetap --font-inter agar tidak mengubah pemakai lain. */
-const inter = Roboto({
-  variable: "--font-inter",
-  weight: ["400", "500", "700"],
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono-code",
@@ -54,7 +46,7 @@ export default async function RootLayout({
           <style dangerouslySetInnerHTML={{ __html: themeCss(settings.themeBrand, settings.themeAccent) }} />
         )}
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${jetbrainsMono.variable} antialiased`}>
         {settings.appBgId && (
           // Latar seluruh aplikasi dari dashboard admin; lapisan warna tema menjaga keterbacaan.
           <div

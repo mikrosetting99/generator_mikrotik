@@ -13,6 +13,9 @@ export interface RouterStatusItem {
   message: string;
   latencyMs: number;
   checkedAt: number;
+  /** Koneksi SSH: tidak ada grafik trafik, hanya status dan info dasar. */
+  ssh?: boolean;
+  info?: { identity: string; version: string; board: string; uptime: string; cpuLoad: string };
 }
 
 /** Router yang sedang tersambung dan siap dipantau. */
@@ -260,7 +263,7 @@ export function RouterMonitor({
     return () => window.clearInterval(timer);
   }, [paused, every, ids, poll]);
 
-  if (targets.length === 0) {
+  if (targets.length === 0 && !statusList.some((s) => s.state === "online")) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {statusList.length > 0 && <StatusStrip items={statusList} onCheck={onCheck} checking={checking} />}
@@ -394,6 +397,15 @@ export function RouterMonitor({
                           <span style={{ color: UL_COLOR }}>↑ Upload {fmtBps(tx)}</span>
                         </span>
                         <Spark values={st?.history.map((h) => h.cpu) ?? []} max={100} color={pctColor(cpu)} height={26} />
+                      </span>
+                    ) : live && item.ssh ? (
+                      <span className="mt-2.5 block space-y-1 text-xs text-muted">
+                        {item.info && (
+                          <span className="block font-mono text-[11px] text-ink">
+                            {item.info.identity} · RouterOS {item.info.version} · CPU {item.info.cpuLoad}% · up {item.info.uptime}
+                          </span>
+                        )}
+                        <span className="block">Koneksi SSH: hanya status dan info dasar, grafik trafik tersedia di koneksi API.</span>
                       </span>
                     ) : (
                       <span className="mt-2.5 block text-xs text-bad">{wait ? <span className="text-muted">Memeriksa…</span> : item.message || "Tidak tersambung."}</span>

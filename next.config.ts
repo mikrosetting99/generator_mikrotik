@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // ssh2 punya modul native opsional; dimuat langsung dari node_modules, tidak dibundel.
+  serverExternalPackages: ["ssh2"],
   /**
    * nginx di server menyimpan cache jawaban halaman dan mengabaikan
    * Cache-Control — halaman beranda yang berisi nama pengguna sampai ikut

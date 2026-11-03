@@ -22,6 +22,7 @@ export async function PUT(request: Request, { params }: Ctx) {
     data: {
       name: d.name,
       host: d.host,
+      protocol: d.protocol,
       port: d.port,
       tls: d.tls,
       username: d.username,

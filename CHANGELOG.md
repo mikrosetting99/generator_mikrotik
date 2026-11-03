@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.64.0] - 2026-11-05
+
+_AI Engineer: koneksi Mikrotik lewat SSH_
+
+### Ditambahkan
+
+- Tiap Mikrotik bisa dipilih koneksinya: API (bawaan) atau SSH (port 22). Pilihan ada di form tambah/ubah Mikrotik; Test koneksi, status, dan chat bekerja untuk keduanya.
+- Lewat SSH, perintah dijalankan sebagai CLI RouterOS apa adanya, sehingga /export (otomatis hide-sensitive) dan filter print lengkap bisa dipakai AI.
+- Perintah SSH dibatasi ketat: wajib diawali /, tanpa skrip (:), titik koma, $, { }, atau sub-perintah selain [find …]; perintah yang berjalan terus (follow, torch, sniffer, monitor tanpa once) ditolak; ping dibatasi 4 kali. Aturan persetujuan perubahan dan perintah berisiko sama dengan API.
+
+### Diubah
+
+- Router dengan koneksi SSH di Monitoring hanya menampilkan status dan info dasar (identity, versi, CPU, uptime); grafik trafik hanya untuk koneksi API.
+
 ## [1.63.0] - 2026-11-04
 
 _AI Engineer: test API key & model, monitoring lebih ringkas_

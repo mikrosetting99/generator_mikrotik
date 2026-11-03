@@ -38,6 +38,8 @@ model AiRouter {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String   @db.VarChar(80)
   host        String   @db.VarChar(253)
+  /// "api" (RouterOS API, bawaan) atau "ssh".
+  protocol    String   @default("api") @db.VarChar(8)
   port        Int      @default(8728)
   tls         Boolean  @default(false)
   username    String   @db.VarChar(100)

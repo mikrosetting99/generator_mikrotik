@@ -27,6 +27,25 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.64.0",
+    date: "2026-11-05",
+    title: "AI Engineer: koneksi Mikrotik lewat SSH",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Tiap Mikrotik bisa dipilih koneksinya: API (bawaan) atau SSH (port 22). Pilihan ada di form tambah/ubah Mikrotik; Test koneksi, status, dan chat bekerja untuk keduanya.",
+          "Lewat SSH, perintah dijalankan sebagai CLI RouterOS apa adanya, sehingga /export (otomatis hide-sensitive) dan filter print lengkap bisa dipakai AI.",
+          "Perintah SSH dibatasi ketat: wajib diawali /, tanpa skrip (:), titik koma, $, { }, atau sub-perintah selain [find …]; perintah yang berjalan terus (follow, torch, sniffer, monitor tanpa once) ditolak; ping dibatasi 4 kali. Aturan persetujuan perubahan dan perintah berisiko sama dengan API.",
+        ],
+      },
+      {
+        type: "changed",
+        items: ["Router dengan koneksi SSH di Monitoring hanya menampilkan status dan info dasar (identity, versi, CPU, uptime); grafik trafik hanya untuk koneksi API."],
+      },
+    ],
+  },
+  {
     version: "1.63.0",
     date: "2026-11-04",
     title: "AI Engineer: test API key & model, monitoring lebih ringkas",

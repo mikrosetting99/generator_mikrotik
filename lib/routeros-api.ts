@@ -19,6 +19,8 @@ export interface RouterTarget {
   tls: boolean;
   username: string;
   password: string;
+  /** Cara menyambung; kosong = API. SSH dijalankan lewat lib/routeros-ssh.ts. */
+  protocol?: "api" | "ssh";
 }
 
 /* ------------------------------------------------------------------ protokol */
@@ -316,7 +318,7 @@ const DANGER = [
 ];
 const BLOCKED = [/^\/system\/reset-configuration$/, /^\/system\/reset$/];
 
-function classify(path: string, verb: string): Safety {
+export function classify(path: string, verb: string): Safety {
   if (BLOCKED.some((r) => r.test(path))) return "blocked";
   if (verb === "print" || verb === "get" || /\/(ping|traceroute)$/.test(path)) return "read";
   if (DANGER.some((r) => r.test(path))) return "danger";

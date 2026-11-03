@@ -27,6 +27,25 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.63.0",
+    date: "2026-11-04",
+    title: "AI Engineer: test API key & model, monitoring lebih ringkas",
+    changes: [
+      {
+        type: "added",
+        items: ["Koneksi AI: tombol Test API key & model mengirim satu pesan pendek ke penyedia dan menampilkan hasil serta waktunya, atau pesan galat penyedia bila key, model, atau kuota bermasalah."],
+      },
+      {
+        type: "changed",
+        items: [
+          "Monitoring: ringkasan di atas daftar router (Tersambung, Download, Upload, CPU tertinggi, Perlu perhatian) dihapus.",
+          "Detail Mikrotik: tabel seluruh interface dihapus; grafik trafik per interface tetap ada.",
+          "Menu atas tidak lagi menampilkan angka jumlah (Monitoring, Mikrotik, Memori, Skill).",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.62.0",
     date: "2026-11-04",
     title: "AI Engineer: memori per Mikrotik",

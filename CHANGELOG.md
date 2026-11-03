@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.63.0] - 2026-11-04
+
+_AI Engineer: test API key & model, monitoring lebih ringkas_
+
+### Ditambahkan
+
+- Koneksi AI: tombol Test API key & model mengirim satu pesan pendek ke penyedia dan menampilkan hasil serta waktunya, atau pesan galat penyedia bila key, model, atau kuota bermasalah.
+
+### Diubah
+
+- Monitoring: ringkasan di atas daftar router (Tersambung, Download, Upload, CPU tertinggi, Perlu perhatian) dihapus.
+- Detail Mikrotik: tabel seluruh interface dihapus; grafik trafik per interface tetap ada.
+- Menu atas tidak lagi menampilkan angka jumlah (Monitoring, Mikrotik, Memori, Skill).
+
 ## [1.62.0] - 2026-11-04
 
 _AI Engineer: memori per Mikrotik_

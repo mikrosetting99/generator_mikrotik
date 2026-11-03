@@ -333,6 +333,7 @@ export function AiEngineer() {
   const [view, setView] = useState<"chat" | "monitor" | "routers" | "memory" | "ai" | "skills">("chat");
   const [memory, setMemory] = useState<MemoryStore>({ on: true, routers: {} });
   const [noteDraft, setNoteDraft] = useState("");
+  const [aiTest, setAiTest] = useState<{ busy: boolean; result?: { ok: boolean; ms: number; reply?: string; error?: string } }>({ busy: false });
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [convId, setConvId] = useState(() => newId());
   const [convRouter, setConvRouter] = useState("");
@@ -457,7 +458,6 @@ export function AiEngineer() {
     return text.length > MEMORY_SEND_CHARS ? text.slice(text.length - MEMORY_SEND_CHARS) : text;
   };
   const onlineRouters = routers.filter((r) => statuses[r.id]?.state === "online");
-  const connectedCount = onlineRouters.length;
 
 
   /* ------------------------------------------------------------------ model */
@@ -474,6 +474,20 @@ export function AiEngineer() {
       setFlash({ tone: "bad", text: "Gagal menghubungi server." });
     } finally {
       setModelsBusy(false);
+    }
+  };
+
+  /** Uji API key + model: satu pesan pendek sungguhan ke penyedia, jadi key, model, dan kuota ikut teruji. */
+  const testAi = async () => {
+    setAiTest({ busy: true });
+    try {
+      const r = await post<{ ok?: boolean; ms?: number; reply?: string }>("/api/ai/test", { provider: ai.provider, model: ai.model, apiKey: ai.apiKey, baseUrl: ai.baseUrl });
+      setAiTest({
+        busy: false,
+        result: r.data.ok ? { ok: true, ms: r.data.ms ?? 0, reply: r.data.reply } : { ok: false, ms: r.data.ms ?? 0, error: r.data.error ?? "Uji koneksi gagal." },
+      });
+    } catch {
+      setAiTest({ busy: false, result: { ok: false, ms: 0, error: "Gagal menghubungi server." } });
     }
   };
 
@@ -917,7 +931,20 @@ export function AiEngineer() {
                 <TextInput mono value={ai.model} onChange={(model) => setAi({ ...ai, model: model.trim() })} placeholder="nama model, mis. gpt-4o-mini" />
               )}
             </div>
-          </Field>          <p className="text-[11px] leading-relaxed text-faint">
+          </Field>
+          <div className="space-y-2">
+            <Button onClick={testAi} disabled={aiTest.busy || !ai.apiKey.trim() || !ai.model.trim()}>
+              {aiTest.busy ? "Menguji…" : "Test API key & model"}
+            </Button>
+            {aiTest.result && (
+              <Note tone={aiTest.result.ok ? "info" : "bad"}>
+                {aiTest.result.ok
+                  ? `Berhasil: ${provider.label} · ${ai.model} menjawab dalam ${aiTest.result.ms} ms${aiTest.result.reply ? ` ("${aiTest.result.reply}")` : ""}.`
+                  : `Gagal (${aiTest.result.ms} ms): ${aiTest.result.error}`}
+              </Note>
+            )}
+          </div>
+          <p className="text-[11px] leading-relaxed text-faint">
             API key disimpan di browser ini saja. Server hanya meneruskannya ke penyedia AI saat Anda chat atau memuat daftar model dan tidak menyimpannya.
           </p>
         </div>
@@ -1248,11 +1275,11 @@ export function AiEngineer() {
 
   const navItems = [
     ["chat", "Chat"],
-    ["monitor", `Monitoring${connectedCount ? ` (${connectedCount})` : ""}`],
-    ["routers", `Mikrotik (${routers.length})`],
-    ["memory", `Memori${activeMemory.notes.length + activeMemory.activity.length ? ` (${activeMemory.notes.length + activeMemory.activity.length})` : ""}`],
+    ["monitor", "Monitoring"],
+    ["routers", "Mikrotik"],
+    ["memory", "Memori"],
     ["ai", "Koneksi AI"],
-    ["skills", `Skill${skills.length ? ` (${skills.length})` : ""}`],
+    ["skills", "Skill"],
   ] as const;
   // Menu aplikasi ditaruh di bilah atas (seperti menu bagian di Odoo).
   const navbar =

@@ -296,10 +296,6 @@ export function RouterMonitor({
     return !q || `${r.item.name} ${r.item.host} ${r.s?.identity ?? ""}`.toLowerCase().includes(q);
   });
   const onlineN = rows.filter((r) => r.live).length;
-  const offlineN = rows.filter((r) => !r.live && r.item.state !== "checking").length;
-  const totalRx = rows.reduce((n, r) => n + r.rx, 0);
-  const totalTx = rows.reduce((n, r) => n + r.tx, 0);
-  const hottest = rows.filter((r) => r.live && r.s).sort((x, y) => y.cpu - x.cpu)[0];
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -324,14 +320,6 @@ export function RouterMonitor({
 
       {!detail ? (
         <div className="space-y-4 p-4">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <Stat label="Tersambung" value={`${onlineN} / ${rows.length}`} sub={offlineN ? `${offlineN} router offline` : "Semua router normal"} />
-            <Stat label="↓ Download" value={fmtBps(totalRx)} sub="jumlah interface tersibuk tiap router" color={DL_COLOR} />
-            <Stat label="↑ Upload" value={fmtBps(totalTx)} sub="jumlah interface tersibuk tiap router" color={UL_COLOR} />
-            <Stat label="CPU tertinggi" value={hottest ? `${hottest.cpu}%` : "-"} sub={hottest?.item.name ?? "Belum ada data"} pct={hottest?.cpu ?? 0} />
-            <Stat label="Perlu perhatian" value={String(offlineN + rows.filter((r) => r.live && (r.cpu >= 85 || r.mem >= 90)).length)} sub="offline, CPU ≥ 85%, atau memori ≥ 90%" />
-          </div>
-
           <div className="flex flex-wrap items-center gap-2">
             <div role="tablist" aria-label="Filter router" className="inline-flex overflow-hidden rounded-md border border-line text-xs font-medium">
               {(
@@ -500,31 +488,6 @@ export function RouterMonitor({
                       <TrafficChart values={rx} color={DL_COLOR} title="Download" arrow="↓" />
                       <TrafficChart values={tx} color={UL_COLOR} title="Upload" arrow="↑" />
                     </div>
-                  </div>
-                  <div className="overflow-x-auto rounded-md border border-line">
-                    <table className="w-full text-left text-sm">
-                      <thead className="border-b border-line bg-raised text-[11px] uppercase tracking-[0.08em] text-muted">
-                        <tr>
-                          <th className="px-3 py-2 font-semibold">Interface</th>
-                          <th className="px-3 py-2 font-semibold">Tipe</th>
-                          <th className="px-3 py-2 text-right font-semibold" style={{ color: DL_COLOR }}>↓ Download (Rx)</th>
-                          <th className="px-3 py-2 text-right font-semibold" style={{ color: UL_COLOR }}>↑ Upload (Tx)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {s.interfaces.map((i) => (
-                          <tr key={i.name} className="border-b border-line-soft last:border-0">
-                            <td className="px-3 py-1.5 font-mono text-[13px] text-ink">
-                              <span className={`mr-2 inline-block h-2 w-2 rounded-full ${i.disabled ? "bg-faint" : i.running ? "bg-ok" : "bg-bad"}`} />
-                              {i.name}
-                            </td>
-                            <td className="px-3 py-1.5 text-muted">{i.type}</td>
-                            <td className="px-3 py-1.5 text-right font-mono text-[13px] text-ink">{i.running ? fmtBps(i.rxBps) : "-"}</td>
-                            <td className="px-3 py-1.5 text-right font-mono text-[13px] text-ink">{i.running ? fmtBps(i.txBps) : "-"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
                   </div>
                 </div>
               )}

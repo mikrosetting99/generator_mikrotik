@@ -298,6 +298,8 @@ export function AiEngineer() {
   routersRef.current = routers;
 
   const [skills, setSkills] = useState<Skill[]>([]);
+  /** Skill aktif yang dibuang server pada pesan terakhir (melewati batas jumlah/karakter). */
+  const [skillDropped, setSkillDropped] = useState<string[]>([]);
   const [skillRef, setSkillRef] = useState("");
   const [skillBusy, setSkillBusy] = useState(false);
   const [showKey, setShowKey] = useState(false);
@@ -598,7 +600,7 @@ export function AiEngineer() {
       const payload = history
         .filter((m) => m.role !== "system" && !(m.error && m.role === "assistant"))
         .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.role === "result" ? `[Hasil eksekusi]\n${m.content}` : m.content }));
-      const r = await post<{ text: string }>(
+      const r = await post<{ text: string; skillsUsed?: string[]; skillsDropped?: string[] }>(
         "/api/ai/chat",
         {
           provider: ai.provider,
@@ -615,6 +617,7 @@ export function AiEngineer() {
         setMessages((m) => [...m, { id: newId(), role: "assistant", content: r.data.error ?? "Gagal menghubungi AI.", error: true }]);
         return;
       }
+      setSkillDropped(r.data.skillsDropped ?? []);
       const reply: Msg = { id: newId(), role: "assistant", content: r.data.text };
       const next = [...history, reply];
       setMessages((m) => [...m, reply]);
@@ -1156,10 +1159,28 @@ export function AiEngineer() {
             )}
           </div>
           {view === "chat" && (
-            <label className="ml-auto flex items-center gap-1.5 text-xs text-muted" title="Perintah print dijalankan otomatis dan hasilnya langsung dianalisis AI">
-              <input type="checkbox" checked={autoRead} onChange={(e) => setAutoRead(e.target.checked)} className="h-4 w-4 accent-[var(--color-brand)]" />
-              <span>Baca otomatis</span>
-            </label>
+            <div className="ml-auto flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setView("skills")}
+                title={
+                  skillDropped.length
+                    ? `Tidak terkirim ke AI (melewati batas): ${skillDropped.join(", ")}`
+                    : enabledSkills.length
+                      ? `Dikirim ke AI di setiap pesan: ${enabledSkills.map((s) => s.name).join(", ")}`
+                      : "Belum ada skill aktif. Klik untuk membuka menu Skill."
+                }
+                className={`rounded px-1.5 py-0.5 text-xs hover:underline ${skillDropped.length ? "bg-warn/15 font-medium text-warn" : "text-muted"}`}
+              >
+                {skillDropped.length
+                  ? `Skill: ${enabledSkills.length - skillDropped.length}/${enabledSkills.length} terkirim`
+                  : `Skill: ${enabledSkills.length} aktif`}
+              </button>
+              <label className="flex items-center gap-1.5 text-xs text-muted" title="Perintah print dijalankan otomatis dan hasilnya langsung dianalisis AI">
+                <input type="checkbox" checked={autoRead} onChange={(e) => setAutoRead(e.target.checked)} className="h-4 w-4 accent-[var(--color-brand)]" />
+                <span>Baca otomatis</span>
+              </label>
+            </div>
           )}
         </header>
 

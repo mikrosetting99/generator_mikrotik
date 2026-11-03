@@ -38,22 +38,22 @@ export async function POST(request: Request) {
   }
 
   let skillChars = 0;
-  const skills = (Array.isArray(b.skills) ? b.skills : [])
-    .slice(0, MAX_SKILLS)
-    .map((s: unknown) => {
-      const r = s as Record<string, unknown>;
-      return { name: String(r?.name ?? "skill").slice(0, 80), content: String(r?.content ?? "") };
-    })
-    .filter((s) => {
-      skillChars += s.content.length;
-      return s.content.trim() && skillChars <= MAX_SKILLS_CHARS;
-    });
+  const sent = (Array.isArray(b.skills) ? b.skills : []).map((s: unknown) => {
+    const r = s as Record<string, unknown>;
+    return { name: String(r?.name ?? "skill").slice(0, 80), content: String(r?.content ?? "") };
+  });
+  const skills = sent.slice(0, MAX_SKILLS).filter((s) => {
+    skillChars += s.content.length;
+    return s.content.trim() && skillChars <= MAX_SKILLS_CHARS;
+  });
+  // Skill yang tidak ikut terkirim ke AI (melewati batas jumlah/karakter, atau kosong) dilaporkan ke layar.
+  const skillsDropped = sent.filter((s) => !skills.includes(s)).map((s) => s.name);
 
   const system = buildSystemPrompt({ routerInfo: String(b.routerInfo ?? "").slice(0, 2000), skills });
 
   try {
     const text = await chatOnce({ provider, model, apiKey, baseUrl, system, messages }, AbortSignal.timeout(110_000));
-    return NextResponse.json({ text });
+    return NextResponse.json({ text, skillsUsed: skills.map((s) => s.name), skillsDropped });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Gagal menghubungi AI.";
     return NextResponse.json({ error: message }, { status: 502 });

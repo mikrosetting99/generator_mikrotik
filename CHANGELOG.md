@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.61.0] - 2026-11-03
+
+_AI Engineer: penanda skill aktif di chat_
+
+### Ditambahkan
+
+- Baris kontrol chat menampilkan jumlah skill aktif yang dikirim ke AI ("Skill: 2 aktif"); klik untuk membuka menu Skill, arahkan kursor untuk melihat namanya.
+- Bila server membuang skill karena melewati batas jumlah atau karakter, penanda berubah kuning ("Skill: 1/2 terkirim") dan menyebut skill yang tidak terkirim.
+
 ## [1.60.2] - 2026-11-02
 
 _Perbaikan build produksi_

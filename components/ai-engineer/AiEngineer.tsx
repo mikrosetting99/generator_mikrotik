@@ -23,9 +23,13 @@ interface RouterProfile {
   id: string;
   name: string;
   host: string;
+  /** Port API; 0 = API tidak dipakai. */
   port: number;
+  /** Port SSH; 0 = SSH tidak dipakai. */
+  sshPort: number;
   tls: boolean;
   username: string;
+  /** Jalur bawaan bila API dan SSH sama-sama aktif. */
   protocol?: "api" | "ssh";
 }
 
@@ -34,12 +38,20 @@ interface RouterForm {
   id: string;
   name: string;
   host: string;
+  apiOn: boolean;
   port: string;
+  sshOn: boolean;
+  sshPort: string;
   tls: boolean;
+  /** Jalur bawaan bila keduanya aktif. */
   protocol: "api" | "ssh";
   username: string;
   password: string;
 }
+
+type Via = "api" | "ssh";
+const VIA_KEY = "ai-eng-via-v1";
+const VIA_LABEL: Record<Via, string> = { api: "API", ssh: "SSH" };
 
 type RouterState = "online" | "offline" | "auth" | "timeout" | "blocked" | "checking";
 
@@ -131,7 +143,15 @@ const MAX_AUTO_STEPS = 4;
 const SKILLS_CHAR_LIMIT = 90_000;
 
 const DEFAULT_AI: AiSettings = { provider: "anthropic", model: AI_PROVIDERS[0].models[0], apiKey: "", baseUrl: "" };
-const BLANK_ROUTER: RouterForm = { id: "", name: "", host: "", port: "8728", tls: false, protocol: "api", username: "", password: "" };
+const BLANK_ROUTER: RouterForm = { id: "", name: "", host: "", apiOn: true, port: "8728", sshOn: false, sshPort: "22", tls: false, protocol: "api", username: "", password: "" };
+
+/** Jalur yang tersedia di sebuah Mikrotik, bawaan dulu. */
+const viasOf = (r: Pick<RouterProfile, "port" | "sshPort" | "protocol">): Via[] => {
+  const list: Via[] = [];
+  if (r.port > 0) list.push("api");
+  if (r.sshPort > 0) list.push("ssh");
+  return r.protocol === "ssh" ? list.reverse() : list;
+};
 
 const FULL_CHECK =
   "Lakukan pemeriksaan lengkap router ini: identity dan versi, resource (CPU, memori, disk), interface dan trafik, IP address dan route, DHCP, firewall dan NAT, serta log error terbaru. Lalu ringkas masalah yang ditemukan dan beri rekomendasi.";
@@ -335,6 +355,8 @@ export function AiEngineer() {
   const [view, setView] = useState<"chat" | "monitor" | "routers" | "memory" | "ai" | "skills">("chat");
   const [memory, setMemory] = useState<MemoryStore>({ on: true, routers: {} });
   const [noteDraft, setNoteDraft] = useState("");
+  /** Jalur (API/SSH) yang dipilih pengguna per Mikrotik untuk chat dan eksekusi. */
+  const [viaPref, setViaPref] = useState<Record<string, Via>>({});
   const [aiTest, setAiTest] = useState<{ busy: boolean; result?: { ok: boolean; ms: number; reply?: string; error?: string } }>({ busy: false });
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [convId, setConvId] = useState(() => newId());
@@ -373,6 +395,8 @@ export function AiEngineer() {
       if (raw) setSkills(JSON.parse(raw));
       const c = window.localStorage.getItem(CONVS_KEY);
       if (c) setConvs(JSON.parse(c));
+      const via = window.localStorage.getItem(VIA_KEY);
+      if (via) setViaPref(JSON.parse(via));
       const mem = window.localStorage.getItem(MEMORY_KEY);
       if (mem) setMemory({ on: true, routers: {}, ...JSON.parse(mem) });
 
@@ -403,6 +427,9 @@ export function AiEngineer() {
     if (ready) save(MEMORY_KEY, memory);
   }, [memory, ready]);
   useEffect(() => {
+    if (ready) save(VIA_KEY, viaPref);
+  }, [viaPref, ready]);
+  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy, view]);
 
@@ -425,11 +452,20 @@ export function AiEngineer() {
   const enabledSkills = skills.filter((s) => s.enabled);
   const skillChars = enabledSkills.reduce((n, s) => n + s.content.length, 0);
 
+  /** Jalur efektif sebuah Mikrotik: pilihan pengguna bila masih tersedia, selain itu jalur bawaan. */
+  const viaOf = useCallback(
+    (r: RouterProfile): Via => {
+      const avail = viasOf(r);
+      const pick = viaPref[r.id];
+      return pick && avail.includes(pick) ? pick : (avail[0] ?? "api");
+    },
+    [viaPref],
+  );
   const active = routers.find((r) => r.id === activeId) ?? null;
   const activeStatus = active ? statuses[active.id] : undefined;
   const info = activeStatus?.state === "online" ? (activeStatus.info ?? null) : null;
   const routerInfoText = info
-    ? `nama=${routerLabel(active as RouterProfile)} identity=${info.identity} versi RouterOS=${info.version} board=${info.board} uptime=${info.uptime} cpu-load=${info.cpuLoad}% koneksi=${active?.protocol === "ssh" ? "SSH" : "API"}`
+    ? `nama=${routerLabel(active as RouterProfile)} identity=${info.identity} versi RouterOS=${info.version} board=${info.board} uptime=${info.uptime} cpu-load=${info.cpuLoad}% koneksi=${active && viaOf(active) === "ssh" ? "SSH" : "API"}`
     : "";
   const activeMemory = memory.routers[activeId] ?? EMPTY_MEMORY;
 
@@ -495,7 +531,7 @@ export function AiEngineer() {
 
   /* ------------------------------------------------------------------ router */
 
-  const bodyFor = useCallback((r: RouterProfile) => ({ routerId: r.id }), []);
+  const bodyFor = useCallback((r: RouterProfile) => ({ routerId: r.id, via: viaOf(r) }), [viaOf]);
 
   /** Memeriksa tersambung atau tidaknya router (kosong = semua) dan memperbarui lencana statusnya. */
   const checkStatuses = useCallback(async (ids?: string[]) => {
@@ -558,7 +594,16 @@ export function AiEngineer() {
     return () => window.clearInterval(timer);
   }, [ready, checkStatuses]);
 
-  const formBody = (f: RouterForm) => ({ name: f.name, host: f.host, protocol: f.protocol, port: Number(f.port) || (f.protocol === "ssh" ? 22 : 8728), tls: f.protocol === "api" && f.tls, username: f.username, password: f.password });
+  const formBody = (f: RouterForm) => ({
+    name: f.name,
+    host: f.host,
+    protocol: f.protocol,
+    port: f.apiOn ? Number(f.port) || (f.tls ? 8729 : 8728) : 0,
+    sshPort: f.sshOn ? Number(f.sshPort) || 22 : 0,
+    tls: f.apiOn && f.tls,
+    username: f.username,
+    password: f.password,
+  });
 
   const saveRouter = async () => {
     if (!editing) return;
@@ -585,26 +630,24 @@ export function AiEngineer() {
     }
   };
 
+  /** Hapus hasil test satu kunci ("form" atau id router) untuk kedua jalur. */
   const clearDiag = (key: string) =>
-    setDiag((d) => {
-      const { [key]: _drop, ...rest } = d;
-      void _drop;
-      return rest;
-    });
+    setDiag((d) => Object.fromEntries(Object.entries(d).filter(([k]) => k !== key && !k.startsWith(`${key}:`))));
 
-  /** Test koneksi API langkah demi langkah ("form" = isian form, selain itu = id router tersimpan). */
-  const runDiag = async (key: string) => {
+  /** Test koneksi langkah demi langkah lewat satu jalur ("form" = isian form, selain itu = id router tersimpan). */
+  const runDiag = async (key: string, via: Via) => {
+    const slot = `${key}:${via}`;
     let body: Record<string, unknown>;
     if (key === "form") {
       if (!editing) return;
-      body = { test: formBody(editing), id: editing.id || undefined, diagnose: true };
-    } else body = { id: key, diagnose: true };
-    setDiag((d) => ({ ...d, [key]: { busy: true } }));
+      body = { test: formBody(editing), id: editing.id || undefined, diagnose: true, via };
+    } else body = { id: key, diagnose: true, via };
+    setDiag((d) => ({ ...d, [slot]: { busy: true } }));
     try {
       const r = await post<{ diagnosis: DiagResult }>("/api/ai/routers/status", body);
-      setDiag((d) => ({ ...d, [key]: r.ok && r.data.diagnosis ? { busy: false, result: r.data.diagnosis } : { busy: false, error: r.data.error ?? httpMessage(r.status) } }));
+      setDiag((d) => ({ ...d, [slot]: r.ok && r.data.diagnosis ? { busy: false, result: r.data.diagnosis } : { busy: false, error: r.data.error ?? httpMessage(r.status) } }));
     } catch {
-      setDiag((d) => ({ ...d, [key]: { busy: false, error: "Gagal menghubungi server." } }));
+      setDiag((d) => ({ ...d, [slot]: { busy: false, error: "Gagal menghubungi server." } }));
     }
   };
   const removeRouter = async (r: RouterProfile) => {
@@ -867,7 +910,7 @@ export function AiEngineer() {
 
   const aiReady = Boolean(ai.apiKey.trim() && ai.model.trim());
   const draftRows = Math.min(6, Math.max(1, draft.split("\n").length));
-  const monitorTargets: MonitorTarget[] = onlineRouters.filter((r) => r.protocol !== "ssh").map((r) => ({ id: r.id, name: routerLabel(r), body: bodyFor(r) }));
+  const monitorTargets: MonitorTarget[] = onlineRouters.filter((r) => r.port > 0).map((r) => ({ id: r.id, name: routerLabel(r), body: { routerId: r.id, via: "api" } }));
 
   const block = "mb-4 rounded-[10px] border border-line bg-surface";
   const blockHead = "rounded-t-[10px] border-b border-line bg-raised px-4 py-2.5";
@@ -984,52 +1027,75 @@ export function AiEngineer() {
               <Field label="Nama">
                 <TextInput value={editing.name} onChange={(name) => setEditing({ ...editing, name })} placeholder="mis. Kantor Pusat" />
               </Field>
-              <Field
-                label="Koneksi"
-                hint={editing.protocol === "ssh" ? "SSH menjalankan perintah CLI apa adanya (termasuk /export). Grafik trafik monitoring belum tersedia." : "API adalah bawaan dan mendukung grafik trafik monitoring."}
-              >
-                <div role="radiogroup" aria-label="Jenis koneksi" className="inline-flex overflow-hidden rounded-md border border-line text-sm font-medium">
-                  {(["api", "ssh"] as const).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      role="radio"
-                      aria-checked={editing.protocol === p}
-                      onClick={() =>
-                        setEditing({
-                          ...editing,
-                          protocol: p,
-                          tls: p === "ssh" ? false : editing.tls,
-                          port: ["", "22", "8728", "8729"].includes(editing.port) ? (p === "ssh" ? "22" : editing.tls ? "8729" : "8728") : editing.port,
-                        })
-                      }
-                      className={`min-h-9 px-5 ${editing.protocol === p ? "bg-brand text-brand-ink" : "bg-surface text-muted hover:bg-raised hover:text-ink"}`}
-                    >
-                      {p === "api" ? "API" : "SSH"}
-                    </button>
-                  ))}
-                </div>
+              <Field label="IP publik / domain" required>
+                <TextInput mono value={editing.host} onChange={(host) => setEditing({ ...editing, host: host.replace(/\s+/g, "") })} placeholder="103.1.2.3 atau router.contoh.com" />
               </Field>
-              <div className="grid grid-cols-[minmax(0,1fr)_92px] gap-2">
-                <Field label="IP publik / domain" required>
-                  <TextInput mono value={editing.host} onChange={(host) => setEditing({ ...editing, host: host.replace(/\s+/g, "") })} placeholder="103.1.2.3 atau router.contoh.com" />
-                </Field>
-                <Field label={editing.protocol === "ssh" ? "Port SSH" : "Port API"}>
-                  <TextInput mono value={editing.port} onChange={(port) => setEditing({ ...editing, port: port.replace(/\D/g, "") })} placeholder={editing.protocol === "ssh" ? "22" : "8728"} />
-                </Field>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className={`space-y-2 rounded-md border p-3 ${editing.apiOn ? "border-brand/50 bg-surface" : "border-line bg-raised"}`}>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-ink">
+                    <input
+                      type="checkbox"
+                      checked={editing.apiOn}
+                      onChange={(e) => setEditing({ ...editing, apiOn: e.target.checked, protocol: !e.target.checked && editing.sshOn ? "ssh" : editing.protocol })}
+                      className="h-4 w-4 accent-[var(--color-brand)]"
+                    />
+                    API
+                  </label>
+                  <p className="text-[11px] leading-relaxed text-muted">Perintah menu lewat API RouterOS; mendukung grafik trafik di Monitoring.</p>
+                  {editing.apiOn && (
+                    <>
+                      <Field label="Port API">
+                        <TextInput mono value={editing.port} onChange={(port) => setEditing({ ...editing, port: port.replace(/\D/g, "") })} placeholder="8728" />
+                      </Field>
+                      <label className="flex items-center gap-2 text-xs text-muted">
+                        <input
+                          type="checkbox"
+                          checked={editing.tls}
+                          onChange={(e) => setEditing({ ...editing, tls: e.target.checked, port: e.target.checked && editing.port === "8728" ? "8729" : !e.target.checked && editing.port === "8729" ? "8728" : editing.port })}
+                          className="h-4 w-4 accent-[var(--color-brand)]"
+                        />
+                        Pakai TLS (api-ssl, port 8729)
+                      </label>
+                    </>
+                  )}
+                </div>
+                <div className={`space-y-2 rounded-md border p-3 ${editing.sshOn ? "border-brand/50 bg-surface" : "border-line bg-raised"}`}>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-ink">
+                    <input
+                      type="checkbox"
+                      checked={editing.sshOn}
+                      onChange={(e) => setEditing({ ...editing, sshOn: e.target.checked, protocol: !e.target.checked && editing.apiOn ? "api" : editing.protocol })}
+                      className="h-4 w-4 accent-[var(--color-brand)]"
+                    />
+                    SSH
+                  </label>
+                  <p className="text-[11px] leading-relaxed text-muted">Perintah CLI apa adanya, termasuk /export. Tanpa grafik trafik.</p>
+                  {editing.sshOn && (
+                    <Field label="Port SSH">
+                      <TextInput mono value={editing.sshPort} onChange={(sshPort) => setEditing({ ...editing, sshPort: sshPort.replace(/\D/g, "") })} placeholder="22" />
+                    </Field>
+                  )}
+                </div>
               </div>
-              {editing.protocol === "api" && (
-              <label className="flex items-center gap-2 text-xs text-muted">
-                <input
-                  type="checkbox"
-                  checked={editing.tls}
-                  onChange={(e) => setEditing({ ...editing, tls: e.target.checked, port: e.target.checked && editing.port === "8728" ? "8729" : !e.target.checked && editing.port === "8729" ? "8728" : editing.port })}
-                  className="h-4 w-4 accent-[var(--color-brand)]"
-                />
-                Pakai TLS (api-ssl, biasanya port 8729)
-              </label>
+              {editing.apiOn && editing.sshOn && (
+                <Field label="Jalur bawaan" hint="Dipakai untuk status dan chat. Di halaman Chat Anda tetap bisa berpindah antara API dan SSH kapan saja.">
+                  <div role="radiogroup" aria-label="Jalur bawaan" className="inline-flex overflow-hidden rounded-md border border-line text-sm font-medium">
+                    {(["api", "ssh"] as const).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        role="radio"
+                        aria-checked={editing.protocol === p}
+                        onClick={() => setEditing({ ...editing, protocol: p })}
+                        className={`min-h-9 px-5 ${editing.protocol === p ? "bg-brand text-brand-ink" : "bg-surface text-muted hover:bg-raised hover:text-ink"}`}
+                      >
+                        {VIA_LABEL[p]}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
               )}
-              <div className="grid grid-cols-2 gap-2">
+              <p className="text-[11px] text-faint">Username dan password yang sama dipakai untuk API dan SSH.</p>              <div className="grid grid-cols-2 gap-2">
                 <Field label="Username" required>
                   <TextInput mono value={editing.username} onChange={(username) => setEditing({ ...editing, username: username.trim() })} placeholder="ai-engineer" />
                 </Field>
@@ -1037,14 +1103,18 @@ export function AiEngineer() {
                   <TextInput mono type="password" value={editing.password} onChange={(password) => setEditing({ ...editing, password })} placeholder="••••••" />
                 </Field>
               </div>
-              {diag.form && <ConnTest state={diag.form} />}
+              {(["api", "ssh"] as const).map((v) => diag[`form:${v}`] && <ConnTest key={v} state={diag[`form:${v}`]} />)}
               <div className="flex flex-wrap gap-2">
                 <Button variant="primary" onClick={saveRouter} disabled={routerBusy}>
                   {routerBusy ? "Memproses…" : "Simpan"}
                 </Button>
-                <Button onClick={() => runDiag("form")} disabled={routerBusy || diag.form?.busy}>
-                  Test koneksi API
-                </Button>
+                {(["api", "ssh"] as const)
+                  .filter((v) => (v === "api" ? editing.apiOn : editing.sshOn))
+                  .map((v) => (
+                    <Button key={v} onClick={() => runDiag("form", v)} disabled={routerBusy || diag[`form:${v}`]?.busy}>
+                      Test koneksi {VIA_LABEL[v]}
+                    </Button>
+                  ))}
                 <Button onClick={() => { setEditing(null); clearDiag("form"); }}>Batal</Button>
               </div>
             </div>
@@ -1078,8 +1148,7 @@ export function AiEngineer() {
                           {r.id === activeId && <span className="rounded-full bg-brand/15 px-1.5 text-[10px] font-semibold uppercase text-brand">aktif</span>}
                         </p>
                         <p className="truncate font-mono text-[11px] text-muted">
-                          {r.username}@{r.host}:{r.port}
-                          {r.protocol === "ssh" ? " · SSH" : r.tls ? " · TLS" : ""}
+                          {r.username}@{r.host} · {viasOf(r).map((v) => `${VIA_LABEL[v]} :${v === "ssh" ? r.sshPort : r.port}${v === "api" && r.tls ? " TLS" : ""}`).join(" · ")}
                         </p>
                         {st?.state === "online" && st.info && (
                           <p className="truncate font-mono text-[11px] text-faint">
@@ -1094,17 +1163,19 @@ export function AiEngineer() {
                       <Button size="sm" onClick={() => checkStatuses([r.id])} disabled={st?.state === "checking"}>
                         Periksa
                       </Button>
-                      <Button size="sm" onClick={() => runDiag(r.id)} disabled={diag[r.id]?.busy}>
-                        Test koneksi API
-                      </Button>
-                      <Button size="sm" onClick={() => { setEditing({ id: r.id, name: r.name, host: r.host, port: String(r.port), tls: r.tls, protocol: r.protocol ?? "api", username: r.username, password: "" }); clearDiag("form"); }}>
+                      {viasOf(r).map((v) => (
+                        <Button key={v} size="sm" onClick={() => runDiag(r.id, v)} disabled={diag[`${r.id}:${v}`]?.busy}>
+                          Test koneksi {VIA_LABEL[v]}
+                        </Button>
+                      ))}
+                      <Button size="sm" onClick={() => { setEditing({ id: r.id, name: r.name, host: r.host, apiOn: r.port > 0, port: r.port > 0 ? String(r.port) : "8728", sshOn: r.sshPort > 0, sshPort: r.sshPort > 0 ? String(r.sshPort) : "22", tls: r.tls, protocol: r.protocol ?? "api", username: r.username, password: "" }); clearDiag("form"); }}>
                         Ubah
                       </Button>
                       <Button size="sm" variant="danger" className="px-2" ariaLabel={`Hapus ${routerLabel(r)}`} title="Hapus" onClick={() => removeRouter(r)}>
                         <Trash className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                    {diag[r.id] && <ConnTest state={diag[r.id]} />}
+                    {viasOf(r).map((v) => diag[`${r.id}:${v}`] && <ConnTest key={v} state={diag[`${r.id}:${v}`]} />)}
                   </li>
                 );
               })}
@@ -1384,6 +1455,32 @@ export function AiEngineer() {
                     ))}
                   </select>
                 </label>
+                {active && (
+                  <>
+                    <span className="text-faint">/</span>
+                    {viasOf(active).length > 1 ? (
+                      <div role="radiogroup" aria-label="Jalur koneksi chat ini" title="Jalur untuk membaca dan menjalankan perintah di Mikrotik ini" className="inline-flex overflow-hidden rounded border border-line text-xs font-medium">
+                        {viasOf(active).sort().map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            role="radio"
+                            aria-checked={viaOf(active) === v}
+                            disabled={busy}
+                            onClick={() => setViaPref((p) => ({ ...p, [active.id]: v }))}
+                            className={`min-h-7 px-2.5 disabled:opacity-50 ${viaOf(active) === v ? "bg-brand text-brand-ink" : "bg-surface text-muted hover:bg-raised hover:text-ink"}`}
+                          >
+                            {VIA_LABEL[v]}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs font-medium text-muted" title="Satu-satunya jalur yang aktif untuk Mikrotik ini">
+                        {VIA_LABEL[viaOf(active)]}
+                      </span>
+                    )}
+                  </>
+                )}
               </>
             )}
           </div>
@@ -1426,7 +1523,7 @@ export function AiEngineer() {
         ) : view === "monitor" ? (
           <RouterMonitor
             targets={monitorTargets}
-            statusList={routers.map((r) => ({ id: r.id, name: routerLabel(r), host: r.host, state: statuses[r.id]?.state ?? "checking", message: statuses[r.id]?.message ?? "", latencyMs: statuses[r.id]?.latencyMs ?? 0, checkedAt: statuses[r.id]?.checkedAt ?? 0, ssh: r.protocol === "ssh", info: statuses[r.id]?.info }))}
+            statusList={routers.map((r) => ({ id: r.id, name: routerLabel(r), host: r.host, state: statuses[r.id]?.state ?? "checking", message: statuses[r.id]?.message ?? "", latencyMs: statuses[r.id]?.latencyMs ?? 0, checkedAt: statuses[r.id]?.checkedAt ?? 0, ssh: r.port <= 0, info: statuses[r.id]?.info }))}
             onCheck={() => checkStatuses()}
             checking={checking}
           />

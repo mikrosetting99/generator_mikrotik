@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isGuardResponse, requireAiUser } from "@/lib/ai-guard";
-import { checkMany, checkTarget, diagnoseRouter, loadTarget, parseRouterInput } from "@/lib/ai-routers";
+import { checkMany, checkTarget, diagnoseRouter, loadTarget, parseRouterInput, resolveVia } from "@/lib/ai-routers";
 import { resolvePublicHost } from "@/lib/net-guard";
 import { prisma } from "@/lib/prisma";
 import { open } from "@/lib/vault";
@@ -28,10 +28,18 @@ export async function POST(request: Request) {
       password = row ? open(row.passwordEnc) : "";
     }
     if (!password) return NextResponse.json({ error: "Isi password untuk menguji koneksi." }, { status: 400 });
-    if (b.diagnose) return NextResponse.json({ diagnosis: await diagnoseRouter({ host: d.host, port: d.port, tls: d.tls, username: d.username, password, protocol: d.protocol }) });
+    let via;
+    try {
+      via = resolveVia({ port: d.port, sshPort: d.sshPort, protocol: d.protocol }, b.via);
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Jalur koneksi tidak valid." }, { status: 400 });
+    }
+    const port = via === "ssh" ? d.sshPort : d.port;
+    const tls = via === "api" && d.tls;
+    if (b.diagnose) return NextResponse.json({ diagnosis: await diagnoseRouter({ host: d.host, port, tls, username: d.username, password, protocol: via }) });
     try {
       const ip = await resolvePublicHost(d.host);
-      const status = await checkTarget("test", { ip, host: d.host, port: d.port, tls: d.tls, username: d.username, password, protocol: d.protocol });
+      const status = await checkTarget("test", { ip, host: d.host, port, tls, username: d.username, password, protocol: via });
       return NextResponse.json({ statuses: [status] });
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : "Alamat tidak boleh dituju." }, { status: 400 });
@@ -42,7 +50,15 @@ export async function POST(request: Request) {
   if (b?.diagnose && typeof b.id === "string") {
     const row = await prisma.aiRouter.findFirst({ where: { id: b.id, userId: guard.userId } });
     if (!row) return NextResponse.json({ error: "Router tidak ditemukan." }, { status: 404 });
-    return NextResponse.json({ diagnosis: await diagnoseRouter({ host: row.host, port: row.port, tls: row.tls, username: row.username, password: open(row.passwordEnc), protocol: row.protocol === "ssh" ? "ssh" : "api" }) });
+    let via;
+    try {
+      via = resolveVia(row, b.via);
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Jalur koneksi tidak valid." }, { status: 400 });
+    }
+    return NextResponse.json({
+      diagnosis: await diagnoseRouter({ host: row.host, port: via === "ssh" ? row.sshPort : row.port, tls: via === "api" && row.tls, username: row.username, password: open(row.passwordEnc), protocol: via }),
+    });
   }
 
   const ids = Array.isArray(b?.ids) ? (b?.ids as unknown[]).map(String).slice(0, 40) : [];

@@ -27,6 +27,22 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.65.0",
+    date: "2026-11-06",
+    title: "AI Engineer: API dan SSH bisa aktif bersamaan, dipilih saat chat",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Satu Mikrotik kini bisa memakai API dan SSH sekaligus, masing-masing dengan port sendiri (username dan password sama). Form menyediakan kotak API dan SSH, serta Jalur bawaan bila keduanya aktif.",
+          "Di halaman Chat muncul pilihan API | SSH di samping nama Mikrotik; pilihan menentukan jalur untuk membaca dan menjalankan perintah, diingat per Mikrotik, dan AI diberi tahu jalur yang sedang dipakai.",
+          "Test koneksi tersedia terpisah untuk API dan SSH. Monitoring tetap memakai API untuk grafik trafik bila API aktif.",
+          "Router yang sebelumnya hanya SSH otomatis dipindah ke pengaturan baru (port SSH, API nonaktif).",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.64.0",
     date: "2026-11-05",
     title: "AI Engineer: koneksi Mikrotik lewat SSH",

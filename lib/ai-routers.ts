@@ -12,9 +12,13 @@ export interface RouterPublic {
   id: string;
   name: string;
   host: string;
+  /** Port API; 0 = API tidak dipakai. */
   port: number;
+  /** Port SSH; 0 = SSH tidak dipakai. */
+  sshPort: number;
   tls: boolean;
   username: string;
+  /** Jalur bawaan bila API dan SSH sama-sama aktif. */
   protocol: "api" | "ssh";
 }
 
@@ -23,11 +27,14 @@ export interface RouterInput {
   host: string;
   protocol: "api" | "ssh";
   port: number;
+  sshPort: number;
   tls: boolean;
   username: string;
   /** Kosong saat mengubah = pertahankan password lama. */
   password: string;
 }
+
+export type Via = "api" | "ssh";
 
 const HOST_OK = /^[A-Za-z0-9]([A-Za-z0-9.:-]*[A-Za-z0-9])?$/;
 
@@ -35,11 +42,15 @@ export function parseRouterInput(body: unknown): { ok: true; data: RouterInput }
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   const host = String(b.host ?? "").trim().slice(0, 253);
   const username = String(b.username ?? "").trim().slice(0, 100);
-  const protocol = b.protocol === "ssh" ? "ssh" : "api";
-  const port = Math.round(Number(b.port)) || (protocol === "ssh" ? 22 : 8728);
+  // 0 = jalur itu tidak dipakai; port API yang tidak dikirim berarti 8728 (isian lama).
+  const port = b.port === undefined ? 8728 : Math.round(Number(b.port)) || 0;
+  const sshPort = Math.round(Number(b.sshPort)) || 0;
   if (!host || !HOST_OK.test(host)) return { ok: false, error: "Alamat router (IP publik atau domain) tidak valid." };
   if (!username) return { ok: false, error: "Username router belum diisi." };
-  if (port < 1 || port > 65535) return { ok: false, error: "Port harus 1–65535." };
+  if (port < 0 || port > 65535 || sshPort < 0 || sshPort > 65535) return { ok: false, error: "Port harus 1–65535." };
+  if (port === 0 && sshPort === 0) return { ok: false, error: "Aktifkan minimal satu jalur: API atau SSH." };
+  const wanted: Via = b.protocol === "ssh" ? "ssh" : "api";
+  const protocol: Via = wanted === "ssh" ? (sshPort > 0 ? "ssh" : "api") : port > 0 ? "api" : "ssh";
   return {
     ok: true,
     data: {
@@ -47,18 +58,22 @@ export function parseRouterInput(body: unknown): { ok: true; data: RouterInput }
       host,
       protocol,
       port,
-      tls: protocol === "api" && Boolean(b.tls),
+      sshPort,
+      tls: port > 0 && Boolean(b.tls),
       username,
       password: String(b.password ?? "").slice(0, 200),
     },
   };
 }
 
-export const toPublic = (r: { id: string; name: string; host: string; port: number; tls: boolean; username: string; protocol: string }): RouterPublic => ({
+type RouterRow = { id: string; name: string; host: string; port: number; sshPort: number; tls: boolean; username: string; protocol: string };
+
+export const toPublic = (r: RouterRow): RouterPublic => ({
   id: r.id,
   name: r.name,
   host: r.host,
   port: r.port,
+  sshPort: r.sshPort,
   tls: r.tls,
   username: r.username,
   protocol: r.protocol === "ssh" ? "ssh" : "api",
@@ -66,14 +81,33 @@ export const toPublic = (r: { id: string; name: string; host: string; port: numb
 
 export const sealPassword = seal;
 
-/** Router milik pengguna ini sebagai target koneksi (DNS diselesaikan dan dicek publik). */
-export async function loadTarget(userId: string, id: string): Promise<{ profile: RouterPublic; target: RouterTarget }> {
-  const row = await prisma.aiRouter.findFirst({ where: { id, userId } });
-  if (!row) throw new Error("Router tidak ditemukan.");
-  const ip = await resolvePublicHost(row.host);
-  return { profile: toPublic(row), target: { ip, host: row.host, port: row.port, tls: row.tls, username: row.username, password: open(row.passwordEnc), protocol: row.protocol === "ssh" ? "ssh" : "api" } };
+/**
+ * Jalur yang dipakai untuk satu permintaan. Bila `requested` diisi (pilihan pengguna) dan jalur itu
+ * tidak aktif di router ini, galat; bila kosong, jalur bawaan router (atau satu-satunya yang aktif).
+ */
+export function resolveVia(row: Pick<RouterRow, "port" | "sshPort" | "protocol">, requested?: unknown): Via {
+  if (requested === "api" || requested === "ssh") {
+    const ok = requested === "api" ? row.port > 0 : row.sshPort > 0;
+    if (!ok) throw new Error(`Koneksi ${requested === "api" ? "API" : "SSH"} tidak diaktifkan untuk Mikrotik ini.`);
+    return requested;
+  }
+  if (row.protocol === "ssh" && row.sshPort > 0) return "ssh";
+  if (row.port > 0) return "api";
+  return "ssh";
 }
 
+/** Router milik pengguna ini sebagai target koneksi (DNS diselesaikan dan dicek publik). */
+export async function loadTarget(userId: string, id: string, via?: unknown): Promise<{ profile: RouterPublic; target: RouterTarget; via: Via }> {
+  const row = await prisma.aiRouter.findFirst({ where: { id, userId } });
+  if (!row) throw new Error("Router tidak ditemukan.");
+  const use = resolveVia(row, via);
+  const ip = await resolvePublicHost(row.host);
+  return {
+    profile: toPublic(row),
+    via: use,
+    target: { ip, host: row.host, port: use === "ssh" ? row.sshPort : row.port, tls: use === "api" && row.tls, username: row.username, password: open(row.passwordEnc), protocol: use },
+  };
+}
 export type RouterState = "online" | "offline" | "auth" | "timeout" | "blocked";
 
 export interface RouterStatus {

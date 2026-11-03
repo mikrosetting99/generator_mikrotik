@@ -24,6 +24,7 @@ export async function PUT(request: Request, { params }: Ctx) {
       host: d.host,
       protocol: d.protocol,
       port: d.port,
+      sshPort: d.sshPort,
       tls: d.tls,
       username: d.username,
       ...(d.password ? { passwordEnc: sealPassword(d.password) } : {}),

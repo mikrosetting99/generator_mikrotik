@@ -40,7 +40,10 @@ model AiRouter {
   host        String   @db.VarChar(253)
   /// "api" (RouterOS API, bawaan) atau "ssh".
   protocol    String   @default("api") @db.VarChar(8)
+  /// Port API; 0 = API tidak dipakai.
   port        Int      @default(8728)
+  /// Port SSH; 0 = SSH tidak dipakai. `protocol` menjadi pilihan bawaan bila keduanya aktif.
+  sshPort     Int      @default(0)
   tls         Boolean  @default(false)
   username    String   @db.VarChar(100)
   passwordEnc String   @db.Text

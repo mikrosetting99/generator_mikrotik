@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Maksimal ${MAX_AI_ROUTERS} router.` }, { status: 400 });
   }
   const row = await prisma.aiRouter.create({
-    data: { userId: guard.userId, name: d.name, host: d.host, protocol: d.protocol, port: d.port, tls: d.tls, username: d.username, passwordEnc: sealPassword(d.password) },
+    data: { userId: guard.userId, name: d.name, host: d.host, protocol: d.protocol, port: d.port, sshPort: d.sshPort, tls: d.tls, username: d.username, passwordEnc: sealPassword(d.password) },
   });
   return NextResponse.json({ router: toPublic(row) });
 }

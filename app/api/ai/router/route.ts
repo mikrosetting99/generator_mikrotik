@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
   let t: RouterTarget;
   try {
-    t = (await loadTarget(guard.userId, String(b.routerId ?? ""))).target;
+    t = (await loadTarget(guard.userId, String(b.routerId ?? ""), b.via)).target;
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Alamat router tidak valid." }, { status: 400 });
   }

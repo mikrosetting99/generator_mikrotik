@@ -49,7 +49,11 @@ export async function POST(request: Request) {
   // Skill yang tidak ikut terkirim ke AI (melewati batas jumlah/karakter, atau kosong) dilaporkan ke layar.
   const skillsDropped = sent.filter((s) => !skills.includes(s)).map((s) => s.name);
 
-  const system = buildSystemPrompt({ routerInfo: String(b.routerInfo ?? "").slice(0, 2000), skills });
+  const system = buildSystemPrompt({
+    routerInfo: String(b.routerInfo ?? "").slice(0, 2000),
+    memory: String(b.memory ?? "").slice(0, 4000),
+    skills,
+  });
 
   try {
     const text = await chatOnce({ provider, model, apiKey, baseUrl, system, messages }, AbortSignal.timeout(110_000));

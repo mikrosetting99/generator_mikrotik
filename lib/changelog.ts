@@ -27,6 +27,21 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.62.0",
+    date: "2026-11-04",
+    title: "AI Engineer: memori per Mikrotik",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Menu Memori: tiap Mikrotik punya catatan dan jejak perubahan sendiri yang dikirim ke AI, sehingga AI ingat hal yang sudah dilakukan walau chat baru dibuka. Bisa dimatikan, dan catatan bisa ditambah atau dihapus manual.",
+          "Setiap perintah pengubah konfigurasi yang berhasil dijalankan dicatat otomatis (waktu dan perintah); perintah baca tidak dicatat.",
+          "AI bisa menyimpan fakta penting lewat blok ```memori di akhir jawabannya (mis. peran interface, keputusan desain); blok itu tidak tampil sebagai kode dan muncul sebagai pemberitahuan singkat.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.61.0",
     date: "2026-11-03",
     title: "AI Engineer: penanda skill aktif di chat",

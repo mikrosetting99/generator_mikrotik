@@ -83,6 +83,27 @@ interface Conversation {
   messages: Msg[];
 }
 
+/** Memori satu Mikrotik: catatan fakta (dari AI atau pengguna) dan jejak perubahan yang pernah diterapkan. */
+interface RouterMemory {
+  notes: string[];
+  activity: string[];
+}
+
+interface MemoryStore {
+  on: boolean;
+  routers: Record<string, RouterMemory>;
+}
+
+const EMPTY_MEMORY: RouterMemory = { notes: [], activity: [] };
+
+/** Isi blok ```memori dari jawaban AI: satu catatan per baris (awalan "-" dibuang). */
+function extractMemoryNotes(text: string): string[] {
+  return splitSegments(text)
+    .flatMap((s) => (s.type === "code" && s.lang === "memori" ? s.code.split(/\r?\n/) : []))
+    .map((l) => l.replace(/^\s*[-*•]\s*/, "").trim().slice(0, 240))
+    .filter(Boolean);
+}
+
 interface ExecResult {
   line: string;
   ok: boolean;
@@ -97,8 +118,12 @@ const ACTIVE_KEY = "ai-eng-active-router-v1";
 const SKILLS_KEY = "ai-eng-skills-v1";
 const CONVS_KEY = "ai-eng-convs-v1";
 const MODELS_KEY = "ai-eng-models-v1";
+const MEMORY_KEY = "ai-eng-memory-v1";
 const MAX_CONVS = 30;
-const VIEW_LABEL = { chat: "Chat", monitor: "Monitoring", routers: "Mikrotik", ai: "Koneksi AI", skills: "Skill" } as const;
+const MAX_NOTES = 30;
+const MAX_ACTIVITY = 40;
+const MEMORY_SEND_CHARS = 3500;
+const VIEW_LABEL = { chat: "Chat", monitor: "Monitoring", routers: "Mikrotik", memory: "Memori", ai: "Koneksi AI", skills: "Skill" } as const;
 const MAX_STORED_MESSAGES = 80;
 const MAX_AUTO_STEPS = 4;
 const SKILLS_CHAR_LIMIT = 90_000;
@@ -305,7 +330,9 @@ export function AiEngineer() {
   const [showKey, setShowKey] = useState(false);
   const [flash, setFlash] = useState<{ tone: "info" | "warn" | "bad"; text: string } | null>(null);
 
-  const [view, setView] = useState<"chat" | "monitor" | "routers" | "ai" | "skills">("chat");
+  const [view, setView] = useState<"chat" | "monitor" | "routers" | "memory" | "ai" | "skills">("chat");
+  const [memory, setMemory] = useState<MemoryStore>({ on: true, routers: {} });
+  const [noteDraft, setNoteDraft] = useState("");
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [convId, setConvId] = useState(() => newId());
   const [convRouter, setConvRouter] = useState("");
@@ -343,6 +370,8 @@ export function AiEngineer() {
       if (raw) setSkills(JSON.parse(raw));
       const c = window.localStorage.getItem(CONVS_KEY);
       if (c) setConvs(JSON.parse(c));
+      const mem = window.localStorage.getItem(MEMORY_KEY);
+      if (mem) setMemory({ on: true, routers: {}, ...JSON.parse(mem) });
 
       setActiveId(window.localStorage.getItem(ACTIVE_KEY) ?? "");
     } catch {
@@ -367,6 +396,9 @@ export function AiEngineer() {
   useEffect(() => {
     if (ready) save(CONVS_KEY, convs);
   }, [convs, ready]);
+  useEffect(() => {
+    if (ready) save(MEMORY_KEY, memory);
+  }, [memory, ready]);
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy, view]);
@@ -396,6 +428,34 @@ export function AiEngineer() {
   const routerInfoText = info
     ? `nama=${routerLabel(active as RouterProfile)} identity=${info.identity} versi RouterOS=${info.version} board=${info.board} uptime=${info.uptime} cpu-load=${info.cpuLoad}%`
     : "";
+  const activeMemory = memory.routers[activeId] ?? EMPTY_MEMORY;
+
+  /** Ubah memori satu Mikrotik; daftar dipangkas ke batas dan catatan kembar dibuang. */
+  const updateMemory = (routerId: string, fn: (m: RouterMemory) => RouterMemory) => {
+    if (!routerId) return;
+    setMemory((s) => {
+      const next = fn(s.routers[routerId] ?? EMPTY_MEMORY);
+      return {
+        ...s,
+        routers: {
+          ...s.routers,
+          [routerId]: { notes: [...new Set(next.notes)].slice(-MAX_NOTES), activity: next.activity.slice(-MAX_ACTIVITY) },
+        },
+      };
+    });
+  };
+
+  /** Teks memori yang dikirim ke AI untuk satu Mikrotik; yang terbaru dipertahankan bila terlalu panjang. */
+  const memoryTextFor = (routerId: string): string => {
+    if (!memory.on) return "";
+    const m = memory.routers[routerId];
+    if (!m || (!m.notes.length && !m.activity.length)) return "";
+    const parts: string[] = [];
+    if (m.notes.length) parts.push(`Catatan:\n${m.notes.map((n) => `- ${n}`).join("\n")}`);
+    if (m.activity.length) parts.push(`Perubahan yang pernah diterapkan lewat AI Engineer (terlama ke terbaru):\n${m.activity.map((a) => `- ${a}`).join("\n")}`);
+    const text = parts.join("\n\n");
+    return text.length > MEMORY_SEND_CHARS ? text.slice(text.length - MEMORY_SEND_CHARS) : text;
+  };
   const onlineRouters = routers.filter((r) => statuses[r.id]?.state === "online");
   const connectedCount = onlineRouters.length;
 
@@ -541,6 +601,11 @@ export function AiEngineer() {
       return rest;
     });
     setConvs((cs) => cs.filter((c) => c.routerId !== r.id));
+    setMemory((s) => {
+      const { [r.id]: _m, ...rest } = s.routers;
+      void _m;
+      return { ...s, routers: rest };
+    });
     if (activeId === r.id) selectRouter(routers.find((x) => x.id !== r.id)?.id ?? "", true);
   };
   /** Menjalankan daftar perintah di router aktif; hasilnya ditambahkan ke chat dan dikembalikan agar bisa dikirim ke AI. */
@@ -577,6 +642,10 @@ export function AiEngineer() {
         confirmDanger: dangers.length > 0,
       });
       if (!r.ok) return push(`Gagal menjalankan di ${routerLabel(active)}: ${r.data.error ?? "galat tidak diketahui"}`, true);
+      // Perubahan yang berhasil dicatat di memori router ini agar AI tahu apa yang sudah dilakukan.
+      const stamp = new Date().toLocaleString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const applied = r.data.results.filter((x) => x.ok && !isReadLine(x.line)).map((x) => `${stamp}: ${x.line.slice(0, 220)}`);
+      if (applied.length) updateMemory(active.id, (m) => ({ ...m, activity: [...m.activity, ...applied] }));
       const text = r.data.results.map((x) => `${x.ok ? "✔" : "✘"} ${x.line}\n${x.output}`).join("\n\n");
       return push(text, r.data.results.some((x) => !x.ok));
     } catch {
@@ -608,6 +677,7 @@ export function AiEngineer() {
           apiKey: ai.apiKey,
           baseUrl: ai.baseUrl,
           routerInfo: routerInfoText,
+          memory: memoryTextFor(convRouter || activeId),
           skills: enabledSkills.map((s) => ({ name: s.name, content: s.content })),
           messages: payload,
         },
@@ -618,6 +688,13 @@ export function AiEngineer() {
         return;
       }
       setSkillDropped(r.data.skillsDropped ?? []);
+      if (memory.on) {
+        const notes = extractMemoryNotes(r.data.text);
+        if (notes.length) {
+          updateMemory(convRouter || activeId, (m) => ({ ...m, notes: [...m.notes, ...notes] }));
+          toast(`${notes.length} catatan disimpan ke memori`, "info");
+        }
+      }
       const reply: Msg = { id: newId(), role: "assistant", content: r.data.text };
       const next = [...history, reply];
       setMessages((m) => [...m, reply]);
@@ -986,6 +1063,100 @@ export function AiEngineer() {
       </section>
   );
 
+  const memorySection = (
+    <section className={block}>
+      <h2 className={`${blockHead} text-[15px] font-semibold text-ink`}>Memori {active ? `· ${routerLabel(active)}` : ""}</h2>
+      <div className="space-y-4 p-4">
+        <label className="flex items-start gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={memory.on}
+            onChange={(e) => setMemory((s) => ({ ...s, on: e.target.checked }))}
+            className="mt-0.5 h-4 w-4 accent-[var(--color-brand)]"
+          />
+          <span>
+            Aktifkan memori
+            <span className="block text-xs text-muted">
+              Catatan dan jejak perubahan Mikrotik ini dikirim ke AI di setiap chat baru maupun lama, jadi AI ingat apa yang sudah dilakukan. Tersimpan di browser ini, terpisah untuk tiap Mikrotik.
+            </span>
+          </span>
+        </label>
+        {!active ? (
+          <p className="rounded-md border border-dashed border-line px-3 py-3 text-xs text-faint">Pilih atau tambah Mikrotik dulu.</p>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-ink">Catatan ({activeMemory.notes.length})</h3>
+              <p className="text-xs text-muted">AI menyimpan fakta penting di sini (mis. WAN1 = ether1 Telkom). Anda juga bisa menambah atau menghapus sendiri.</p>
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const t = noteDraft.trim().slice(0, 240);
+                  if (!t) return;
+                  updateMemory(active.id, (m) => ({ ...m, notes: [...m.notes, t] }));
+                  setNoteDraft("");
+                }}
+              >
+                <div className="flex-1">
+                  <TextInput value={noteDraft} onChange={setNoteDraft} placeholder="Tambah catatan untuk Mikrotik ini…" />
+                </div>
+                <Button type="submit" disabled={!noteDraft.trim()}>
+                  <Plus className="h-4 w-4" />
+                  Tambah
+                </Button>
+              </form>
+              {activeMemory.notes.length === 0 ? (
+                <p className="rounded-md border border-dashed border-line px-3 py-3 text-xs text-faint">Belum ada catatan.</p>
+              ) : (
+                <ul className="divide-y divide-line overflow-hidden rounded-md border border-line">
+                  {activeMemory.notes.map((n, i) => (
+                    <li key={`${i}-${n}`} className="flex items-start gap-2 px-3 py-2 text-sm text-ink">
+                      <span className="min-w-0 flex-1 break-words">{n}</span>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        className="px-2"
+                        ariaLabel="Hapus catatan"
+                        title="Hapus"
+                        onClick={() => updateMemory(active.id, (m) => ({ ...m, notes: m.notes.filter((_, j) => j !== i) }))}
+                      >
+                        <Trash className="h-3.5 w-3.5" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-ink">Jejak perubahan ({activeMemory.activity.length})</h3>
+                {activeMemory.activity.length > 0 && (
+                  <Button size="sm" variant="danger" onClick={() => updateMemory(active.id, (m) => ({ ...m, activity: [] }))}>
+                    Kosongkan
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted">Dicatat otomatis setiap perintah yang mengubah konfigurasi berhasil dijalankan (perintah baca tidak dicatat).</p>
+              {activeMemory.activity.length === 0 ? (
+                <p className="rounded-md border border-dashed border-line px-3 py-3 text-xs text-faint">Belum ada perubahan tercatat.</p>
+              ) : (
+                <ul className="max-h-80 divide-y divide-line overflow-auto rounded-md border border-line font-mono text-[12px] text-ink">
+                  {[...activeMemory.activity].reverse().map((a, i) => (
+                    <li key={`${i}-${a}`} className="break-all px-3 py-1.5">
+                      {a}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  );
+
   const skillsSection = (
       <section className={block}>
         <h2 className={`${blockHead} text-[15px] font-semibold text-ink`}>Skill (skills.sh)</h2>
@@ -1079,6 +1250,7 @@ export function AiEngineer() {
     ["chat", "Chat"],
     ["monitor", `Monitoring${connectedCount ? ` (${connectedCount})` : ""}`],
     ["routers", `Mikrotik (${routers.length})`],
+    ["memory", `Memori${activeMemory.notes.length + activeMemory.activity.length ? ` (${activeMemory.notes.length + activeMemory.activity.length})` : ""}`],
     ["ai", "Koneksi AI"],
     ["skills", `Skill${skills.length ? ` (${skills.length})` : ""}`],
   ] as const;
@@ -1190,9 +1362,9 @@ export function AiEngineer() {
           </div>
         )}
 
-        {view === "routers" || view === "ai" || view === "skills" ? (
+        {view === "routers" || view === "memory" || view === "ai" || view === "skills" ? (
           <div className="min-h-0 flex-1 overflow-y-auto bg-canvas p-4">
-            <div className="mx-auto w-full max-w-[860px]">{view === "routers" ? routersSection : view === "ai" ? aiSection : skillsSection}</div>
+            <div className="mx-auto w-full max-w-[860px]">{view === "routers" ? routersSection : view === "memory" ? memorySection : view === "ai" ? aiSection : skillsSection}</div>
           </div>
         ) : view === "monitor" ? (
           <RouterMonitor
@@ -1285,6 +1457,7 @@ export function AiEngineer() {
                             </p>
                           ) : null;
                         }
+                        if (seg.lang === "memori") return null; // catatan untuk memori, tidak ditampilkan sebagai kode
                         const cmds = extractCommands(seg.lang, seg.code);
                         const key = `${m.id}:${i}`;
                         const writes = cmds.filter((l) => !isReadLine(l)).length;

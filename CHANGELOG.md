@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.62.0] - 2026-11-04
+
+_AI Engineer: memori per Mikrotik_
+
+### Ditambahkan
+
+- Menu Memori: tiap Mikrotik punya catatan dan jejak perubahan sendiri yang dikirim ke AI, sehingga AI ingat hal yang sudah dilakukan walau chat baru dibuka. Bisa dimatikan, dan catatan bisa ditambah atau dihapus manual.
+- Setiap perintah pengubah konfigurasi yang berhasil dijalankan dicatat otomatis (waktu dan perintah); perintah baca tidak dicatat.
+- AI bisa menyimpan fakta penting lewat blok ```memori di akhir jawabannya (mis. peran interface, keputusan desain); blok itu tidak tampil sebagai kode dan muncul sebagai pemberitahuan singkat.
+
 ## [1.61.0] - 2026-11-03
 
 _AI Engineer: penanda skill aktif di chat_

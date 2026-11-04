@@ -57,6 +57,22 @@ export async function resolveBaseUrl(p: AiProviderInfo, custom?: string): Promis
   return raw;
 }
 
+/**
+ * Base URL custom diperiksa publik hanya untuk alamat awalnya; pengalihan (3xx) bisa membawa
+ * permintaan ke alamat internal server. Jadi untuk "custom" pengalihan tidak diikuti.
+ */
+function redirectMode(p: AiProviderInfo): RequestRedirect {
+  return p.id === "custom" ? "manual" : "follow";
+}
+
+function statusHint(status: number): string {
+  if (status === 401 || status === 403) return " (cek API key)";
+  if (status === 404) return " (cek nama model atau Base URL)";
+  if (status === 429) return " (batas pemakaian/kuota)";
+  if (status >= 300 && status < 400) return " (Base URL dialihkan ke alamat lain; isi alamat tujuan akhirnya)";
+  return "";
+}
+
 /** Mengirim percakapan ke penyedia AI dan mengembalikan teks jawabannya. */
 export async function chatOnce(req: ChatRequest, signal?: AbortSignal): Promise<string> {
   const info = AI_PROVIDERS.find((p) => p.id === req.provider);
@@ -74,6 +90,7 @@ export async function chatOnce(req: ChatRequest, signal?: AbortSignal): Promise<
       headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({ model: req.model, max_tokens: maxTokens, system: req.system, messages: req.messages }),
       signal,
+      redirect: redirectMode(info),
     });
   } else {
     res = await fetch(`${base}/chat/completions`, {
@@ -86,13 +103,13 @@ export async function chatOnce(req: ChatRequest, signal?: AbortSignal): Promise<
         messages: [{ role: "system", content: req.system }, ...req.messages],
       }),
       signal,
+      redirect: redirectMode(info),
     });
   }
 
   const raw = await res.text();
   if (!res.ok) {
-    const hint = res.status === 401 || res.status === 403 ? " (cek API key)" : res.status === 404 ? " (cek nama model atau Base URL)" : res.status === 429 ? " (batas pemakaian/kuota)" : "";
-    throw new Error(`${info.label} menjawab ${res.status}${hint}: ${errorText(raw, key)}`);
+    throw new Error(`${info.label} menjawab ${res.status}${statusHint(res.status)}: ${errorText(raw, key)}`);
   }
   let data: {
     content?: Array<{ type?: string; text?: string }>;
@@ -127,10 +144,10 @@ export async function listModels(req: { provider: AiProviderId; apiKey: string; 
 
   const res =
     info.kind === "anthropic"
-      ? await fetch(`${base}/v1/models?limit=1000`, { headers: { "x-api-key": key, "anthropic-version": "2023-06-01" }, signal })
-      : await fetch(`${base}/models`, { headers: key ? { authorization: `Bearer ${key}` } : {}, signal });
+      ? await fetch(`${base}/v1/models?limit=1000`, { headers: { "x-api-key": key, "anthropic-version": "2023-06-01" }, signal, redirect: redirectMode(info) })
+      : await fetch(`${base}/models`, { headers: key ? { authorization: `Bearer ${key}` } : {}, signal, redirect: redirectMode(info) });
   const raw = await res.text();
-  if (!res.ok) throw new Error(`${info.label} menjawab ${res.status}${res.status === 401 || res.status === 403 ? " (cek API key)" : ""}: ${errorText(raw, key)}`);
+  if (!res.ok) throw new Error(`${info.label} menjawab ${res.status}${res.status === 401 || res.status === 403 || (res.status >= 300 && res.status < 400) ? statusHint(res.status) : ""}: ${errorText(raw, key)}`);
 
   let data: { data?: Array<{ id?: string }>; models?: Array<{ name?: string }> };
   try {

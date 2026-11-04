@@ -27,6 +27,21 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.65.2",
+    date: "2026-11-06",
+    title: "AI Engineer: penjaga alamat dan password router diperketat",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Pemeriksaan alamat lokal kini mengenali semua bentuk IPv6 yang membawa alamat IPv4 (mis. ::ffff:7f00:1, NAT64 64:ff9b::, 6to4 2002::) serta multicast IPv6, sehingga tidak bisa dipakai untuk menjangkau jaringan internal server.",
+          "Password router tersimpan hanya dipakai ulang (isian password dikosongkan) bila alamat, port, dan username tidak berubah — saat Test koneksi maupun saat menyimpan. Bila berubah, password wajib diisi lagi.",
+          "Base URL custom pada penyedia AI tidak lagi mengikuti pengalihan (redirect) ke alamat lain.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.65.1",
     date: "2026-11-06",
     title: "Login Page Hotspot: khusus admin, gambar divalidasi",

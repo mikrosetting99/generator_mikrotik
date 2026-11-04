@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isGuardResponse, requireAiUser } from "@/lib/ai-guard";
-import { checkMany, checkTarget, diagnoseRouter, loadTarget, parseRouterInput, resolveVia } from "@/lib/ai-routers";
+import { PASSWORD_ULANG, checkMany, checkTarget, diagnoseRouter, loadTarget, parseRouterInput, resolveVia, sameEndpoint } from "@/lib/ai-routers";
 import { resolvePublicHost } from "@/lib/net-guard";
 import { prisma } from "@/lib/prisma";
 import { open } from "@/lib/vault";
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     let password = d.password;
     if (!password && typeof b.id === "string") {
       const row = await prisma.aiRouter.findFirst({ where: { id: b.id, userId: guard.userId } });
+      if (row && !sameEndpoint(row, d)) return NextResponse.json({ error: PASSWORD_ULANG }, { status: 400 });
       password = row ? open(row.passwordEnc) : "";
     }
     if (!password) return NextResponse.json({ error: "Isi password untuk menguji koneksi." }, { status: 400 });

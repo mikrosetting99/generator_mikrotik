@@ -82,6 +82,17 @@ export const toPublic = (r: RouterRow): RouterPublic => ({
 export const sealPassword = seal;
 
 /**
+ * Password tersimpan hanya boleh dipakai ulang (isian password dikosongkan) bila tujuannya sama:
+ * alamat, kedua port, dan username tidak berubah. Kalau tidak, password router bisa dikirim ke
+ * alamat lain yang diketik di form.
+ */
+export function sameEndpoint(row: Pick<RouterRow, "host" | "port" | "sshPort" | "username">, d: Pick<RouterInput, "host" | "port" | "sshPort" | "username">): boolean {
+  return row.host.trim().toLowerCase() === d.host.trim().toLowerCase() && row.port === d.port && row.sshPort === d.sshPort && row.username === d.username;
+}
+
+export const PASSWORD_ULANG = "Alamat, port, atau username berubah. Isi password lagi.";
+
+/**
  * Jalur yang dipakai untuk satu permintaan. Bila `requested` diisi (pilihan pengguna) dan jalur itu
  * tidak aktif di router ini, galat; bila kosong, jalur bawaan router (atau satu-satunya yang aktif).
  */

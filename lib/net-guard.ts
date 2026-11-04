@@ -23,14 +23,48 @@ function ipv4Private(ip: string): boolean {
   );
 }
 
+/** IPv6 sebagai 8 kelompok 16-bit, termasuk bentuk singkat (::) dan ekor IPv4 (::ffff:1.2.3.4). */
+function ipv6Groups(ip: string): number[] | null {
+  let s = ip.toLowerCase();
+  const tail = s.match(/^(.*:)(\d+\.\d+\.\d+\.\d+)$/);
+  if (tail) {
+    const [a, b, c, d] = tail[2].split(".").map(Number);
+    s = `${tail[1]}${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}`;
+  }
+  const halves = s.split("::");
+  if (halves.length > 2) return null;
+  const left = halves[0] ? halves[0].split(":") : [];
+  const right = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  const fill = halves.length === 2 ? 8 - left.length - right.length : 0;
+  if (fill < 0) return null;
+  const groups = [...left, ...Array(fill).fill("0"), ...right].map((g) => parseInt(g, 16));
+  return groups.length === 8 && groups.every((g) => g >= 0 && g <= 0xffff) ? groups : null;
+}
+
+function ipv4From(hi: number, lo: number): string {
+  return [hi >> 8, hi & 0xff, lo >> 8, lo & 0xff].join(".");
+}
+
+function ipv6Private(ip: string): boolean {
+  const g = ipv6Groups(ip.split("%")[0]);
+  if (!g) return true;
+  const zero = (from: number, to: number) => g.slice(from, to).every((x) => x === 0);
+  // Bentuk yang membawa alamat IPv4 di dalamnya: dinilai dari alamat IPv4 itu.
+  if (zero(0, 5) && g[5] === 0xffff) return ipv4Private(ipv4From(g[6], g[7])); // ::ffff:a.b.c.d (mapped)
+  if (zero(0, 6)) return ipv4Private(ipv4From(g[6], g[7])); // ::a.b.c.d (compatible), juga :: dan ::1
+  if (g[0] === 0x64 && g[1] === 0xff9b && zero(2, 6)) return ipv4Private(ipv4From(g[6], g[7])); // NAT64
+  if (g[0] === 0x2002) return ipv4Private(ipv4From(g[1], g[2])); // 6to4
+  return (
+    (g[0] & 0xfe00) === 0xfc00 || // fc00::/7 unique local
+    (g[0] & 0xffc0) === 0xfe80 || // fe80::/10 link-local
+    (g[0] & 0xffc0) === 0xfec0 || // fec0::/10 site-local (usang)
+    (g[0] & 0xff00) === 0xff00 // ff00::/8 multicast
+  );
+}
+
 export function isPrivateIp(ip: string): boolean {
   if (net.isIPv4(ip)) return ipv4Private(ip);
-  if (net.isIPv6(ip)) {
-    const lower = ip.toLowerCase();
-    const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (mapped) return ipv4Private(mapped[1]);
-    return lower === "::" || lower === "::1" || lower.startsWith("fc") || lower.startsWith("fd") || /^fe[89ab]/.test(lower);
-  }
+  if (net.isIPv6(ip)) return ipv6Private(ip);
   return true;
 }
 

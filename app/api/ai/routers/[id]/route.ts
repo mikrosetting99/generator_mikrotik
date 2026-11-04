@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isGuardResponse, requireAiUser } from "@/lib/ai-guard";
-import { parseRouterInput, sealPassword, toPublic } from "@/lib/ai-routers";
+import { PASSWORD_ULANG, parseRouterInput, sameEndpoint, sealPassword, toPublic } from "@/lib/ai-routers";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +15,12 @@ export async function PUT(request: Request, { params }: Ctx) {
   const parsed = parseRouterInput(await request.json().catch(() => null));
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   const d = parsed.data;
-  const found = await prisma.aiRouter.findFirst({ where: { id, userId: guard.userId }, select: { id: true } });
+  const found = await prisma.aiRouter.findFirst({
+    where: { id, userId: guard.userId },
+    select: { id: true, host: true, port: true, sshPort: true, username: true },
+  });
   if (!found) return NextResponse.json({ error: "Router tidak ditemukan." }, { status: 404 });
+  if (!d.password && !sameEndpoint(found, d)) return NextResponse.json({ error: PASSWORD_ULANG }, { status: 400 });
   const row = await prisma.aiRouter.update({
     where: { id },
     data: {

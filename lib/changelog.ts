@@ -27,6 +27,20 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.66.0",
+    date: "2026-11-04",
+    title: "Network Engineer: nama baru, skill dimuat setiap chat dibuka",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "AI Mikrotik Engineer berganti nama menjadi Network Engineer (menu, judul halaman, dan sebutan AI di chat). Judul menu yang sudah diganti sendiri oleh admin tidak diubah.",
+          "Setiap chat dibuka — halaman dimuat, chat baru, membuka riwayat, atau ganti Mikrotik — skill aktif dimuat ulang dari sumbernya (skills.sh/GitHub), jadi AI selalu memakai isi skill terbaru. Pesan pertama menunggu pemuatan selesai. Bila sumbernya gagal diambil, salinan tersimpan tetap dipakai dan ada pemberitahuan.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.65.3",
     date: "2026-11-06",
     title: "AI Engineer: Base URL custom tahan DNS rebinding",

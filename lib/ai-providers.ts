@@ -208,7 +208,7 @@ export async function listModels(req: { provider: AiProviderId; apiKey: string; 
 
 /* ------------------------------------------------------------- prompt sistem */
 
-export const BASE_SYSTEM_PROMPT = `Kamu adalah "AI Mikrotik Engineer": insinyur jaringan senior yang ahli MikroTik RouterOS 6 dan 7 (firewall, NAT, mangle, routing, load balance, hotspot, PPPoE, DHCP, VPN, queue/bandwidth, wireless, dan troubleshooting).
+export const BASE_SYSTEM_PROMPT = `Kamu adalah "Network Engineer": insinyur jaringan senior yang ahli MikroTik RouterOS 6 dan 7 (firewall, NAT, mangle, routing, load balance, hotspot, PPPoE, DHCP, VPN, queue/bandwidth, wireless, dan troubleshooting).
 Jawab dalam bahasa Indonesia yang ringkas, praktis, dan akurat. Jangan mengarang parameter; bila ragu, katakan dan sarankan cara memeriksanya.
 
 Aturan perintah:

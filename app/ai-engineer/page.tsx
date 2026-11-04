@@ -8,7 +8,7 @@ import { VersionBadge } from "@/components/VersionBadge";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "AI Mikrotik Engineer",
+  title: "Network Engineer",
 };
 
 export default function AiEngineerPage() {
@@ -20,12 +20,12 @@ export default function AiEngineerPage() {
             <AppSwitcher />
             <div className="flex min-w-0 items-center gap-2">
               <Wand className="h-4 w-4 text-brand" />
-              <h1 className="truncate text-sm font-semibold text-ink">AI Mikrotik Engineer</h1>
+              <h1 className="truncate text-sm font-semibold text-ink">Network Engineer</h1>
               <span className="hidden lg:inline-flex">
                 <VersionBadge />
               </span>
             </div>
-            <nav id="ai-nav-slot" aria-label="Menu AI Mikrotik Engineer" className="ml-2 flex min-w-0 flex-1 items-center self-stretch overflow-x-auto" />
+            <nav id="ai-nav-slot" aria-label="Menu Network Engineer" className="ml-2 flex min-w-0 flex-1 items-center self-stretch overflow-x-auto" />
           </div>
           <ThemeToggle />
         </div>

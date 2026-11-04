@@ -5,7 +5,7 @@ import tls from "node:tls";
 /**
  * Klien API RouterOS (port 8728, atau 8729 untuk TLS) tanpa pustaka tambahan, plus penerjemah
  * perintah gaya CLI ("/ip firewall nat print where chain=srcnat") ke kalimat API. Dipakai
- * AI Mikrotik Engineer untuk membaca dan mengubah konfigurasi router.
+ * Network Engineer untuk membaca dan mengubah konfigurasi router.
  */
 
 export type Row = Record<string, string>;

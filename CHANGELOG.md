@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.66.0] - 2026-11-04
+
+_Network Engineer: nama baru, skill dimuat setiap chat dibuka_
+
+### Diubah
+
+- AI Mikrotik Engineer berganti nama menjadi Network Engineer (menu, judul halaman, dan sebutan AI di chat). Judul menu yang sudah diganti sendiri oleh admin tidak diubah.
+- Setiap chat dibuka — halaman dimuat, chat baru, membuka riwayat, atau ganti Mikrotik — skill aktif dimuat ulang dari sumbernya (skills.sh/GitHub), jadi AI selalu memakai isi skill terbaru. Pesan pertama menunggu pemuatan selesai. Bila sumbernya gagal diambil, salinan tersimpan tetap dipakai dan ada pemberitahuan.
+
 ## [1.65.3] - 2026-11-06
 
 _AI Engineer: Base URL custom tahan DNS rebinding_

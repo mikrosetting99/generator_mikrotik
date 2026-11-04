@@ -5,7 +5,7 @@ import { registerFailure } from "@/lib/rate-limit";
 import { getSiteSettings } from "@/lib/site-settings-server";
 
 /**
- * Penjaga API AI Mikrotik Engineer: wajib login; user biasa hanya bila admin membuka menunya
+ * Penjaga API Network Engineer: wajib login; user biasa hanya bila admin membuka menunya
  * (sama dengan aturan halaman). Juga membatasi jumlah panggilan per pengguna.
  * Mengembalikan id pengguna, atau respons galat yang siap dikirim.
  */

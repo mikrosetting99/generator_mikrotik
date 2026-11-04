@@ -3,7 +3,7 @@ import dns from "node:dns/promises";
 import net, { type LookupFunction } from "node:net";
 
 /**
- * Penjaga koneksi keluar dari server: AI Mikrotik Engineer menyambung ke alamat yang diketik
+ * Penjaga koneksi keluar dari server: Network Engineer menyambung ke alamat yang diketik
  * pengguna, jadi hanya alamat publik yang boleh dituju (bukan jaringan internal server).
  * Untuk uji lokal, AI_ALLOW_PRIVATE_HOSTS=1 mematikan pemeriksaan ini.
  */

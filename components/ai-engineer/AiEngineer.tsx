@@ -349,6 +349,12 @@ export function AiEngineer() {
   const [skillDropped, setSkillDropped] = useState<string[]>([]);
   const [skillRef, setSkillRef] = useState("");
   const [skillBusy, setSkillBusy] = useState(false);
+  /** Skill aktif sedang dimuat ulang dari sumbernya (setiap chat dibuka). */
+  const [skillLoading, setSkillLoading] = useState(false);
+  const skillsRef = useRef<Skill[]>([]);
+  skillsRef.current = skills;
+  /** Pemuatan skill yang sedang berjalan; pesan pertama menunggu ini selesai. */
+  const skillLoadRef = useRef<Promise<void> | null>(null);
   const [showKey, setShowKey] = useState(false);
   const [flash, setFlash] = useState<{ tone: "info" | "warn" | "bad"; text: string } | null>(null);
 
@@ -725,6 +731,7 @@ export function AiEngineer() {
     abortRef.current = controller;
     setBusy(true);
     try {
+      await skillLoadRef.current;
       const payload = history
         .filter((m) => m.role !== "system" && !(m.error && m.role === "assistant"))
         .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.role === "result" ? `[Hasil eksekusi]\n${m.content}` : m.content }));
@@ -737,7 +744,7 @@ export function AiEngineer() {
           baseUrl: ai.baseUrl,
           routerInfo: routerInfoText,
           memory: memoryTextFor(convRouter || activeId),
-          skills: enabledSkills.map((s) => ({ name: s.name, content: s.content })),
+          skills: skillsRef.current.filter((s) => s.enabled).map((s) => ({ name: s.name, content: s.content })),
           messages: payload,
         },
         controller.signal,
@@ -886,6 +893,45 @@ export function AiEngineer() {
   };
 
   /* ------------------------------------------------------------------ skill */
+
+  /** Muat ulang skill aktif dari sumbernya agar chat selalu memakai isi terbaru; bila gagal, salinan tersimpan tetap dipakai. */
+  const reloadSkills = useCallback(async () => {
+    const list = skillsRef.current.filter((s) => s.enabled && s.source);
+    if (!list.length) return;
+    setSkillLoading(true);
+    try {
+      const r = await post<{ results: Array<{ skill?: Omit<Skill, "enabled">; error?: string }> }>("/api/ai/skills", {
+        refs: list.map((s) => s.source),
+      });
+      if (!r.ok) {
+        toast(`${r.data.error ?? "Skill gagal dimuat ulang."} Memakai salinan tersimpan.`, "warn");
+        return;
+      }
+      const fresh = new Map<string, Omit<Skill, "enabled">>();
+      const failed: string[] = [];
+      list.forEach((s, i) => {
+        const got = r.data.results[i]?.skill;
+        if (got) fresh.set(s.id, got);
+        else failed.push(s.name);
+      });
+      const next = skillsRef.current.map((s) => {
+        const f = fresh.get(s.id);
+        return f ? { ...s, name: f.name, description: f.description, content: f.content, source: f.source } : s;
+      });
+      skillsRef.current = next;
+      setSkills(next);
+      if (failed.length) toast(`Skill gagal dimuat ulang, memakai salinan tersimpan: ${failed.join(", ")}`, "warn");
+    } catch {
+      toast("Skill gagal dimuat ulang. Memakai salinan tersimpan.", "warn");
+    } finally {
+      setSkillLoading(false);
+    }
+  }, [toast]);
+
+  // Setiap chat dibuka (halaman dimuat, chat baru, riwayat, ganti Mikrotik) skill aktif dimuat ulang.
+  useEffect(() => {
+    if (ready) skillLoadRef.current = reloadSkills();
+  }, [convId, ready, reloadSkills]);
 
   const addSkill = async () => {
     const ref = skillRef.trim();
@@ -1490,7 +1536,9 @@ export function AiEngineer() {
                 type="button"
                 onClick={() => setView("skills")}
                 title={
-                  skillDropped.length
+                  skillLoading
+                    ? "Memuat ulang skill aktif dari sumbernya…"
+                    : skillDropped.length
                     ? `Tidak terkirim ke AI (melewati batas): ${skillDropped.join(", ")}`
                     : enabledSkills.length
                       ? `Dikirim ke AI di setiap pesan: ${enabledSkills.map((s) => s.name).join(", ")}`
@@ -1498,7 +1546,9 @@ export function AiEngineer() {
                 }
                 className={`rounded px-1.5 py-0.5 text-xs hover:underline ${skillDropped.length ? "bg-warn/15 font-medium text-warn" : "text-muted"}`}
               >
-                {skillDropped.length
+                {skillLoading
+                  ? "Skill: memuat…"
+                  : skillDropped.length
                   ? `Skill: ${enabledSkills.length - skillDropped.length}/${enabledSkills.length} terkirim`
                   : `Skill: ${enabledSkills.length} aktif`}
               </button>

@@ -199,7 +199,7 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     id: "ai-engineer",
     group: "Konfigurasi",
     builtin: true,
-    title: "AI Mikrotik Engineer",
+    title: "Network Engineer",
     description: "Chat dengan AI untuk bertanya, menyusun script, dan menjalankan perintah di router lewat API (IP publik atau domain).",
     href: "/ai-engineer",
     icon: "wand",
@@ -338,6 +338,8 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
 
   const saved = Array.isArray(input.menus) ? (input.menus as Record<string, unknown>[]) : [];
   const builtinById = new Map(BUILTIN_MENUS.map((m) => [m.id, m]));
+  /** Judul bawaan lama: yang masih tersimpan persis begini ikut nama baru; judul buatan admin tidak disentuh. */
+  const oldDefaultTitles: Record<string, string> = { "ai-engineer": "AI Mikrotik Engineer" };
   const seen = new Set<string>();
   const menus: MenuSetting[] = [];
   let customCount = 0;
@@ -353,7 +355,7 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
       menus.push({
         ...def,
         group: pickGroup(item.group, def.group),
-        title: str(item.title, def.title, 60) || def.title,
+        title: item.title === oldDefaultTitles[id] ? def.title : str(item.title, def.title, 60) || def.title,
         description: str(item.description, def.description, 200),
         visible: bool(item.visible, true),
         userVisible: bool(item.userVisible, true),

@@ -10,9 +10,10 @@ import { NextResponse, type NextRequest } from "next/server";
 const SHORT_SESSION_SECONDS = 8 * 60 * 60; // 8 jam
 
 /**
- * /admin dan /login-page-hotspot wajib login. /admin juga
- * wajib peran ADMIN — pengguna biasa yang nyasar ke sana dilempar balik ke
- * beranda, bukan ke /login, supaya tidak terlihat seperti sesi mereka hilang.
+ * /admin dan /login-page-hotspot wajib login dan wajib peran ADMIN — pengguna
+ * biasa yang nyasar ke sana dilempar balik ke beranda, bukan ke /login, supaya
+ * tidak terlihat seperti sesi mereka hilang. Server action dan route handler
+ * di bawahnya tetap memeriksa peran sendiri (lib/require-admin.ts).
  *
  * Beranda dan menu (/setup, /loadbalance, /hotspot-login, /cek) diatur admin di
  * /admin — wajib login atau terbuka — dan dijaga di layout masing-masing.
@@ -32,7 +33,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (req.nextUrl.pathname.startsWith("/admin") && token.role !== "ADMIN") {
+  const adminOnly =
+    req.nextUrl.pathname.startsWith("/admin") || req.nextUrl.pathname.startsWith("/login-page-hotspot");
+  if (adminOnly && token.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/", req.url));
   }
 

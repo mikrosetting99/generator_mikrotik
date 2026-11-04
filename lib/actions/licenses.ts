@@ -8,6 +8,18 @@ import { buatKunci, bacaSalt, rapikanIdentity } from "@/lib/license/key";
 import { pecahNomor } from "@/lib/license/nomor";
 import type { LicensePackage, PesananLengkap } from "@/lib/license/pesanan";
 import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/require-admin";
+
+/**
+ * Setiap fungsi yang diekspor dari berkas "use server" bisa dipanggil langsung
+ * dari browser sebagai server action, tidak hanya lewat halaman yang dijaga
+ * middleware. Jadi pemeriksaan admin wajib ada di dalam tiap fungsi.
+ */
+const BUKAN_ADMIN = "Hanya admin.";
+
+async function wajibAdmin(): Promise<void> {
+  if (!(await isAdmin())) throw new Error(BUKAN_ADMIN);
+}
 
 /**
  * Dulu bentuk baris ini datang langsung dari Supabase (kolom snake_case).
@@ -67,6 +79,7 @@ function toPesanan(row: PrismaLicenseOrder & { packages: PrismaLicensePackage[] 
  * ------------------------------------------------------------------ */
 
 export async function daftarPesanan(): Promise<PesananLengkap[]> {
+  await wajibAdmin();
   const rows = await prisma.licenseOrder.findMany({
     include: { packages: true },
     orderBy: { createdAt: "desc" },
@@ -75,6 +88,7 @@ export async function daftarPesanan(): Promise<PesananLengkap[]> {
 }
 
 export async function ambilPesanan(id: string): Promise<PesananLengkap | null> {
+  await wajibAdmin();
   const row = await prisma.licenseOrder.findUnique({
     where: { id },
     include: { packages: true },
@@ -87,6 +101,7 @@ export async function ambilPesanan(id: string): Promise<PesananLengkap | null> {
  * ------------------------------------------------------------------ */
 
 export async function createLicenseOrder(_prev: string | undefined, formData: FormData) {
+  if (!(await isAdmin())) return BUKAN_ADMIN;
   const isi = bacaForm(formData);
   const paket = bacaPaket(formData);
   const nomorMentah = String(formData.get("wa") ?? "");
@@ -140,6 +155,7 @@ export async function createLicenseOrder(_prev: string | undefined, formData: Fo
 }
 
 export async function updateLicenseOrder(id: string, _prev: string | undefined, formData: FormData) {
+  if (!(await isAdmin())) return BUKAN_ADMIN;
   const isi = bacaForm(formData);
   const paket = bacaPaket(formData);
   const nomorMentah = String(formData.get("wa") ?? "");
@@ -210,6 +226,7 @@ export async function updateLicenseOrder(id: string, _prev: string | undefined, 
  * butuh kunci baru, dan itu bukan pelanggaran.
  */
 export async function terbitkanLisensi(id: string, _prev: string | undefined, formData: FormData) {
+  if (!(await isAdmin())) return BUKAN_ADMIN;
   const identity = rapikanIdentity(String(formData.get("router_identity") ?? ""));
   if (!identity) return "ID ROUTER belum diisi.";
   if (identity.startsWith("$(")) {
@@ -243,6 +260,7 @@ export async function terbitkanLisensi(id: string, _prev: string | undefined, fo
 }
 
 export async function deleteLicenseOrder(id: string) {
+  await wajibAdmin();
   await prisma.licenseOrder.delete({ where: { id } });
   revalidatePath("/login-page-hotspot");
 }

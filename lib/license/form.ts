@@ -10,6 +10,25 @@ import type { Pesanan } from "./build";
  * buruk daripada tidak ada pratinjau sama sekali.
  */
 
+/**
+ * Batas panjang data URI gambar. Jauh di atas batas unggah di browser
+ * (BATAS_GAMBAR, maks 300 KB ≈ 400 ribu karakter base64), jadi gambar sah
+ * tidak pernah tertolak; yang dicegah hanya isian raksasa.
+ */
+const MAKS_DATA_URL = 1_500_000;
+
+/**
+ * Hanya data URI gambar base64 yang diterima. Nilainya disisipkan apa adanya
+ * ke HTML pratinjau (url('...') dan src), jadi apa pun di luar alfabet base64
+ * — tanda kutip, <, spasi — bisa keluar dari atribut dan menjadi skrip.
+ * Yang tidak lolos dianggap kosong, sama seperti tidak mengunggah gambar.
+ */
+function gambarAman(nilai: FormDataEntryValue | null): string | null {
+  const s = String(nilai ?? "").trim();
+  if (!s || s.length > MAKS_DATA_URL) return null;
+  return /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/]+={0,2}$/.test(s) ? s : null;
+}
+
 export function bacaForm(formData: FormData) {
   const namaUsaha = String(formData.get("nama_usaha") ?? "").trim();
 
@@ -57,8 +76,8 @@ export function bacaForm(formData: FormData) {
     bank_nama: bankNomor ? String(formData.get("bank_nama") ?? "").trim() || null : null,
     bank_nomor: bankNomor || null,
     bank_atas_nama: bankNomor ? String(formData.get("bank_atas_nama") ?? "").trim() || null : null,
-    logo_data_url: String(formData.get("logo_data_url") ?? "").trim() || null,
-    bg_data_url: String(formData.get("bg_data_url") ?? "").trim() || null,
+    logo_data_url: gambarAman(formData.get("logo_data_url")),
+    bg_data_url: gambarAman(formData.get("bg_data_url")),
     status: String(formData.get("status") ?? "draft"),
   };
 }

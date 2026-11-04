@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { bacaForm, bacaPaket, jadiPesanan } from "@/lib/license/form";
 import { cetakPratinjau } from "@/lib/license/pratinjau";
 import { pecahNomor } from "@/lib/license/nomor";
+import { requireAdmin } from "@/lib/require-admin";
 
 /**
  * Pratinjau halaman login dari isian form yang sedang diketik.
@@ -15,11 +16,13 @@ import { pecahNomor } from "@/lib/license/nomor";
  * pun hanya karena satu kolom belum terisi membuat fiturnya tidak berguna.
  * Yang kosong diisi contoh secukupnya.
  *
- * Middleware sudah menjaga seluruh /login-page-hotspot, jadi rute ini tidak
- * memeriksa sesi lagi — tapi kalau matcher di middleware.ts berubah,
- * pemeriksaan itu harus dipindahkan ke sini.
+ * Khusus admin. Middleware juga menjaga /login-page-hotspot, tapi pemeriksaan
+ * di sini tetap dipasang supaya rute ini aman meski matcher-nya berubah.
  */
 export async function POST(req: Request) {
+  const ditolak = await requireAdmin();
+  if (ditolak) return ditolak;
+
   try {
     const formData = await req.formData();
     const isi = bacaForm(formData);

@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.65.1] - 2026-11-06
+
+_Login Page Hotspot: khusus admin, gambar divalidasi_
+
+### Diperbaiki
+
+- Login Page Hotspot (pesanan lisensi) kini khusus admin: daftar, simpan, terbitkan kunci, pratinjau, dan unduh menolak akun biasa di sisi server, dan akun biasa yang membuka /login-page-hotspot diarahkan ke beranda.
+- Logo dan latar pesanan hanya diterima sebagai gambar data URI base64; isian lain dianggap kosong.
+- Pratinjau halaman login dijalankan dalam iframe sandbox, sehingga skrip di dalamnya tidak bisa mengakses sesi situs.
+
 ## [1.65.0] - 2026-11-06
 
 _AI Engineer: API dan SSH bisa aktif bersamaan, dipilih saat chat_

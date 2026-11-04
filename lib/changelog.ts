@@ -27,6 +27,21 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.65.1",
+    date: "2026-11-06",
+    title: "Login Page Hotspot: khusus admin, gambar divalidasi",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Login Page Hotspot (pesanan lisensi) kini khusus admin: daftar, simpan, terbitkan kunci, pratinjau, dan unduh menolak akun biasa di sisi server, dan akun biasa yang membuka /login-page-hotspot diarahkan ke beranda.",
+          "Logo dan latar pesanan hanya diterima sebagai gambar data URI base64; isian lain dianggap kosong.",
+          "Pratinjau halaman login dijalankan dalam iframe sandbox, sehingga skrip di dalamnya tidak bisa mengakses sesi situs.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.65.0",
     date: "2026-11-06",
     title: "AI Engineer: API dan SSH bisa aktif bersamaan, dipilih saat chat",

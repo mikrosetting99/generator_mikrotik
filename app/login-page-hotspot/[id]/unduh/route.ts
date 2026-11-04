@@ -3,6 +3,7 @@ import { ambilPesanan } from "@/lib/actions/licenses";
 import { cetakZip } from "@/lib/license/zip";
 import { namaArsip, simpanArsip } from "@/lib/license/arsip";
 import type { Pesanan } from "@/lib/license/build";
+import { requireAdmin } from "@/lib/require-admin";
 
 /**
  * Mencetak folder siap upload untuk satu pesanan.
@@ -11,11 +12,13 @@ import type { Pesanan } from "@/lib/license/build";
  * pesanan yang dicetak ulang selalu memakai template versi terbaru, dan
  * tidak ada berkas basi yang menumpuk di storage.
  *
- * Middleware sudah menjaga seluruh /login-page-hotspot, jadi rute ini tidak
- * memeriksa sesi lagi — tapi kalau matcher di middleware.ts berubah,
- * pemeriksaan itu harus dipindahkan ke sini.
+ * Khusus admin. Middleware juga menjaga /login-page-hotspot, tapi pemeriksaan
+ * di sini tetap dipasang supaya rute ini aman meski matcher-nya berubah.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const ditolak = await requireAdmin();
+  if (ditolak) return ditolak;
+
   const { id } = await params;
 
   const pesanan = await ambilPesanan(id);

@@ -104,6 +104,9 @@ export function Pratinjau() {
           <iframe
             key={`${url}-${perangkat.id}`}
             src={url}
+            /* Tanpa allow-same-origin: skrip template tetap jalan, tapi
+               halaman pratinjau tidak bisa menyentuh sesi atau API situs ini. */
+            sandbox="allow-scripts"
             title="Pratinjau halaman login"
             className="border-0 bg-black"
             style={{

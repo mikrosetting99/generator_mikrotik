@@ -2,6 +2,12 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 
+/** True bila sesi saat ini milik admin. Untuk server action yang tidak mengembalikan NextResponse. */
+export async function isAdmin(): Promise<boolean> {
+  const session = await getServerSession(authOptions);
+  return session?.user?.role === "ADMIN";
+}
+
 /** Penjaga API khusus admin: null bila lolos, atau respons 401/403 yang siap dikembalikan. */
 export async function requireAdmin(): Promise<NextResponse | null> {
   const session = await getServerSession(authOptions);

@@ -27,6 +27,20 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.65.3",
+    date: "2026-11-06",
+    title: "AI Engineer: Base URL custom tahan DNS rebinding",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Alamat IP dari Base URL custom kini diperiksa tepat saat koneksi dibuat, bukan hanya sebelumnya, sehingga domain yang mengganti jawaban DNS-nya ke alamat internal server (DNS rebinding) ditolak.",
+          "Jawaban dari Base URL custom dibatasi 5 MB.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.65.2",
     date: "2026-11-06",
     title: "AI Engineer: penjaga alamat dan password router diperketat",

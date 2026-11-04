@@ -1,5 +1,6 @@
 import { AI_PROVIDERS, type AiProviderId, type AiProviderInfo } from "@/lib/ai-catalog";
-import { resolvePublicHost } from "@/lib/net-guard";
+import https from "node:https";
+import { publicLookup, resolvePublicHost } from "@/lib/net-guard";
 
 export { AI_PROVIDERS, type AiProviderId, type AiProviderInfo };
 
@@ -57,12 +58,57 @@ export async function resolveBaseUrl(p: AiProviderInfo, custom?: string): Promis
   return raw;
 }
 
+interface PlainResponse {
+  status: number;
+  ok: boolean;
+  text: string;
+}
+
+interface SendInit {
+  method?: "GET" | "POST";
+  headers?: Record<string, string>;
+  body?: string;
+  signal?: AbortSignal;
+}
+
+/** Batas ukuran jawaban dari Base URL custom. */
+const MAX_CUSTOM_BODY = 5 * 1024 * 1024;
+
 /**
- * Base URL custom diperiksa publik hanya untuk alamat awalnya; pengalihan (3xx) bisa membawa
- * permintaan ke alamat internal server. Jadi untuk "custom" pengalihan tidak diikuti.
+ * Permintaan ke Base URL custom lewat node:https dengan `publicLookup`: alamat IP diperiksa
+ * publik tepat saat koneksi dibuat (tahan DNS rebinding), dan pengalihan (3xx) tidak diikuti.
  */
-function redirectMode(p: AiProviderInfo): RequestRedirect {
-  return p.id === "custom" ? "manual" : "follow";
+function customRequest(url: string, init: SendInit): Promise<PlainResponse> {
+  return new Promise((resolve, reject) => {
+    const headers = init.body ? { ...init.headers, "content-length": String(Buffer.byteLength(init.body)) } : init.headers;
+    const req = https.request(url, { method: init.method ?? "GET", headers, lookup: publicLookup, signal: init.signal }, (res) => {
+      const chunks: Buffer[] = [];
+      let size = 0;
+      res.on("data", (c: Buffer) => {
+        size += c.length;
+        if (size > MAX_CUSTOM_BODY) {
+          req.destroy(new Error("Jawaban dari Base URL terlalu besar."));
+          return;
+        }
+        chunks.push(c);
+      });
+      res.on("end", () => {
+        const status = res.statusCode ?? 0;
+        resolve({ status, ok: status >= 200 && status < 300, text: Buffer.concat(chunks).toString("utf8") });
+      });
+      res.on("error", reject);
+    });
+    req.on("error", reject);
+    if (init.body) req.write(init.body);
+    req.end();
+  });
+}
+
+/** Penyedia bawaan memakai fetch biasa (alamatnya tetap); "custom" lewat customRequest. */
+async function send(p: AiProviderInfo, url: string, init: SendInit): Promise<PlainResponse> {
+  if (p.id === "custom") return customRequest(url, init);
+  const res = await fetch(url, { method: init.method ?? "GET", headers: init.headers, body: init.body, signal: init.signal });
+  return { status: res.status, ok: res.ok, text: await res.text() };
 }
 
 function statusHint(status: number): string {
@@ -83,17 +129,16 @@ export async function chatOnce(req: ChatRequest, signal?: AbortSignal): Promise<
   const key = req.apiKey.trim();
   const maxTokens = Math.min(Math.max(req.maxTokens ?? 4096, 256), 8192);
 
-  let res: Response;
+  let res: PlainResponse;
   if (info.kind === "anthropic") {
-    res = await fetch(`${base}/v1/messages`, {
+    res = await send(info, `${base}/v1/messages`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({ model: req.model, max_tokens: maxTokens, system: req.system, messages: req.messages }),
       signal,
-      redirect: redirectMode(info),
     });
   } else {
-    res = await fetch(`${base}/chat/completions`, {
+    res = await send(info, `${base}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
       body: JSON.stringify({
@@ -103,11 +148,10 @@ export async function chatOnce(req: ChatRequest, signal?: AbortSignal): Promise<
         messages: [{ role: "system", content: req.system }, ...req.messages],
       }),
       signal,
-      redirect: redirectMode(info),
     });
   }
 
-  const raw = await res.text();
+  const raw = res.text;
   if (!res.ok) {
     throw new Error(`${info.label} menjawab ${res.status}${statusHint(res.status)}: ${errorText(raw, key)}`);
   }
@@ -144,9 +188,9 @@ export async function listModels(req: { provider: AiProviderId; apiKey: string; 
 
   const res =
     info.kind === "anthropic"
-      ? await fetch(`${base}/v1/models?limit=1000`, { headers: { "x-api-key": key, "anthropic-version": "2023-06-01" }, signal, redirect: redirectMode(info) })
-      : await fetch(`${base}/models`, { headers: key ? { authorization: `Bearer ${key}` } : {}, signal, redirect: redirectMode(info) });
-  const raw = await res.text();
+      ? await send(info, `${base}/v1/models?limit=1000`, { headers: { "x-api-key": key, "anthropic-version": "2023-06-01" }, signal })
+      : await send(info, `${base}/models`, { headers: key ? { authorization: `Bearer ${key}` } : {}, signal });
+  const raw = res.text;
   if (!res.ok) throw new Error(`${info.label} menjawab ${res.status}${res.status === 401 || res.status === 403 || (res.status >= 300 && res.status < 400) ? statusHint(res.status) : ""}: ${errorText(raw, key)}`);
 
   let data: { data?: Array<{ id?: string }>; models?: Array<{ name?: string }> };

@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.65.3] - 2026-11-06
+
+_AI Engineer: Base URL custom tahan DNS rebinding_
+
+### Diperbaiki
+
+- Alamat IP dari Base URL custom kini diperiksa tepat saat koneksi dibuat, bukan hanya sebelumnya, sehingga domain yang mengganti jawaban DNS-nya ke alamat internal server (DNS rebinding) ditolak.
+- Jawaban dari Base URL custom dibatasi 5 MB.
+
 ## [1.65.2] - 2026-11-06
 
 _AI Engineer: penjaga alamat dan password router diperketat_

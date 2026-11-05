@@ -27,6 +27,23 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.67.0",
+    date: "2026-11-05",
+    title: "VPN RADIUS: server VPN, paket, dan akun VPN",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Menu Script VPN mendapat tab baru untuk admin: Akun VPN, Server VPN, dan Paket. Tab Link script yang lama tidak berubah.",
+          "Server VPN (Mikrotik CHR): domain, IP publik, subnet tunnel, gateway, protokol, dan kapasitas. Tombol Script CHR membuat script sekali tempel untuk mendaftarkan FreeRADIUS di CHR.",
+          "Paket VPN: harga, masa aktif, batas upload/download, kuota port-forward, maksimal akun per pelanggan, dan server yang boleh dipilih.",
+          "Akun VPN didaftarkan admin untuk pelanggan: IP tunnel dibagikan otomatis dan tetap, password disimpan terenkripsi beserta hash NT untuk RADIUS, status (menunggu/aktif/ditangguhkan), masa aktif, tanda online, dan script client siap tempel.",
+          "Konfigurasi Docker FreeRADIUS di deploy/radius beserta panduan pemasangan dan uji tahap 1.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.66.0",
     date: "2026-11-04",
     title: "Network Engineer: nama baru, skill dimuat setiap chat dibuka",

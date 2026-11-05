@@ -23,9 +23,10 @@ model User {
   role         Role     @default(USER)
   createdAt    DateTime @default(now())
 
-  configs SavedConfig[]
-  loginPages SavedLoginPage[]
-  aiRouters AiRouter[]
+  configs     SavedConfig[]
+  loginPages  SavedLoginPage[]
+  aiRouters   AiRouter[]
+  vpnAccounts VpnAccount[]
 
   @@map("users")
 }
@@ -148,21 +149,21 @@ enum LicenseStatus {
 /// Dulu di Supabase (license_orders); dipindah ke sini bersama sistem login
 /// yang sama dengan Setup Mikrotik Baru, tanpa sistem koin/pembayaran lagi.
 model LicenseOrder {
-  id     String @id @default(cuid())
+  id    String @id @default(cuid())
   /// Nomor pendek untuk disebut di percakapan WhatsApp ("pesanan #14").
-  nomor  Int    @unique @default(autoincrement())
+  nomor Int    @unique @default(autoincrement())
 
-  namaUsaha     String
-  kontakNama    String?
-  catatan       String?
-  templateSlug  String
+  namaUsaha    String
+  kontakNama   String?
+  catatan      String?
+  templateSlug String
 
   // Logo teks dipecah dua supaya bisa dua warna, seperti MIKRO|SETTING.
-  merekA       String
-  merekB       String  @default("")
-  merekSpasi   Boolean @default(true)
-  tagline      String  @default("INTERNET HOTSPOT VOUCHER")
-  footerTagline String @default("Internet Hotspot Voucher")
+  merekA        String
+  merekB        String  @default("")
+  merekSpasi    Boolean @default(true)
+  tagline       String  @default("INTERNET HOTSPOT VOUCHER")
+  footerTagline String  @default("Internet Hotspot Voucher")
 
   // waNomor untuk tautan (62...), waTampil untuk yang terbaca di layar.
   waNomor  String
@@ -267,4 +268,116 @@ model VpnScript {
   @@index([phone])
   @@index([categoryId])
   @@map("vpn_scripts")
+}
+
+/// Server VPN (Mikrotik CHR) yang memeriksa login pelanggan ke FreeRADIUS. Setiap server punya
+/// subnet tunnel sendiri; IP pelanggan dibagikan dari subnet itu (lib/vpn-radius.ts).
+model VpnServer {
+  id           String       @id @default(cuid())
+  name         String       @db.VarChar(80)
+  location     String       @default("") @db.VarChar(80)
+  /// Alamat yang dipakai pelanggan (connect-to dan akses), mis. vpn1.mikrosetting.com.
+  domain       String       @unique @db.VarChar(160)
+  /// IP publik CHR; FreeRADIUS mengenali server dari IP asal paket ini (view radius_nas).
+  publicIp     String       @unique @db.VarChar(15)
+  subnet       String       @db.VarChar(18)
+  /// local-address profil PPP di CHR; dipantau Netwatch di script pelanggan.
+  gatewayIp    String       @db.VarChar(15)
+  /// Protokol yang aktif di server, dipisah koma (mis. "sstp,l2tp,ovpn").
+  protocols    String       @default("sstp,l2tp,ovpn") @db.VarChar(20)
+  rosVersion   String       @default("v6") @db.VarChar(4)
+  capacity     Int          @default(250)
+  /// Secret RADIUS apa adanya: FreeRADIUS harus bisa membacanya (lewat view radius_nas).
+  radiusSecret String       @db.VarChar(64)
+  /// false = semua akun di server ini ditolak RADIUS.
+  active       Boolean      @default(true)
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  accounts     VpnAccount[]
+
+  @@map("vpn_servers")
+}
+
+/// Paket VPN yang dibuat admin: harga, masa aktif, kecepatan, dan kuota.
+model VpnPackage {
+  id           String       @id @default(cuid())
+  name         String       @db.VarChar(80)
+  priceIdr     Int          @default(0)
+  durationDays Int          @default(30)
+  /// Batas kecepatan pelanggan dalam kbps; 0 = tanpa batas (Mikrotik-Rate-Limit lewat view radius_reply).
+  uploadKbps   Int          @default(0)
+  downloadKbps Int          @default(0)
+  /// Port-forward tambahan di luar Winbox/API/Webfig bawaan.
+  portForwards Int          @default(0)
+  /// Maksimal akun VPN per pelanggan di paket ini.
+  maxAccounts  Int          @default(1)
+  protocols    String       @default("sstp,l2tp,ovpn") @db.VarChar(20)
+  /// Id server yang boleh dipilih, dipisah koma; kosong = semua server.
+  serverIds    String       @default("") @db.VarChar(1000)
+  active       Boolean      @default(true)
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  accounts     VpnAccount[]
+
+  @@map("vpn_packages")
+}
+
+/// Satu akun VPN pelanggan, terikat ke satu server dan satu paket. FreeRADIUS hanya menerima akun
+/// berstatus "active" yang belum lewat expiresAt (view radius_check).
+model VpnAccount {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serverId    String
+  server      VpnServer  @relation(fields: [serverId], references: [id], onDelete: Restrict)
+  packageId   String
+  package     VpnPackage @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  username    String     @unique @db.VarChar(41)
+  /// Terenkripsi (lib/vault.ts), untuk ditampilkan di script pelanggan.
+  passwordEnc String     @db.Text
+  /// NT-Password (lib/nt-hash.ts) yang dibaca FreeRADIUS; password asli tidak pernah sampai ke RADIUS.
+  ntHash      String     @db.Char(32)
+  /// IP tetap pelanggan di dalam tunnel (Framed-IP-Address).
+  tunnelIp    String     @db.VarChar(15)
+  /// "pending" | "active" | "suspended"
+  status      String     @default("pending") @db.VarChar(12)
+  /// null = tanpa batas waktu.
+  expiresAt   DateTime?
+  note        String     @default("") @db.VarChar(300)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([serverId, tunnelIp])
+  @@index([userId])
+  @@index([packageId])
+  @@map("vpn_accounts")
+}
+
+/// Accounting FreeRADIUS (ditulis FreeRADIUS, dibaca aplikasi untuk status online dan pemakaian).
+/// Kolomnya hanya yang dipakai deploy/radius/queries.conf; waktu dalam UTC.
+model RadAcct {
+  radacctid          BigInt    @id @default(autoincrement())
+  acctsessionid      String    @default("") @db.VarChar(64)
+  acctuniqueid       String    @unique @default("") @db.VarChar(32)
+  username           String    @default("") @db.VarChar(64)
+  nasipaddress       String    @default("") @db.VarChar(15)
+  nasportid          String?   @db.VarChar(32)
+  acctstarttime      DateTime? @db.DateTime(0)
+  acctupdatetime     DateTime? @db.DateTime(0)
+  acctstoptime       DateTime? @db.DateTime(0)
+  acctsessiontime    Int?      @db.UnsignedInt
+  acctinputoctets    BigInt?
+  acctoutputoctets   BigInt?
+  callingstationid   String    @default("") @db.VarChar(50)
+  acctterminatecause String    @default("") @db.VarChar(32)
+  framedipaddress    String    @default("") @db.VarChar(15)
+
+  @@index([username])
+  @@index([acctstoptime])
+  @@index([nasipaddress])
+  @@index([framedipaddress])
+  @@index([acctsessionid])
+  @@map("radacct")
 }

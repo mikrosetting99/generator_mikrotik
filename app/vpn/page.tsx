@@ -3,7 +3,7 @@ import { AppSwitcher } from "@/components/AppSwitcher";
 import { getServerSession } from "next-auth";
 import { Lock } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { VpnAdmin } from "@/components/vpn/VpnAdmin";
+import { VpnTabs } from "@/components/vpn/VpnTabs";
 import { VersionBadge } from "@/components/VersionBadge";
 import { authOptions } from "@/lib/auth";
 
@@ -37,7 +37,7 @@ export default async function VpnPage() {
 
       <div className="w-full px-5 py-6 lg:px-8">
         {isAdmin ? (
-          <VpnAdmin />
+          <VpnTabs />
         ) : (
           <section className="mx-auto max-w-lg overflow-hidden rounded-md border border-line bg-surface shadow-sm">
             <div className="border-b border-line bg-raised px-5 py-3">

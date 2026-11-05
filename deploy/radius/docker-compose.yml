@@ -1,0 +1,14 @@
+services:
+  freeradius:
+    build: .
+    container_name: mikrosetting-radius
+    # Jaringan host: UDP 1812/1813 dijaga firewall server biasa (Docker tidak melompatinya),
+    # dan MySQL aaPanel di 127.0.0.1 bisa dipakai langsung.
+    network_mode: host
+    env_file: .env
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

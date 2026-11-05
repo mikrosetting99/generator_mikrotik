@@ -96,6 +96,7 @@ export interface SiteSettings {
 const GROUP_CANDIDATES: Record<string, string[]> = {
   "dns-flush": ["Mikrotik", "Konfigurasi"],
   "ai-engineer": ["Mikrotik", "Konfigurasi"],
+  "vpn-radius": ["Alat", "Mikrotik", "Konfigurasi"],
 };
 
 export const MAX_CUSTOM_MENUS = 12;
@@ -191,6 +192,20 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     icon: "lock",
     visible: true,
     // Pengelolaan hanya untuk admin; pelanggan memakai link pribadi (/script/…), bukan menu ini.
+    userVisible: false,
+    devMode: false,
+    requireLogin: true,
+  },
+  {
+    id: "vpn-radius",
+    group: "Alat",
+    builtin: true,
+    title: "Manajemen VPN",
+    description: "Server VPN (CHR), paket, dan akun VPN pelanggan yang diperiksa lewat RADIUS: IP tunnel tetap dan batas kecepatan per paket.",
+    href: "/vpn-radius",
+    icon: "shield",
+    visible: true,
+    // Untuk sementara akun didaftarkan admin; pelanggan belum membuka menu ini sendiri.
     userVisible: false,
     devMode: false,
     requireLogin: true,

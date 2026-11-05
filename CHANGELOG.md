@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.67.1] - 2026-11-05
+
+_Manajemen VPN jadi aplikasi sendiri_
+
+### Diubah
+
+- Akun VPN, Server VPN, dan Paket dipindah dari tab di Script VPN & Mikhmon Online ke aplikasi baru Manajemen VPN (/vpn-radius) dengan menu sendiri di beranda. Script VPN & Mikhmon Online kembali seperti semula.
+- Menu Manajemen VPN untuk sementara hanya terlihat admin; nama, grup, dan aksesnya bisa diatur di Dashboard Admin seperti menu lain.
+
 ## [1.67.0] - 2026-11-05
 
 _VPN RADIUS: server VPN, paket, dan akun VPN_

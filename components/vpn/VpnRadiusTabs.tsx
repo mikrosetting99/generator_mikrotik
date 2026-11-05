@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { VpnAdmin } from "@/components/vpn/VpnAdmin";
 import { VpnRadiusAdmin } from "@/components/vpn/VpnRadiusAdmin";
 
 const TABS = [
-  { id: "scripts", label: "Link script" },
   { id: "accounts", label: "Akun VPN" },
   { id: "servers", label: "Server VPN" },
   { id: "packages", label: "Paket" },
@@ -14,9 +12,9 @@ type Tab = (typeof TABS)[number]["id"];
 
 const isTab = (v: string): v is Tab => TABS.some((t) => t.id === v);
 
-/** Tab admin di /vpn: link script lama tetap di tab pertama, VPN RADIUS di tab lainnya. Tab terpilih diingat di #hash. */
-export function VpnTabs() {
-  const [tab, setTab] = useState<Tab>("scripts");
+/** Tab di /vpn-radius. Tab terpilih diingat di #hash supaya bertahan saat halaman dimuat ulang. */
+export function VpnRadiusTabs() {
+  const [tab, setTab] = useState<Tab>("accounts");
 
   useEffect(() => {
     const fromHash = window.location.hash.slice(1);
@@ -25,12 +23,12 @@ export function VpnTabs() {
 
   const pick = (t: Tab) => {
     setTab(t);
-    window.history.replaceState(null, "", t === "scripts" ? window.location.pathname : `#${t}`);
+    window.history.replaceState(null, "", t === "accounts" ? window.location.pathname : `#${t}`);
   };
 
   return (
     <div>
-      <nav aria-label="Bagian VPN" className="mb-5 flex gap-1 overflow-x-auto border-b border-line">
+      <nav aria-label="Bagian Manajemen VPN" className="mb-5 flex gap-1 overflow-x-auto border-b border-line">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -45,7 +43,7 @@ export function VpnTabs() {
           </button>
         ))}
       </nav>
-      {tab === "scripts" ? <VpnAdmin /> : <VpnRadiusAdmin view={tab} />}
+      <VpnRadiusAdmin view={tab} />
     </div>
   );
 }

@@ -27,6 +27,20 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.67.1",
+    date: "2026-11-05",
+    title: "Manajemen VPN jadi aplikasi sendiri",
+    changes: [
+      {
+        type: "changed",
+        items: [
+          "Akun VPN, Server VPN, dan Paket dipindah dari tab di Script VPN & Mikhmon Online ke aplikasi baru Manajemen VPN (/vpn-radius) dengan menu sendiri di beranda. Script VPN & Mikhmon Online kembali seperti semula.",
+          "Menu Manajemen VPN untuk sementara hanya terlihat admin; nama, grup, dan aksesnya bisa diatur di Dashboard Admin seperti menu lain.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.67.0",
     date: "2026-11-05",
     title: "VPN RADIUS: server VPN, paket, dan akun VPN",

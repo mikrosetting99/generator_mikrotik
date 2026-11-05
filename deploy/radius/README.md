@@ -1,7 +1,7 @@
 # FreeRADIUS untuk akun VPN pelanggan
 
 FreeRADIUS memeriksa login PPP (SSTP/L2TP/OVPN) dari setiap Mikrotik CHR. Data akun dikelola di
-aplikasi (menu **Script VPN & Mikhmon Online → Akun VPN / Server VPN / Paket**), lalu dibaca
+aplikasi (menu **Manajemen VPN**: Akun VPN, Server VPN, Paket), lalu dibaca
 FreeRADIUS lewat view di database aplikasi. Tidak ada sinkronisasi terpisah.
 
 ```

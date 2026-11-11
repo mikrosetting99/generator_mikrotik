@@ -250,6 +250,19 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     devMode: false,
     requireLogin: false,
   },
+  {
+    id: "rack-design",
+    group: "Alat",
+    builtin: true,
+    title: "Simulasi Rack Server",
+    description: "Susun perangkat di rack per U dan hitung ruang, daya, panas, berat, serta kapasitas UPS.",
+    href: "/rack-server",
+    icon: "database",
+    visible: true,
+    userVisible: true,
+    devMode: false,
+    requireLogin: false,
+  },
 ];
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {

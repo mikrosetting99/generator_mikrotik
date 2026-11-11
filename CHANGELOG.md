@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.68.0] - 2026-11-11
+
+_Menu baru: Simulasi Rack Server_
+
+### Ditambahkan
+
+- Simulasi Rack Server (/rack-server, grup Alat): pilih tinggi rack 6U–47U, lalu tambahkan router, switch, OLT, server, storage, UPS, PDU, patch panel, cable manager, shelf, KVM, blank panel, atau perangkat custom. Klik untuk menambah atau seret ke posisi; perangkat di rack bisa digeser dengan mouse, sentuhan, atau tombol panah.
+- Ringkasan langsung: ruang terpakai, total daya dan arus, panas (BTU/jam), berat terhadap beban maksimal rack, dan beban UPS; peringatan bila melebihi kapasitas listrik, UPS, atau beban rack, dan bila perangkat berat ada di bagian atas.
+- Daftar perangkat dari atas ke bawah yang bisa disalin, Ekspor/Impor desain sebagai berkas .json, dan Cetak. Desain tersimpan di browser; tidak perlu login.
+
 ## [1.67.1] - 2026-11-05
 
 _Manajemen VPN jadi aplikasi sendiri_

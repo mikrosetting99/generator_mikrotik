@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
 import { AppSwitcher } from "@/components/AppSwitcher";
 import { Check, Copy, Database, Download, Plus, Trash, Upload } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -9,6 +10,7 @@ import { Button, Field, Note, Panel, Select, TextInput } from "@/components/ui";
 import {
   billOfMaterials,
   canPlace,
+  DEPTH_PRESETS,
   DEVICE_KINDS,
   DEVICE_LIBRARY,
   deviceFromTemplate,
@@ -16,15 +18,20 @@ import {
   exampleRack,
   fmtNum,
   KIND_COLOR,
+  KIND_DEPTH,
   KIND_LABEL,
+  MAX_DEPTH,
+  MAX_DEVICE_DEPTH,
   MAX_DEVICE_U,
   MAX_DEVICES,
   MAX_U,
+  MIN_DEPTH,
   MIN_U,
   normalizeRack,
   RACK_PRESETS,
   rackWarnings,
   summarize,
+  usableDepth,
   type DeviceKind,
   type DeviceTemplate,
   type RackDevice,
@@ -32,13 +39,34 @@ import {
 } from "@/lib/rack";
 
 const STORAGE_KEY = "rack-designer-v1";
+const VIEW_KEY = "rack-designer-view";
 /** Tinggi satu U di layar (px). */
 const UH = 22;
 
+// Three.js hanya dimuat saat tampilan 3D dibuka, dan hanya di browser.
+const Rack3D = dynamic(() => import("./Rack3D"), {
+  ssr: false,
+  loading: () => <div className="flex h-[560px] items-center justify-center rounded-lg bg-raised text-xs text-muted ring-1 ring-line sm:h-[640px]">Memuat tampilan 3D…</div>,
+});
+
 /** Isian angka yang boleh dikosongkan saat mengetik; kosong dibaca 0. */
-function NumberField({ label, value, onChange, suffix, step }: { label: string; value: number; onChange: (n: number) => void; suffix?: string; step?: string }) {
+function NumberField({
+  label,
+  value,
+  onChange,
+  suffix,
+  step,
+  hint,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+  suffix?: string;
+  step?: string;
+  hint?: string;
+}) {
   return (
-    <Field label={label}>
+    <Field label={label} hint={hint}>
       <div className="relative">
         <input
           type="number"
@@ -94,6 +122,7 @@ export function RackDesigner() {
   const [hover, setHover] = useState<{ u: number; pos: number; valid: boolean } | null>(null);
   const [flash, setFlash] = useState<{ tone: "info" | "warn" | "bad"; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [mode, setMode] = useState<"2d" | "3d">("2d");
   const dragTemplate = useRef<DeviceTemplate | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -106,8 +135,23 @@ export function RackDesigner() {
     } catch {
       // penyimpanan diblokir atau data rusak: pakai contoh
     }
+    try {
+      // #3d di alamat langsung membuka tampilan 3D (bisa dipakai untuk berbagi tautan)
+      if (window.location.hash === "#3d" || localStorage.getItem(VIEW_KEY) === "3d") setMode("3d");
+    } catch {
+      // abaikan
+    }
     setReady(true);
   }, []);
+  const switchMode = (m: "2d" | "3d") => {
+    setMode(m);
+    try {
+      localStorage.setItem(VIEW_KEY, m);
+    } catch {
+      // abaikan
+    }
+  };
+  const select3d = useCallback((id: string) => setSelectedId(id), []);
   useEffect(() => {
     if (!ready) return;
     try {
@@ -147,7 +191,7 @@ export function RackDesigner() {
   };
 
   const duplicate = (d: RackDevice) => {
-    const t: DeviceTemplate = { id: "", name: d.name, kind: d.kind, u: d.u, watts: d.watts, kg: d.kg, upsWatts: d.upsWatts };
+    const t: DeviceTemplate = { id: "", name: d.name, kind: d.kind, u: d.u, watts: d.watts, kg: d.kg, depthMm: d.depthMm, upsWatts: d.upsWatts };
     addTemplate(t);
   };
 
@@ -304,6 +348,7 @@ export function RackDesigner() {
                       setHover(null);
                     }}
                     onClick={() => addTemplate(t)}
+                    title={`${t.u}U · kedalaman ${t.depthMm} mm · ${t.watts} W · ${t.kg} kg`}
                     className="flex w-full items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 text-left text-sm text-ink transition-colors hover:border-brand/50 hover:bg-brand/[0.05]"
                   >
                     <span className="h-3.5 w-1.5 shrink-0 rounded-sm" style={{ background: KIND_COLOR[t.kind] }} />
@@ -317,7 +362,7 @@ export function RackDesigner() {
             <Button
               size="sm"
               className="mt-3 w-full"
-              onClick={() => addTemplate({ id: "custom", name: "Perangkat baru", kind: "other", u: 1, watts: 0, kg: 0 })}
+              onClick={() => addTemplate({ id: "custom", name: "Perangkat baru", kind: "other", u: 1, watts: 0, kg: 0, depthMm: KIND_DEPTH.other })}
             >
               <Plus className="h-3.5 w-3.5" /> Perangkat custom
             </Button>
@@ -331,13 +376,32 @@ export function RackDesigner() {
               <Note tone={flash.tone}>{flash.text}</Note>
             </div>
           )}
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-base font-semibold text-ink">{rack.name}</h2>
-            <span className="font-mono text-xs text-muted">
-              {H}U · terpakai {summary.usedU}U · kosong {summary.freeU}U
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-semibold text-ink">{rack.name}</h2>
+              <span className="font-mono text-xs text-muted">
+                {H}U · {rack.depthMm} mm · terpakai {summary.usedU}U · kosong {summary.freeU}U
+              </span>
+            </div>
+            <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 print:hidden" role="group" aria-label="Tampilan rack">
+              {(["2d", "3d"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => switchMode(m)}
+                  aria-pressed={mode === m}
+                  className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors ${mode === m ? "bg-brand text-white" : "text-muted hover:text-ink"}`}
+                >
+                  {m === "2d" ? "2D · Edit" : "3D"}
+                </button>
+              ))}
+            </div>
           </div>
 
+          {mode === "3d" ? (
+            <Rack3D rack={rack} selectedId={selectedId} onSelect={select3d} />
+          ) : (
+          <>
           <div className="mx-auto w-full max-w-[520px] rounded-lg bg-[#1b1f26] p-2 shadow-lg ring-1 ring-black/40">
             <div className="flex">
               <UnitLabels units={units} />
@@ -409,6 +473,8 @@ export function RackDesigner() {
             </div>
           </div>
           <p className="text-center text-[11px] text-faint print:hidden">Tampak depan · U1 di paling bawah · seret perangkat untuk memindah</p>
+          </>
+          )}
         </section>
 
         {/* ------------------------------------- pengaturan, ringkasan, editor */}
@@ -448,6 +514,7 @@ export function RackDesigner() {
               <DeviceEditor
                 key={selected.id}
                 device={selected}
+                rackDepth={rack.depthMm}
                 onPatch={(p) => patchDevice(selected.id, p)}
                 onPlace={(u, pos) => placeDevice(selected, u, pos)}
                 onDuplicate={() => duplicate(selected)}
@@ -473,6 +540,7 @@ export function RackDesigner() {
                     ]}
                   />
                 </Field>
+                <DepthPicker value={rack.depthMm} onChange={(depthMm) => patchRack({ depthMm })} />
                 <NumberField label="Beban maksimal rack" value={rack.maxKg} onChange={(n) => patchRack({ maxKg: Math.max(0, n) })} suffix="kg" />
                 <NumberField label="Kapasitas listrik / PDU" value={rack.maxWatts} onChange={(n) => patchRack({ maxWatts: Math.max(0, n) })} suffix="W" />
                 <NumberField label="Tegangan" value={rack.voltage} onChange={(n) => patchRack({ voltage: Math.max(0, n) })} suffix="V" />
@@ -500,6 +568,7 @@ export function RackDesigner() {
                   <tr className="border-b border-line text-left text-faint">
                     <th className="py-1.5 pr-2 font-medium">Posisi</th>
                     <th className="py-1.5 pr-2 font-medium">Perangkat</th>
+                    <th className="py-1.5 pr-2 text-right font-medium">mm</th>
                     <th className="py-1.5 pr-2 text-right font-medium">W</th>
                     <th className="py-1.5 text-right font-medium">kg</th>
                   </tr>
@@ -516,6 +585,7 @@ export function RackDesigner() {
                         <span className="mr-1.5 inline-block h-2 w-2 rounded-sm align-middle" style={{ background: KIND_COLOR[d.kind] }} />
                         {d.name}
                       </td>
+                      <td className={`py-1.5 pr-2 text-right font-mono ${d.depthMm > usableDepth(rack.depthMm) ? "text-bad" : "text-ink"}`}>{d.depthMm}</td>
                       <td className="py-1.5 pr-2 text-right font-mono text-ink">{fmtNum(d.watts)}</td>
                       <td className="py-1.5 text-right font-mono text-ink">{fmtNum(d.kg)}</td>
                     </tr>
@@ -547,8 +617,58 @@ function UnitLabels({ units }: { units: number[] }) {
   );
 }
 
+/** Kedalaman rack: pilih ukuran umum, atau "Ukuran lain" untuk mengetik sendiri. */
+function DepthPicker({ value, onChange }: { value: number; onChange: (mm: number) => void }) {
+  const isPreset = DEPTH_PRESETS.some((p) => p.mm === value);
+  const [custom, setCustom] = useState(!isPreset);
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+
+  const apply = () => {
+    const n = Math.round(Number(draft.replace(",", ".")));
+    if (!Number.isFinite(n) || n <= 0) return setDraft(String(value));
+    const mm = Math.min(Math.max(n, MIN_DEPTH), MAX_DEPTH);
+    setDraft(String(mm));
+    if (mm !== value) onChange(mm);
+  };
+
+  return (
+    <Field label="Kedalaman rack" hint={`Perangkat muat sampai ${usableDepth(value)} mm (setelah rel dan pintu).`}>
+      <div className="flex flex-col gap-2">
+        <Select
+          value={custom ? "custom" : String(value)}
+          onChange={(v) => {
+            if (v === "custom") return setCustom(true);
+            setCustom(false);
+            onChange(Number(v));
+          }}
+          options={[...DEPTH_PRESETS.map((p) => ({ value: String(p.mm), label: p.label })), { value: "custom", label: "Ukuran lain…" }]}
+        />
+        {custom && (
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={MIN_DEPTH}
+              max={MAX_DEPTH}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={apply}
+              onKeyDown={(e) => e.key === "Enter" && apply()}
+              aria-label="Kedalaman rack (mm)"
+              className="min-h-10 w-full rounded-lg border border-line bg-surface px-3 pr-12 font-mono text-sm text-ink focus:border-brand focus:outline-none"
+            />
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-faint">mm</span>
+          </div>
+        )}
+      </div>
+    </Field>
+  );
+}
+
 function DeviceEditor({
   device,
+  rackDepth,
   onPatch,
   onPlace,
   onDuplicate,
@@ -556,6 +676,7 @@ function DeviceEditor({
   onClose,
 }: {
   device: RackDevice;
+  rackDepth: number;
   onPatch: (p: Partial<RackDevice>) => void;
   onPlace: (u: number, pos: number) => boolean;
   onDuplicate: () => void;
@@ -625,6 +746,20 @@ function DeviceEditor({
         </Field>
         <NumberField label="Daya" value={device.watts} onChange={(n) => onPatch({ watts: Math.max(0, n) })} suffix="W" />
         <NumberField label="Berat" value={device.kg} onChange={(n) => onPatch({ kg: Math.max(0, n) })} suffix="kg" />
+        <div className="sm:col-span-2">
+          <NumberField
+            label="Kedalaman"
+            value={device.depthMm}
+            onChange={(n) => onPatch({ depthMm: Math.min(Math.max(Math.round(n), 0), MAX_DEVICE_DEPTH) })}
+            suffix="mm"
+            step="10"
+            hint={
+              device.depthMm > usableDepth(rackDepth)
+                ? `Tidak muat: rack hanya ${usableDepth(rackDepth)} mm.`
+                : `Sisa ${usableDepth(rackDepth) - device.depthMm} mm di belakang untuk kabel.`
+            }
+          />
+        </div>
         {device.kind === "ups" && (
           <div className="sm:col-span-2">
             <NumberField label="Kapasitas UPS" value={device.upsWatts} onChange={(n) => onPatch({ upsWatts: Math.max(0, n) })} suffix="W" />

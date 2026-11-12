@@ -29,8 +29,47 @@ const test = (name: string, fn: () => void) => {
   }
 };
 
-const dev = (over: Partial<RackDevice>): RackDevice => ({ id: Math.random().toString(36), name: "X", kind: "server", u: 1, pos: 1, watts: 0, kg: 0, upsWatts: 0, note: "", ...over });
-const rack = (devices: RackDevice[], over: Partial<RackState> = {}): RackState => ({ name: "T", heightU: 12, maxKg: 100, maxWatts: 1000, voltage: 220, devices, ...over });
+const dev = (over: Partial<RackDevice>): RackDevice => ({
+  id: Math.random().toString(36),
+  name: "X",
+  kind: "server",
+  u: 1,
+  pos: 1,
+  watts: 0,
+  kg: 0,
+  upsWatts: 0,
+  depthMm: 300,
+  note: "",
+  ...over,
+});
+const rack = (devices: RackDevice[], over: Partial<RackState> = {}): RackState => ({
+  name: "T",
+  heightU: 12,
+  maxKg: 100,
+  maxWatts: 1000,
+  voltage: 220,
+  depthMm: 1000,
+  devices,
+  ...over,
+});
+
+test("kedalaman: tidak muat, kabel sempit, dan muat", () => {
+  // rack 600 mm → muat sampai 500 mm
+  const r = (depthMm: number, watts = 100) => rackWarnings(...withSummary(rack([dev({ name: "Server dalam", depthMm, watts })], { depthMm: 600 })));
+  assert.ok(r(700).some((w) => w.tone === "bad" && /Server dalam lebih dalam dari ruang rack \(500 mm/.test(w.text)));
+  assert.ok(r(450).some((w) => w.tone === "warn" && /kabel/.test(w.text)), "sisa 50 mm");
+  assert.ok(!r(450, 0).some((w) => /kabel/.test(w.text)), "perangkat pasif tanpa kabel power");
+  assert.ok(!r(350).some((w) => /kedalaman|lebih dalam|kabel/.test(w.text)));
+});
+
+test("kedalaman: data lama tanpa kedalaman memakai nilai bawaan jenis", () => {
+  const r = normalizeRack({ devices: [{ id: "a", kind: "server", u: 1, pos: 1 }, { id: "b", kind: "patch", u: 1, pos: 2, depthMm: 90 }] });
+  assert.equal(r.depthMm, 1000);
+  assert.equal(r.devices[0].depthMm, 750);
+  assert.equal(r.devices[1].depthMm, 90);
+  assert.equal(normalizeRack({ depthMm: 99999 }).depthMm, 1500);
+  assert.equal(normalizeRack({ depthMm: 10 }).depthMm, 250);
+});
 
 test("canPlace: batas rack dan tabrakan", () => {
   const r = rack([dev({ id: "a", u: 2, pos: 5 })]); // menempati U5-6

@@ -54,6 +54,8 @@ export interface RackDevice {
   kg: number;
   /** Hanya UPS: kapasitas daya keluaran (watt). */
   upsWatts: number;
+  /** Kedalaman badan perangkat dari rel depan (mm). */
+  depthMm: number;
   note: string;
 }
 
@@ -66,10 +68,52 @@ export interface RackState {
   maxWatts: number;
   /** Tegangan listrik (V), untuk menghitung arus. */
   voltage: number;
+  /** Kedalaman luar rack (mm). */
+  depthMm: number;
   devices: RackDevice[];
 }
 
 export const MIN_U = 4;
+export const MIN_DEPTH = 250;
+export const MAX_DEPTH = 1500;
+export const MAX_DEVICE_DEPTH = 1400;
+
+/** Kedalaman rack yang umum dijual (mm). Nilai lain bisa diketik sendiri. */
+export const DEPTH_PRESETS: Array<{ mm: number; label: string }> = [
+  { mm: 450, label: "450 mm (dinding)" },
+  { mm: 500, label: "500 mm (dinding)" },
+  { mm: 600, label: "600 mm" },
+  { mm: 800, label: "800 mm" },
+  { mm: 900, label: "900 mm" },
+  { mm: 1000, label: "1000 mm (standar server)" },
+  { mm: 1100, label: "1100 mm" },
+  { mm: 1200, label: "1200 mm" },
+];
+
+/**
+ * Ruang yang hilang di dalam rack: rel depan mundur dari pintu, dan pintu belakang. Perangkat
+ * lebih dalam dari (kedalaman rack - RACK_LOSS_MM) tidak muat; sisa kurang dari CABLE_SPACE_MM
+ * di belakang perangkat membuat kabel power dan jaringan tertekuk.
+ */
+export const RACK_LOSS_MM = 100;
+export const CABLE_SPACE_MM = 100;
+
+/** Kedalaman bawaan per jenis, untuk data lama yang belum punya kedalaman. */
+export const KIND_DEPTH: Record<DeviceKind, number> = {
+  server: 750,
+  storage: 600,
+  switch: 300,
+  router: 250,
+  olt: 300,
+  ups: 550,
+  pdu: 150,
+  patch: 100,
+  cable: 100,
+  shelf: 450,
+  kvm: 650,
+  blank: 20,
+  other: 300,
+};
 export const MAX_U = 52;
 export const MAX_DEVICE_U = 12;
 export const MAX_DEVICES = 120;
@@ -95,30 +139,34 @@ export interface DeviceTemplate {
   u: number;
   watts: number;
   kg: number;
+  depthMm: number;
   upsWatts?: number;
 }
 
-/** Perangkat siap pakai. Angka daya dan berat adalah perkiraan umum; sesuaikan dengan datasheet. */
+/** Perangkat siap pakai. Angka daya, berat, dan kedalaman adalah perkiraan umum; sesuaikan dengan datasheet. */
 export const DEVICE_LIBRARY: DeviceTemplate[] = [
-  { id: "router-1u", name: "Router 1U", kind: "router", u: 1, watts: 60, kg: 4 },
-  { id: "switch-24", name: "Switch 24 port", kind: "switch", u: 1, watts: 30, kg: 3 },
-  { id: "switch-48", name: "Switch 48 port", kind: "switch", u: 1, watts: 60, kg: 4.5 },
-  { id: "switch-48-poe", name: "Switch 48 port PoE", kind: "switch", u: 1, watts: 450, kg: 6 },
-  { id: "olt-1u", name: "OLT 1U", kind: "olt", u: 1, watts: 90, kg: 5 },
-  { id: "server-1u", name: "Server 1U", kind: "server", u: 1, watts: 350, kg: 15 },
-  { id: "server-2u", name: "Server 2U", kind: "server", u: 2, watts: 550, kg: 25 },
-  { id: "server-4u", name: "Server 4U", kind: "server", u: 4, watts: 900, kg: 40 },
-  { id: "storage-2u", name: "Storage / NAS 2U", kind: "storage", u: 2, watts: 250, kg: 20 },
-  { id: "ups-2u", name: "UPS 2U 1500VA", kind: "ups", u: 2, watts: 0, kg: 25, upsWatts: 1000 },
-  { id: "ups-3u", name: "UPS 3U 3000VA", kind: "ups", u: 3, watts: 0, kg: 40, upsWatts: 2700 },
-  { id: "pdu-1u", name: "PDU 1U", kind: "pdu", u: 1, watts: 0, kg: 2 },
-  { id: "patch-24", name: "Patch panel 24 port", kind: "patch", u: 1, watts: 0, kg: 1.5 },
-  { id: "cable-1u", name: "Cable manager 1U", kind: "cable", u: 1, watts: 0, kg: 1 },
-  { id: "shelf-1u", name: "Shelf 1U", kind: "shelf", u: 1, watts: 0, kg: 3 },
-  { id: "shelf-2u", name: "Shelf 2U", kind: "shelf", u: 2, watts: 0, kg: 5 },
-  { id: "kvm-1u", name: "KVM console 1U", kind: "kvm", u: 1, watts: 25, kg: 10 },
-  { id: "blank-1u", name: "Blank panel 1U", kind: "blank", u: 1, watts: 0, kg: 0.3 },
+  { id: "router-1u", name: "Router 1U", kind: "router", u: 1, watts: 60, kg: 4, depthMm: 250 },
+  { id: "switch-24", name: "Switch 24 port", kind: "switch", u: 1, watts: 30, kg: 3, depthMm: 250 },
+  { id: "switch-48", name: "Switch 48 port", kind: "switch", u: 1, watts: 60, kg: 4.5, depthMm: 300 },
+  { id: "switch-48-poe", name: "Switch 48 port PoE", kind: "switch", u: 1, watts: 450, kg: 6, depthMm: 400 },
+  { id: "olt-1u", name: "OLT 1U", kind: "olt", u: 1, watts: 90, kg: 5, depthMm: 300 },
+  { id: "server-1u", name: "Server 1U", kind: "server", u: 1, watts: 350, kg: 15, depthMm: 700 },
+  { id: "server-2u", name: "Server 2U", kind: "server", u: 2, watts: 550, kg: 25, depthMm: 750 },
+  { id: "server-4u", name: "Server 4U", kind: "server", u: 4, watts: 900, kg: 40, depthMm: 800 },
+  { id: "storage-2u", name: "Storage / NAS 2U", kind: "storage", u: 2, watts: 250, kg: 20, depthMm: 600 },
+  { id: "ups-2u", name: "UPS 2U 1500VA", kind: "ups", u: 2, watts: 0, kg: 25, depthMm: 500, upsWatts: 1000 },
+  { id: "ups-3u", name: "UPS 3U 3000VA", kind: "ups", u: 3, watts: 0, kg: 40, depthMm: 600, upsWatts: 2700 },
+  { id: "pdu-1u", name: "PDU 1U", kind: "pdu", u: 1, watts: 0, kg: 2, depthMm: 150 },
+  { id: "patch-24", name: "Patch panel 24 port", kind: "patch", u: 1, watts: 0, kg: 1.5, depthMm: 100 },
+  { id: "cable-1u", name: "Cable manager 1U", kind: "cable", u: 1, watts: 0, kg: 1, depthMm: 100 },
+  { id: "shelf-1u", name: "Shelf 1U", kind: "shelf", u: 1, watts: 0, kg: 3, depthMm: 450 },
+  { id: "shelf-2u", name: "Shelf 2U", kind: "shelf", u: 2, watts: 0, kg: 5, depthMm: 550 },
+  { id: "kvm-1u", name: "KVM console 1U", kind: "kvm", u: 1, watts: 25, kg: 10, depthMm: 650 },
+  { id: "blank-1u", name: "Blank panel 1U", kind: "blank", u: 1, watts: 0, kg: 0.3, depthMm: 20 },
 ];
+
+/** Kedalaman perangkat yang masih muat di rack sedalam depthMm (setelah rel dan pintu). */
+export const usableDepth = (depthMm: number) => Math.max(depthMm - RACK_LOSS_MM, 0);
 
 /** Perangkat yang sebaiknya di bagian bawah rack (berat atau UPS); yang lain diisi dari atas. */
 export const fillsFromBottom = (d: Pick<RackDevice, "kind" | "kg">) => d.kind === "ups" || d.kind === "storage" || d.kg >= 20;
@@ -225,6 +273,20 @@ export function rackWarnings(state: RackState, s: RackSummary): RackWarning[] {
     if (lower !== null) out.push({ tone: "warn", text: `${d.name} (${fmtNum(d.kg)} kg) ada di bagian atas; pindahkan ke bawah agar rack stabil.` });
   }
 
+  // Kedalaman: perangkat yang tidak muat, atau muat tapi kabel belakangnya tertekuk.
+  const usable = usableDepth(state.depthMm);
+  const tooDeep = state.devices.filter((d) => d.depthMm > usable);
+  const tight = state.devices.filter((d) => d.depthMm <= usable && usable - d.depthMm < CABLE_SPACE_MM && d.watts > 0);
+  if (tooDeep.length) {
+    out.push({
+      tone: "bad",
+      text: `${namesOf(tooDeep)} lebih dalam dari ruang rack (${fmtNum(usable)} mm dari rel depan ke pintu belakang): pintu belakang tidak bisa ditutup. Pilih rack lebih dalam.`,
+    });
+  }
+  if (tight.length) {
+    out.push({ tone: "warn", text: `Sisa ruang di belakang ${namesOf(tight)} kurang dari ${CABLE_SPACE_MM} mm: kabel power dan jaringan akan tertekuk.` });
+  }
+
   if (s.usedPct >= 90 && s.watts > 1500) {
     out.push({ tone: "info", text: "Rack hampir penuh dengan beban panas tinggi: pastikan aliran udara depan-ke-belakang dan beri blank panel di slot kosong." });
   }
@@ -232,6 +294,13 @@ export function rackWarnings(state: RackState, s: RackSummary): RackWarning[] {
 }
 
 export const fmtNum = (n: number) => (Math.round(n * 10) / 10).toLocaleString("id-ID");
+
+/** "A, B, dan 3 lainnya" supaya peringatan tetap pendek. */
+function namesOf(list: RackDevice[]): string {
+  const names = list.map((d) => d.name);
+  if (names.length <= 3) return names.join(", ");
+  return `${names.slice(0, 2).join(", ")}, dan ${names.length - 2} lainnya`;
+}
 
 /* ------------------------------------------------------------------ data */
 
@@ -254,6 +323,7 @@ export function normalizeRack(raw: unknown): RackState {
     maxKg: num(r.maxKg, 0, 5000, 600),
     maxWatts: num(r.maxWatts, 0, 100_000, 3500),
     voltage: num(r.voltage, 100, 400, 220),
+    depthMm: int(r.depthMm, MIN_DEPTH, MAX_DEPTH, 1000),
     devices: [],
   };
   const list = Array.isArray(r.devices) ? r.devices : [];
@@ -269,6 +339,7 @@ export function normalizeRack(raw: unknown): RackState {
       watts: num(d.watts, 0, 20_000, 0),
       kg: num(d.kg, 0, 500, 0),
       upsWatts: kind === "ups" ? num(d.upsWatts, 0, 100_000, 0) : 0,
+      depthMm: int(d.depthMm, 10, MAX_DEVICE_DEPTH, KIND_DEPTH[kind]),
       note: text(d.note, 200),
     };
     if (state.devices.some((x) => x.id === device.id)) device.id = newDeviceId();
@@ -286,12 +357,23 @@ export function deviceFromTemplate(state: RackState, t: DeviceTemplate, pos?: nu
   const base = { kind: t.kind, kg: t.kg };
   const at = pos ?? firstFit(state, t.u, !fillsFromBottom(base));
   if (at === null || !canPlace(state, t.u, at)) return null;
-  return { id: newDeviceId(), name: t.name, kind: t.kind, u: t.u, pos: at, watts: t.watts, kg: t.kg, upsWatts: t.upsWatts ?? 0, note: "" };
+  return {
+    id: newDeviceId(),
+    name: t.name,
+    kind: t.kind,
+    u: t.u,
+    pos: at,
+    watts: t.watts,
+    kg: t.kg,
+    upsWatts: t.upsWatts ?? 0,
+    depthMm: t.depthMm,
+    note: "",
+  };
 }
 
 /** Contoh rack awal: jaringan di atas, server di tengah, UPS di bawah. */
 export function exampleRack(): RackState {
-  const state: RackState = { name: "Rack NOC 1", heightU: 42, maxKg: 600, maxWatts: 3500, voltage: 220, devices: [] };
+  const state: RackState = { name: "Rack NOC 1", heightU: 42, maxKg: 600, maxWatts: 3500, voltage: 220, depthMm: 1000, devices: [] };
   const place = (id: string, pos: number, name?: string) => {
     const t = DEVICE_LIBRARY.find((x) => x.id === id);
     const d = t && deviceFromTemplate(state, t, pos);
@@ -316,10 +398,10 @@ export function billOfMaterials(state: RackState): string {
   const rows = [...state.devices].sort((a, b) => b.pos - a.pos);
   const s = summarize(state);
   return [
-    `${state.name} — ${state.heightU}U`,
+    `${state.name} — ${state.heightU}U, kedalaman ${state.depthMm} mm`,
     ...rows.map((d) => {
       const range = d.u === 1 ? `U${d.pos}` : `U${d.pos}-${d.pos + d.u - 1}`;
-      return `${range.padEnd(8)} ${d.name} (${d.u}U, ${fmtNum(d.watts)} W, ${fmtNum(d.kg)} kg)`;
+      return `${range.padEnd(8)} ${d.name} (${d.u}U, ${d.depthMm} mm, ${fmtNum(d.watts)} W, ${fmtNum(d.kg)} kg)`;
     }),
     "",
     `Terpakai ${s.usedU}/${state.heightU}U · Daya ${fmtNum(s.watts)} W (${fmtNum(s.amps)} A @${state.voltage} V) · Panas ${Math.round(s.btu).toLocaleString("id-ID")} BTU/jam · Berat ${fmtNum(s.kg)} kg`,

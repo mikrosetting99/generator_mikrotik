@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.69.0] - 2026-11-12
+
+_Simulasi Rack Server: tampilan 3D dan kedalaman rack_
+
+### Ditambahkan
+
+- Tampilan 3D: tombol 2D · Edit / 3D di atas rack. Rack bisa diputar, di-zoom, dan dilihat dari depan, samping, belakang, atau miring; pintu depan kaca dan pintu belakang bisa dibuka, panel samping bisa disembunyikan, dan klik perangkat untuk memilih dan mengubahnya. Tampilan bisa disimpan sebagai gambar PNG.
+- Kedalaman rack bisa dipilih (450–1200 mm, atau ukuran lain 250–1500 mm), dan setiap perangkat punya kedalaman sendiri dengan nilai bawaan sesuai jenisnya.
+- Peringatan bila perangkat lebih dalam dari ruang rack (pintu belakang tidak bisa ditutup) atau sisa ruang kabel di belakangnya kurang dari 100 mm. Kedalaman ikut tampil di daftar perangkat dan teks yang disalin.
+
 ## [1.68.0] - 2026-11-11
 
 _Menu baru: Simulasi Rack Server_

@@ -11,9 +11,15 @@ import {
   deviceFromTemplate,
   exampleRack,
   firstFit,
+  matchModel,
   normalizeRack,
+  outerHeightMm,
+  RACK_MODELS,
+  RACK_TYPE,
+  RACK_TYPES,
   rackWarnings,
   summarize,
+  usableDepth,
   type RackDevice,
   type RackState,
 } from "../lib/rack";
@@ -44,6 +50,8 @@ const dev = (over: Partial<RackDevice>): RackDevice => ({
 });
 const rack = (devices: RackDevice[], over: Partial<RackState> = {}): RackState => ({
   name: "T",
+  type: "closed",
+  widthMm: 600,
   heightU: 12,
   maxKg: 100,
   maxWatts: 1000,
@@ -56,10 +64,44 @@ const rack = (devices: RackDevice[], over: Partial<RackState> = {}): RackState =
 test("kedalaman: tidak muat, kabel sempit, dan muat", () => {
   // rack 600 mm → muat sampai 500 mm
   const r = (depthMm: number, watts = 100) => rackWarnings(...withSummary(rack([dev({ name: "Server dalam", depthMm, watts })], { depthMm: 600 })));
-  assert.ok(r(700).some((w) => w.tone === "bad" && /Server dalam lebih dalam dari ruang rack \(500 mm/.test(w.text)));
+  assert.ok(r(700).some((w) => w.tone === "bad" && /Server dalam lebih dalam dari ruang rak \(500 mm dari rel depan ke pintu belakang/.test(w.text)));
   assert.ok(r(450).some((w) => w.tone === "warn" && /kabel/.test(w.text)), "sisa 50 mm");
   assert.ok(!r(450, 0).some((w) => /kabel/.test(w.text)), "perangkat pasif tanpa kabel power");
   assert.ok(!r(350).some((w) => /kedalaman|lebih dalam|kabel/.test(w.text)));
+});
+
+test("jenis rak: tinggi luar, katalog, dan batas kedalaman", () => {
+  assert.equal(outerHeightMm({ type: "closed", heightU: 42 }), 2047);
+  assert.equal(outerHeightMm({ type: "wall", heightU: 6 }), 367);
+  assert.equal(usableDepth({ type: "closed", depthMm: 1000 }), 900);
+  assert.equal(usableDepth({ type: "open4", depthMm: 800 }), 800);
+  assert.equal(usableDepth({ type: "open2", depthMm: 600 }), null);
+  assert.equal(new Set(RACK_MODELS.map((m) => m.id)).size, RACK_MODELS.length, "id katalog unik");
+  for (const t of RACK_TYPES) assert.ok(RACK_MODELS.some((m) => m.type === t.id), `ada model ${t.id}`);
+  for (const m of RACK_MODELS) assert.ok(RACK_TYPE[m.type].widths.includes(m.widthMm), `lebar ${m.id}`);
+  assert.equal(matchModel({ type: "closed", heightU: 42, widthMm: 800, depthMm: 1000 })?.id, "closed-42u-800x1000");
+  assert.equal(matchModel({ type: "closed", heightU: 42, widthMm: 800, depthMm: 950 }), undefined);
+});
+
+test("jenis rak: peringatan open 4-post dan 2-post", () => {
+  const w = (type: RackState["type"], over: Partial<RackDevice>) => rackWarnings(...withSummary(rack([dev({ name: "Srv", ...over })], { type, depthMm: 800 })));
+  const o4 = w("open4", { depthMm: 900, watts: 100 });
+  assert.ok(o4.some((x) => x.tone === "warn" && /menonjol/.test(x.text)));
+  assert.ok(!o4.some((x) => x.tone === "bad" && /tidak muat/.test(x.text)), "open rack tidak punya pintu");
+  assert.ok(w("open2", { depthMm: 700 }).some((x) => /rak 2-post/.test(x.text)));
+  assert.ok(w("open2", { depthMm: 300, kg: 25 }).some((x) => /rak 2-post/.test(x.text)));
+  assert.ok(!w("open2", { kind: "shelf", depthMm: 450, kg: 30 }).some((x) => /rak 2-post/.test(x.text)), "shelf boleh");
+  assert.ok(!w("open2", { depthMm: 300, kg: 4 }).some((x) => /rak 2-post/.test(x.text)));
+  assert.ok(w("wall", { depthMm: 750 }).some((x) => x.tone === "bad" && /ke dinding/.test(x.text)));
+});
+
+test("jenis rak: data lama dan lebar tidak sah", () => {
+  const old = normalizeRack({ heightU: 42 });
+  assert.equal(old.type, "closed");
+  assert.equal(old.widthMm, 600);
+  assert.equal(normalizeRack({ type: "wall", widthMm: 800 }).widthMm, 600, "rak dinding hanya 600");
+  assert.equal(normalizeRack({ type: "closed", widthMm: 800 }).widthMm, 800);
+  assert.equal(normalizeRack({ type: "aneh" }).type, "closed");
 });
 
 test("kedalaman: data lama tanpa kedalaman memakai nilai bawaan jenis", () => {
@@ -151,7 +193,7 @@ test("contoh rack sah dan daftar perangkat", () => {
   const ex = exampleRack();
   assert.equal(normalizeRack(JSON.parse(JSON.stringify(ex))).devices.length, ex.devices.length, "contoh tidak bertabrakan");
   const bom = billOfMaterials(ex);
-  assert.match(bom, /^Rack NOC 1 — 42U/);
+  assert.match(bom, /^Rack NOC 1 — Rak tertutup 42U · 600 × 1000 × 2047 mm/);
   assert.match(bom, /U1-3\s+UPS 3U 3000VA/);
   const s = summarize(ex);
   assert.ok(s.upsLoadPct !== null && s.upsLoadPct < 100, "contoh tidak melebihi UPS");

@@ -8,6 +8,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.70.0] - 2026-11-12
+
+_Simulasi Rack Server: jenis rak dan katalog ukuran_
+
+### Ditambahkan
+
+- Jenis rak: rak tertutup (close rack / cabinet), rak dinding (wall mount), open rack 4 tiang, dan open rack 2 tiang, masing-masing dengan penjelasan singkat.
+- Katalog ukuran per jenis: rak dinding 6U–20U (450/500/600 mm), rak tertutup 20U–47U (lebar 600/800, dalam 800/1000/1200 mm), open rack 4-post 15U–47U, dan 2-post 15U–45U, lengkap dengan beban maksimal. Memilih ukuran mengisi tinggi, lebar, kedalaman, dan beban; semuanya masih bisa diubah sendiri.
+- Dimensi luar rak (lebar × dalam × tinggi dalam mm) tampil di panel Rack, di atas rak, dan di teks yang disalin.
+- Tampilan 3D mengikuti jenisnya: rak tertutup dengan pintu depan-belakang, rak dinding tergantung di dinding dengan pintu depan, open rack 4-post tanpa pintu dan panel, open rack 2-post dengan dua tiang dan kaki. Lebar 800 mm tampil lebih lebar.
+- Peringatan per jenis: perangkat menonjol dari rel open rack 4-post, perangkat lebih dalam dari 450 mm atau lebih berat dari 20 kg di rak 2-post tanpa shelf, dan perangkat yang mentok dinding di rak dinding.
+
 ## [1.69.2] - 2026-11-12
 
 _Perintah update satu baris di server_

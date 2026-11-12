@@ -28,14 +28,25 @@ import {
   MIN_DEPTH,
   MIN_U,
   normalizeRack,
-  RACK_PRESETS,
+  HEIGHT_CHOICES,
+  matchModel,
+  modelLabel,
+  outerHeightMm,
+  RACK_MODELS,
+  RACK_TYPE,
+  RACK_TYPES,
+  rackSizeLabel,
   rackWarnings,
   summarize,
+  TWO_POST_MAX_DEPTH,
+  TWO_POST_MAX_KG,
   usableDepth,
   type DeviceKind,
   type DeviceTemplate,
   type RackDevice,
+  type RackModel,
   type RackState,
+  type RackType,
 } from "@/lib/rack";
 
 const STORAGE_KEY = "rack-designer-v1";
@@ -165,6 +176,7 @@ export function RackDesigner() {
   const warnings = useMemo(() => rackWarnings(rack, summary), [rack, summary]);
   const selected = rack.devices.find((d) => d.id === selectedId) ?? null;
   const H = rack.heightU;
+  const model = matchModel(rack);
 
   const patchRack = (partial: Partial<RackState>) => setRack((r) => ({ ...r, ...partial }));
   const patchDevice = (id: string, partial: Partial<RackDevice>) =>
@@ -207,8 +219,31 @@ export function RackDesigner() {
       return setFlash({ tone: "warn", text: `Tidak bisa jadi ${height}U: ${out.map((d) => d.name).join(", ")} ada di atas U${height}. Pindahkan dulu.` });
     }
     setFlash(null);
-    const preset = RACK_PRESETS.find((p) => p.u === height);
-    patchRack({ heightU: height, ...(preset ? { maxKg: preset.maxKg } : {}) });
+    patchRack({ heightU: height });
+  };
+
+  /** Pakai ukuran dari katalog (tinggi, lebar, kedalaman, beban maksimal). */
+  const applyModel = (m: RackModel): boolean => {
+    const out = devicesAbove(rack.devices, m.heightU);
+    if (out.length) {
+      setFlash({ tone: "warn", text: `Tidak bisa jadi ${m.heightU}U: ${out.map((d) => d.name).join(", ")} ada di atas U${m.heightU}. Pindahkan dulu.` });
+      return false;
+    }
+    setFlash(null);
+    patchRack({ type: m.type, heightU: m.heightU, widthMm: m.widthMm, depthMm: m.depthMm, maxKg: m.maxKg });
+    return true;
+  };
+
+  /** Ganti jenis rak: pakai model jenis itu yang tingginya paling dekat dan masih memuat semua perangkat. */
+  const changeType = (type: RackType) => {
+    const fits = RACK_MODELS.filter((m) => m.type === type && !devicesAbove(rack.devices, m.heightU).length).sort(
+      (a, b) => Math.abs(a.heightU - H) - Math.abs(b.heightU - H) || Math.abs(a.depthMm - rack.depthMm) - Math.abs(b.depthMm - rack.depthMm),
+    );
+    if (!fits.length) {
+      const top = Math.max(...rack.devices.map((d) => d.pos + d.u - 1));
+      return setFlash({ tone: "warn", text: `${RACK_TYPE[type].short} paling tinggi tidak memuat perangkat sampai U${top}. Pindahkan perangkat ke bawah dulu.` });
+    }
+    applyModel(fits[0]);
   };
 
   /* ------------------------------------------------ geser perangkat di rack */
@@ -380,7 +415,7 @@ export function RackDesigner() {
             <div className="min-w-0">
               <h2 className="truncate text-base font-semibold text-ink">{rack.name}</h2>
               <span className="font-mono text-xs text-muted">
-                {H}U · {rack.depthMm} mm · terpakai {summary.usedU}U · kosong {summary.freeU}U
+                {rackSizeLabel(rack)} · terpakai {summary.usedU}U · kosong {summary.freeU}U
               </span>
             </div>
             <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 print:hidden" role="group" aria-label="Tampilan rack">
@@ -514,7 +549,7 @@ export function RackDesigner() {
               <DeviceEditor
                 key={selected.id}
                 device={selected}
-                rackDepth={rack.depthMm}
+                rack={rack}
                 onPatch={(p) => patchDevice(selected.id, p)}
                 onPlace={(u, pos) => placeDevice(selected, u, pos)}
                 onDuplicate={() => duplicate(selected)}
@@ -530,17 +565,64 @@ export function RackDesigner() {
                 <Field label="Nama rack">
                   <TextInput value={rack.name} onChange={(name) => patchRack({ name: name.slice(0, 80) })} />
                 </Field>
-                <Field label="Tinggi rack">
+                <Field label="Jenis rak" hint={RACK_TYPE[rack.type].description}>
                   <Select
-                    value={String(H)}
-                    onChange={(v) => setHeight(Number(v))}
+                    value={rack.type}
+                    onChange={(v) => changeType(v as RackType)}
+                    options={RACK_TYPES.map((t) => ({ value: t.id, label: t.label }))}
+                  />
+                </Field>
+                <Field label="Ukuran" hint="Memilih ukuran mengisi tinggi, lebar, kedalaman, dan beban maksimal. Bisa diubah lagi di bawah.">
+                  <Select
+                    value={model?.id ?? "custom"}
+                    onChange={(v) => {
+                      const m = RACK_MODELS.find((x) => x.id === v);
+                      if (m) applyModel(m);
+                    }}
                     options={[
-                      ...RACK_PRESETS.map((p) => ({ value: String(p.u), label: p.label })),
-                      ...(RACK_PRESETS.some((p) => p.u === H) ? [] : [{ value: String(H), label: `${H}U` }]),
+                      ...RACK_MODELS.filter((m) => m.type === rack.type).map((m) => ({ value: m.id, label: modelLabel(m) })),
+                      ...(model ? [] : [{ value: "custom", label: `Ukuran sendiri: ${H}U · ${rack.widthMm} × ${rack.depthMm} mm` }]),
                     ]}
                   />
                 </Field>
-                <DepthPicker value={rack.depthMm} onChange={(depthMm) => patchRack({ depthMm })} />
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Tinggi">
+                    <Select
+                      value={String(H)}
+                      onChange={(v) => setHeight(Number(v))}
+                      options={[...new Set([...HEIGHT_CHOICES, H])].sort((a, b) => a - b).map((u) => ({ value: String(u), label: `${u}U` }))}
+                    />
+                  </Field>
+                  <Field label="Lebar">
+                    <Select
+                      value={String(rack.widthMm)}
+                      onChange={(v) => patchRack({ widthMm: Number(v) })}
+                      options={RACK_TYPE[rack.type].widths.map((w) => ({ value: String(w), label: `${w} mm` }))}
+                    />
+                  </Field>
+                </div>
+                {RACK_TYPE[rack.type].hasDepth ? (
+                  <DepthPicker rack={rack} onChange={(depthMm) => patchRack({ depthMm })} />
+                ) : (
+                  <p className="text-[11px] leading-relaxed text-faint">
+                    Rak 2-post tidak punya rel belakang, jadi kedalaman perangkat tidak dibatasi; perangkat lebih dari {TWO_POST_MAX_DEPTH} mm atau{" "}
+                    {TWO_POST_MAX_KG} kg sebaiknya di atas shelf.
+                  </p>
+                )}
+                <dl className="grid grid-cols-3 gap-2 rounded-md bg-raised px-3 py-2 text-xs">
+                  <div>
+                    <dt className="text-muted">Lebar</dt>
+                    <dd className="font-mono text-ink">{rack.widthMm} mm</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">{rack.type === "open2" ? "Tapak" : "Dalam"}</dt>
+                    <dd className="font-mono text-ink">{rack.depthMm} mm</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">Tinggi luar</dt>
+                    <dd className="font-mono text-ink">{outerHeightMm(rack)} mm</dd>
+                  </div>
+                </dl>
                 <NumberField label="Beban maksimal rack" value={rack.maxKg} onChange={(n) => patchRack({ maxKg: Math.max(0, n) })} suffix="kg" />
                 <NumberField label="Kapasitas listrik / PDU" value={rack.maxWatts} onChange={(n) => patchRack({ maxWatts: Math.max(0, n) })} suffix="W" />
                 <NumberField label="Tegangan" value={rack.voltage} onChange={(n) => patchRack({ voltage: Math.max(0, n) })} suffix="V" />
@@ -585,7 +667,7 @@ export function RackDesigner() {
                         <span className="mr-1.5 inline-block h-2 w-2 rounded-sm align-middle" style={{ background: KIND_COLOR[d.kind] }} />
                         {d.name}
                       </td>
-                      <td className={`py-1.5 pr-2 text-right font-mono ${d.depthMm > usableDepth(rack.depthMm) ? "text-bad" : "text-ink"}`}>{d.depthMm}</td>
+                      <td className={`py-1.5 pr-2 text-right font-mono ${tooDeep(rack, d) ? "text-bad" : "text-ink"}`}>{d.depthMm}</td>
                       <td className="py-1.5 pr-2 text-right font-mono text-ink">{fmtNum(d.watts)}</td>
                       <td className="py-1.5 text-right font-mono text-ink">{fmtNum(d.kg)}</td>
                     </tr>
@@ -618,7 +700,33 @@ function UnitLabels({ units }: { units: number[] }) {
 }
 
 /** Kedalaman rack: pilih ukuran umum, atau "Ukuran lain" untuk mengetik sendiri. */
-function DepthPicker({ value, onChange }: { value: number; onChange: (mm: number) => void }) {
+function tooDeep(rack: RackState, d: RackDevice): boolean {
+  const usable = usableDepth(rack);
+  return usable !== null && d.depthMm > usable;
+}
+
+function deviceDepthHint(rack: RackState, d: RackDevice): string {
+  const usable = usableDepth(rack);
+  if (usable === null) {
+    return d.kind !== "shelf" && (d.depthMm > TWO_POST_MAX_DEPTH || d.kg > TWO_POST_MAX_KG)
+      ? "Terlalu dalam/berat untuk 2-post tanpa shelf."
+      : "Rak 2-post: dipasang dari telinga depan.";
+  }
+  if (rack.type === "open4") {
+    return d.depthMm > usable ? `Menonjol ${d.depthMm - usable} mm di belakang rel.` : `Sisa ${usable - d.depthMm} mm sampai rel belakang.`;
+  }
+  return d.depthMm > usable ? `Tidak muat: rak hanya ${usable} mm.` : `Sisa ${usable - d.depthMm} mm di belakang untuk kabel.`;
+}
+
+function depthHint(rack: RackState): string {
+  const usable = usableDepth(rack);
+  if (rack.type === "open4") return `Jarak rel depan ke belakang ${rack.depthMm} mm; perangkat lebih dalam akan menonjol.`;
+  if (rack.type === "wall") return `Perangkat muat sampai ${usable} mm (setelah rel, pintu, dan dinding).`;
+  return `Perangkat muat sampai ${usable} mm (setelah rel dan pintu).`;
+}
+
+function DepthPicker({ rack, onChange }: { rack: RackState; onChange: (mm: number) => void }) {
+  const value = rack.depthMm;
   const isPreset = DEPTH_PRESETS.some((p) => p.mm === value);
   const [custom, setCustom] = useState(!isPreset);
   const [draft, setDraft] = useState(String(value));
@@ -633,7 +741,7 @@ function DepthPicker({ value, onChange }: { value: number; onChange: (mm: number
   };
 
   return (
-    <Field label="Kedalaman rack" hint={`Perangkat muat sampai ${usableDepth(value)} mm (setelah rel dan pintu).`}>
+    <Field label={rack.type === "open4" ? "Jarak rel (kedalaman)" : "Kedalaman rack"} hint={depthHint(rack)}>
       <div className="flex flex-col gap-2">
         <Select
           value={custom ? "custom" : String(value)}
@@ -668,7 +776,7 @@ function DepthPicker({ value, onChange }: { value: number; onChange: (mm: number
 
 function DeviceEditor({
   device,
-  rackDepth,
+  rack,
   onPatch,
   onPlace,
   onDuplicate,
@@ -676,7 +784,7 @@ function DeviceEditor({
   onClose,
 }: {
   device: RackDevice;
-  rackDepth: number;
+  rack: RackState;
   onPatch: (p: Partial<RackDevice>) => void;
   onPlace: (u: number, pos: number) => boolean;
   onDuplicate: () => void;
@@ -753,11 +861,7 @@ function DeviceEditor({
             onChange={(n) => onPatch({ depthMm: Math.min(Math.max(Math.round(n), 0), MAX_DEVICE_DEPTH) })}
             suffix="mm"
             step="10"
-            hint={
-              device.depthMm > usableDepth(rackDepth)
-                ? `Tidak muat: rack hanya ${usableDepth(rackDepth)} mm.`
-                : `Sisa ${usableDepth(rackDepth) - device.depthMm} mm di belakang untuk kabel.`
-            }
+            hint={deviceDepthHint(rack, device)}
           />
         </div>
         {device.kind === "ups" && (

@@ -59,9 +59,14 @@ export interface RackDevice {
   note: string;
 }
 
+export type RackType = "closed" | "wall" | "open4" | "open2";
+
 export interface RackState {
   name: string;
+  type: RackType;
   heightU: number;
+  /** Lebar luar (mm): 600 atau 800. */
+  widthMm: number;
   /** Beban maksimal rack (kg), dari spesifikasi rack. */
   maxKg: number;
   /** Kapasitas listrik jalur/PDU yang memasok rack (watt). */
@@ -118,19 +123,150 @@ export const MAX_U = 52;
 export const MAX_DEVICE_U = 12;
 export const MAX_DEVICES = 120;
 
-/** Ukuran rack umum beserta beban maksimal perkiraan (rack dinding vs rack berdiri). */
-export const RACK_PRESETS: Array<{ u: number; label: string; maxKg: number }> = [
-  { u: 6, label: "6U (dinding)", maxKg: 30 },
-  { u: 9, label: "9U (dinding)", maxKg: 40 },
-  { u: 12, label: "12U (dinding)", maxKg: 60 },
-  { u: 15, label: "15U", maxKg: 80 },
-  { u: 20, label: "20U", maxKg: 300 },
-  { u: 27, label: "27U", maxKg: 400 },
-  { u: 32, label: "32U", maxKg: 500 },
-  { u: 42, label: "42U (standar)", maxKg: 600 },
-  { u: 45, label: "45U", maxKg: 800 },
-  { u: 47, label: "47U", maxKg: 800 },
+export interface RackTypeInfo {
+  id: RackType;
+  label: string;
+  short: string;
+  description: string;
+  /** Tinggi alas dan atap di luar ruang U (mm), untuk menghitung tinggi luar. */
+  baseMm: number;
+  topMm: number;
+  hasDoors: boolean;
+  /** Lebar yang bisa dipilih. */
+  widths: number[];
+  /** Kedalaman dipakai menghitung muat/tidaknya perangkat (2-post tidak punya kedalaman rel). */
+  hasDepth: boolean;
+}
+
+export const RACK_TYPES: RackTypeInfo[] = [
+  {
+    id: "closed",
+    label: "Rak tertutup (close rack / cabinet)",
+    short: "Rak tertutup",
+    description: "Berdiri di lantai, pintu depan kaca dan pintu belakang berlubang, panel samping bisa dilepas, bisa dikunci.",
+    baseMm: 100,
+    topMm: 80,
+    hasDoors: true,
+    widths: [600, 800],
+    hasDepth: true,
+  },
+  {
+    id: "wall",
+    label: "Rak dinding (wall mount)",
+    short: "Rak dinding",
+    description: "Ditempel di dinding, pintu depan kaca, untuk perangkat jaringan ringan dan dangkal.",
+    baseMm: 50,
+    topMm: 50,
+    hasDoors: true,
+    widths: [600],
+    hasDepth: true,
+  },
+  {
+    id: "open4",
+    label: "Open rack 4 tiang (4-post open frame)",
+    short: "Open rack 4-post",
+    description: "Rangka terbuka tanpa pintu dan panel, empat tiang dengan rel depan-belakang; sirkulasi udara bebas, cocok untuk server di ruang tertutup.",
+    baseMm: 60,
+    topMm: 60,
+    hasDoors: false,
+    widths: [600, 800],
+    hasDepth: true,
+  },
+  {
+    id: "open2",
+    label: "Open rack 2 tiang (2-post relay rack)",
+    short: "Open rack 2-post",
+    description: "Dua tiang tengah, perangkat dipasang dari telinga depannya; untuk patch panel, switch, router, dan perangkat ringan.",
+    baseMm: 50,
+    topMm: 50,
+    hasDoors: false,
+    widths: [600],
+    hasDepth: false,
+  },
 ];
+
+export const RACK_TYPE = Object.fromEntries(RACK_TYPES.map((t) => [t.id, t])) as Record<RackType, RackTypeInfo>;
+
+export interface RackModel {
+  id: string;
+  type: RackType;
+  heightU: number;
+  widthMm: number;
+  depthMm: number;
+  maxKg: number;
+}
+
+/** Ukuran rak yang umum dijual. Beban maksimal adalah angka umum; cek spesifikasi pabrikan. */
+export const RACK_MODELS: RackModel[] = [
+  // rak dinding
+  ...([
+    [6, 450, 30],
+    [6, 500, 30],
+    [9, 450, 40],
+    [9, 500, 40],
+    [12, 450, 60],
+    [12, 600, 60],
+    [15, 600, 60],
+    [18, 600, 70],
+    [20, 600, 80],
+  ] as const).map(([u, d, kg]) => ({ id: `wall-${u}u-${d}`, type: "wall" as const, heightU: u, widthMm: 600, depthMm: d, maxKg: kg })),
+  // rak tertutup berdiri
+  ...([
+    [20, 600, 800, 300],
+    [27, 600, 800, 400],
+    [27, 600, 1000, 400],
+    [32, 600, 1000, 500],
+    [37, 600, 1000, 600],
+    [42, 600, 800, 600],
+    [42, 600, 1000, 600],
+    [42, 800, 1000, 800],
+    [42, 600, 1200, 800],
+    [45, 600, 1000, 800],
+    [45, 800, 1200, 1000],
+    [47, 600, 1000, 800],
+    [47, 800, 1200, 1000],
+  ] as const).map(([u, w, d, kg]) => ({ id: `closed-${u}u-${w}x${d}`, type: "closed" as const, heightU: u, widthMm: w, depthMm: d, maxKg: kg })),
+  // open rack 4 tiang (kedalaman = jarak rel depan ke belakang)
+  ...([
+    [15, 600, 600, 300],
+    [27, 600, 800, 500],
+    [32, 600, 1000, 600],
+    [42, 600, 800, 800],
+    [42, 600, 1000, 800],
+    [42, 800, 1000, 1000],
+    [45, 600, 1000, 900],
+    [47, 600, 1000, 900],
+  ] as const).map(([u, w, d, kg]) => ({ id: `open4-${u}u-${w}x${d}`, type: "open4" as const, heightU: u, widthMm: w, depthMm: d, maxKg: kg })),
+  // open rack 2 tiang (kedalaman = tapak kaki)
+  ...([
+    [15, 100],
+    [20, 150],
+    [32, 200],
+    [42, 250],
+    [45, 250],
+  ] as const).map(([u, kg]) => ({ id: `open2-${u}u`, type: "open2" as const, heightU: u, widthMm: 600, depthMm: 600, maxKg: kg })),
+];
+
+/** Tinggi luar rak (mm): ruang U ditambah alas dan atap. */
+export const outerHeightMm = (r: Pick<RackState, "type" | "heightU">) => Math.round(r.heightU * 44.45 + RACK_TYPE[r.type].baseMm + RACK_TYPE[r.type].topMm);
+
+/** "Rak tertutup 42U · 600 × 1000 × 2047 mm (L × D × T)" */
+export function rackSizeLabel(r: Pick<RackState, "type" | "heightU" | "widthMm" | "depthMm">): string {
+  const t = RACK_TYPE[r.type];
+  return `${t.short} ${r.heightU}U · ${r.widthMm} × ${r.depthMm} × ${outerHeightMm(r)} mm (L × D × T)`;
+}
+
+export function modelLabel(m: RackModel): string {
+  // pendek supaya muat di dropdown; tinggi luar tampil di kotak dimensi
+  return m.type === "open2" ? `${m.heightU}U · maks ${m.maxKg} kg` : `${m.heightU}U · ${m.widthMm} × ${m.depthMm} mm · maks ${m.maxKg} kg`;
+}
+
+/** Model katalog yang persis sama dengan rak sekarang, bila ada. */
+export const matchModel = (r: Pick<RackState, "type" | "heightU" | "widthMm" | "depthMm">) =>
+  RACK_MODELS.find((m) => m.type === r.type && m.heightU === r.heightU && m.widthMm === r.widthMm && m.depthMm === r.depthMm);
+
+/** Tinggi U yang bisa dipilih manual. */
+export const HEIGHT_CHOICES = [4, 6, 9, 12, 15, 18, 20, 22, 24, 27, 32, 37, 42, 45, 47, 48, 52];
 
 export interface DeviceTemplate {
   id: string;
@@ -165,8 +301,20 @@ export const DEVICE_LIBRARY: DeviceTemplate[] = [
   { id: "blank-1u", name: "Blank panel 1U", kind: "blank", u: 1, watts: 0, kg: 0.3, depthMm: 20 },
 ];
 
-/** Kedalaman perangkat yang masih muat di rack sedalam depthMm (setelah rel dan pintu). */
-export const usableDepth = (depthMm: number) => Math.max(depthMm - RACK_LOSS_MM, 0);
+/**
+ * Kedalaman perangkat yang masih muat (mm). Rak tertutup/dinding: kedalaman dikurangi rel dan
+ * pintu. Open rack 4-post: jarak rel depan-belakang (lebih dari itu menonjol, tapi tidak terhalang
+ * pintu). Open rack 2-post: tidak dibatasi (null).
+ */
+export function usableDepth(r: Pick<RackState, "type" | "depthMm">): number | null {
+  if (r.type === "open2") return null;
+  if (r.type === "open4") return r.depthMm;
+  return Math.max(r.depthMm - RACK_LOSS_MM, 0);
+}
+
+/** Batas perangkat yang aman dipasang di 2-post tanpa shelf (perkiraan umum). */
+export const TWO_POST_MAX_DEPTH = 450;
+export const TWO_POST_MAX_KG = 20;
 
 /** Perangkat yang sebaiknya di bagian bawah rack (berat atau UPS); yang lain diisi dari atas. */
 export const fillsFromBottom = (d: Pick<RackDevice, "kind" | "kg">) => d.kind === "ups" || d.kind === "storage" || d.kg >= 20;
@@ -274,17 +422,36 @@ export function rackWarnings(state: RackState, s: RackSummary): RackWarning[] {
   }
 
   // Kedalaman: perangkat yang tidak muat, atau muat tapi kabel belakangnya tertekuk.
-  const usable = usableDepth(state.depthMm);
-  const tooDeep = state.devices.filter((d) => d.depthMm > usable);
-  const tight = state.devices.filter((d) => d.depthMm <= usable && usable - d.depthMm < CABLE_SPACE_MM && d.watts > 0);
-  if (tooDeep.length) {
-    out.push({
-      tone: "bad",
-      text: `${namesOf(tooDeep)} lebih dalam dari ruang rack (${fmtNum(usable)} mm dari rel depan ke pintu belakang): pintu belakang tidak bisa ditutup. Pilih rack lebih dalam.`,
-    });
+  const usable = usableDepth(state);
+  if (usable !== null && state.type !== "open4") {
+    const tooDeep = state.devices.filter((d) => d.depthMm > usable);
+    const tight = state.devices.filter((d) => d.depthMm <= usable && usable - d.depthMm < CABLE_SPACE_MM && d.watts > 0);
+    if (tooDeep.length) {
+      const rear = state.type === "wall" ? "dinding" : "pintu belakang";
+      out.push({
+        tone: "bad",
+        text: `${namesOf(tooDeep)} lebih dalam dari ruang rak (${fmtNum(usable)} mm dari rel depan ke ${rear}): tidak muat. Pilih rak lebih dalam.`,
+      });
+    }
+    if (tight.length) {
+      out.push({ tone: "warn", text: `Sisa ruang di belakang ${namesOf(tight)} kurang dari ${CABLE_SPACE_MM} mm: kabel power dan jaringan akan tertekuk.` });
+    }
+  } else if (usable !== null) {
+    const out4 = state.devices.filter((d) => d.depthMm > usable);
+    if (out4.length) {
+      out.push({ tone: "warn", text: `${namesOf(out4)} lebih dalam dari jarak rel ${fmtNum(usable)} mm: menonjol di belakang dan rel belakang tidak bisa dibaut. Atur rel lebih dalam atau pilih rak lebih dalam.` });
+    }
+  } else {
+    const heavy = state.devices.filter((d) => d.kind !== "shelf" && (d.depthMm > TWO_POST_MAX_DEPTH || d.kg > TWO_POST_MAX_KG));
+    if (heavy.length) {
+      out.push({
+        tone: "warn",
+        text: `${namesOf(heavy)} terlalu dalam atau berat untuk rak 2-post (lebih dari ${TWO_POST_MAX_DEPTH} mm atau ${TWO_POST_MAX_KG} kg): taruh di atas shelf atau pakai rak 4-post/tertutup.`,
+      });
+    }
   }
-  if (tight.length) {
-    out.push({ tone: "warn", text: `Sisa ruang di belakang ${namesOf(tight)} kurang dari ${CABLE_SPACE_MM} mm: kabel power dan jaringan akan tertekuk.` });
+  if (state.type === "wall" && state.devices.some((d) => d.kind === "server" || d.kind === "storage")) {
+    out.push({ tone: "info", text: "Server/storage di rak dinding: pastikan dinding dan baut kuat menahan beban, dan sirkulasi udara cukup." });
   }
 
   if (s.usedPct >= 90 && s.watts > 1500) {
@@ -317,8 +484,12 @@ const text = (v: unknown, max: number, fallback = "") => (typeof v === "string" 
  */
 export function normalizeRack(raw: unknown): RackState {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const type: RackType = RACK_TYPES.some((t) => t.id === r.type) ? (r.type as RackType) : "closed";
+  const width = int(r.widthMm, 0, 2000, 600);
   const state: RackState = {
     name: text(r.name, 80, "Rack 1") || "Rack 1",
+    type,
+    widthMm: RACK_TYPE[type].widths.includes(width) ? width : RACK_TYPE[type].widths[0],
     heightU: int(r.heightU, MIN_U, MAX_U, 42),
     maxKg: num(r.maxKg, 0, 5000, 600),
     maxWatts: num(r.maxWatts, 0, 100_000, 3500),
@@ -373,7 +544,7 @@ export function deviceFromTemplate(state: RackState, t: DeviceTemplate, pos?: nu
 
 /** Contoh rack awal: jaringan di atas, server di tengah, UPS di bawah. */
 export function exampleRack(): RackState {
-  const state: RackState = { name: "Rack NOC 1", heightU: 42, maxKg: 600, maxWatts: 3500, voltage: 220, depthMm: 1000, devices: [] };
+  const state: RackState = { name: "Rack NOC 1", type: "closed", heightU: 42, widthMm: 600, maxKg: 600, maxWatts: 3500, voltage: 220, depthMm: 1000, devices: [] };
   const place = (id: string, pos: number, name?: string) => {
     const t = DEVICE_LIBRARY.find((x) => x.id === id);
     const d = t && deviceFromTemplate(state, t, pos);
@@ -398,7 +569,7 @@ export function billOfMaterials(state: RackState): string {
   const rows = [...state.devices].sort((a, b) => b.pos - a.pos);
   const s = summarize(state);
   return [
-    `${state.name} — ${state.heightU}U, kedalaman ${state.depthMm} mm`,
+    `${state.name} — ${rackSizeLabel(state)}, beban maks ${fmtNum(state.maxKg)} kg`,
     ...rows.map((d) => {
       const range = d.u === 1 ? `U${d.pos}` : `U${d.pos}-${d.pos + d.u - 1}`;
       return `${range.padEnd(8)} ${d.name} (${d.u}U, ${d.depthMm} mm, ${fmtNum(d.watts)} W, ${fmtNum(d.kg)} kg)`;

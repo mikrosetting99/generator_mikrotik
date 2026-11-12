@@ -12,12 +12,18 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Download } from "@/components/icons";
 import { Button, Note } from "@/components/ui";
-import { KIND_COLOR, RACK_LOSS_MM, usableDepth, type RackDevice, type RackState } from "@/lib/rack";
+import {
+  KIND_COLOR,
+  RACK_LOSS_MM,
+  RACK_TYPE,
+  TWO_POST_MAX_DEPTH,
+  TWO_POST_MAX_KG,
+  usableDepth,
+  type RackDevice,
+  type RackState,
+} from "@/lib/rack";
 
 const U = 0.04445;
-const RACK_W = 0.6;
-const BASE_H = 0.1;
-const TOP_H = 0.05;
 /** Rel depan mundur dari muka rack; sisa RACK_LOSS_MM ada di belakang untuk pintu. */
 const FRONT_GAP = RACK_LOSS_MM / 2 / 1000;
 const EAR_W = 0.4826;
@@ -170,41 +176,73 @@ function disposeTree(obj: THREE.Object3D) {
   });
 }
 
-function rackHeight(heightU: number) {
-  return heightU * U + BASE_H + TOP_H;
+type RackSize = Pick<RackState, "type" | "heightU" | "widthMm" | "depthMm">;
+
+interface RackGeo {
+  /** Lebar dan dalam luar (m). */
+  W: number;
+  D: number;
+  base: number;
+  top: number;
+  /** Tinggi rak dari alas sampai atap (m). */
+  RH: number;
+  /** Ketinggian alas dari lantai: rak dinding digantung. */
+  y0: number;
+  /** Muka rel depan, tempat telinga perangkat dibaut. */
+  railZ: number;
+  rearRailZ: number | null;
+}
+
+const WALL_MOUNT_Y = 1.0;
+
+function rackGeo(r: RackSize): RackGeo {
+  const t = RACK_TYPE[r.type];
+  const W = r.widthMm / 1000;
+  const D = r.depthMm / 1000;
+  const base = t.baseMm / 1000;
+  const top = t.topMm / 1000;
+  const RH = r.heightU * U + base + top;
+  const y0 = r.type === "wall" ? WALL_MOUNT_Y : 0;
+  if (r.type === "open2") return { W, D, base, top, RH, y0, railZ: 0.035, rearRailZ: null };
+  if (r.type === "open4") return { W, D, base, top, RH, y0, railZ: D / 2 - 0.025, rearRailZ: -D / 2 + 0.025 };
+  const railZ = D / 2 - FRONT_GAP;
+  const usable = Math.max(r.depthMm - RACK_LOSS_MM, 100) / 1000;
+  return { W, D, base, top, RH, y0, railZ, rearRailZ: railZ - Math.max(usable - 0.02, 0.1) };
 }
 
 /** Posisi kamera untuk tiap sudut pandang, cukup jauh supaya seluruh rack terlihat. */
-function viewPose(view: View, heightU: number, depthMm: number) {
-  const rh = rackHeight(heightU);
-  const d = depthMm / 1000;
-  const dist = Math.max(rh, d, 1) * 1.6 + 0.35;
-  const target = new THREE.Vector3(0, rh / 2, 0);
+function viewPose(view: View, r: RackSize) {
+  const g = rackGeo(r);
+  const cy = g.y0 + g.RH / 2;
+  const dist = Math.max(g.RH, g.D, 1) * 1.6 + 0.35;
+  const target = new THREE.Vector3(0, cy, 0);
   const pos =
     view === "front"
-      ? new THREE.Vector3(0, rh / 2, dist)
+      ? new THREE.Vector3(0, cy, dist)
       : view === "rear"
-        ? new THREE.Vector3(0, rh / 2, -dist)
+        ? new THREE.Vector3(0, cy, -dist)
         : view === "side"
-          ? new THREE.Vector3(dist, rh / 2, 0)
-          : new THREE.Vector3(dist * 0.62, rh * 0.78, dist * 0.8);
+          ? new THREE.Vector3(dist, cy, 0)
+          : new THREE.Vector3(dist * 0.62, g.y0 + g.RH * 0.78 + (g.y0 ? 0.25 : 0), dist * 0.8);
   return { pos, target };
 }
 
 function buildRack(rack: RackState, selectedId: string | null, sidePanels: boolean): {
   group: THREE.Group;
-  frontDoor: THREE.Object3D;
-  rearDoor: THREE.Object3D;
+  frontDoor: THREE.Object3D | null;
+  rearDoor: THREE.Object3D | null;
   pickables: THREE.Object3D[];
 } {
   const group = new THREE.Group();
   const pickables: THREE.Object3D[] = [];
-  const D = rack.depthMm / 1000;
-  const RH = rackHeight(rack.heightU);
-  const railZ = D / 2 - FRONT_GAP;
-  const usable = usableDepth(rack.depthMm);
+  const { W, D, base, top, RH, y0, railZ, rearRailZ } = rackGeo(rack);
+  const type = rack.type;
+  const usable = usableDepth(rack);
+  const railH = rack.heightU * U;
+  const railY = y0 + base + railH / 2;
 
   const frameMat = new THREE.MeshStandardMaterial({ color: "#1c2027", metalness: 0.55, roughness: 0.55 });
+  const railMat = new THREE.MeshStandardMaterial({ color: "#7c838f", metalness: 0.7, roughness: 0.35 });
   const box = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z);
@@ -213,32 +251,72 @@ function buildRack(rack: RackState, selectedId: string | null, sidePanels: boole
     group.add(m);
     return m;
   };
+  let labelX = -(EAR_W / 2 + 0.016);
 
-  // alas, atap, tiang sudut
-  box(RACK_W, BASE_H, D, frameMat, 0, BASE_H / 2, 0);
-  box(RACK_W, TOP_H, D, frameMat, 0, RH - TOP_H / 2, 0);
-  const post = 0.035;
-  for (const sx of [-1, 1]) {
-    for (const sz of [-1, 1]) box(post, RH, post, frameMat, sx * (RACK_W / 2 - post / 2), RH / 2, sz * (D / 2 - post / 2));
+  if (type === "closed" || type === "wall") {
+    // alas, atap, tiang sudut
+    box(W, base, D, frameMat, 0, y0 + base / 2, 0);
+    box(W, top, D, frameMat, 0, y0 + RH - top / 2, 0);
+    const post = 0.035;
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) box(post, RH, post, frameMat, sx * (W / 2 - post / 2), y0 + RH / 2, sz * (D / 2 - post / 2));
+    }
+    if (type === "closed") {
+      const footMat = new THREE.MeshStandardMaterial({ color: "#0d0f13", roughness: 0.9 });
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(0.05, 0.02, 0.05, footMat, sx * (W / 2 - 0.06), 0.01, sz * (D / 2 - 0.06));
+    } else {
+      // dinding tempat rak digantung
+      const wall = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshStandardMaterial({ color: "#d8d4cc", roughness: 0.95 }));
+      wall.position.set(0, 1.5, -D / 2 - 0.002);
+      wall.receiveShadow = true;
+      group.add(wall);
+    }
+    if (sidePanels) {
+      const sideMat = new THREE.MeshStandardMaterial({ color: "#2a2f38", metalness: 0.4, roughness: 0.6, transparent: true, opacity: 0.32, depthWrite: false });
+      const h = RH - base - top;
+      for (const sx of [-1, 1]) box(0.008, h, D - post * 2, sideMat, sx * (W / 2 - 0.004), y0 + base + h / 2, 0);
+    }
+  } else if (type === "open4") {
+    // empat tiang, rangka atas dan bawah, tanpa panel
+    const post = 0.045;
+    const px = W / 2 - post / 2;
+    const pz = D / 2 - post / 2;
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(post, RH, post, frameMat, sx * px, y0 + RH / 2, sz * pz);
+    for (const y of [y0 + base / 2, y0 + RH - top / 2]) {
+      const h = y === y0 + base / 2 ? base : top;
+      for (const sz of [-1, 1]) box(W, h, post, frameMat, 0, y, sz * pz);
+      for (const sx of [-1, 1]) box(post, h, D, frameMat, sx * px, y, 0);
+    }
+    // braket rel ke tiang
+    for (const z of [railZ - 0.01, rearRailZ! + 0.01]) {
+      for (const y of [y0 + base + 0.02, y0 + RH - top - 0.02]) box(W - post, 0.02, 0.02, frameMat, 0, y, z);
+    }
+  } else {
+    // 2 tiang tengah, kaki memanjang ke depan dan belakang
+    const postW = 0.03;
+    const postD = 0.07;
+    const px = EAR_W / 2 + postW / 2 - 0.004;
+    labelX = -px;
+    for (const sx of [-1, 1]) {
+      box(postW, RH, postD, frameMat, sx * px, y0 + RH / 2, 0);
+      box(0.08, base, D, frameMat, sx * px, y0 + base / 2, 0);
+    }
+    box(px * 2 + postW, top, postD, frameMat, 0, y0 + RH - top / 2, 0);
+    box(px * 2 + postW, 0.04, 0.04, frameMat, 0, y0 + base + 0.02, 0);
   }
-  // kaki
-  const footMat = new THREE.MeshStandardMaterial({ color: "#0d0f13", roughness: 0.9 });
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(0.05, 0.02, 0.05, footMat, sx * (RACK_W / 2 - 0.06), 0.01, sz * (D / 2 - 0.06));
 
-  // rel 19" depan dan belakang, rel depan bernomor U
-  const railMat = new THREE.MeshStandardMaterial({ color: "#7c838f", metalness: 0.7, roughness: 0.35 });
-  const railH = rack.heightU * U;
-  const railY = BASE_H + railH / 2;
-  const rearRailZ = railZ - Math.max(usable / 1000 - 0.02, 0.1);
-  for (const sx of [-1, 1]) {
-    box(0.018, railH, 0.02, railMat, sx * (EAR_W / 2 - 0.009), railY, railZ - 0.01);
-    box(0.018, railH, 0.02, railMat, sx * (EAR_W / 2 - 0.009), railY, rearRailZ);
+  // rel 19" depan (dan belakang bila ada)
+  if (type !== "open2") {
+    for (const sx of [-1, 1]) {
+      box(0.018, railH, 0.02, railMat, sx * (EAR_W / 2 - 0.009), railY, railZ - 0.01);
+      if (rearRailZ !== null) box(0.018, railH, 0.02, railMat, sx * (EAR_W / 2 - 0.009), railY, rearRailZ);
+    }
   }
+  // nomor U di rel kiri depan
   {
     const c = document.createElement("canvas");
-    const px = 40;
     c.width = 48;
-    c.height = Math.min(rack.heightU * px, 4096);
+    c.height = Math.min(rack.heightU * 40, 4096);
     const g = c.getContext("2d")!;
     const step = c.height / rack.heightU;
     g.fillStyle = "#7c838f";
@@ -251,26 +329,30 @@ function buildRack(rack: RackState, selectedId: string | null, sidePanels: boole
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     const label = new THREE.Mesh(new THREE.PlaneGeometry(0.026, railH), new THREE.MeshBasicMaterial({ map: tex }));
-    label.position.set(-(EAR_W / 2 + 0.016), railY, railZ + 0.0015);
+    label.position.set(labelX, railY, railZ + 0.0015);
     group.add(label);
-  }
-
-  // panel samping
-  if (sidePanels) {
-    const sideMat = new THREE.MeshStandardMaterial({ color: "#2a2f38", metalness: 0.4, roughness: 0.6, transparent: true, opacity: 0.32, depthWrite: false });
-    for (const sx of [-1, 1]) box(0.008, RH - BASE_H - TOP_H, D - post * 2, sideMat, sx * (RACK_W / 2 - 0.004), BASE_H + (RH - BASE_H - TOP_H) / 2, 0);
   }
 
   // perangkat
   for (const d of rack.devices) {
     const h = d.u * U - 0.0015;
-    const y = BASE_H + (d.pos - 1) * U + h / 2 + 0.00075;
+    const y = y0 + base + (d.pos - 1) * U + h / 2 + 0.00075;
     const dd = Math.max(d.depthMm, 10) / 1000;
-    const tooDeep = d.depthMm > usable;
     const isSel = d.id === selectedId;
+    // merah = tidak muat di rak tertutup; jingga = menonjol (open 4-post) atau terlalu berat untuk 2-post
+    const problem =
+      usable === null
+        ? d.kind !== "shelf" && (d.depthMm > TWO_POST_MAX_DEPTH || d.kg > TWO_POST_MAX_KG)
+          ? "#f0ad4e"
+          : null
+        : d.depthMm > usable
+          ? type === "open4"
+            ? "#f0ad4e"
+            : "#f1707d"
+          : null;
 
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: tooDeep ? "#f1707d" : d.kind === "blank" ? "#20242b" : "#353b46",
+      color: problem ?? (d.kind === "blank" ? "#20242b" : "#353b46"),
       metalness: 0.45,
       roughness: 0.5,
       emissive: isSel ? new THREE.Color("#71639e") : new THREE.Color("#000000"),
@@ -284,7 +366,7 @@ function buildRack(rack: RackState, selectedId: string | null, sidePanels: boole
     group.add(body);
     pickables.push(body);
 
-    // garis warna jenis di atas badan, supaya terlihat dari samping/belakang
+    // garis warna jenis di sisi badan, supaya terlihat dari samping/belakang
     if (d.kind !== "blank") {
       const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.012, h * 0.7, dd * 0.98), new THREE.MeshStandardMaterial({ color: KIND_COLOR[d.kind], roughness: 0.6 }));
       stripe.position.set(BODY_W / 2 + 0.0005, y, railZ - dd / 2);
@@ -320,16 +402,18 @@ function buildRack(rack: RackState, selectedId: string | null, sidePanels: boole
     }
   }
 
+  if (!RACK_TYPE[type].hasDoors) return { group, frontDoor: null, rearDoor: null, pickables };
+
   // pintu depan kaca, engsel di kiri
-  const doorH = RH - BASE_H - TOP_H;
+  const doorH = RH - base - top;
   const frontDoor = new THREE.Group();
-  frontDoor.position.set(-RACK_W / 2, BASE_H + doorH / 2, D / 2);
+  frontDoor.position.set(-W / 2, y0 + base + doorH / 2, D / 2);
   {
     const glass = new THREE.Mesh(
-      new THREE.BoxGeometry(RACK_W - 0.06, doorH - 0.06, 0.005),
+      new THREE.BoxGeometry(W - 0.06, doorH - 0.06, 0.005),
       new THREE.MeshPhysicalMaterial({ color: "#9fb4c8", metalness: 0, roughness: 0.08, transparent: true, opacity: 0.16, depthWrite: false }),
     );
-    glass.position.set(RACK_W / 2, 0, 0.012);
+    glass.position.set(W / 2, 0, 0.012);
     frontDoor.add(glass);
     const doorFrameMat = new THREE.MeshStandardMaterial({ color: "#14171c", metalness: 0.5, roughness: 0.5 });
     const bar = (w: number, h: number, x: number, y: number) => {
@@ -338,20 +422,26 @@ function buildRack(rack: RackState, selectedId: string | null, sidePanels: boole
       m.castShadow = true;
       frontDoor.add(m);
     };
-    bar(RACK_W, 0.03, RACK_W / 2, doorH / 2 - 0.015);
-    bar(RACK_W, 0.03, RACK_W / 2, -doorH / 2 + 0.015);
+    bar(W, 0.03, W / 2, doorH / 2 - 0.015);
+    bar(W, 0.03, W / 2, -doorH / 2 + 0.015);
     bar(0.03, doorH, 0.015, 0);
-    bar(0.03, doorH, RACK_W - 0.015, 0);
+    bar(0.03, doorH, W - 0.015, 0);
     // gagang
-    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.16, 0.025), new THREE.MeshStandardMaterial({ color: "#8a919c", metalness: 0.8, roughness: 0.3 }));
-    handle.position.set(RACK_W - 0.04, 0, 0.032);
+    const handle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.014, Math.min(0.16, doorH * 0.4), 0.025),
+      new THREE.MeshStandardMaterial({ color: "#8a919c", metalness: 0.8, roughness: 0.3 }),
+    );
+    handle.position.set(W - 0.04, 0, 0.032);
     frontDoor.add(handle);
   }
   group.add(frontDoor);
 
+  // rak dinding menempel di dinding: tanpa pintu belakang
+  if (type === "wall") return { group, frontDoor, rearDoor: null, pickables };
+
   // pintu belakang berlubang, engsel di kanan (dilihat dari belakang: kiri)
   const rearDoor = new THREE.Group();
-  rearDoor.position.set(RACK_W / 2, BASE_H + doorH / 2, -D / 2);
+  rearDoor.position.set(W / 2, y0 + base + doorH / 2, -D / 2);
   {
     const c = document.createElement("canvas");
     c.width = 128;
@@ -364,12 +454,12 @@ function buildRack(rack: RackState, selectedId: string | null, sidePanels: boole
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(10, Math.max(4, Math.round((doorH / (RACK_W - 0.02)) * 10)));
+    tex.repeat.set(10, Math.max(4, Math.round((doorH / (W - 0.02)) * 10)));
     const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(RACK_W - 0.01, doorH, 0.012),
+      new THREE.BoxGeometry(W - 0.01, doorH, 0.012),
       new THREE.MeshStandardMaterial({ map: tex, metalness: 0.5, roughness: 0.6, transparent: true, opacity: 0.88 }),
     );
-    mesh.position.set(-(RACK_W - 0.01) / 2, 0, -0.008);
+    mesh.position.set(-(W - 0.01) / 2, 0, -0.008);
     mesh.castShadow = true;
     rearDoor.add(mesh);
   }
@@ -393,8 +483,9 @@ export default function Rack3D({ rack, selectedId, onSelect }: { rack: RackState
   const [rearOpen, setRearOpen] = useState(false);
   const [sidePanels, setSidePanels] = useState(true);
   const [view, setView] = useState<View>("iso");
-  const sizeKey = `${rack.heightU}x${rack.depthMm}`;
-  const initialSize = useRef({ heightU: rack.heightU, depthMm: rack.depthMm });
+  const sizeKey = `${rack.type}|${rack.heightU}|${rack.widthMm}|${rack.depthMm}`;
+  const initialSize = useRef<RackSize>({ type: rack.type, heightU: rack.heightU, widthMm: rack.widthMm, depthMm: rack.depthMm });
+  const info = RACK_TYPE[rack.type];
   const firstPose = useRef(true);
 
   // Renderer, kamera, kontrol, dan putaran gambar: dibuat sekali.
@@ -451,7 +542,7 @@ export default function Rack3D({ rack, selectedId, onSelect }: { rack: RackState
 
     const content = new THREE.Group();
     scene.add(content);
-    const start = viewPose("iso", initialSize.current.heightU, initialSize.current.depthMm);
+    const start = viewPose("iso", initialSize.current);
     camera.position.copy(start.pos);
     controls.target.copy(start.target);
     controls.update();
@@ -532,8 +623,8 @@ export default function Rack3D({ rack, selectedId, onSelect }: { rack: RackState
     }
     const built = buildRack(rack, selectedId, sidePanels);
     s.content.add(built.group);
-    built.frontDoor.rotation.y = frontAngle;
-    built.rearDoor.rotation.y = rearAngle;
+    if (built.frontDoor) built.frontDoor.rotation.y = frontAngle;
+    if (built.rearDoor) built.rearDoor.rotation.y = rearAngle;
     s.frontDoor = built.frontDoor;
     s.rearDoor = built.rearDoor;
     s.pickables = built.pickables;
@@ -548,8 +639,8 @@ export default function Rack3D({ rack, selectedId, onSelect }: { rack: RackState
       firstPose.current = false;
       return;
     }
-    const [h, d] = sizeKey.split("x").map(Number);
-    const pose = viewPose(view, h, d);
+    const [type, h, w, d] = sizeKey.split("|");
+    const pose = viewPose(view, { type: type as RackState["type"], heightU: Number(h), widthMm: Number(w), depthMm: Number(d) });
     s.fly = { from: s.camera.position.clone(), to: pose.pos, fromTarget: s.controls.target.clone(), target: pose.target, t: 0 };
   }, [view, sizeKey]);
 
@@ -596,7 +687,7 @@ export default function Rack3D({ rack, selectedId, onSelect }: { rack: RackState
                 if (v.id === view) {
                   const s = sceneRef.current;
                   if (s) {
-                    const pose = viewPose(v.id, rack.heightU, rack.depthMm);
+                    const pose = viewPose(v.id, rack);
                     s.fly = { from: s.camera.position.clone(), to: pose.pos, fromTarget: s.controls.target.clone(), target: pose.target, t: 0 };
                   }
                 }
@@ -609,9 +700,9 @@ export default function Rack3D({ rack, selectedId, onSelect }: { rack: RackState
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          {toggle(frontOpen, "Buka pintu depan", setFrontOpen)}
-          {toggle(rearOpen, "Buka pintu belakang", setRearOpen)}
-          {toggle(sidePanels, "Panel samping", setSidePanels)}
+          {info.hasDoors && toggle(frontOpen, "Buka pintu depan", setFrontOpen)}
+          {rack.type === "closed" && toggle(rearOpen, "Buka pintu belakang", setRearOpen)}
+          {info.hasDoors && toggle(sidePanels, "Panel samping", setSidePanels)}
           <Button size="sm" onClick={savePng} title="Simpan tampilan 3D sebagai gambar">
             <Download className="h-3.5 w-3.5" /> PNG
           </Button>

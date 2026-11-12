@@ -12,6 +12,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Download } from "@/components/icons";
 import { Button, Note } from "@/components/ui";
+import { CABLE_HEX, cableRoute, portLayout, type PortSpot } from "@/lib/rack-ports";
 import {
   KIND_COLOR,
   RACK_LOSS_MM,
@@ -92,8 +93,11 @@ function drawFace(d: RackDevice, w: number, h: number): HTMLCanvasElement {
   const detailX = x0 + Math.round((x1 - x0) * 0.42);
   const dw = x1 - detailX;
   const midY = h / 2;
+  const spots = d.portSide === "front" ? portLayout(d) : [];
   g.save();
-  if (d.kind === "switch" || d.kind === "patch" || d.kind === "olt") {
+  if (spots.length) {
+    drawPorts(g, spots, w, h);
+  } else if (d.kind === "switch" || d.kind === "patch" || d.kind === "olt") {
     const rows = 2;
     const cols = d.kind === "olt" ? 16 : 24;
     const pw = dw / cols;
@@ -153,12 +157,59 @@ function drawFace(d: RackDevice, w: number, h: number): HTMLCanvasElement {
     const size = Math.min(40, Math.max(22, h * 0.34));
     g.font = `600 ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     g.textBaseline = "middle";
-    const maxW = detailX - x0 - 40;
+    const maxW = spots.length ? w * 0.32 - x0 - 34 : detailX - x0 - 40;
     let label = d.name;
     while (label.length > 1 && g.measureText(label).width > maxW) label = label.slice(0, -1);
     if (label !== d.name) label = `${label.slice(0, -1)}…`;
     g.fillText(label, x0 + 26, midY);
   }
+  return c;
+}
+
+/** Gambar port sesuai jenisnya: RJ45 hitam, sangkar SFP perak, adaptor LC biru, PON hijau. */
+function drawPorts(g: CanvasRenderingContext2D, spots: PortSpot[], w: number, h: number) {
+  for (const p of spots) {
+    const pw = p.w * w;
+    const ph = p.h * h;
+    const x = p.x * w - pw / 2;
+    const y = p.y * h - ph / 2;
+    if (p.type === "rj45" || p.type === "console") {
+      g.fillStyle = p.type === "console" ? "#1e3a5f" : "#07080a";
+      g.fillRect(x, y, pw, ph);
+      g.fillStyle = "#2a2f38";
+      g.fillRect(x + pw * 0.3, y + (p.y < 0.5 ? 0 : ph * 0.8), pw * 0.4, ph * 0.2);
+    } else if (p.type === "lc") {
+      g.fillStyle = "#1e40af";
+      g.fillRect(x, y, pw, ph);
+      g.fillStyle = "#0b0d11";
+      g.fillRect(x + pw * 0.12, y + ph * 0.25, pw * 0.3, ph * 0.5);
+      g.fillRect(x + pw * 0.58, y + ph * 0.25, pw * 0.3, ph * 0.5);
+    } else {
+      // sangkar SFP/QSFP/PON
+      g.fillStyle = p.type === "pon" ? "#15803d" : "#9aa1ab";
+      g.fillRect(x, y, pw, ph);
+      g.fillStyle = "#0b0d11";
+      g.fillRect(x + pw * 0.1, y + ph * 0.18, pw * 0.8, ph * 0.64);
+    }
+  }
+}
+
+/** Muka belakang perangkat yang portnya di belakang (server, NAS): port, PSU, dan kipas. */
+function drawRear(d: RackDevice, w: number, h: number): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#2a2f37";
+  g.fillRect(0, 0, w, h);
+  // PSU di kiri (dilihat dari belakang)
+  g.fillStyle = "#1b1e24";
+  g.fillRect(w * 0.03, h * 0.12, w * 0.2, h * 0.76);
+  g.fillStyle = "#0e1013";
+  g.beginPath();
+  g.arc(w * 0.13, h * 0.5, Math.min(w * 0.06, h * 0.3), 0, Math.PI * 2);
+  g.fill();
+  drawPorts(g, portLayout(d), w, h);
   return c;
 }
 
@@ -227,7 +278,13 @@ function viewPose(view: View, r: RackSize) {
   return { pos, target };
 }
 
-function buildRack(rack: RackState, selectedId: string | null, sidePanels: boolean): {
+function buildRack(
+  rack: RackState,
+  selectedId: string | null,
+  sidePanels: boolean,
+  showCables: boolean,
+  selectedCableId: string | null,
+): {
   group: THREE.Group;
   frontDoor: THREE.Object3D | null;
   rearDoor: THREE.Object3D | null;
@@ -358,7 +415,18 @@ function buildRack(rack: RackState, selectedId: string | null, sidePanels: boole
       emissive: isSel ? new THREE.Color("#71639e") : new THREE.Color("#000000"),
       emissiveIntensity: isSel ? 0.55 : 0,
     });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(BODY_W, h, dd), bodyMat);
+    let bodyMats: THREE.Material | THREE.Material[] = bodyMat;
+    if (d.portSide === "rear" && d.ports.length) {
+      const rw = 1024;
+      const rh = Math.max(64, Math.min(2048, Math.round((rw * h) / BODY_W)));
+      const rtex = new THREE.CanvasTexture(drawRear(d, rw, rh));
+      rtex.colorSpace = THREE.SRGBColorSpace;
+      rtex.anisotropy = 8;
+      const rearMat = new THREE.MeshStandardMaterial({ map: rtex, metalness: 0.3, roughness: 0.6 });
+      // urutan muka BoxGeometry: +x, -x, +y, -y, +z, -z (belakang)
+      bodyMats = [bodyMat, bodyMat, bodyMat, bodyMat, bodyMat, rearMat];
+    }
+    const body = new THREE.Mesh(new THREE.BoxGeometry(BODY_W, h, dd), bodyMats);
     body.position.set(0, y, railZ - dd / 2);
     body.castShadow = true;
     body.receiveShadow = true;
@@ -399,6 +467,40 @@ function buildRack(rack: RackState, selectedId: string | null, sidePanels: boole
       );
       edges.position.set(0, y, railZ - dd / 2 + 0.004);
       group.add(edges);
+    }
+  }
+
+  // patch cord: tabung mengikuti jalur yang sama dengan hitungan panjang kabel
+  if (showCables) {
+    const toWorld = (p: { x: number; y: number; z: number }) => new THREE.Vector3(p.x, p.y + y0 + base, p.z + railZ);
+    for (const c of rack.cables) {
+      const route = cableRoute(rack, c);
+      if (!route) continue;
+      const sel = c.id === selectedCableId;
+      const dim = !!selectedCableId && !sel;
+      const mat = new THREE.MeshStandardMaterial({
+        color: CABLE_HEX[c.color] ?? "#3b82f6",
+        roughness: 0.55,
+        transparent: dim,
+        opacity: dim ? 0.3 : 1,
+        emissive: sel ? new THREE.Color(CABLE_HEX[c.color] ?? "#3b82f6") : new THREE.Color("#000000"),
+        emissiveIntensity: sel ? 0.45 : 0,
+      });
+      const curve = new THREE.CatmullRomCurve3(route.map(toWorld), false, "catmullrom", 0.15);
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 72, sel ? 0.0042 : 0.0028, 6, false), mat);
+      tube.castShadow = true;
+      group.add(tube);
+      // konektor di kedua ujung
+      for (const [p, q] of [
+        [route[0], route[1]],
+        [route[route.length - 1], route[route.length - 2]],
+      ]) {
+        const plug = new THREE.Mesh(new THREE.BoxGeometry(0.011, 0.009, 0.024), mat);
+        const a = toWorld(p);
+        const b = toWorld(q);
+        plug.position.copy(a.clone().lerp(b, 0.24));
+        group.add(plug);
+      }
     }
   }
 
@@ -470,7 +572,19 @@ function buildRack(rack: RackState, selectedId: string | null, sidePanels: boole
 
 /* ------------------------------------------------------------------- komponen */
 
-export default function Rack3D({ rack, selectedId, onSelect }: { rack: RackState; selectedId: string | null; onSelect: (id: string) => void }) {
+export default function Rack3D({
+  rack,
+  selectedId,
+  onSelect,
+  showCables,
+  selectedCableId,
+}: {
+  rack: RackState;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  showCables: boolean;
+  selectedCableId: string | null;
+}) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<Scene3D | null>(null);
   const doorTarget = useRef({ front: 0, rear: 0 });
@@ -621,14 +735,14 @@ export default function Rack3D({ rack, selectedId, onSelect }: { rack: RackState
       s.content.remove(child);
       disposeTree(child);
     }
-    const built = buildRack(rack, selectedId, sidePanels);
+    const built = buildRack(rack, selectedId, sidePanels, showCables, selectedCableId);
     s.content.add(built.group);
     if (built.frontDoor) built.frontDoor.rotation.y = frontAngle;
     if (built.rearDoor) built.rearDoor.rotation.y = rearAngle;
     s.frontDoor = built.frontDoor;
     s.rearDoor = built.rearDoor;
     s.pickables = built.pickables;
-  }, [rack, selectedId, sidePanels]);
+  }, [rack, selectedId, sidePanels, showCables, selectedCableId]);
 
   // Pindah sudut pandang (juga saat ukuran rack berubah supaya rack tetap terlihat utuh).
   useEffect(() => {

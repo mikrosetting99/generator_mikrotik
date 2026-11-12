@@ -20,9 +20,24 @@ import {
   rackWarnings,
   summarize,
   usableDepth,
+  patchDevice,
+  removeDevice,
   type RackDevice,
   type RackState,
 } from "../lib/rack";
+import {
+  cableBom,
+  cableLength,
+  checkCable,
+  defaultCableKind,
+  devicePorts,
+  duplicatePortNames,
+  estimateLength,
+  portLayout,
+  portSummary,
+  roundToStd,
+  type CableKind,
+} from "../lib/rack-ports";
 
 let passed = 0;
 const test = (name: string, fn: () => void) => {
@@ -46,6 +61,10 @@ const dev = (over: Partial<RackDevice>): RackDevice => ({
   upsWatts: 0,
   depthMm: 300,
   note: "",
+  brand: "",
+  model: "",
+  ports: [],
+  portSide: "front",
   ...over,
 });
 const rack = (devices: RackDevice[], over: Partial<RackState> = {}): RackState => ({
@@ -58,7 +77,109 @@ const rack = (devices: RackDevice[], over: Partial<RackState> = {}): RackState =
   voltage: 220,
   depthMm: 1000,
   devices,
+  cables: [],
   ...over,
+});
+
+const tpl = (id: string) => DEVICE_LIBRARY.find((t) => t.id === id)!;
+const fromTpl = (id: string, pos: number, devId: string): RackDevice => ({ ...deviceFromTemplate(rack([], { heightU: 42 }), tpl(id), pos)!, id: devId });
+
+test("port: nama sesuai merek dan tata letak", () => {
+  const ccr = devicePorts(tpl("mt-ccr2004-1g-12s-2xs"));
+  assert.deepEqual(ccr.map((p) => p.name).slice(0, 3), ["ether1", "sfp-sfpplus1", "sfp-sfpplus2"]);
+  assert.equal(ccr.at(-1)?.name, "sfp28-2");
+  assert.equal(ccr.length, 15);
+  const ex = devicePorts(tpl("jn-ex2300-24t"));
+  assert.equal(ex[0].name, "ge-0/0/0");
+  assert.ok(ex.some((p) => p.name === "xe-0/1/3"));
+  assert.ok(ex.some((p) => p.name === "Console"));
+  const cisco = devicePorts(tpl("cs-c2960x-24ts"));
+  assert.ok(cisco.some((p) => p.name === "Gi1/0/28" && p.type === "sfp"));
+  for (const t of DEVICE_LIBRARY) {
+    assert.equal(duplicatePortNames(t.ports).length, 0, `nama port unik: ${t.id}`);
+    const spots = portLayout({ ports: t.ports, u: t.u });
+    for (const s of spots) assert.ok(s.x - s.w / 2 >= 0.32 && s.x + s.w / 2 <= 0.96 && s.y > 0 && s.y < 1, `port di dalam muka: ${t.id} ${s.name}`);
+  }
+  assert.equal(new Set(DEVICE_LIBRARY.map((t) => t.id)).size, DEVICE_LIBRARY.length, "id katalog unik");
+  assert.equal(portSummary(tpl("mt-crs326-24g-2s").ports), "24×RJ45 · 2×SFP+ 10G");
+});
+
+test("kabel: kecocokan port dan jenis kabel", () => {
+  const sw = fromTpl("mt-crs326-24g-2s", 40, "sw");
+  const rt = fromTpl("mt-ccr2004-1g-12s-2xs", 39, "rt");
+  const pp = fromTpl("patch-24", 42, "pp");
+  const odf = fromTpl("odf-24", 37, "odf");
+  const olt = fromTpl("olt-1u", 38, "olt");
+  const r = rack([sw, rt, pp, odf, olt], { heightU: 42 });
+  const ok = (a: string, pa: string, b: string, pb: string, kind: CableKind) => checkCable(r, { dev: a, port: pa }, { dev: b, port: pb }, kind);
+  assert.ok(ok("sw", "ether1", "pp", "1", "utp").ok);
+  assert.ok(!ok("sw", "ether1", "pp", "1", "fiber").ok, "fiber ke RJ45 ditolak");
+  assert.ok(ok("rt", "sfp-sfpplus1", "sw", "sfp-sfpplus1", "dac").ok);
+  assert.ok(!ok("rt", "ether1", "sw", "sfp-sfpplus1", "dac").ok, "DAC butuh SFP di kedua ujung");
+  const mod = ok("rt", "sfp-sfpplus2", "sw", "ether2", "utp");
+  assert.ok(mod.ok && mod.notes.some((n) => /modul SFP\+ RJ45/.test(n)));
+  assert.ok(ok("olt", "PON1", "odf", "1", "fiber").ok);
+  assert.ok(!ok("olt", "PON1", "sw", "sfp-sfpplus2", "fiber").ok, "PON hanya ke ODF");
+  const speed = ok("rt", "sfp28-1", "sw", "sfp-sfpplus2", "dac");
+  assert.ok(speed.ok && speed.notes.some((n) => /25G ke 10G/.test(n)));
+  assert.ok(!ok("sw", "ether1", "sw", "ether1", "utp").ok, "port yang sama");
+  assert.ok(!ok("sw", "ether99", "pp", "1", "utp").ok, "port tidak ada");
+  r.cables.push({ id: "c1", a: { dev: "sw", port: "ether1" }, b: { dev: "pp", port: "1" }, kind: "utp", color: "blue", lengthM: 0, label: "" });
+  assert.ok(!ok("sw", "ether1", "pp", "2", "utp").ok, "port sudah terpakai");
+  assert.equal(defaultCableKind("rj45", "rj45"), "utp");
+  assert.equal(defaultCableKind("sfp+", "sfp28"), "dac");
+  assert.equal(defaultCableKind("pon", "lc"), "fiber");
+});
+
+test("kabel: panjang jalur, ukuran standar, dan kebutuhan", () => {
+  const sw = fromTpl("mt-crs326-24g-2s", 40, "sw");
+  const pp = fromTpl("patch-24", 42, "pp");
+  const srv = fromTpl("dl-r650", 20, "srv");
+  const r = rack([sw, pp, srv], { heightU: 42 });
+  const near = estimateLength(r, { a: { dev: "sw", port: "ether1" }, b: { dev: "pp", port: "1" } })!;
+  const far = estimateLength(r, { a: { dev: "srv", port: "NIC1" }, b: { dev: "sw", port: "ether20" } })!;
+  assert.ok(near > 0.3 && near < 1, `dekat ${near}`);
+  // server di U20 port belakang: naik 20U (~0,9 m) + kedalaman server (~0,77 m) + jalur samping
+  assert.ok(far > 1.8 && far < 3, `jauh ${far}`);
+  assert.equal(roundToStd(0.62), 1);
+  assert.equal(roundToStd(2.2), 3);
+  assert.equal(roundToStd(31), 31);
+  r.cables.push(
+    { id: "a", a: { dev: "sw", port: "ether1" }, b: { dev: "pp", port: "1" }, kind: "utp", color: "blue", lengthM: 0, label: "" },
+    { id: "b", a: { dev: "sw", port: "ether2" }, b: { dev: "pp", port: "2" }, kind: "utp", color: "blue", lengthM: 0, label: "" },
+    { id: "c", a: { dev: "srv", port: "NIC1" }, b: { dev: "sw", port: "ether20" }, kind: "utp", color: "red", lengthM: 1, label: "" },
+  );
+  assert.ok(cableLength(r, r.cables[2]).tooShort, "1 m terlalu pendek ke server di bawah");
+  const bom = cableBom(r);
+  assert.deepEqual(
+    bom.map((b) => [b.color, b.length, b.count]),
+    [
+      ["blue", 1, 2],
+      ["red", 1, 1],
+    ],
+  );
+});
+
+test("kabel: hapus perangkat atau port ikut melepas kabel, impor membuang kabel rusak", () => {
+  const ex = exampleRack();
+  assert.ok(ex.cables.length >= 18, `contoh punya kabel (${ex.cables.length})`);
+  const round = normalizeRack(JSON.parse(JSON.stringify(ex)));
+  assert.equal(round.cables.length, ex.cables.length, "kabel contoh lolos impor");
+  const sw = ex.devices.find((d) => d.name === "Switch core")!;
+  const after = removeDevice(ex, sw.id);
+  assert.ok(after.cables.every((c) => c.a.dev !== sw.id && c.b.dev !== sw.id));
+  assert.ok(after.cables.length < ex.cables.length);
+  const fewer = patchDevice(ex, sw.id, { ports: [{ type: "rj45", count: 4, prefix: "ether", start: 1 }] });
+  assert.ok(!fewer.cables.some((c) => (c.a.dev === sw.id && c.a.port === "ether20") || (c.b.dev === sw.id && c.b.port === "ether20")));
+  const bad = normalizeRack({
+    ...JSON.parse(JSON.stringify(ex)),
+    cables: [...ex.cables, { a: { dev: "x", port: "1" }, b: { dev: "y", port: "2" }, kind: "utp" }, ex.cables[0]],
+  });
+  assert.equal(bad.cables.length, ex.cables.length, "kabel ke perangkat hilang dan port dobel dibuang");
+  // data lama tanpa port: port diambil dari katalog lewat id model
+  const legacy = normalizeRack({ devices: [{ id: "a", kind: "switch", u: 1, pos: 1, model: "mt-crs326-24g-2s" }] });
+  assert.equal(devicePorts(legacy.devices[0]).length, 26);
+  assert.match(billOfMaterials(ex), /Kebutuhan kabel:/);
 });
 
 test("kedalaman: tidak muat, kabel sempit, dan muat", () => {
@@ -194,7 +315,7 @@ test("contoh rack sah dan daftar perangkat", () => {
   assert.equal(normalizeRack(JSON.parse(JSON.stringify(ex))).devices.length, ex.devices.length, "contoh tidak bertabrakan");
   const bom = billOfMaterials(ex);
   assert.match(bom, /^Rack NOC 1 — Rak tertutup 42U · 600 × 1000 × 2047 mm/);
-  assert.match(bom, /U1-3\s+UPS 3U 3000VA/);
+  assert.match(bom, /U1-2\s+APC Smart-UPS SMT3000RMI2U/);
   const s = summarize(ex);
   assert.ok(s.upsLoadPct !== null && s.upsLoadPct < 100, "contoh tidak melebihi UPS");
 });

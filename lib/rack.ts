@@ -6,6 +6,25 @@
  * Posisi memakai penomoran standar: U1 di paling bawah. Perangkat setinggi h di posisi pos
  * menempati U pos sampai pos + h - 1.
  */
+import { DEVICE_LIBRARY, type DeviceTemplate } from "./rack-catalog";
+import {
+  CABLE_COLOR_LABEL,
+  CABLE_KIND_LABEL,
+  cableBom,
+  cableLength,
+  checkCable,
+  devicePorts,
+  fmtLength,
+  normalizeCables,
+  normalizePortGroups,
+  pruneCables,
+  type CableEnd,
+  type CableKind,
+  type PortGroup,
+  type RackCable,
+} from "./rack-ports";
+
+export { BRANDS, DEVICE_LIBRARY, GENERIC_BRAND, type DeviceTemplate } from "./rack-catalog";
 
 export type DeviceKind =
   | "server"
@@ -57,6 +76,11 @@ export interface RackDevice {
   /** Kedalaman badan perangkat dari rel depan (mm). */
   depthMm: number;
   note: string;
+  /** Merek dan id model katalog ("" untuk perangkat custom). */
+  brand: string;
+  model: string;
+  ports: PortGroup[];
+  portSide: "front" | "rear";
 }
 
 export type RackType = "closed" | "wall" | "open4" | "open2";
@@ -76,6 +100,8 @@ export interface RackState {
   /** Kedalaman luar rack (mm). */
   depthMm: number;
   devices: RackDevice[];
+  /** Patch cord antar port. */
+  cables: RackCable[];
 }
 
 export const MIN_U = 4;
@@ -267,39 +293,6 @@ export const matchModel = (r: Pick<RackState, "type" | "heightU" | "widthMm" | "
 
 /** Tinggi U yang bisa dipilih manual. */
 export const HEIGHT_CHOICES = [4, 6, 9, 12, 15, 18, 20, 22, 24, 27, 32, 37, 42, 45, 47, 48, 52];
-
-export interface DeviceTemplate {
-  id: string;
-  name: string;
-  kind: DeviceKind;
-  u: number;
-  watts: number;
-  kg: number;
-  depthMm: number;
-  upsWatts?: number;
-}
-
-/** Perangkat siap pakai. Angka daya, berat, dan kedalaman adalah perkiraan umum; sesuaikan dengan datasheet. */
-export const DEVICE_LIBRARY: DeviceTemplate[] = [
-  { id: "router-1u", name: "Router 1U", kind: "router", u: 1, watts: 60, kg: 4, depthMm: 250 },
-  { id: "switch-24", name: "Switch 24 port", kind: "switch", u: 1, watts: 30, kg: 3, depthMm: 250 },
-  { id: "switch-48", name: "Switch 48 port", kind: "switch", u: 1, watts: 60, kg: 4.5, depthMm: 300 },
-  { id: "switch-48-poe", name: "Switch 48 port PoE", kind: "switch", u: 1, watts: 450, kg: 6, depthMm: 400 },
-  { id: "olt-1u", name: "OLT 1U", kind: "olt", u: 1, watts: 90, kg: 5, depthMm: 300 },
-  { id: "server-1u", name: "Server 1U", kind: "server", u: 1, watts: 350, kg: 15, depthMm: 700 },
-  { id: "server-2u", name: "Server 2U", kind: "server", u: 2, watts: 550, kg: 25, depthMm: 750 },
-  { id: "server-4u", name: "Server 4U", kind: "server", u: 4, watts: 900, kg: 40, depthMm: 800 },
-  { id: "storage-2u", name: "Storage / NAS 2U", kind: "storage", u: 2, watts: 250, kg: 20, depthMm: 600 },
-  { id: "ups-2u", name: "UPS 2U 1500VA", kind: "ups", u: 2, watts: 0, kg: 25, depthMm: 500, upsWatts: 1000 },
-  { id: "ups-3u", name: "UPS 3U 3000VA", kind: "ups", u: 3, watts: 0, kg: 40, depthMm: 600, upsWatts: 2700 },
-  { id: "pdu-1u", name: "PDU 1U", kind: "pdu", u: 1, watts: 0, kg: 2, depthMm: 150 },
-  { id: "patch-24", name: "Patch panel 24 port", kind: "patch", u: 1, watts: 0, kg: 1.5, depthMm: 100 },
-  { id: "cable-1u", name: "Cable manager 1U", kind: "cable", u: 1, watts: 0, kg: 1, depthMm: 100 },
-  { id: "shelf-1u", name: "Shelf 1U", kind: "shelf", u: 1, watts: 0, kg: 3, depthMm: 450 },
-  { id: "shelf-2u", name: "Shelf 2U", kind: "shelf", u: 2, watts: 0, kg: 5, depthMm: 550 },
-  { id: "kvm-1u", name: "KVM console 1U", kind: "kvm", u: 1, watts: 25, kg: 10, depthMm: 650 },
-  { id: "blank-1u", name: "Blank panel 1U", kind: "blank", u: 1, watts: 0, kg: 0.3, depthMm: 20 },
-];
 
 /**
  * Kedalaman perangkat yang masih muat (mm). Rak tertutup/dinding: kedalaman dikurangi rel dan
@@ -496,6 +489,7 @@ export function normalizeRack(raw: unknown): RackState {
     voltage: num(r.voltage, 100, 400, 220),
     depthMm: int(r.depthMm, MIN_DEPTH, MAX_DEPTH, 1000),
     devices: [],
+    cables: [],
   };
   const list = Array.isArray(r.devices) ? r.devices : [];
   for (const item of list.slice(0, MAX_DEVICES)) {
@@ -512,10 +506,16 @@ export function normalizeRack(raw: unknown): RackState {
       upsWatts: kind === "ups" ? num(d.upsWatts, 0, 100_000, 0) : 0,
       depthMm: int(d.depthMm, 10, MAX_DEVICE_DEPTH, KIND_DEPTH[kind]),
       note: text(d.note, 200),
+      brand: text(d.brand, 30),
+      model: text(d.model, 60),
+      // data lama tanpa port: ambil port bawaan dari katalog bila id modelnya dikenal
+      ports: Array.isArray(d.ports) ? normalizePortGroups(d.ports) : (DEVICE_LIBRARY.find((t) => t.id === d.model)?.ports ?? []),
+      portSide: d.portSide === "rear" ? "rear" : "front",
     };
     if (state.devices.some((x) => x.id === device.id)) device.id = newDeviceId();
     if (canPlace(state, device.u, device.pos)) state.devices.push(device);
   }
+  state.cables = normalizeCables(r.cables, state.devices);
   return state;
 }
 
@@ -539,28 +539,77 @@ export function deviceFromTemplate(state: RackState, t: DeviceTemplate, pos?: nu
     upsWatts: t.upsWatts ?? 0,
     depthMm: t.depthMm,
     note: "",
+    brand: t.brand,
+    model: t.id,
+    ports: t.ports.map((g) => ({ ...g })),
+    portSide: t.portSide ?? "front",
   };
 }
 
-/** Contoh rack awal: jaringan di atas, server di tengah, UPS di bawah. */
+/** Hapus perangkat beserta kabel yang tersambung ke portnya. */
+export function removeDevice(state: RackState, id: string): RackState {
+  const devices = state.devices.filter((d) => d.id !== id);
+  return { ...state, devices, cables: pruneCables(devices, state.cables) };
+}
+
+/** Ubah perangkat; kabel ke port yang tidak ada lagi ikut dilepas. */
+export function patchDevice(state: RackState, id: string, partial: Partial<RackDevice>): RackState {
+  const devices = state.devices.map((d) => (d.id === id ? { ...d, ...partial } : d));
+  return { ...state, devices, cables: partial.ports ? pruneCables(devices, state.cables) : state.cables };
+}
+
+/** Contoh rack awal: jaringan di atas, server di tengah, UPS di bawah, lengkap dengan patch cord. */
 export function exampleRack(): RackState {
-  const state: RackState = { name: "Rack NOC 1", type: "closed", heightU: 42, widthMm: 600, maxKg: 600, maxWatts: 3500, voltage: 220, depthMm: 1000, devices: [] };
-  const place = (id: string, pos: number, name?: string) => {
+  const state: RackState = {
+    name: "Rack NOC 1",
+    type: "closed",
+    heightU: 42,
+    widthMm: 600,
+    maxKg: 600,
+    maxWatts: 3500,
+    voltage: 220,
+    depthMm: 1000,
+    devices: [],
+    cables: [],
+  };
+  const ids: Record<string, string> = {};
+  const place = (key: string, id: string, pos: number, name?: string) => {
     const t = DEVICE_LIBRARY.find((x) => x.id === id);
     const d = t && deviceFromTemplate(state, t, pos);
-    if (d) state.devices.push(name ? { ...d, name } : d);
+    if (!d) return;
+    // id tetap (bukan acak) supaya HTML server dan browser sama saat hydrate: id ikut tampil di <option value>
+    const dev = { ...d, id: `ex-${key}`, ...(name ? { name } : {}) };
+    state.devices.push(dev);
+    ids[key] = dev.id;
   };
-  place("patch-24", 42);
-  place("cable-1u", 41);
-  place("switch-48", 40, "Switch core");
-  place("router-1u", 39, "Router BGP");
-  place("olt-1u", 38);
-  place("cable-1u", 37);
-  place("server-1u", 30, "Server billing");
-  place("server-2u", 28, "Server Proxmox");
-  place("storage-2u", 6, "NAS backup");
-  place("pdu-1u", 4);
-  place("ups-3u", 1);
+  place("pp", "patch-24", 42, "Patch panel A");
+  place("cm1", "cable-1u", 41);
+  place("sw", "mt-crs326-24g-2s", 40, "Switch core");
+  place("rt", "mt-ccr2004-1g-12s-2xs", 39, "Router BGP");
+  place("olt", "olt-1u", 38);
+  place("odf", "odf-24", 37, "ODF uplink & PON");
+  place("cm2", "cable-1u", 36);
+  place("srv1", "dl-r650", 20, "Server billing");
+  place("srv2", "dl-r750", 18, "Server Proxmox");
+  place("nas", "sy-rs1221p", 6, "NAS backup");
+  place("pdu", "pdu-1u", 4);
+  place("ups", "apc-smt3000rmi2u", 1);
+
+  const link = (a: string, pa: string, b: string, pb: string, kind: CableKind, color: string, label = "") => {
+    const ea: CableEnd = { dev: ids[a], port: pa };
+    const eb: CableEnd = { dev: ids[b], port: pb };
+    if (checkCable(state, ea, eb, kind).ok) state.cables.push({ id: `ex-c${state.cables.length + 1}`, a: ea, b: eb, kind, color, lengthM: 0, label });
+  };
+  link("rt", "sfp-sfpplus1", "odf", "1", "fiber", "yellow", "Uplink ISP");
+  link("rt", "sfp-sfpplus2", "sw", "sfp-sfpplus1", "dac", "black", "Trunk core");
+  link("rt", "sfp-sfpplus3", "olt", "XGE1", "dac", "black", "Uplink OLT");
+  for (let i = 1; i <= 4; i++) link("olt", `PON${i}`, "odf", String(i + 2), "fiber", "yellow", `PON ${i}`);
+  for (let i = 1; i <= 8; i++) link("sw", `ether${i}`, "pp", String(i), "utp", "blue");
+  link("srv1", "NIC1", "sw", "ether20", "utp", "red");
+  link("srv1", "iDRAC", "sw", "ether24", "utp", "green", "iDRAC");
+  link("srv2", "NIC1", "sw", "ether21", "utp", "red");
+  link("srv2", "NIC2", "sw", "ether22", "utp", "red");
+  link("nas", "LAN1", "sw", "ether23", "utp", "orange");
   return state;
 }
 
@@ -576,5 +625,25 @@ export function billOfMaterials(state: RackState): string {
     }),
     "",
     `Terpakai ${s.usedU}/${state.heightU}U · Daya ${fmtNum(s.watts)} W (${fmtNum(s.amps)} A @${state.voltage} V) · Panas ${Math.round(s.btu).toLocaleString("id-ID")} BTU/jam · Berat ${fmtNum(s.kg)} kg`,
+    ...(state.cables.length
+      ? [
+          "",
+          `Patch cord (${state.cables.length}):`,
+          ...state.cables.map((c) => {
+            const name = (e: CableEnd) => `${state.devices.find((d) => d.id === e.dev)?.name ?? "?"} ${e.port}`;
+            const { length } = cableLength(state, c);
+            return `- ${name(c.a)} ↔ ${name(c.b)} · ${CABLE_KIND_LABEL[c.kind]} ${fmtLength(length)} ${CABLE_COLOR_LABEL[c.color] ?? ""}${c.label ? ` · ${c.label}` : ""}`;
+          }),
+          "",
+          "Kebutuhan kabel:",
+          ...cableBom(state).map((r) => `- ${r.count} × ${CABLE_KIND_LABEL[r.kind]} ${fmtLength(r.length)} ${CABLE_COLOR_LABEL[r.color] ?? ""}`),
+        ]
+      : []),
   ].join("\n");
+}
+
+/** Jumlah port terpakai dan total, untuk ringkasan. */
+export function portUsage(state: RackState): { used: number; total: number } {
+  const total = state.devices.reduce((n, d) => n + devicePorts(d).length, 0);
+  return { used: state.cables.length * 2, total };
 }

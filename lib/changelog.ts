@@ -27,6 +27,24 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.71.0",
+    date: "2026-11-12",
+    title: "Simulasi Rack Server: patch cord, patch panel, dan perangkat multi-brand",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Perangkat asli multi-brand lengkap dengan port dan penamaannya: MikroTik (CCR2004, CCR2116, CCR2216, CCR1036, RB1100, RB4011, CRS326, CRS354, CRS317, CRS518), Cisco Catalyst 2960X/9200L/9300, Juniper EX2300/MX204, Huawei S5735, Ubiquiti UDM-Pro/USW-Pro, TP-Link Omada, Dell PowerEdge R650/R750, HPE ProLiant DL360/DL380, Synology RackStation, dan APC Smart-UPS. Daftar perangkat bisa difilter per merek dan dicari.",
+          "Patch panel Cat6 24/48 port (termasuk 48 port HD 1U) dan ODF fiber 12/24/48/96 core dengan adaptor LC duplex.",
+          "Simulasi patch cord: pilih dua port dari daftar, atau klik port di panel perangkat terpilih. Jenis kabel (UTP Cat6, fiber, DAC) dan warna dipilih otomatis atau manual; port yang tidak cocok ditolak (mis. RJ45 ke fiber, PON selain ke ODF), dan diberi catatan bila butuh modul SFP RJ45, transceiver, atau beda kecepatan.",
+          "Panjang patch cord dihitung dari jalur lewat cable manager samping (termasuk ke port belakang server) dan dibulatkan ke ukuran standar 0,3–30 m; bisa dipilih sendiri, dengan peringatan bila terlalu pendek. Ringkasan kebutuhan kabel per jenis, panjang, dan warna ikut di teks yang disalin.",
+          "Port tampil di muka perangkat pada 2D dan 3D (RJ45, sangkar SFP/QSFP, adaptor LC, PON), berwarna sesuai kabelnya; port server dan NAS ada di muka belakang. Kabel tampil sebagai garis di 2D dan tabung di 3D, dan bisa disembunyikan dengan tombol Kabel.",
+          "Port perangkat custom bisa diatur sendiri (jenis, jumlah, awalan nama, nomor awal, letak depan/belakang).",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.70.0",
     date: "2026-11-12",
     title: "Simulasi Rack Server: jenis rak dan katalog ukuran",

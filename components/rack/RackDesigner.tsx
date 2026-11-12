@@ -1,9 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from "react";
 import { AppSwitcher } from "@/components/AppSwitcher";
-import { Check, Copy, Database, Download, Plus, Trash, Upload } from "@/components/icons";
+import { Check, Copy, Database, Download, Trash, Upload } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VersionBadge } from "@/components/VersionBadge";
 import { Button, Field, Note, Panel, Select, TextInput } from "@/components/ui";
@@ -12,13 +12,11 @@ import {
   canPlace,
   DEPTH_PRESETS,
   DEVICE_KINDS,
-  DEVICE_LIBRARY,
   deviceFromTemplate,
   devicesAbove,
   exampleRack,
   fmtNum,
   KIND_COLOR,
-  KIND_DEPTH,
   KIND_LABEL,
   MAX_DEPTH,
   MAX_DEVICE_DEPTH,
@@ -28,6 +26,9 @@ import {
   MIN_DEPTH,
   MIN_U,
   normalizeRack,
+  patchDevice as patchDeviceIn,
+  portUsage,
+  removeDevice,
   HEIGHT_CHOICES,
   matchModel,
   modelLabel,
@@ -48,6 +49,10 @@ import {
   type RackState,
   type RackType,
 } from "@/lib/rack";
+import { CABLE_HEX, cableRoute, portInUse, portLayout, portSummary, type CableEnd, type RackCable } from "@/lib/rack-ports";
+import { CablePanel, type CableDraft } from "./CablePanel";
+import { DeviceLibrary } from "./DeviceLibrary";
+import { PortGrid, PortsEditor } from "./PortGrid";
 
 const STORAGE_KEY = "rack-designer-v1";
 const VIEW_KEY = "rack-designer-view";
@@ -134,6 +139,9 @@ export function RackDesigner() {
   const [flash, setFlash] = useState<{ tone: "info" | "warn" | "bad"; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<"2d" | "3d">("2d");
+  const [showCables, setShowCables] = useState(true);
+  const [draft, setDraft] = useState<CableDraft>({ a: null, b: null });
+  const [selectedCableId, setSelectedCableId] = useState<string | null>(null);
   const dragTemplate = useRef<DeviceTemplate | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -177,10 +185,24 @@ export function RackDesigner() {
   const selected = rack.devices.find((d) => d.id === selectedId) ?? null;
   const H = rack.heightU;
   const model = matchModel(rack);
+  const ports = useMemo(() => portUsage(rack), [rack]);
 
   const patchRack = (partial: Partial<RackState>) => setRack((r) => ({ ...r, ...partial }));
-  const patchDevice = (id: string, partial: Partial<RackDevice>) =>
-    setRack((r) => ({ ...r, devices: r.devices.map((d) => (d.id === id ? { ...d, ...partial } : d)) }));
+  const patchDevice = (id: string, partial: Partial<RackDevice>) => setRack((r) => patchDeviceIn(r, id, partial));
+  const setCables = (cables: RackCable[]) => setRack((r) => ({ ...r, cables }));
+
+  /** Klik port kosong: isi ujung A dulu, lalu B. */
+  const pickPort = (end: CableEnd) => {
+    setSelectedCableId(null);
+    setDraft((d) => {
+      const same = (e: CableEnd | null) => e && e.dev === end.dev && e.port === end.port;
+      if (same(d.a)) return { ...d, a: null };
+      if (same(d.b)) return { ...d, b: null };
+      if (!d.a?.port) return { ...d, a: end };
+      if (!d.b?.port) return { ...d, b: end };
+      return { a: end, b: null };
+    });
+  };
 
   /** Pindah atau ubah tinggi perangkat hanya bila tidak keluar rack dan tidak menimpa perangkat lain. */
   const placeDevice = (d: RackDevice, u: number, pos: number): boolean => {
@@ -203,13 +225,26 @@ export function RackDesigner() {
   };
 
   const duplicate = (d: RackDevice) => {
-    const t: DeviceTemplate = { id: "", name: d.name, kind: d.kind, u: d.u, watts: d.watts, kg: d.kg, depthMm: d.depthMm, upsWatts: d.upsWatts };
+    const t: DeviceTemplate = {
+      id: d.model,
+      name: d.name,
+      brand: d.brand,
+      kind: d.kind,
+      u: d.u,
+      watts: d.watts,
+      kg: d.kg,
+      depthMm: d.depthMm,
+      upsWatts: d.upsWatts,
+      ports: d.ports,
+      portSide: d.portSide,
+    };
     addTemplate(t);
   };
 
   const remove = (id: string) => {
-    setRack((r) => ({ ...r, devices: r.devices.filter((d) => d.id !== id) }));
+    setRack((r) => removeDevice(r, id));
     if (selectedId === id) setSelectedId(null);
+    setDraft((d) => ({ a: d.a?.dev === id ? null : d.a, b: d.b?.dev === id ? null : d.b }));
   };
 
   const setHeight = (u: number) => {
@@ -342,10 +377,10 @@ export function RackDesigner() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" onClick={() => { setRack(exampleRack()); setSelectedId(null); setFlash(null); }} title="Muat contoh rack NOC">
+            <Button size="sm" onClick={() => { setRack(exampleRack()); setSelectedId(null); setFlash(null); setDraft({ a: null, b: null }); setSelectedCableId(null); }} title="Muat contoh rack NOC">
               Contoh
             </Button>
-            <Button size="sm" onClick={() => { if (window.confirm("Kosongkan semua perangkat di rack?")) { setRack((r) => ({ ...r, devices: [] })); setSelectedId(null); } }}>
+            <Button size="sm" onClick={() => { if (window.confirm("Kosongkan semua perangkat dan kabel di rack?")) { setRack((r) => ({ ...r, devices: [], cables: [] })); setSelectedId(null); setDraft({ a: null, b: null }); setSelectedCableId(null); } }}>
               Kosongkan
             </Button>
             <Button size="sm" onClick={exportJson} title="Simpan desain sebagai berkas .json">
@@ -367,40 +402,16 @@ export function RackDesigner() {
         {/* --------------------------------------------- daftar perangkat */}
         <aside className="space-y-5 print:hidden">
           <Panel title="Perangkat" description="Klik untuk menambah, atau seret ke posisi di rack.">
-            <ul className="space-y-1">
-              {DEVICE_LIBRARY.map((t) => (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    draggable
-                    onDragStart={(e) => {
-                      dragTemplate.current = t;
-                      e.dataTransfer.setData("text/plain", t.id);
-                      e.dataTransfer.effectAllowed = "copy";
-                    }}
-                    onDragEnd={() => {
-                      dragTemplate.current = null;
-                      setHover(null);
-                    }}
-                    onClick={() => addTemplate(t)}
-                    title={`${t.u}U · kedalaman ${t.depthMm} mm · ${t.watts} W · ${t.kg} kg`}
-                    className="flex w-full items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 text-left text-sm text-ink transition-colors hover:border-brand/50 hover:bg-brand/[0.05]"
-                  >
-                    <span className="h-3.5 w-1.5 shrink-0 rounded-sm" style={{ background: KIND_COLOR[t.kind] }} />
-                    <span className="min-w-0 flex-1 truncate">{t.name}</span>
-                    <span className="shrink-0 font-mono text-[11px] text-faint">{t.u}U</span>
-                    <Plus className="h-3.5 w-3.5 shrink-0 text-faint" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <Button
-              size="sm"
-              className="mt-3 w-full"
-              onClick={() => addTemplate({ id: "custom", name: "Perangkat baru", kind: "other", u: 1, watts: 0, kg: 0, depthMm: KIND_DEPTH.other })}
-            >
-              <Plus className="h-3.5 w-3.5" /> Perangkat custom
-            </Button>
+            <DeviceLibrary
+              onAdd={(t) => addTemplate(t)}
+              onDragStart={(t) => {
+                dragTemplate.current = t;
+              }}
+              onDragEnd={() => {
+                dragTemplate.current = null;
+                setHover(null);
+              }}
+            />
           </Panel>
         </aside>
 
@@ -418,7 +429,16 @@ export function RackDesigner() {
                 {rackSizeLabel(rack)} · terpakai {summary.usedU}U · kosong {summary.freeU}U
               </span>
             </div>
-            <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 print:hidden" role="group" aria-label="Tampilan rack">
+            <div className="flex items-center gap-2 print:hidden">
+            <button
+              type="button"
+              onClick={() => setShowCables((v) => !v)}
+              aria-pressed={showCables}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${showCables ? "border-brand bg-brand/10 text-brand" : "border-line bg-surface text-muted hover:text-ink"}`}
+            >
+              Kabel {rack.cables.length ? `(${rack.cables.length})` : ""}
+            </button>
+            <div className="inline-flex rounded-lg border border-line bg-surface p-0.5" role="group" aria-label="Tampilan rack">
               {(["2d", "3d"] as const).map((m) => (
                 <button
                   key={m}
@@ -431,10 +451,11 @@ export function RackDesigner() {
                 </button>
               ))}
             </div>
+            </div>
           </div>
 
           {mode === "3d" ? (
-            <Rack3D rack={rack} selectedId={selectedId} onSelect={select3d} />
+            <Rack3D rack={rack} selectedId={selectedId} onSelect={select3d} showCables={showCables} selectedCableId={selectedCableId} />
           ) : (
           <>
           <div className="mx-auto w-full max-w-[520px] rounded-lg bg-[#1b1f26] p-2 shadow-lg ring-1 ring-black/40">
@@ -496,20 +517,50 @@ export function RackDesigner() {
                             : `linear-gradient(90deg, ${KIND_COLOR[d.kind]} 0 6px, #2b313c 6px)`,
                       }}
                     >
-                      <span className="ml-1.5 min-w-0 flex-1 truncate text-[12px] font-medium leading-none">{d.name}</span>
-                      <span className="shrink-0 font-mono text-[10px] leading-none text-white/60">
-                        {d.u}U{d.watts ? ` · ${fmtNum(d.watts)}W` : ""}
-                      </span>
+                      {d.portSide === "front" && d.ports.length > 0 ? (
+                        <>
+                          <span className="ml-1.5 w-[27%] min-w-0 truncate text-[11.5px] font-medium leading-none">{d.name}</span>
+                          <FrontPorts device={d} cables={rack.cables} draft={draft} />
+                        </>
+                      ) : (
+                        <>
+                          <span className="ml-1.5 min-w-0 flex-1 truncate text-[12px] font-medium leading-none">{d.name}</span>
+                          <span className="shrink-0 font-mono text-[10px] leading-none text-white/60">
+                            {d.ports.length > 0 ? "port di belakang · " : ""}
+                            {d.u}U{d.watts ? ` · ${fmtNum(d.watts)}W` : ""}
+                          </span>
+                        </>
+                      )}
                     </button>
                   );
                 })}
+
+                {showCables && (
+                  <CableOverlay
+                    devices={drag?.moved ? rack.devices.map((d) => (d.id === drag.id ? { ...d, pos: drag.pos } : d)) : rack.devices}
+                    cables={rack.cables}
+                    heightU={H}
+                    selectedCableId={selectedCableId}
+                  />
+                )}
               </div>
               <UnitLabels units={units} />
             </div>
           </div>
-          <p className="text-center text-[11px] text-faint print:hidden">Tampak depan · U1 di paling bawah · seret perangkat untuk memindah</p>
+          <p className="text-center text-[11px] text-faint print:hidden">
+            Tampak depan · U1 di paling bawah · seret perangkat untuk memindah · garis putus-putus = kabel ke port belakang
+          </p>
           </>
           )}
+
+          <CablePanel
+            rack={rack}
+            draft={draft}
+            setDraft={setDraft}
+            selectedCableId={selectedCableId}
+            setSelectedCableId={setSelectedCableId}
+            onChange={setCables}
+          />
         </section>
 
         {/* ------------------------------------- pengaturan, ringkasan, editor */}
@@ -530,6 +581,12 @@ export function RackDesigner() {
                 <div className="rounded-md bg-raised px-2.5 py-2">
                   <dt className="text-muted">Panas</dt>
                   <dd className="font-mono text-sm text-ink">{Math.round(summary.btu).toLocaleString("id-ID")} BTU/jam</dd>
+                </div>
+                <div className="col-span-2 rounded-md bg-raised px-2.5 py-2">
+                  <dt className="text-muted">Port &amp; patch cord</dt>
+                  <dd className="font-mono text-sm text-ink">
+                    {ports.used}/{ports.total} port terpakai · {rack.cables.length} kabel
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -555,6 +612,16 @@ export function RackDesigner() {
                 onDuplicate={() => duplicate(selected)}
                 onRemove={() => remove(selected.id)}
                 onClose={() => setSelectedId(null)}
+                portGrid={
+                  <PortGrid
+                    device={selected}
+                    cables={rack.cables}
+                    draft={draft}
+                    selectedCableId={selectedCableId}
+                    onPick={pickPort}
+                    onSelectCable={setSelectedCableId}
+                  />
+                }
               />
             </div>
           )}
@@ -687,6 +754,79 @@ export function RackDesigner() {
   );
 }
 
+/** Port di muka perangkat pada tampilan 2D (hanya gambar; klik port lewat panel perangkat). */
+function FrontPorts({ device, cables, draft }: { device: RackDevice; cables: RackCable[]; draft: CableDraft }) {
+  const spots = portLayout(device);
+  const pending = (name: string) => [draft.a, draft.b].some((e) => e && e.dev === device.id && e.port === name);
+  return (
+    <span className="pointer-events-none absolute inset-0" aria-hidden>
+      {spots.map((p) => {
+        const cable = portInUse(cables, { dev: device.id, port: p.name });
+        const optic = p.type !== "rj45" && p.type !== "console";
+        return (
+          <span
+            key={p.name}
+            className={`absolute rounded-[1px] ${pending(p.name) ? "ring-1 ring-white" : ""}`}
+            style={{
+              left: `${(p.x - p.w / 2) * 100}%`,
+              top: `${(p.y - p.h / 2) * 100}%`,
+              width: `${p.w * 100}%`,
+              height: `${p.h * 100}%`,
+              background: cable ? CABLE_HEX[cable.color] : optic ? "#5b6270" : "#0b0d11",
+              boxShadow: cable ? undefined : "inset 0 0 0 1px rgba(255,255,255,0.14)",
+            }}
+          />
+        );
+      })}
+    </span>
+  );
+}
+
+/**
+ * Patch cord pada tampilan 2D: kurva dari port ke jalur samping lalu ke port tujuan. Koordinat x
+ * 0..1000 selebar badan rack, y dalam px.
+ */
+function CableOverlay({ devices, cables, heightU, selectedCableId }: { devices: RackDevice[]; cables: RackCable[]; heightU: number; selectedCableId: string | null }) {
+  const point = (e: CableEnd) => {
+    const d = devices.find((x) => x.id === e.dev);
+    if (!d) return null;
+    const top = (heightU - (d.pos + d.u - 1)) * UH + 1;
+    const h = d.u * UH - 2;
+    if (d.portSide === "rear") return { x: 985, y: top + h / 2, rear: true };
+    const spot = portLayout(d).find((p) => p.name === e.port);
+    return spot ? { x: 4 + spot.x * 992, y: top + spot.y * h, rear: false } : null;
+  };
+  return (
+    <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible" viewBox={`0 0 1000 ${heightU * UH}`} preserveAspectRatio="none" aria-hidden>
+      {cables.map((c) => {
+        const a = point(c.a);
+        const b = point(c.b);
+        if (!a || !b || !cableRoute({ devices }, c)) return null;
+        const sel = c.id === selectedCableId;
+        // jarak dekat: kabel menggantung di antara kedua port; jauh: lewat cable manager samping
+        // (kanan, karena kiri muka perangkat dipakai nama)
+        const near = Math.abs(a.y - b.y) <= UH * 3 && !a.rear && !b.rear;
+        const side = (a.x + b.x) / 2 < 300 ? -45 : 1045;
+        const sag = Math.max(a.y, b.y) + 10 + Math.abs(a.x - b.x) * 0.03;
+        const d = near ? `M ${a.x} ${a.y} C ${a.x} ${sag}, ${b.x} ${sag}, ${b.x} ${b.y}` : `M ${a.x} ${a.y} C ${side} ${a.y}, ${side} ${b.y}, ${b.x} ${b.y}`;
+        return (
+          <path
+            key={c.id}
+            d={d}
+            fill="none"
+            stroke={CABLE_HEX[c.color]}
+            strokeWidth={sel ? 4 : 2}
+            strokeOpacity={selectedCableId && !sel ? 0.35 : 0.9}
+            strokeDasharray={a.rear || b.rear ? "5 4" : undefined}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
 function UnitLabels({ units }: { units: number[] }) {
   return (
     <div className="w-7 shrink-0">
@@ -782,6 +922,7 @@ function DeviceEditor({
   onDuplicate,
   onRemove,
   onClose,
+  portGrid,
 }: {
   device: RackDevice;
   rack: RackState;
@@ -790,7 +931,9 @@ function DeviceEditor({
   onDuplicate: () => void;
   onRemove: () => void;
   onClose: () => void;
+  portGrid: ReactNode;
 }) {
+  const [editPorts, setEditPorts] = useState(false);
   // Tinggi dan posisi diketik dulu, baru diterapkan bila muat (supaya angka setengah jadi tidak ditolak).
   const [u, setU] = useState(String(device.u));
   const [pos, setPos] = useState(String(device.pos));
@@ -873,7 +1016,40 @@ function DeviceEditor({
           <TextInput value={device.note} onChange={(note) => onPatch({ note: note.slice(0, 200) })} placeholder="mis. IP 10.0.0.2, SN, pemilik" />
         </Field>
       </div>
-      <p className="mt-2 text-[11px] text-faint">{KIND_LABEL[device.kind]} · menempati U{device.pos}{device.u > 1 ? `–${device.pos + device.u - 1}` : ""}</p>
+      <p className="mt-2 text-[11px] text-faint">
+        {device.brand && device.brand !== "Generik" ? `${device.brand} · ` : ""}
+        {KIND_LABEL[device.kind]} · menempati U{device.pos}
+        {device.u > 1 ? `–${device.pos + device.u - 1}` : ""}
+      </p>
+
+      <div className="mt-4 border-t border-line pt-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">
+            Port{device.ports.length ? ` · ${portSummary(device.ports)}` : ""}
+          </p>
+          <div className="flex items-center gap-1">
+            {device.ports.length > 0 && (
+              <select
+                value={device.portSide}
+                onChange={(e) => onPatch({ portSide: e.target.value as "front" | "rear" })}
+                aria-label="Letak port"
+                className="min-h-7 rounded-md border border-line bg-surface px-1.5 text-[11px] text-ink focus:border-brand focus:outline-none"
+              >
+                <option value="front">di depan</option>
+                <option value="rear">di belakang</option>
+              </select>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => setEditPorts((v) => !v)}>
+              {editPorts ? "Selesai" : "Ubah port"}
+            </Button>
+          </div>
+        </div>
+        {editPorts ? <PortsEditor groups={device.ports} onChange={(ports) => onPatch({ ports })} /> : portGrid}
+        {!editPorts && device.ports.length > 0 && (
+          <p className="mt-2 text-[10.5px] text-faint">Klik port kosong untuk ujung A, lalu port lain (perangkat mana pun) untuk ujung B. Klik port berwarna untuk melihat kabelnya.</p>
+        )}
+      </div>
+
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" onClick={() => onPlace(device.u, device.pos + 1)}>
           Naik 1U

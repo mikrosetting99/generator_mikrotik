@@ -57,3 +57,6 @@ next-env.d.ts
 # tetap berfungsi.
 templates/*/img/*.jpg
 templates/*/img/*.png
+
+# alamat server untuk deploy.ps1 (lokal saja)
+.deploy.local.json

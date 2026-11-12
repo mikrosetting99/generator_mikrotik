@@ -185,6 +185,26 @@ bila:
   biasanya berarti ada yang mengedit file langsung di server, cek dulu
   sebelum menimpa dengan `git stash` atau `git checkout .`.
 
+### Deploy sekali klik dari laptop Windows
+
+`deploy.cmd` di folder proyek melakukan push dan update sekaligus: branch
+yang sedang aktif di-push ke `main` (hanya fast-forward; ditolak bila ada
+perubahan belum di-commit atau `main` di GitHub lebih baru), lalu masuk ke
+server lewat SSH dan menjalankan `update.sh`.
+
+```powershell
+.\deploy.cmd              # push + deploy (atau klik dua kali deploy.cmd)
+.\deploy.cmd -SetupKey    # sekali saja: pasang kunci SSH agar tidak ditanya password
+.\deploy.cmd -NoPush      # hanya jalankan update.sh di server
+.\deploy.cmd -Reconfigure # ganti alamat server
+```
+
+Saat pertama dijalankan, script menanyakan IP/domain server, user SSH
+(bawaan `root`), port (bawaan `22`), dan folder proyek, lalu menyimpannya di
+`.deploy.local.json` (tidak ikut di-commit). Butuh "OpenSSH Client" Windows
+(sudah terpasang di Windows 10/11) dan port SSH server terbuka di firewall
+aaPanel.
+
 ---
 
 ## Catatan

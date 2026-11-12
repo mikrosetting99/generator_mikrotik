@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.69.1] - 2026-11-12
+
+_Deploy sekali klik dari laptop_
+
+### Ditambahkan
+
+- deploy.cmd / deploy.ps1: push branch aktif ke main (hanya fast-forward) lalu menjalankan update.sh di server lewat SSH. Alamat server ditanyakan sekali dan disimpan lokal; -SetupKey memasang kunci SSH supaya tidak perlu password, -NoPush hanya menjalankan update di server.
+
 ## [1.69.0] - 2026-11-12
 
 _Simulasi Rack Server: tampilan 3D dan kedalaman rack_

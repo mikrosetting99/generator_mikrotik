@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.69.1",
+    date: "2026-11-12",
+    title: "Deploy sekali klik dari laptop",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "deploy.cmd / deploy.ps1: push branch aktif ke main (hanya fast-forward) lalu menjalankan update.sh di server lewat SSH. Alamat server ditanyakan sekali dan disimpan lokal; -SetupKey memasang kunci SSH supaya tidak perlu password, -NoPush hanya menjalankan update di server.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.69.0",
     date: "2026-11-12",
     title: "Simulasi Rack Server: tampilan 3D dan kedalaman rack",

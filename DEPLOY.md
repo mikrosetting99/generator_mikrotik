@@ -162,12 +162,13 @@ Aset statis (`/_next/static/...`) sudah dikirim Next.js dengan header cache
 
 ## 7. Update setelah ada perubahan kode
 
-Push dari lokal seperti biasa, lalu di server:
+Push dari lokal seperti biasa, lalu di server (Terminal aaPanel):
 
 ```bash
-cd /www/wwwroot/generator_mikrotik
-bash update.sh
+cd /www/wwwroot/generator_mikrotik && bash scripts/update_generatormikrotik.sh
 ```
+
+(`bash update.sh` dari folder yang sama juga masih bisa; isinya sama.)
 
 `update.sh` melakukan: cek `.env` ada & git bersih → `git pull` → `npm ci` →
 `prisma migrate deploy` → `build` → `pm2 reload` → `pm2 save`, dan

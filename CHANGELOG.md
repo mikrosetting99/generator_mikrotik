@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.69.2] - 2026-11-12
+
+_Perintah update satu baris di server_
+
+### Ditambahkan
+
+- scripts/update_generatormikrotik.sh: update di server cukup dengan `cd /www/wwwroot/generator_mikrotik && bash scripts/update_generatormikrotik.sh` (sama seperti update.sh).
+
 ## [1.69.1] - 2026-11-12
 
 _Deploy sekali klik dari laptop_

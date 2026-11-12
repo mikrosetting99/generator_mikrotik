@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.69.2",
+    date: "2026-11-12",
+    title: "Perintah update satu baris di server",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "scripts/update_generatormikrotik.sh: update di server cukup dengan `cd /www/wwwroot/generator_mikrotik && bash scripts/update_generatormikrotik.sh` (sama seperti update.sh).",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.69.1",
     date: "2026-11-12",
     title: "Deploy sekali klik dari laptop",

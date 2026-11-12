@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from "react";
 import { AppSwitcher } from "@/components/AppSwitcher";
 import { Check, Copy, Database, Download, Trash, Upload } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -137,6 +137,7 @@ export function RackDesigner() {
   const [drag, setDrag] = useState<DragState | null>(null);
   const [hover, setHover] = useState<{ u: number; pos: number; valid: boolean } | null>(null);
   const [flash, setFlash] = useState<{ tone: "info" | "warn" | "bad"; text: string } | null>(null);
+  const [undo, setUndo] = useState<{ device: RackDevice; cables: RackCable[]; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<"2d" | "3d">("2d");
   const [showCables, setShowCables] = useState(true);
@@ -241,11 +242,37 @@ export function RackDesigner() {
     addTemplate(t);
   };
 
+  /** Hapus perangkat (dan kabelnya); rack sebelumnya disimpan supaya bisa dibatalkan. */
   const remove = (id: string) => {
+    const d = rack.devices.find((x) => x.id === id);
+    if (!d) return;
+    const cables = rack.cables.filter((c) => c.a.dev === id || c.b.dev === id);
+    setUndo({ device: d, cables, text: `${d.name} dihapus${cables.length ? ` beserta ${cables.length} kabel` : ""}.` });
+    setFlash(null);
     setRack((r) => removeDevice(r, id));
     if (selectedId === id) setSelectedId(null);
-    setDraft((d) => ({ a: d.a?.dev === id ? null : d.a, b: d.b?.dev === id ? null : d.b }));
+    setDraft((x) => ({ a: x.a?.dev === id ? null : x.a, b: x.b?.dev === id ? null : x.b }));
+    setSelectedCableId(null);
   };
+  /** Kembalikan perangkat terakhir yang dihapus ke posisinya, beserta kabel yang portnya masih kosong. */
+  const undoRemove = () => {
+    if (!undo) return;
+    const { device, cables } = undo;
+    if (!canPlace(rack, device.u, device.pos)) {
+      return setFlash({ tone: "warn", text: `${device.name} tidak bisa dikembalikan: U${device.pos} sudah terisi perangkat lain.` });
+    }
+    const devices = [...rack.devices, device];
+    const restored = cables.filter((c) => !portInUse(rack.cables, c.a) && !portInUse(rack.cables, c.b) && cableRoute({ devices }, c));
+    setRack((r) => ({ ...r, devices: [...r.devices, device], cables: [...r.cables, ...restored] }));
+    setSelectedId(device.id);
+    setUndo(null);
+    if (restored.length < cables.length) setFlash({ tone: "info", text: `${cables.length - restored.length} kabel tidak dikembalikan karena portnya sudah dipakai.` });
+  };
+  const removeRef = useRef(remove);
+  useEffect(() => {
+    removeRef.current = remove;
+  });
+  const remove3d = useCallback((id: string) => removeRef.current(id), []);
 
   const setHeight = (u: number) => {
     const height = Math.min(Math.max(Math.round(u) || MIN_U, MIN_U), MAX_U);
@@ -343,6 +370,7 @@ export function RackDesigner() {
       const next = normalizeRack(JSON.parse(await file.text()));
       setRack(next);
       setSelectedId(null);
+      setUndo(null);
       setFlash({ tone: "info", text: `${next.name} dimuat (${next.devices.length} perangkat).` });
     } catch {
       setFlash({ tone: "bad", text: "Berkas tidak bisa dibaca. Pilih berkas .json hasil Ekspor." });
@@ -377,10 +405,10 @@ export function RackDesigner() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" onClick={() => { setRack(exampleRack()); setSelectedId(null); setFlash(null); setDraft({ a: null, b: null }); setSelectedCableId(null); }} title="Muat contoh rack NOC">
+            <Button size="sm" onClick={() => { setRack(exampleRack()); setSelectedId(null); setFlash(null); setUndo(null); setDraft({ a: null, b: null }); setSelectedCableId(null); }} title="Muat contoh rack NOC">
               Contoh
             </Button>
-            <Button size="sm" onClick={() => { if (window.confirm("Kosongkan semua perangkat dan kabel di rack?")) { setRack((r) => ({ ...r, devices: [], cables: [] })); setSelectedId(null); setDraft({ a: null, b: null }); setSelectedCableId(null); } }}>
+            <Button size="sm" onClick={() => { if (window.confirm("Kosongkan semua perangkat dan kabel di rack?")) { setRack((r) => ({ ...r, devices: [], cables: [] })); setSelectedId(null); setUndo(null); setDraft({ a: null, b: null }); setSelectedCableId(null); } }}>
               Kosongkan
             </Button>
             <Button size="sm" onClick={exportJson} title="Simpan desain sebagai berkas .json">
@@ -422,6 +450,19 @@ export function RackDesigner() {
               <Note tone={flash.tone}>{flash.text}</Note>
             </div>
           )}
+          {undo && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink print:hidden" role="status">
+              <span>{undo.text}</span>
+              <span className="flex gap-1">
+                <Button size="sm" onClick={undoRemove}>
+                  Batalkan
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setUndo(null)} ariaLabel="Tutup pemberitahuan">
+                  Tutup
+                </Button>
+              </span>
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <h2 className="truncate text-base font-semibold text-ink">{rack.name}</h2>
@@ -455,7 +496,7 @@ export function RackDesigner() {
           </div>
 
           {mode === "3d" ? (
-            <Rack3D rack={rack} selectedId={selectedId} onSelect={select3d} showCables={showCables} selectedCableId={selectedCableId} />
+            <Rack3D rack={rack} selectedId={selectedId} onSelect={select3d} onRemove={remove3d} showCables={showCables} selectedCableId={selectedCableId} />
           ) : (
           <>
           <div className="mx-auto w-full max-w-[520px] rounded-lg bg-[#1b1f26] p-2 shadow-lg ring-1 ring-black/40">
@@ -487,9 +528,11 @@ export function RackDesigner() {
                   const pos = dragging ? drag.pos : d.pos;
                   const valid = !dragging || canPlace(rack, d.u, pos, d.id);
                   const isSel = d.id === selectedId;
+                  const top = (H - (pos + d.u - 1)) * UH + 1;
+                  const height = d.u * UH - 2;
                   return (
+                    <Fragment key={d.id}>
                     <button
-                      key={d.id}
                       type="button"
                       onPointerDown={(e) => onDevicePointerDown(e, d)}
                       onPointerMove={(e) => onDevicePointerMove(e, d)}
@@ -501,16 +544,19 @@ export function RackDesigner() {
                         if (e.key === "ArrowUp" || e.key === "ArrowDown") {
                           e.preventDefault();
                           placeDevice(d, d.u, d.pos + (e.key === "ArrowUp" ? 1 : -1));
+                        } else if (e.key === "Delete" || e.key === "Backspace") {
+                          e.preventDefault();
+                          remove(d.id);
                         }
                       }}
                       aria-label={`${d.name}, U${d.pos}${d.u > 1 ? ` sampai ${d.pos + d.u - 1}` : ""}`}
-                      title="Seret untuk memindah · klik untuk mengubah · panah atas/bawah memindah 1U"
+                      title="Seret untuk memindah · klik untuk mengubah · panah atas/bawah memindah 1U · Delete untuk menghapus"
                       className={`absolute inset-x-1 flex touch-none items-center gap-2 overflow-hidden rounded-sm border px-2 text-left text-white transition-shadow ${
                         dragging ? "z-30 cursor-grabbing opacity-90 shadow-2xl" : "z-10 cursor-grab"
                       } ${isSel ? "ring-2 ring-white" : ""} ${valid ? "border-white/15" : "border-bad ring-2 ring-bad"}`}
                       style={{
-                        top: (H - (pos + d.u - 1)) * UH + 1,
-                        height: d.u * UH - 2,
+                        top,
+                        height,
                         background:
                           d.kind === "blank"
                             ? "repeating-linear-gradient(90deg,#2a2f38 0 6px,#252a32 6px 12px)"
@@ -532,6 +578,20 @@ export function RackDesigner() {
                         </>
                       )}
                     </button>
+                    {isSel && !dragging && (
+                      // di kolom nomor U sebelah kanan, supaya tidak menutupi port
+                      <button
+                        type="button"
+                        onClick={() => remove(d.id)}
+                        aria-label={`Hapus ${d.name}`}
+                        title={`Hapus ${d.name}`}
+                        className="absolute z-40 flex h-5 w-6 items-center justify-center rounded bg-bad text-white shadow-md ring-1 ring-black/40 hover:brightness-110 print:hidden"
+                        style={{ top: top + height / 2 - 10, right: -27 }}
+                      >
+                        <Trash className="h-3 w-3" />
+                      </button>
+                    )}
+                    </Fragment>
                   );
                 })}
 

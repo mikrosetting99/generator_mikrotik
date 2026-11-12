@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.71.1] - 2026-11-12
+
+_Simulasi Rack Server: hapus perangkat langsung di rack_
+
+### Ditambahkan
+
+- Tombol hapus langsung di rack: di tampilan 2D muncul tombol merah di samping perangkat yang dipilih (juga tombol Delete di keyboard), di tampilan 3D muncul kotak nama perangkat dengan tombol Hapus di pojok kiri atas.
+- Setelah menghapus muncul pemberitahuan dengan tombol Batalkan: perangkat kembali ke posisinya beserta kabel yang portnya masih kosong.
+
 ## [1.71.0] - 2026-11-12
 
 _Simulasi Rack Server: patch cord, patch panel, dan perangkat multi-brand_

@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { Download } from "@/components/icons";
+import { Download, Trash } from "@/components/icons";
 import { Button, Note } from "@/components/ui";
 import { CABLE_HEX, cableRoute, portLayout, type PortSpot } from "@/lib/rack-ports";
 import {
@@ -576,12 +576,14 @@ export default function Rack3D({
   rack,
   selectedId,
   onSelect,
+  onRemove,
   showCables,
   selectedCableId,
 }: {
   rack: RackState;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onRemove: (id: string) => void;
   showCables: boolean;
   selectedCableId: string | null;
 }) {
@@ -600,6 +602,7 @@ export default function Rack3D({
   const sizeKey = `${rack.type}|${rack.heightU}|${rack.widthMm}|${rack.depthMm}`;
   const initialSize = useRef<RackSize>({ type: rack.type, heightU: rack.heightU, widthMm: rack.widthMm, depthMm: rack.depthMm });
   const info = RACK_TYPE[rack.type];
+  const selected = rack.devices.find((d) => d.id === selectedId) ?? null;
   const firstPose = useRef(true);
 
   // Renderer, kamera, kontrol, dan putaran gambar: dibuat sekali.
@@ -822,10 +825,23 @@ export default function Rack3D({
           </Button>
         </div>
       </div>
-      <div
-        ref={wrapRef}
-        className="relative h-[560px] w-full overflow-hidden rounded-lg bg-gradient-to-b from-raised to-surface ring-1 ring-line sm:h-[640px]"
-      />
+      <div className="relative">
+        <div
+          ref={wrapRef}
+          className="relative h-[560px] w-full overflow-hidden rounded-lg bg-gradient-to-b from-raised to-surface ring-1 ring-line sm:h-[640px]"
+        />
+        {selected && (
+          <div className="absolute left-3 top-3 flex max-w-[calc(100%-24px)] items-center gap-2 rounded-lg border border-line bg-surface/95 py-1.5 pl-3 pr-1.5 text-xs shadow-md backdrop-blur print:hidden">
+            <span className="min-w-0 truncate text-ink">
+              <span className="font-semibold">{selected.name}</span>
+              <span className="text-faint"> · U{selected.pos}{selected.u > 1 ? `–${selected.pos + selected.u - 1}` : ""}</span>
+            </span>
+            <Button size="sm" variant="danger" onClick={() => onRemove(selected.id)} title={`Hapus ${selected.name}`}>
+              <Trash className="h-3.5 w-3.5" /> Hapus
+            </Button>
+          </div>
+        )}
+      </div>
       <p className="text-center text-[11px] text-faint print:hidden">
         Seret untuk memutar · scroll / cubit untuk zoom · klik kanan / dua jari untuk menggeser · klik perangkat untuk memilih
       </p>

@@ -27,6 +27,20 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.71.1",
+    date: "2026-11-12",
+    title: "Simulasi Rack Server: hapus perangkat langsung di rack",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Tombol hapus langsung di rack: di tampilan 2D muncul tombol merah di samping perangkat yang dipilih (juga tombol Delete di keyboard), di tampilan 3D muncul kotak nama perangkat dengan tombol Hapus di pojok kiri atas.",
+          "Setelah menghapus muncul pemberitahuan dengan tombol Batalkan: perangkat kembali ke posisinya beserta kabel yang portnya masih kosong.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.71.0",
     date: "2026-11-12",
     title: "Simulasi Rack Server: patch cord, patch panel, dan perangkat multi-brand",

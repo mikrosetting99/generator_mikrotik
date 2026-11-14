@@ -27,6 +27,30 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.73.0",
+    date: "2026-11-14",
+    title: "Network Monitoring: collector, Analisa MikroTik, tampilan Perangkat",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Tab Monitoring di Network Engineer menjadi Network Monitoring, dengan menu Ringkasan, Perangkat, Gangguan, dan Konfigurasi. Halaman Perangkat punya pencarian, filter site, chip status (Online, Peringatan, Down, Data Tidak Tersedia), dan tab jenis yang bisa dipakai bersamaan, gangguan aktif di atas daftar, List View di desktop, serta kartu ringkas di HP.",
+          "Collector terpisah dari web (scripts/nm-collector.mts, PM2 generator-mikrotik-nm). Collector memeriksa MikroTik tiap 60 detik lewat RouterOS API read-only: keterjangkauan, uptime, CPU, RAM, status dan trafik WAN dari selisih counter (tahan reset dan reboot), serta jumlah sesi PPPoE dan Hotspot.",
+          "Tab Analisa di detail MikroTik dengan tiga aturan yang ambangnya bisa diatur: CPU tinggi, WAN link down, dan sesi PPPoE turun. Setiap temuan menampilkan nilai pemicu, sampel pendukung, grafik, langkah pengecekan, dan waktu pulih.",
+          "Status router tidak terjangkau, gagal mengambil metrik, dan data kedaluwarsa (termasuk saat collector berhenti) dibedakan. Status WAN ditulis \"belum terverifikasi\" selama router tidak terjangkau.",
+          "Mode demo berisi data simulasi yang diberi label jelas.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Grafik langsung dari browser yang lama tetap ada sebagai \"Pantau langsung\".",
+          "Koneksi API-SSL collector memvalidasi sertifikat (CA tepercaya atau fingerprint SHA-256). Target dibatasi ke port dan subnet yang diizinkan (NM_ALLOWED_PORTS, NM_ALLOWED_NETWORKS).",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.72.0",
     date: "2026-11-14",
     title: "Dashboard Admin: pemakaian modul per hari",

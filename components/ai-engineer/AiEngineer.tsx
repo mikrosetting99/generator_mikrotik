@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import type { DiagResult } from "@/lib/ai-routers";
 import { ConnTest, type DiagState } from "@/components/ai-engineer/ConnTest";
 import { RouterMonitor, type MonitorTarget } from "@/components/ai-engineer/RouterMonitor";
+import { NetworkMonitoring } from "@/components/monitoring/NetworkMonitoring";
 import { Check, ChevronDown, Copy, Plus, Terminal, Trash, Wand, X } from "@/components/icons";
 import { Button, Field, Note, Select, TextInput } from "@/components/ui";
 import { AI_PROVIDERS, type AiProviderId } from "@/lib/ai-catalog";
@@ -369,6 +370,10 @@ export function AiEngineer() {
   const [convRouter, setConvRouter] = useState("");
   const [navSlot, setNavSlot] = useState<HTMLElement | null>(null);
   useEffect(() => setNavSlot(document.getElementById("ai-nav-slot")), []);
+  // Tautan langsung ke Network Monitoring (#nm/…) membuka tab Monitoring.
+  useEffect(() => {
+    if (/^#nm(-demo)?\//.test(window.location.hash)) setView("monitor");
+  }, []);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1459,7 +1464,8 @@ export function AiEngineer() {
 
       {/* ------------------------------------------------------------ chat */}
       <section className="flex min-h-0 min-w-0 flex-col bg-surface">
-        <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface px-4 py-2">
+        {/* Monitoring punya bilah kontrolnya sendiri (Network Monitoring). */}
+        <header className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface px-4 py-2 ${view === "monitor" ? "hidden" : ""}`}>
           {view === "chat" && (
             <button
               type="button"
@@ -1571,11 +1577,16 @@ export function AiEngineer() {
             <div className="mx-auto w-full max-w-[860px]">{view === "routers" ? routersSection : view === "memory" ? memorySection : view === "ai" ? aiSection : skillsSection}</div>
           </div>
         ) : view === "monitor" ? (
-          <RouterMonitor
-            targets={monitorTargets}
-            statusList={routers.map((r) => ({ id: r.id, name: routerLabel(r), host: r.host, state: statuses[r.id]?.state ?? "checking", message: statuses[r.id]?.message ?? "", latencyMs: statuses[r.id]?.latencyMs ?? 0, checkedAt: statuses[r.id]?.checkedAt ?? 0, ssh: r.port <= 0, info: statuses[r.id]?.info }))}
-            onCheck={() => checkStatuses()}
-            checking={checking}
+          <NetworkMonitoring
+            routers={routers.filter((r) => r.port > 0).map((r) => ({ id: r.id, name: routerLabel(r), host: r.host }))}
+            live={
+              <RouterMonitor
+                targets={monitorTargets}
+                statusList={routers.map((r) => ({ id: r.id, name: routerLabel(r), host: r.host, state: statuses[r.id]?.state ?? "checking", message: statuses[r.id]?.message ?? "", latencyMs: statuses[r.id]?.latencyMs ?? 0, checkedAt: statuses[r.id]?.checkedAt ?? 0, ssh: r.port <= 0, info: statuses[r.id]?.info }))}
+                onCheck={() => checkStatuses()}
+                checking={checking}
+              />
+            }
           />
         ) : (
           <>

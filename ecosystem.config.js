@@ -28,5 +28,23 @@ module.exports = {
         HOSTNAME: "127.0.0.1",
       },
     },
+    {
+      // Collector Network Monitoring (scripts/nm-collector.mts): proses terpisah dari web.
+      // Memeriksa MikroTik tiap interval, menyimpan sampel, dan membuka/menutup temuan Analisa.
+      // Lihat DEPLOY.md bagian Network Monitoring untuk NM_ALLOWED_NETWORKS (subnet VPN/site).
+      name: "generator-mikrotik-nm",
+      cwd: __dirname,
+      script: "node_modules/tsx/dist/cli.mjs",
+      args: "scripts/nm-collector.mts",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "200M",
+      kill_timeout: 30000,
+      env: {
+        NODE_ENV: "production",
+      },
+    },
   ],
 };

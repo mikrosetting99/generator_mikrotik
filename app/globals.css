@@ -375,3 +375,31 @@ button:disabled {
   animation: icon-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   animation-delay: calc(var(--i, 0) * 55ms + 320ms);
 }
+
+/*
+ * Network Monitoring (Network Engineer → Monitoring): aksen biru, hanya di dalam .nm-theme.
+ * Bilah navigasi global tetap memakai warna situs. --nm-s1/--nm-s2 = dua seri grafik (RX/TX).
+ */
+.nm-theme {
+  --color-brand: #8ab8f0;
+  --color-brand-dim: #1c3352;
+  --color-brand-ink: #0b1a2b;
+  --nm-s1: #8ab8f0;
+  --nm-s2: #f2b45a;
+}
+:root[data-theme="light"] .nm-theme {
+  --color-brand: #1d63b0;
+  --color-brand-dim: #e6eff9;
+  --color-brand-ink: #ffffff;
+  --nm-s1: #1d63b0;
+  --nm-s2: #c26a00;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .nm-theme {
+    --color-brand: #1d63b0;
+    --color-brand-dim: #e6eff9;
+    --color-brand-ink: #ffffff;
+    --nm-s1: #1d63b0;
+    --nm-s2: #c26a00;
+  }
+}

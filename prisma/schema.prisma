@@ -27,8 +27,107 @@ model User {
   loginPages  SavedLoginPage[]
   aiRouters   AiRouter[]
   vpnAccounts VpnAccount[]
+  nmDevices   NmDevice[]
 
   @@map("users")
+}
+
+/// Perangkat yang dipantau Network Monitoring. Kredensial (sebaiknya user read-only) terenkripsi
+/// lewat lib/vault.ts dan hanya dibuka oleh collector; tidak pernah dikirim ke browser.
+model NmDevice {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String    @db.VarChar(80)
+  site           String    @default("") @db.VarChar(80)
+  /// router | olt | ap | onu | server
+  kind           String    @default("router") @db.VarChar(12)
+  /// mikrotik dipantau collector Tahap 1; vendor lain tercatat tetapi datanya "Tidak tersedia".
+  vendor         String    @default("mikrotik") @db.VarChar(20)
+  host           String    @default("") @db.VarChar(253)
+  apiPort        Int       @default(8728)
+  tls            Boolean   @default(false)
+  /// SHA-256 sertifikat API-SSL yang dipercaya (untuk sertifikat self-signed); kosong = wajib CA valid.
+  tlsFingerprint String    @default("") @db.VarChar(100)
+  username       String    @default("") @db.VarChar(100)
+  passwordEnc    String    @db.Text
+  enabled        Boolean   @default(true)
+  intervalSec    Int       @default(60)
+  /// Nama interface WAN yang dipantau, dipisah koma.
+  wanInterfaces  String    @default("") @db.VarChar(500)
+  /// Ambang aturan Analisa (lib/nm/types.ts RuleConfig); null = bawaan.
+  rules          Json?
+  /// Diklaim collector sebelum polling (mencegah dua worker memeriksa perangkat yang sama).
+  lastPollAt     DateTime?
+  lastSampleAt   DateTime?
+  /// Ringkasan sampel terakhir untuk daftar (tanpa kredensial).
+  state          Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  samples  NmSample[]
+  findings NmFinding[]
+
+  @@index([userId])
+  @@index([enabled, lastPollAt])
+  @@map("nm_devices")
+}
+
+/// Satu pemeriksaan perangkat oleh collector. Trafik WAN dihitung dari selisih counter antar sampel.
+model NmSample {
+  id        BigInt   @id @default(autoincrement())
+  deviceId  String
+  device    NmDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  at        DateTime @db.DateTime(3)
+  reachable Boolean
+  apiOk     Boolean
+  cpu       Int?
+  memPct    Float?
+  uptimeSec Int?
+  ppp       Int?
+  hotspot   Int?
+  /// [{name, found, running, rxByte, txByte, rxBps, txBps}]
+  wan       Json?
+  error     String   @default("") @db.VarChar(300)
+
+  @@index([deviceId, at])
+  @@index([at])
+  @@map("nm_samples")
+}
+
+/// Temuan Analisa. activeKey terisi selama aktif (unik per perangkat+aturan+interface) dan dikosongkan
+/// saat pulih, jadi retry atau worker paralel tidak bisa membuat temuan aktif ganda.
+model NmFinding {
+  id           String    @id @default(cuid())
+  userId       String
+  deviceId     String
+  device       NmDevice  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  rule         String    @db.VarChar(24)
+  subject      String    @default("") @db.VarChar(80)
+  activeKey    String?   @unique @db.VarChar(200)
+  /// active | resolved
+  status       String    @default("active") @db.VarChar(10)
+  summary      String    @db.VarChar(300)
+  triggerValue String    @db.VarChar(200)
+  evidence     Json
+  recovery     String    @default("") @db.VarChar(300)
+  startedAt    DateTime  @db.DateTime(3)
+  lastSeenAt   DateTime  @db.DateTime(3)
+  resolvedAt   DateTime? @db.DateTime(3)
+
+  @@index([userId, status])
+  @@index([deviceId, startedAt])
+  @@map("nm_findings")
+}
+
+/// Detak collector: bila berhenti, data perangkat ditandai kedaluwarsa.
+model NmCollector {
+  id         String   @id @db.VarChar(64)
+  startedAt  DateTime @db.DateTime(3)
+  lastBeatAt DateTime @db.DateTime(3)
+  info       Json?
+
+  @@map("nm_collectors")
 }
 
 /// Mikrotik milik pengguna untuk menu AI Mikrotik Engineer. Password disimpan terenkripsi (lib/vault.ts)

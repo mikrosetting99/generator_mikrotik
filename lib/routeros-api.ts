@@ -92,6 +92,25 @@ function parseAttrs(words: string[]): Row {
 
 /* ------------------------------------------------------------------- koneksi */
 
+export class TlsVerifyError extends Error {}
+
+/** "AB:CD:…" atau "abcd…" → huruf kecil tanpa pemisah, untuk membandingkan fingerprint. */
+export const normFingerprint = (v: string) => v.replace(/[^0-9a-f]/gi, "").toLowerCase();
+
+/** null bila sertifikat dipercaya; selain itu alasan penolakan berbahasa Indonesia. */
+export function checkCertificate(s: tls.TLSSocket, host: string, fingerprint: string): string | null {
+  const cert = s.getPeerCertificate();
+  if (!cert || !Object.keys(cert).length) return "Router tidak mengirim sertifikat API-SSL.";
+  if (fingerprint) {
+    return normFingerprint(cert.fingerprint256 ?? "") === normFingerprint(fingerprint)
+      ? null
+      : `Fingerprint sertifikat API-SSL tidak cocok (diterima ${cert.fingerprint256}). Perbarui fingerprint bila sertifikat router memang diganti.`;
+  }
+  if (!s.authorized) return `Sertifikat API-SSL tidak tervalidasi (${String(s.authorizationError ?? "tidak dikenal")}). Pakai sertifikat dari CA tepercaya atau isi fingerprint SHA-256 sertifikat router.`;
+  const idErr = tls.checkServerIdentity(host, cert);
+  return idErr ? `Nama di sertifikat API-SSL tidak cocok dengan ${host}.` : null;
+}
+
 export class RouterOsConnection {
   private buf: Buffer = Buffer.alloc(0);
   private queue: string[][] = [];
@@ -150,7 +169,12 @@ export class RouterOsConnection {
     });
   }
 
-  static connect(t: Pick<RouterTarget, "ip" | "host" | "port" | "tls">, timeoutMs = 8000): Promise<RouterOsConnection> {
+  /**
+   * `verifyTls` (dipakai collector Network Monitoring): sertifikat API-SSL wajib cocok dengan
+   * fingerprint SHA-256 yang dipercaya, atau — bila fingerprint kosong — sah menurut CA sistem
+   * dan cocok dengan nama host. Tanpa opsi ini perilakunya tetap seperti semula.
+   */
+  static connect(t: Pick<RouterTarget, "ip" | "host" | "port" | "tls">, timeoutMs = 8000, verifyTls?: { fingerprint: string }): Promise<RouterOsConnection> {
     return new Promise((resolve, reject) => {
       let settled = false;
       const done = (err: Error | null, conn?: RouterOsConnection) => {
@@ -160,12 +184,23 @@ export class RouterOsConnection {
         if (err) reject(err);
         else resolve(conn!);
       };
+      const onSecure = () => {
+        if (verifyTls) {
+          const s = socket as tls.TLSSocket;
+          const err = checkCertificate(s, t.host, verifyTls.fingerprint);
+          if (err) {
+            socket.destroy();
+            return done(new TlsVerifyError(err));
+          }
+        }
+        done(null, new RouterOsConnection(socket));
+      };
       const socket: net.Socket = t.tls
-        ? tls.connect({ host: t.ip, port: t.port, servername: net.isIP(t.host) ? undefined : t.host, rejectUnauthorized: false }, () => done(null, new RouterOsConnection(socket)))
+        ? tls.connect({ host: t.ip, port: t.port, servername: net.isIP(t.host) ? undefined : t.host, rejectUnauthorized: false }, onSecure)
         : net.connect({ host: t.ip, port: t.port }, () => done(null, new RouterOsConnection(socket)));
       const timer = setTimeout(() => {
         socket.destroy();
-        done(new Error(`Tidak bisa tersambung ke ${t.host}:${t.port} (waktu habis). Pastikan service API aktif dan IP server ini diizinkan di /ip service.`));
+        done(Object.assign(new Error(`Tidak bisa tersambung ke ${t.host}:${t.port} (waktu habis). Pastikan service API aktif dan IP server ini diizinkan di /ip service.`), { code: "ETIMEDOUT" }));
       }, timeoutMs);
       socket.once("error", (e: NodeJS.ErrnoException) => {
         const why =
@@ -174,7 +209,7 @@ export class RouterOsConnection {
             : e.code === "EHOSTUNREACH" || e.code === "ENETUNREACH"
               ? "tidak terjangkau"
               : e.message;
-        done(new Error(`Tidak bisa tersambung ke ${t.host}:${t.port}: ${why}.`));
+        done(Object.assign(new Error(`Tidak bisa tersambung ke ${t.host}:${t.port}: ${why}.`), { code: e.code }));
       });
     });
   }

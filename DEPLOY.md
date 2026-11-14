@@ -208,6 +208,46 @@ aaPanel.
 
 ---
 
+## 8. Network Monitoring (collector)
+
+Tab **Network Engineer → Monitoring** membaca hasil pemeriksaan yang disimpan
+oleh *collector*, yaitu proses terpisah dari web: `scripts/nm-collector.mts`,
+yang di PM2 bernama `generator-mikrotik-nm` (ada di `ecosystem.config.js`).
+Collector memeriksa tiap MikroTik sesuai intervalnya (bawaan 60 detik) lewat
+RouterOS API **hanya dengan perintah print**. Hasilnya disimpan di `nm_samples`,
+lalu aturan Analisa membuka dan menutup temuan di `nm_findings`.
+
+```bash
+# setelah update.sh (migrasi nm_* sudah jalan)
+pm2 start ecosystem.config.js --only generator-mikrotik-nm
+pm2 logs generator-mikrotik-nm
+npx tsx scripts/nm-collector.mts --once   # uji satu putaran tanpa PM2
+```
+
+`update.sh` menjalankan `pm2 reload ecosystem.config.js`. Karena itu collector
+ikut dijalankan (atau di-reload) setiap kali update.
+
+Batas target, diisi di `.env`:
+
+| Variabel | Bawaan | Fungsi |
+|---|---|---|
+| `NM_ALLOWED_PORTS` | `8728,8729` | Port yang boleh dihubungi collector |
+| `NM_ALLOWED_NETWORKS` | kosong | Subnet privat (CIDR IPv4) yang boleh dihubungi, mis. tunnel VPN `10.88.0.0/16`. Tanpa ini hanya IP publik |
+| `NM_CONCURRENCY` | `8` | Perangkat diperiksa bersamaan |
+| `NM_RETENTION_DAYS` | `7` | Umur sampel; temuan yang sudah pulih disimpan 90 hari |
+| `NM_COLLECTOR_ID` | hostname | Nama collector di detak |
+
+Di router, buat user read-only. Grupnya hanya ber-policy `read,api` (contoh
+ada di menu Konfigurasi). Batasi `address` user itu ke IP collector. Untuk
+API-SSL, sertifikat divalidasi: pakai sertifikat dari CA tepercaya, atau isi
+fingerprint SHA-256 sertifikat self-signed di pengaturan perangkat.
+
+Bila collector berhenti, dashboard menandai data perangkat **kedaluwarsa**
+(setelah 3× interval, minimal 3 menit). Status lama tidak dibiarkan terlihat
+seolah masih segar.
+
+---
+
 ## Catatan
 
 - **Environment variable wajib diisi** sejak menu Setup Mikrotik Baru dan

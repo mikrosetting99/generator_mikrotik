@@ -27,6 +27,19 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.73.1",
+    date: "2026-11-14",
+    title: "Network Monitoring: port API bebas (port forwarding)",
+    changes: [
+      {
+        type: "fixed",
+        items: [
+          "Perangkat dengan port API hasil port forwarding (mis. 6006) kini bisa ditambahkan. Sebelumnya collector hanya menerima 8728 dan 8729. Port bisa dibatasi lagi bila perlu lewat NM_ALLOWED_PORTS di server; pembatasan alamat (IP publik atau NM_ALLOWED_NETWORKS) tetap berlaku.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.73.0",
     date: "2026-11-14",
     title: "Network Monitoring: collector, Analisa MikroTik, tampilan Perangkat",

@@ -11,7 +11,7 @@
  *   NM_CONCURRENCY       perangkat diperiksa bersamaan (bawaan 8)
  *   NM_TICK_SECONDS      jeda antar putaran (bawaan 10; tiap perangkat tetap mengikuti intervalnya)
  *   NM_RETENTION_DAYS    umur sampel (bawaan 7) — temuan pulih disimpan 90 hari
- *   NM_ALLOWED_PORTS     port yang boleh dihubungi (bawaan 8728,8729)
+ *   NM_ALLOWED_PORTS     batasi port yang boleh dihubungi (bawaan kosong = semua port)
  *   NM_ALLOWED_NETWORKS  subnet privat yang boleh dihubungi, mis. tunnel VPN "10.88.0.0/16"
  */
 import os from "node:os";

@@ -205,8 +205,12 @@ await test("status: perangkat non-MikroTik / OLT → Data Tidak Tersedia, indika
 /* ------------------------------------------------------- jaringan & input */
 
 await test("target collector: port dan jaringan privat dibatasi", async () => {
+  delete process.env.NM_ALLOWED_PORTS;
   assert.equal(checkPort(8728), null);
-  assert.match(checkPort(22) ?? "", /tidak diizinkan/);
+  assert.equal(checkPort(6006), null, "port forwarding: semua port boleh secara bawaan");
+  assert.match(checkPort(70000) ?? "", /1–65535/);
+  process.env.NM_ALLOWED_PORTS = "8728,8729";
+  assert.match(checkPort(6006) ?? "", /tidak diizinkan/);
   const c = parseCidrs("10.88.0.0/16, 300.1.1.1/8, 0.0.0.0/0");
   assert.equal(c.length, 1, "CIDR tidak valid dan /0 diabaikan");
   assert.ok(inCidrs("10.88.4.2", c));
@@ -217,11 +221,13 @@ await test("target collector: port dan jaringan privat dibatasi", async () => {
   process.env.NM_ALLOWED_NETWORKS = "10.88.0.0/16";
   assert.equal(await resolveAllowedTarget("10.88.0.5", 8728), "10.88.0.5");
   await assert.rejects(resolveAllowedTarget("10.88.0.5", 22), /Port 22/);
+  delete process.env.NM_ALLOWED_PORTS;
+  assert.equal(await resolveAllowedTarget("10.88.0.5", 6006), "10.88.0.5");
   delete process.env.NM_ALLOWED_NETWORKS;
 });
 await test("input perangkat divalidasi", () => {
   assert.equal(parseDeviceInput({ name: "", host: "1.1.1.1" }).ok, false);
-  assert.equal(parseDeviceInput({ name: "A", host: "1.1.1.1", apiPort: 22, username: "m" }).ok, false);
+  assert.equal(parseDeviceInput({ name: "A", host: "1.1.1.1", apiPort: 70000, username: "m" }).ok, false);
   assert.equal(parseDeviceInput({ name: "A", host: "1.1.1.1", username: "m", tlsFingerprint: "abc" }).ok, false);
   const ok = parseDeviceInput({ name: "A", host: "1.1.1.1", username: "m", wanInterfaces: ["ether1", "pppoe-out1", "ether1"], intervalSec: 5 });
   assert.ok(ok.ok);

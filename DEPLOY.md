@@ -231,7 +231,7 @@ Batas target, diisi di `.env`:
 
 | Variabel | Bawaan | Fungsi |
 |---|---|---|
-| `NM_ALLOWED_PORTS` | `8728,8729` | Port yang boleh dihubungi collector |
+| `NM_ALLOWED_PORTS` | kosong (semua port) | Bila diisi, hanya port ini yang boleh dihubungi collector, mis. `8728,8729,6006` |
 | `NM_ALLOWED_NETWORKS` | kosong | Subnet privat (CIDR IPv4) yang boleh dihubungi, mis. tunnel VPN `10.88.0.0/16`. Tanpa ini hanya IP publik |
 | `NM_CONCURRENCY` | `8` | Perangkat diperiksa bersamaan |
 | `NM_RETENTION_DAYS` | `7` | Umur sampel; temuan yang sudah pulih disimpan 90 hari |

@@ -4,18 +4,20 @@ import { isPrivateIp } from "@/lib/net-guard";
 
 /**
  * Target yang boleh dihubungi collector.
- *  - Port: hanya NM_ALLOWED_PORTS (bawaan 8728,8729 = API dan API-SSL RouterOS).
+ *  - Port: bawaan semua port (API RouterOS sering di-port-forward, mis. 6006). Bila NM_ALLOWED_PORTS
+ *    diisi (dipisah koma), hanya port itu yang boleh.
  *  - Alamat: IP publik, atau alamat privat di dalam NM_ALLOWED_NETWORKS (CIDR IPv4 dipisah koma,
  *    mis. subnet tunnel VPN "10.88.0.0/16"). Jaringan internal server lainnya selalu ditolak.
  *    AI_ALLOW_PRIVATE_HOSTS=1 (uji lokal) mengizinkan semua alamat privat.
  */
 
-export function allowedPorts(): number[] {
-  const raw = process.env.NM_ALLOWED_PORTS ?? "8728,8729";
-  return raw
+/** null = semua port 1–65535 boleh (bawaan; API sering di-port-forward ke port lain). */
+export function allowedPorts(): number[] | null {
+  const list = (process.env.NM_ALLOWED_PORTS ?? "")
     .split(",")
     .map((x) => Number(x.trim()))
     .filter((n) => Number.isInteger(n) && n > 0 && n < 65536);
+  return list.length ? list : null;
 }
 
 interface Cidr {
@@ -45,8 +47,10 @@ export function inCidrs(ip: string, cidrs: Cidr[]): boolean {
 
 /** Galat bila port tidak diizinkan; dipakai juga saat menyimpan perangkat. */
 export function checkPort(port: number): string | null {
+  if (!Number.isInteger(port) || port < 1 || port > 65535) return "Port harus 1–65535.";
   const ports = allowedPorts();
-  return ports.includes(port) ? null : `Port ${port} tidak diizinkan untuk collector. Port yang diizinkan: ${ports.join(", ")}.`;
+  if (!ports || ports.includes(port)) return null;
+  return `Port ${port} tidak diizinkan untuk collector. Port yang diizinkan: ${ports.join(", ")} (atur NM_ALLOWED_PORTS di server).`;
 }
 
 const HOST_OK = /^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$/;

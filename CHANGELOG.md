@@ -8,6 +8,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.73.1] - 2026-11-14
+
+_Network Monitoring: port API bebas (port forwarding)_
+
+### Diperbaiki
+
+- Perangkat dengan port API hasil port forwarding (mis. 6006) kini bisa ditambahkan. Sebelumnya collector hanya menerima 8728 dan 8729. Port bisa dibatasi lagi bila perlu lewat NM_ALLOWED_PORTS di server; pembatasan alamat (IP publik atau NM_ALLOWED_NETWORKS) tetap berlaku.
+
 ## [1.73.0] - 2026-11-14
 
 _Network Monitoring: collector, Analisa MikroTik, tampilan Perangkat_

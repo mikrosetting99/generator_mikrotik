@@ -531,7 +531,7 @@ pm2 logs generator-mikrotik-nm
 # uji satu putaran
 npx tsx scripts/nm-collector.mts --once`}</pre>
         <p className="text-xs leading-relaxed text-muted">
-          Collector hanya menghubungi port <span className="font-mono">NM_ALLOWED_PORTS</span> (bawaan 8728, 8729) di IP publik, atau di subnet privat yang didaftarkan di{" "}
+          Port API bebas (mis. hasil port forwarding), kecuali dibatasi lewat <span className="font-mono">NM_ALLOWED_PORTS</span>. Collector hanya menghubungi IP publik, atau subnet privat yang didaftarkan di{" "}
           <span className="font-mono">NM_ALLOWED_NETWORKS</span> (mis. subnet tunnel VPN). Sampel disimpan 7 hari.
         </p>
       </section>

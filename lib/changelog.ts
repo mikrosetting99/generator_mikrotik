@@ -27,6 +27,20 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.72.0",
+    date: "2026-11-14",
+    title: "Dashboard Admin: pemakaian modul per hari",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Pemakaian modul di Dashboard Admin: jumlah modul dibuka hari ini, 7 hari, 30 hari, dan sepanjang masa; grafik total per hari selama 30 hari; dan tabel per modul berisi hari ini, 7 hari, 30 hari, total, serta garis tren 30 hari. Tanggal memakai WIB.",
+          "Hitungan harian baru (tabel menu_usage_daily) mulai tercatat setelah update ini; hitungan total yang sudah ada tetap dipakai untuk kolom Total. Tetap tanpa data pribadi.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.71.1",
     date: "2026-11-12",
     title: "Simulasi Rack Server: hapus perangkat langsung di rack",

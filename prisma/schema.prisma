@@ -103,6 +103,17 @@ model MenuUsage {
   @@map("menu_usage")
 }
 
+/// Pemakaian menu per hari (tanggal WIB, "YYYY-MM-DD"), untuk tren di Dashboard Admin. Tanpa data pribadi.
+model MenuUsageDaily {
+  menuId String @db.VarChar(64)
+  day    String @db.Char(10)
+  count  Int    @default(0)
+
+  @@id([menuId, day])
+  @@index([day])
+  @@map("menu_usage_daily")
+}
+
 /// Template Halaman Login Hotspot yang sudah jadi: dibuat admin, bisa dimuat siapa saja.
 /// Config memuat seluruh pengaturan desain, termasuk gambar (data URI).
 model HotspotTemplate {

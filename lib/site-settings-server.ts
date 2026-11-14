@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_SITE_SETTINGS, normalizeSiteSettings, type SiteSettings } from "@/lib/site-settings";
+import { buildUsageStats, lastDays, USAGE_DAYS, wibDay, type UsageStats } from "@/lib/usage-stats";
 
 const KEY = "site";
 
@@ -20,6 +21,21 @@ export async function getMenuUsage(): Promise<Record<string, number>> {
     return Object.fromEntries(rows.map((r) => [r.menuId, r.count]));
   } catch {
     return {};
+  }
+}
+
+/** Tren pemakaian 30 hari terakhir per modul. Kosong bila database bermasalah atau tabel belum dimigrasi. */
+export async function getUsageStats(): Promise<UsageStats> {
+  const today = wibDay();
+  const days = lastDays(USAGE_DAYS, today);
+  try {
+    const [rows, first] = await Promise.all([
+      prisma.menuUsageDaily.findMany({ where: { day: { gte: days[0] } } }),
+      prisma.menuUsageDaily.findFirst({ orderBy: { day: "asc" }, select: { day: true } }),
+    ]);
+    return buildUsageStats(rows, today, first?.day ?? null);
+  } catch {
+    return buildUsageStats([], today, null);
   }
 }
 

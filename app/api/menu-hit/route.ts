@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/site-settings-server";
+import { wibDay } from "@/lib/usage-stats";
 
 /**
  * Mencatat satu kali pemakaian sebuah menu. Hanya menghitung — tanpa IP, akun,
@@ -24,6 +25,17 @@ export async function POST(request: Request) {
     });
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 });
+  }
+  // Hitungan harian terpisah: bila tabelnya bermasalah, total tetap tercatat.
+  try {
+    const day = wibDay();
+    await prisma.menuUsageDaily.upsert({
+      where: { menuId_day: { menuId: id, day } },
+      update: { count: { increment: 1 } },
+      create: { menuId: id, day, count: 1 },
+    });
+  } catch {
+    // abaikan
   }
   return NextResponse.json({ ok: true });
 }

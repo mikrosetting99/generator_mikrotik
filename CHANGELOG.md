@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.72.0] - 2026-11-14
+
+_Dashboard Admin: pemakaian modul per hari_
+
+### Ditambahkan
+
+- Pemakaian modul di Dashboard Admin: jumlah modul dibuka hari ini, 7 hari, 30 hari, dan sepanjang masa; grafik total per hari selama 30 hari; dan tabel per modul berisi hari ini, 7 hari, 30 hari, total, serta garis tren 30 hari. Tanggal memakai WIB.
+- Hitungan harian baru (tabel menu_usage_daily) mulai tercatat setelah update ini; hitungan total yang sudah ada tetap dipakai untuk kolom Total. Tetap tanpa data pribadi.
+
 ## [1.71.1] - 2026-11-12
 
 _Simulasi Rack Server: hapus perangkat langsung di rack_

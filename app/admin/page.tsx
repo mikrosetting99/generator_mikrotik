@@ -11,7 +11,9 @@ import { ArrowRight, Database, FileText, Users } from "@/components/icons";
 import { authOptions } from "@/lib/auth";
 import { APP_VERSION, CHANGE_TYPE_LABEL, CHANGELOG } from "@/lib/changelog";
 import { prisma } from "@/lib/prisma";
-import { getMenuUsage, getSiteSettings } from "@/lib/site-settings-server";
+import { getMenuUsage, getSiteSettings, getUsageStats } from "@/lib/site-settings-server";
+import { shortDate } from "@/lib/usage-stats";
+import { DailyBars, Sparkline } from "@/components/admin/UsageCharts";
 
 export const dynamic = "force-dynamic";
 
@@ -34,9 +36,10 @@ export default async function AdminDashboardPage({
   const { tab: rawTab } = await searchParams;
   const tab = TABS.find((t) => t === rawTab) ?? "ringkasan";
 
-  const [settings, usage, users, configs, loginPages] = await Promise.all([
+  const [settings, usage, trend, users, configs, loginPages] = await Promise.all([
     getSiteSettings(),
     getMenuUsage(),
+    getUsageStats(),
     prisma.user.count(),
     prisma.savedConfig.count(),
     prisma.savedLoginPage.count(),
@@ -48,8 +51,17 @@ export default async function AdminDashboardPage({
     { label: "Desain login hotspot tersimpan", value: loginPages, icon: FileText, color: "#e0902b" },
   ];
 
-  const ranked = [...settings.menus].sort((a, b) => (usage[b.id] ?? 0) - (usage[a.id] ?? 0));
-  const maxUsage = Math.max(1, ...ranked.map((m) => usage[m.id] ?? 0));
+  // urut menurut 30 hari terakhir, lalu total sepanjang masa
+  const d30 = (id: string) => trend.perMenu[id]?.d30 ?? 0;
+  const ranked = [...settings.menus].sort((a, b) => d30(b.id) - d30(a.id) || (usage[b.id] ?? 0) - (usage[a.id] ?? 0));
+  const allTime = Object.values(usage).reduce((n, v) => n + v, 0);
+  const usageTiles = [
+    { label: "Hari ini", value: trend.today },
+    { label: "7 hari terakhir", value: trend.d7 },
+    { label: "30 hari terakhir", value: trend.d30 },
+    { label: "Sepanjang masa", value: allTime },
+  ];
+  const activeModules = settings.menus.filter((m) => d30(m.id) > 0).length;
 
   return (
     <AdminFrame active={tab}>
@@ -77,37 +89,71 @@ export default async function AdminDashboardPage({
             </div>
           </AdminSection>
 
-          <AdminSection title="Pemakaian aplikasi" description="Berapa kali tiap aplikasi dibuka.">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-line bg-raised/60 text-[11px] uppercase tracking-[0.08em] text-muted">
-                <tr>
-                  <th className="px-5 py-2.5 font-semibold">Aplikasi</th>
-                  <th className="px-5 py-2.5 font-semibold">Grup</th>
-                  <th className="px-5 py-2.5 text-right font-semibold">Dipakai</th>
-                  <th className="hidden w-1/3 px-5 py-2.5 sm:table-cell" />
-                </tr>
-              </thead>
-              <tbody>
-                {ranked.map((menu) => {
-                  const count = usage[menu.id] ?? 0;
-                  return (
-                    <tr key={menu.id} className="border-b border-line-soft last:border-0 hover:bg-brand/[0.05]">
-                      <td className="px-5 py-2.5 font-medium text-ink">{menu.title}</td>
-                      <td className="px-5 py-2.5 text-muted">{menu.group || "—"}</td>
-                      <td className="px-5 py-2.5 text-right font-mono text-ink">{count.toLocaleString("id-ID")}×</td>
-                      <td className="hidden px-5 py-2.5 sm:table-cell">
-                        <span className="block h-1.5 overflow-hidden rounded-full bg-line-soft">
-                          <span
-                            className="block h-full rounded-full bg-brand"
-                            style={{ width: `${(count / maxUsage) * 100}%` }}
-                          />
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <AdminSection
+            title="Pemakaian modul"
+            description="Berapa kali tiap modul dibuka (satu browser dihitung paling banyak sekali per 30 menit per modul; tanpa data pribadi). Tanggal memakai WIB."
+          >
+            <div className="grid grid-cols-2 gap-3 p-5 pb-0 lg:grid-cols-4">
+              {usageTiles.map((t) => (
+                <div key={t.label} className="rounded-md border border-line bg-surface px-4 py-3">
+                  <p className="text-2xl font-semibold leading-none text-ink">{t.value.toLocaleString("id-ID")}×</p>
+                  <p className="mt-1 text-xs text-muted">{t.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="px-5 pb-2 pt-5">
+              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-sm font-semibold text-ink">Total modul dibuka per hari</p>
+                <p className="text-xs text-muted">
+                  30 hari terakhir · {activeModules} modul dipakai
+                </p>
+              </div>
+              <DailyBars days={trend.days} values={trend.totals} label="Total modul dibuka per hari, 30 hari terakhir" />
+              <p className="mt-1 text-[11px] text-faint">
+                {trend.since
+                  ? `Data harian tercatat sejak ${shortDate(trend.since)}; kolom Total menghitung sejak awal.`
+                  : "Data harian mulai tercatat setelah update ini; kolom Total berisi hitungan sejak awal."}
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead className="border-y border-line bg-raised/60 text-[11px] uppercase tracking-[0.08em] text-muted">
+                  <tr>
+                    <th className="px-5 py-2.5 font-semibold">Modul</th>
+                    <th className="px-3 py-2.5 font-semibold">Grup</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">Hari ini</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">7 hari</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">30 hari</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">Total</th>
+                    <th className="px-5 py-2.5 font-semibold">Tren 30 hari</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ranked.map((menu) => {
+                    const t = trend.perMenu[menu.id];
+                    const num = (n: number) => (n ? n.toLocaleString("id-ID") : <span className="text-faint">0</span>);
+                    return (
+                      <tr key={menu.id} className="border-b border-line-soft last:border-0 hover:bg-brand/[0.05]">
+                        <td className="px-5 py-2.5 font-medium text-ink">
+                          {menu.title}
+                          {!menu.visible && <span className="ml-1.5 text-[10px] uppercase tracking-wide text-faint">disembunyikan</span>}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">{menu.group || "—"}</td>
+                        <td className="px-3 py-2.5 text-right font-mono text-ink">{num(t?.today ?? 0)}</td>
+                        <td className="px-3 py-2.5 text-right font-mono text-ink">{num(t?.d7 ?? 0)}</td>
+                        <td className="px-3 py-2.5 text-right font-mono font-semibold text-ink">{num(t?.d30 ?? 0)}</td>
+                        <td className="px-3 py-2.5 text-right font-mono text-muted">{(usage[menu.id] ?? 0).toLocaleString("id-ID")}</td>
+                        <td className="px-5 py-2">
+                          <Sparkline values={t?.series ?? []} label={`${menu.title}: ${(t?.d30 ?? 0).toLocaleString("id-ID")}× dalam 30 hari`} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </AdminSection>
 
           <AdminSection title="Pintasan">

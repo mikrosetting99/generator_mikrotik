@@ -40,11 +40,15 @@
 
   <div id="main" class="main">
 
+    {{#BANNER_ABOVE}}<img class="banner banner-above" src="{{BANNER}}" alt="">{{/BANNER_ABOVE}}
+
     <div class="box brandbox">
       {{#LOGO}}<img class="logo" src="{{LOGO}}" alt="{{PAGE_TITLE}}">{{/LOGO}}
       {{#TITLE}}<h3 class="brand">{{TITLE_HTML}}</h3>{{/TITLE}}
       {{#SUBTITLE}}<p class="subtitle">{{SUBTITLE}}</p>{{/SUBTITLE}}
     </div>
+
+    {{#BANNER_TOP}}<img class="banner banner-top" src="{{BANNER}}" alt="">{{/BANNER_TOP}}
 
     {{#MARQUEE_TOP}}
     <div class="info"><marquee scrollamount="4">{{MARQUEE}}</marquee></div>
@@ -99,6 +103,8 @@
     {{#WA_LINK}}
     <a class="button2" href="{{WA_LINK}}">{{WA_LABEL}}</a>
     {{/WA_LINK}}
+
+    {{#BANNER_BOTTOM}}<img class="banner banner-bottom" src="{{BANNER}}" alt="">{{/BANNER_BOTTOM}}
 
     {{#MARQUEE_BOTTOM}}
     <div class="info"><marquee scrollamount="4">{{MARQUEE}}</marquee></div>

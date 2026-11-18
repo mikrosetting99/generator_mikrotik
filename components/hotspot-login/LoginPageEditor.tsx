@@ -13,7 +13,13 @@ import {
 import { IPHONE_PAD, IphoneFrame } from "@/components/hotspot-login/IphoneFrame";
 import { adjustBrightness } from "@/lib/color";
 import { PRESET_LIMITS, type PresetKind } from "@/lib/preset-kinds";
-import { BG_FITS, BG_POSITIONS, type HotspotPageConfig, type LoginMode } from "@/lib/types-hotspot-login";
+import {
+  BANNER_POSITIONS,
+  BG_FITS,
+  BG_POSITIONS,
+  type HotspotPageConfig,
+  type LoginMode,
+} from "@/lib/types-hotspot-login";
 
 const grid2 = "grid gap-4";
 
@@ -52,6 +58,12 @@ const IMAGE_LIMITS = {
     idealWidth: 700,
     idealHeight: 1080,
     hint: "Ideal sekitar 700 × 900 px, JPG, maksimal 300 KB. Tampil di dalam kartu form.",
+  },
+  banner: {
+    maxBytes: 300 * 1024,
+    idealWidth: 1200,
+    idealHeight: 400,
+    hint: "Ideal 1200 × 400 px (rasio 3:1), JPG atau WEBP, maksimal 300 KB.",
   },
   background: {
     maxBytes: 300 * 1024,
@@ -129,6 +141,9 @@ export function LoginPageEditor({
   const [logoError, setLogoError] = useState("");
   const [bgError, setBgError] = useState("");
   const [formError, setFormError] = useState("");
+  const [bannerError, setBannerError] = useState("");
+  const bannerInput = useRef<HTMLInputElement>(null);
+  const [bannerInfo, setBannerInfo] = useState<ImageInfo | null>(null);
   const [gallery, setGallery] = useState<{ id: string; name: string }[]>([]);
   const [logoGallery, setLogoGallery] = useState<{ id: string; name: string }[]>([]);
   const [galleryBusy, setGalleryBusy] = useState<string | null>(null);
@@ -272,11 +287,12 @@ export function LoginPageEditor({
     read(page.logoDataUrl, setLogoInfo);
     read(page.bgImageDataUrl, setBgInfo);
     read(page.formImageDataUrl, setFormInfo);
-  }, [page.logoDataUrl, page.bgImageDataUrl, page.formImageDataUrl]);
+    read(page.bannerDataUrl, setBannerInfo);
+  }, [page.logoDataUrl, page.bgImageDataUrl, page.formImageDataUrl, page.bannerDataUrl]);
 
   const pickImage = (
     file: File,
-    kind: "logo" | "background" | "form",
+    kind: "logo" | "background" | "form" | "banner",
     onError: (message: string) => void,
   ) => {
     const limit = IMAGE_LIMITS[kind];
@@ -297,6 +313,7 @@ export function LoginPageEditor({
     reader.onload = () => {
       const dataUrl = String(reader.result);
       if (kind === "logo") setPage({ logoDataUrl: dataUrl, logoName: file.name });
+      else if (kind === "banner") setPage({ bannerDataUrl: dataUrl, bannerName: file.name });
       // Gambar di dalam kartu baru terlihat bila kartunya agak tembus pandang.
       else if (kind === "form")
         setPage({
@@ -311,7 +328,7 @@ export function LoginPageEditor({
   };
 
   /** Catatan bila dimensi gambar jauh dari ukuran yang disarankan. */
-  const dimensionNote = (info: ImageInfo | null, kind: "logo" | "background" | "form") => {
+  const dimensionNote = (info: ImageInfo | null, kind: "logo" | "background" | "form" | "banner") => {
     if (!info) return null;
     const limit = IMAGE_LIMITS[kind];
     const tooBig = info.width > limit.idealWidth * 2 || info.height > limit.idealHeight * 2;
@@ -325,7 +342,38 @@ export function LoginPageEditor({
     );
   };
 
-  const totalImageBytes = (logoInfo?.bytes ?? 0) + (bgInfo?.bytes ?? 0) + (formInfo?.bytes ?? 0);
+  const totalImageBytes =
+    (logoInfo?.bytes ?? 0) + (bgInfo?.bytes ?? 0) + (formInfo?.bytes ?? 0) + (bannerInfo?.bytes ?? 0);
+
+  /** Penggeser angka dengan label dan nilai, seragam dengan pengaturan lain. */
+  const slider = (
+    label: string,
+    value: number,
+    shown: string,
+    min: number,
+    max: number,
+    step: number,
+    onChange: (v: number) => void,
+    hint?: string,
+  ) => (
+    <div>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">{label}</span>
+        <span className="font-mono text-[11px] text-brand">{shown}</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        aria-label={label}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="mt-2 w-full accent-[color:var(--color-brand)]"
+      />
+      {hint && <p className="mt-1 text-xs leading-relaxed text-faint">{hint}</p>}
+    </div>
+  );
 
   const swatches = (
     presets: string[],
@@ -691,6 +739,132 @@ export function LoginPageEditor({
               </div>
 
           </div>
+          </Section>
+
+          {/* Banner */}
+          <Section title="Banner">
+            <div>
+              <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Gambar banner</span>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Button size="sm" onClick={() => bannerInput.current?.click()}>
+                  <Upload className="h-3.5 w-3.5" />
+                  {page.bannerDataUrl ? "Ganti" : "Unggah banner"}
+                </Button>
+                {page.bannerDataUrl && (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    className="px-2"
+                    ariaLabel="Hapus banner"
+                    title="Hapus banner"
+                    onClick={() => setPage({ bannerDataUrl: "", bannerName: "" })}
+                  >
+                    <Trash className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                <input
+                  ref={bannerInput}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) pickImage(file, "banner", setBannerError);
+                  }}
+                />
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-faint">
+                Untuk promo, info paket, atau pengumuman. {IMAGE_LIMITS.banner.hint}
+              </p>
+              {dimensionNote(bannerInfo, "banner")}
+              {bannerError && <p className="mt-1.5 text-xs text-bad">{bannerError}</p>}
+            </div>
+
+            {page.bannerDataUrl && (
+              <>
+                <div>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Letak banner</span>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {BANNER_POSITIONS.map((o) => (
+                      <button
+                        key={o.value}
+                        type="button"
+                        aria-pressed={(page.bannerPosition ?? "top") === o.value}
+                        onClick={() => setPage({ bannerPosition: o.value })}
+                        className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                          (page.bannerPosition ?? "top") === o.value
+                            ? "border-brand bg-brand/10 text-ink"
+                            : "border-line-soft text-muted hover:border-line hover:text-ink"
+                        }`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {slider(
+                  "Lebar banner",
+                  page.bannerWidth ?? 100,
+                  `${page.bannerWidth ?? 100}%`,
+                  30,
+                  100,
+                  5,
+                  (bannerWidth) => setPage({ bannerWidth }),
+                  "Persen dari lebar kartu form. Di HP ikut menyesuaikan lebar layar.",
+                )}
+
+                {slider(
+                  "Tinggi banner",
+                  page.bannerHeight ?? 0,
+                  (page.bannerHeight ?? 0) === 0 ? "otomatis" : `${page.bannerHeight} px`,
+                  0,
+                  400,
+                  10,
+                  (h) => setPage({ bannerHeight: h > 0 && h < 40 ? 40 : h }),
+                  "Geser ke 0 agar tinggi mengikuti bentuk gambar (tidak terpotong).",
+                )}
+
+                {(page.bannerHeight ?? 0) > 0 && (
+                  <div>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-muted">Isi kotak banner</span>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {(
+                        [
+                          { value: "cover", label: "Penuh (tepi bisa terpotong)" },
+                          { value: "contain", label: "Utuh" },
+                        ] as const
+                      ).map((o) => (
+                        <button
+                          key={o.value}
+                          type="button"
+                          aria-pressed={(page.bannerFit ?? "cover") === o.value}
+                          onClick={() => setPage({ bannerFit: o.value })}
+                          className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                            (page.bannerFit ?? "cover") === o.value
+                              ? "border-brand bg-brand/10 text-ink"
+                              : "border-line-soft text-muted hover:border-line hover:text-ink"
+                          }`}
+                        >
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {slider(
+                  "Sudut banner",
+                  page.bannerRadius ?? 12,
+                  (page.bannerRadius ?? 12) === 0 ? "siku-siku" : `${page.bannerRadius ?? 12} px`,
+                  0,
+                  30,
+                  2,
+                  (bannerRadius) => setPage({ bannerRadius }),
+                )}
+              </>
+            )}
           </Section>
 
           {/* Background */}

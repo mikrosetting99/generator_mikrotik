@@ -455,6 +455,13 @@ marquee { display: block; }
 
 .stack .main { grid-row: 2; margin: 0 auto; }
 
+/* Baris di atas kartu: logo dan/atau banner yang ditaruh di luar form. */
+.above {
+  grid-row: 1;
+  align-self: end;
+  width: 100%;
+}
+
 /* Logo di luar kartu, di atas form. */
 .logo-above {
   grid-row: 1;
@@ -699,3 +706,20 @@ a.button2:hover { filter: none; opacity: .8; }
 @keyframes okdraw { to { stroke-dashoffset: 0; } }
 @keyframes okpop { from { transform: scale(.4); } to { transform: scale(1); } }
 @keyframes okfill { to { width: 100%; } }
+
+/* --- banner --- */
+{{#BANNER}}
+.banner {
+  display: block;
+  width: {{BANNER_WIDTH}}%;
+  max-width: 100%;
+  height: {{BANNER_HEIGHT}};
+  /* Banner setinggi apa pun tidak boleh mendorong form keluar layar HP. */
+  max-height: 40vh;
+  object-fit: {{BANNER_FIT}};
+  border-radius: {{BANNER_RADIUS}}px;
+  margin: 0 auto 14px;
+}
+.banner-above { margin: 0 auto 16px; }
+.banner-bottom { margin: 14px auto 0; }
+{{/BANNER}}

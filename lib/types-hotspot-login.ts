@@ -26,6 +26,14 @@ export const BG_POSITIONS: { value: BgPosition; label: string; css: string }[] =
 ];
 export type LoginMode = "voucher" | "member";
 
+export type BannerPosition = "above" | "top" | "bottom";
+
+export const BANNER_POSITIONS: { value: BannerPosition; label: string }[] = [
+  { value: "above", label: "Di atas form" },
+  { value: "top", label: "Di bawah nama" },
+  { value: "bottom", label: "Di bawah tombol Login" },
+];
+
 /** Satu baris pada tabel harga paket di halaman login. */
 export interface VoucherPackage {
   id: string;
@@ -86,6 +94,19 @@ export interface HotspotPageConfig {
   logoHeight: number;
   /** Letak logo: di dalam kartu form (bawaan) atau di atas kartu, di luar form. */
   logoPosition: "inside" | "above";
+  /** Banner promosi (gambar), ikut jadi berkas banner.* di dalam zip. Kosong = tanpa banner. */
+  bannerDataUrl: string;
+  bannerName: string;
+  /** Letak banner: di atas kartu form, di dalam form di bawah nama, atau di bawah tombol Login. */
+  bannerPosition: BannerPosition;
+  /** Lebar banner dalam persen dari lebar kartu, 30–100. */
+  bannerWidth: number;
+  /** Tinggi banner dalam piksel, 40–400. 0 = otomatis mengikuti rasio gambar. */
+  bannerHeight: number;
+  /** Bila tinggi tetap: "cover" memenuhi kotak (tepi bisa terpotong), "contain" gambar utuh. */
+  bannerFit: "cover" | "contain";
+  /** Kelengkungan sudut banner dalam piksel, 0–30. */
+  bannerRadius: number;
   /** Gambar latar, juga ikut jadi berkas di dalam zip. */
   bgImageDataUrl: string;
   bgImageName: string;

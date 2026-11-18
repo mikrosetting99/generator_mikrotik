@@ -8,6 +8,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.75.0] - 2026-11-18
+
+_Halaman Login Hotspot: banner_
+
+### Ditambahkan
+
+- Bagian baru Banner di editor Halaman Login Hotspot. Unggah satu gambar untuk promo, info paket, atau pengumuman (ideal 1200 × 400 px, maksimal 300 KB), dan gambarnya ikut masuk ke hotspot.zip sebagai banner.jpg/png.
+- Letak banner bisa dipilih: di atas form, di bawah nama, atau di bawah tombol Login. Berlaku untuk desain Minimal dan Poster.
+- Ukuran banner bisa diatur: lebar 30–100% dari kartu form, tinggi otomatis mengikuti gambar atau tetap 40–400 px (penuh atau utuh), serta kelengkungan sudut. Di HP, tinggi banner dibatasi agar form login tetap terlihat.
+
 ## [1.74.0] - 2026-11-18
 
 _Form Setting Mikrotik: link form untuk pelanggan_

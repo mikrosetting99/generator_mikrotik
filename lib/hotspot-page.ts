@@ -126,6 +126,10 @@ export function formImageFileName(dataUrl: string): string {
   return imageFileName(dataUrl, "form-bg");
 }
 
+export function bannerFileName(dataUrl: string): string {
+  return imageFileName(dataUrl, "banner");
+}
+
 /**
  * Judul boleh dipecah dua warna dengan tanda "|", misalnya "PRO|NET".
  * Tandanya sendiri tidak pernah ikut tampil.
@@ -352,6 +356,17 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     LOGO_INSIDE: page.logoDataUrl && page.logoPosition !== "above" ? "1" : "",
     LOGO_ABOVE: page.logoDataUrl && page.logoPosition === "above" ? "1" : "",
     LOGO_HEIGHT: String(Math.round(Math.max(40, Math.min(260, page.logoHeight || 130)))),
+    // Banner: satu gambar, letak dan ukurannya diatur sendiri.
+    BANNER: page.bannerDataUrl ? bannerFileName(page.bannerDataUrl) : "",
+    BANNER_ABOVE: page.bannerDataUrl && page.bannerPosition === "above" ? "1" : "",
+    BANNER_TOP: page.bannerDataUrl && page.bannerPosition !== "above" && page.bannerPosition !== "bottom" ? "1" : "",
+    BANNER_BOTTOM: page.bannerDataUrl && page.bannerPosition === "bottom" ? "1" : "",
+    // Baris di atas kartu (desain Minimal) dipakai bila logo atau banner ditaruh di atas form.
+    ABOVE: (page.logoDataUrl && page.logoPosition === "above") || (page.bannerDataUrl && page.bannerPosition === "above") ? "1" : "",
+    BANNER_WIDTH: String(clampNum(page.bannerWidth, 30, 100, 100)),
+    BANNER_HEIGHT: page.bannerHeight ? `${clampNum(page.bannerHeight, 40, 400, 160)}px` : "auto",
+    BANNER_FIT: page.bannerFit === "contain" ? "contain" : "cover",
+    BANNER_RADIUS: String(clampNum(page.bannerRadius, 0, 30, 12)),
     BG_IMAGE: page.bgImageDataUrl ? bgFileName(page.bgImageDataUrl) : "",
     // Desain Poster dulu selalu "center top" — itu tetap bawaannya.
     BG_POSITION:
@@ -496,6 +511,7 @@ export async function buildPreviewHtml(page: HotspotPageConfig): Promise<string>
     LOGO: page.logoDataUrl,
     BG_IMAGE: page.bgImageDataUrl,
     FORM_IMAGE: page.formImageDataUrl,
+    BANNER: page.bannerDataUrl,
   };
   return (
     renderTemplate(source, vars)
@@ -512,7 +528,7 @@ export async function buildPreviewHtml(page: HotspotPageConfig): Promise<string>
       .replace(/\$\([^)]*\)/g, "")
   );
 }
-function readmeText(page: HotspotPageConfig, logoFile: string, bgFile: string, formFile: string): string {
+function readmeText(page: HotspotPageConfig, logoFile: string, bgFile: string, formFile: string, bannerFile = ""): string {
   const template = getTemplate(page.template);
   const link = page.whatsappEnabled === false ? "" : whatsappLink(page.whatsapp);
 
@@ -535,7 +551,7 @@ ISI PAKET
   radvert.html   halaman advertisement
   errors.txt     teks pesan error berbahasa Indonesia
   style.css      seluruh tampilan & warna — cukup berkas ini yang diubah
-  md5.js         dipakai metode autentikasi http-chap${logoFile ? `\n  ${logoFile}       logo yang Anda unggah` : ""}${bgFile ? `\n  ${bgFile}  gambar latar yang Anda unggah` : ""}${formFile ? `\n  ${formFile}  gambar di dalam kartu form yang Anda unggah` : ""}
+  md5.js         dipakai metode autentikasi http-chap${logoFile ? `\n  ${logoFile}       logo yang Anda unggah` : ""}${bgFile ? `\n  ${bgFile}  gambar latar yang Anda unggah` : ""}${formFile ? `\n  ${formFile}  gambar di dalam kartu form yang Anda unggah` : ""}${bannerFile ? `\n  ${bannerFile}     banner yang Anda unggah` : ""}
 
 CARA UPLOAD
 -----------
@@ -604,6 +620,11 @@ export async function buildHotspotPackage(page: HotspotPageConfig): Promise<ZipE
     entries.push({ name: formFile, dataUrl: page.formImageDataUrl });
   }
 
-  entries.push({ name: "PETUNJUK-UPLOAD.txt", content: readmeText(page, logoFile, bgFile, formFile) });
+  const bannerFile = page.bannerDataUrl ? bannerFileName(page.bannerDataUrl) : "";
+  if (bannerFile) {
+    entries.push({ name: bannerFile, dataUrl: page.bannerDataUrl });
+  }
+
+  entries.push({ name: "PETUNJUK-UPLOAD.txt", content: readmeText(page, logoFile, bgFile, formFile, bannerFile) });
   return entries;
 }

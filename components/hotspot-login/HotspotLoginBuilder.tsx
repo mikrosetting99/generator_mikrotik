@@ -3,7 +3,8 @@
 import { AppSwitcher } from "@/components/AppSwitcher";
 import { useEffect, useRef, useState } from "react";
 import { Database, Download, FileText, Wand } from "@/components/icons";
-import { TemplateGallery } from "@/components/hotspot-login/TemplateGallery";
+import { loadConfig, TemplateGallery } from "@/components/hotspot-login/TemplateGallery";
+import { applyToLoginPage, type SettingRequestView } from "@/lib/setting-request";
 import { SaveLoadPage } from "@/components/hotspot-login/SaveLoadPage";
 import { LoginPageEditor } from "@/components/hotspot-login/LoginPageEditor";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -28,6 +29,29 @@ export function HotspotLoginBuilder() {
   const touched = useRef(false);
   useEffect(() => {
     let active = true;
+    // Dibuka dari Form Setting Mikrotik (?permintaan=<id>): template pilihan pelanggan
+    // dengan nama usaha dan nomor WhatsApp-nya, menggantikan template default.
+    const requestId = new URLSearchParams(window.location.search).get("permintaan");
+    if (requestId) {
+      fetch(`/api/setting-requests/${encodeURIComponent(requestId)}`, { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then(async (d: { request?: SettingRequestView } | null) => {
+          const req = d?.request;
+          if (!active || !req?.submittedAt) return;
+          let templateId = req.templateId;
+          if (!templateId) {
+            const def = await fetch("/api/hotspot-templates/default", { cache: "no-store" }).then((r) => r.json()).catch(() => null);
+            templateId = def?.template?.id ?? "";
+          }
+          const base = templateId ? await loadConfig(templateId).catch(() => null) : null;
+          if (!active || touched.current) return;
+          setPageState(applyToLoginPage(base ?? createDefaultHotspotLoginConfig(), req));
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }
     fetch("/api/hotspot-templates/default", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {

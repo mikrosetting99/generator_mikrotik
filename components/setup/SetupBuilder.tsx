@@ -50,6 +50,7 @@ import { Button, Modal } from "@/components/ui";
 import { createDefaultConfig } from "@/lib/defaults";
 import { generateSetupScript } from "@/lib/generator/setup";
 import { wirelessInterfaces } from "@/lib/interfaces";
+import { buildSetupConfig, type SettingRequestView } from "@/lib/setting-request";
 import type { SectionId, SetupConfig } from "@/lib/types";
 import { validateConfig } from "@/lib/validate";
 
@@ -144,6 +145,25 @@ export function SetupBuilder() {
 
   const patch = useCallback((partial: Partial<SetupConfig>) => {
     setConfig((prev) => ({ ...prev, ...partial }));
+  }, []);
+
+  // Dibuka dari Form Setting Mikrotik (/setup?permintaan=<id>): isi wizard dari isian pelanggan.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("permintaan");
+    if (!id) return;
+    let active = true;
+    fetch(`/api/setting-requests/${encodeURIComponent(id)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { request?: SettingRequestView } | null) => {
+        if (!active || !d?.request?.submittedAt) return;
+        setConfig(buildSetupConfig(d.request, { routerPassword: d.request.routerPassword }));
+        setLoadedName(d.request.businessName || d.request.label || "Form Setting");
+        setActiveId("device");
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
   const issues = useMemo(() => validateConfig(config), [config]);

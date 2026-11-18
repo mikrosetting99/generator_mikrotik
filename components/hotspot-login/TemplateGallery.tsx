@@ -24,7 +24,7 @@ interface TemplateSummary {
 const configCache = new Map<string, Promise<HotspotPageConfig>>();
 const htmlCache = new Map<string, Promise<string>>();
 
-function loadConfig(id: string): Promise<HotspotPageConfig> {
+export function loadConfig(id: string): Promise<HotspotPageConfig> {
   let p = configCache.get(id);
   if (!p) {
     p = fetch(`/api/hotspot-templates/${id}`, { cache: "no-store" })
@@ -47,13 +47,13 @@ function loadHtml(id: string): Promise<string> {
 }
 
 /** Ukuran perangkat untuk pratinjau besar. */
-const VIEWS = [
+export const VIEWS = [
   { id: "hp", label: "HP", w: 390, h: 844 },
   { id: "laptop", label: "Laptop", w: 1280, h: 720 },
 ] as const;
 
 /** Halaman login sungguhan dalam ukuran kecil, dimuat saat kartunya terlihat. */
-function Thumb({ id, width, height, device }: { id: string; width: number; height: number; device: { w: number; h: number } }) {
+export function Thumb({ id, width, height, device }: { id: string; width: number; height: number; device: { w: number; h: number } }) {
   const box = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [html, setHtml] = useState<string | null>(null);

@@ -8,6 +8,17 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.74.0] - 2026-11-18
+
+_Form Setting Mikrotik: link form untuk pelanggan_
+
+### Ditambahkan
+
+- Menu baru Form Setting Mikrotik (/form-setting). Admin membuat link pribadi lalu mengirimnya ke pelanggan, langsung dari tombol Salin atau WhatsApp.
+- Pelanggan mengisi form tanpa login. Peruntukan Hotspot, PPPoE, atau Hotspot + PPPoE: type MikroTik (bisa dicari), nama usaha/voucher, email aktif, nomor telepon admin, dan template login page. Peruntukan Kantor: type MikroTik, email aktif, dan penjelasan kebutuhan. Isian bisa diubah selama belum ditandai selesai.
+- Dari isian pelanggan, script Setup Mikrotik Baru dibuat otomatis sesuai port perangkatnya, lengkap dengan password admin router acak. Admin tinggal menyalin script, mengunduh .rsc, atau menyesuaikannya dulu di Setup Mikrotik Baru.
+- Login page hotspot memakai template pilihan pelanggan, dengan nama usaha dan tombol WhatsApp yang sudah terpasang. Bisa langsung diunduh sebagai hotspot.zip atau disesuaikan dulu di Halaman Login Hotspot.
+
 ## [1.73.1] - 2026-11-14
 
 _Network Monitoring: port API bebas (port forwarding)_

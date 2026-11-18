@@ -28,8 +28,39 @@ model User {
   aiRouters   AiRouter[]
   vpnAccounts VpnAccount[]
   nmDevices   NmDevice[]
+  settingRequests SettingRequest[]
 
   @@map("users")
+}
+
+/// Form Setting Mikrotik: admin membuat link (token) dan mengirimnya ke pelanggan; pelanggan mengisi
+/// kebutuhan Hotspot/PPPoE/Kantor. Dari isian ini dibuat script Setup Mikrotik Baru dan login page.
+model SettingRequest {
+  id             String    @id @default(cuid())
+  /// Admin pembuat link (pemilik data).
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token          String    @unique @db.VarChar(64)
+  /// Catatan admin, mis. nama pelanggan. Tidak terlihat oleh pelanggan.
+  label          String    @default("") @db.VarChar(120)
+  /// menunggu | masuk | selesai
+  status         String    @default("menunggu") @db.VarChar(12)
+  /// hotspot | pppoe | hotspot-pppoe | kantor
+  purpose        String    @default("") @db.VarChar(16)
+  modelId        String    @default("") @db.VarChar(40)
+  businessName   String    @default("") @db.VarChar(80)
+  email          String    @default("") @db.VarChar(120)
+  phone          String    @default("") @db.VarChar(20)
+  templateId     String    @default("") @db.VarChar(40)
+  needs          String?   @db.Text
+  /// Password admin router yang dipasang di script hasil generate.
+  routerPassword String    @db.VarChar(40)
+  submittedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@map("setting_requests")
 }
 
 /// Perangkat yang dipantau Network Monitoring. Kredensial (sebaiknya user read-only) terenkripsi

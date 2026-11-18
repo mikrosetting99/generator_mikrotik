@@ -27,6 +27,22 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.74.0",
+    date: "2026-11-18",
+    title: "Form Setting Mikrotik: link form untuk pelanggan",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Menu baru Form Setting Mikrotik (/form-setting). Admin membuat link pribadi lalu mengirimnya ke pelanggan, langsung dari tombol Salin atau WhatsApp.",
+          "Pelanggan mengisi form tanpa login. Peruntukan Hotspot, PPPoE, atau Hotspot + PPPoE: type MikroTik (bisa dicari), nama usaha/voucher, email aktif, nomor telepon admin, dan template login page. Peruntukan Kantor: type MikroTik, email aktif, dan penjelasan kebutuhan. Isian bisa diubah selama belum ditandai selesai.",
+          "Dari isian pelanggan, script Setup Mikrotik Baru dibuat otomatis sesuai port perangkatnya, lengkap dengan password admin router acak. Admin tinggal menyalin script, mengunduh .rsc, atau menyesuaikannya dulu di Setup Mikrotik Baru.",
+          "Login page hotspot memakai template pilihan pelanggan, dengan nama usaha dan tombol WhatsApp yang sudah terpasang. Bisa langsung diunduh sebagai hotspot.zip atau disesuaikan dulu di Halaman Login Hotspot.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.73.1",
     date: "2026-11-14",
     title: "Network Monitoring: port API bebas (port forwarding)",

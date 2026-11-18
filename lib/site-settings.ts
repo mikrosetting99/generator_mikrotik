@@ -97,6 +97,7 @@ const GROUP_CANDIDATES: Record<string, string[]> = {
   "dns-flush": ["Mikrotik", "Konfigurasi"],
   "ai-engineer": ["Mikrotik", "Konfigurasi"],
   "vpn-radius": ["Alat", "Mikrotik", "Konfigurasi"],
+  "setting-form": ["Mikrotik", "Konfigurasi"],
 };
 
 export const MAX_CUSTOM_MENUS = 12;
@@ -114,6 +115,20 @@ export const BUILTIN_MENUS: MenuSetting[] = [
     icon: "cpu",
     visible: true,
     userVisible: true,
+    devMode: false,
+    requireLogin: true,
+  },
+  {
+    id: "setting-form",
+    group: "Konfigurasi",
+    builtin: true,
+    title: "Form Setting Mikrotik",
+    description: "Kirim link form ke pelanggan (Hotspot, PPPoE, Kantor), lalu salin script dan unduh login page dari isiannya.",
+    href: "/form-setting",
+    icon: "filetext",
+    visible: true,
+    // Pengelolaan oleh admin; pelanggan memakai link pribadi (/form/…), bukan menu ini.
+    userVisible: false,
     devMode: false,
     requireLogin: true,
   },

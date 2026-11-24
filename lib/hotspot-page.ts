@@ -221,6 +221,57 @@ function jsString(value: string): string {
   return JSON.stringify(value).slice(1, -1).replace(/</g, "\\u003c").replace(/\$\(/g, "$ (");
 }
 
+/* ---------------------------------------------------------- coba gratis */
+
+/** Format waktu RouterOS yang diterima untuk trial: 30m, 1h, 1h30m, 1d, 1w. */
+export function isRosDuration(value: string): boolean {
+  return /^(\d{1,4}[wdhms]){1,4}$/.test(value.trim());
+}
+
+const UNIT_LABEL: Record<string, string> = { w: "minggu", d: "hari", h: "jam", m: "menit", s: "detik" };
+
+/** "1h30m" → "1 jam 30 menit". Tidak valid → kosong. */
+export function durationLabel(value: string): string {
+  const v = value.trim();
+  if (!isRosDuration(v)) return "";
+  return [...v.matchAll(/(\d+)([wdhms])/g)].map(([, n, u]) => `${Number(n)} ${UNIT_LABEL[u]}`).join(" ");
+}
+
+export const TRIAL_DEFAULTS = { uptime: "30m", reset: "1d", label: "Coba gratis" } as const;
+
+function trialUptime(page: HotspotPageConfig) {
+  return isRosDuration(page.trialUptime ?? "") ? page.trialUptime.trim() : TRIAL_DEFAULTS.uptime;
+}
+
+function trialReset(page: HotspotPageConfig) {
+  return isRosDuration(page.trialReset ?? "") ? page.trialReset.trim() : TRIAL_DEFAULTS.reset;
+}
+
+/** Keterangan otomatis di bawah tombol coba gratis, mis. "Gratis 30 menit, sekali per hari". */
+export function trialAutoNote(page: HotspotPageConfig): string {
+  const reset = trialReset(page);
+  const every =
+    reset === "1d" ? "sekali per hari" : reset === "1w" || reset === "7d" ? "sekali per minggu" : `sekali tiap ${durationLabel(reset)}`;
+  return `Gratis ${durationLabel(trialUptime(page))}, ${every}`;
+}
+
+/**
+ * Perintah untuk mengaktifkan login trial di profil hotspot router. Tombol coba gratis
+ * hanya tampil (dan hanya berfungsi) bila login-by profil hotspot memuat "trial".
+ * Profil buatan Setup Mikrotik Baru (hsprof-…) maupun wizard RouterOS (hsprof1) ikut terkena.
+ */
+export function trialCommand(page: HotspotPageConfig): string {
+  return (
+    `/ip hotspot profile set [find where name~"hsprof"] login-by=http-chap,http-pap,trial ` +
+    `trial-uptime-limit=${trialUptime(page)} trial-uptime-reset=${trialReset(page)} trial-user-profile=default`
+  );
+}
+
+/** Teks bebas di halaman HTML: "$(" dipecah supaya tidak dibaca router sebagai variabel. */
+function routerSafe(value: string): string {
+  return escapeHtml(value).replace(/\$\(/g, "$ (");
+}
+
 /** Teks bawaan tiap desain — dipakai bila admin/pengguna tidak mengisi sendiri. */
 const TEXT_DEFAULTS = {
   minimal: {
@@ -387,6 +438,8 @@ export function templateVars(page: HotspotPageConfig): Record<string, string> {
     START_MODE: page.loginMode === "member" ? "member" : "voucher",
     MODE_SWITCH: page.showModeSwitch ? "1" : "",
     TRIAL: page.showTrial ? "1" : "",
+    TRIAL_LABEL: routerSafe(page.trialLabel?.trim() || TRIAL_DEFAULTS.label),
+    TRIAL_NOTE: routerSafe(page.trialNote?.trim() || trialAutoNote(page)),
     PACKAGES: packages.length > 0 ? "1" : "",
     PACKAGE_VALIDITY: anyValidity ? "1" : "",
     PACKAGE_ROWS: rows.join("\n"),
@@ -575,6 +628,13 @@ CATATAN
 - Mode voucher menyembunyikan kolom password dan mengisinya otomatis sama
   dengan kode voucher, jadi pengguna cukup memasukkan satu kode.
 ${
+  page.showTrial
+    ? `- Tombol "Coba gratis" hanya muncul bila login trial aktif di profil hotspot.
+  Jalankan sekali di New Terminal (lama ${durationLabel(trialUptime(page))}, boleh diulang
+  setelah ${durationLabel(trialReset(page))}):
+  ${trialCommand(page)}\n`
+    : ""
+}${
   link
     ? `- Tombol WhatsApp mengarah ke ${link}. Agar bisa dibuka SEBELUM pengguna
   login, domain WhatsApp harus masuk walled garden — rule-nya sudah ikut

@@ -27,6 +27,27 @@ export const CHANGE_TYPE_LABEL: Record<ChangeType, string> = {
 /** Terbaru di paling atas. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.76.0",
+    date: "2026-11-24",
+    title: "Halaman Login Hotspot: tombol Coba gratis",
+    changes: [
+      {
+        type: "added",
+        items: [
+          "Bagian baru Coba gratis di editor Halaman Login Hotspot. Bisa dinyalakan dan dimatikan, bawaannya mati. Pengunjung bisa internetan sebentar tanpa voucher lewat login trial RouterOS, satu kali per perangkat dalam jeda yang ditentukan.",
+          "Tulisan tombol dan keterangannya bisa diganti. Lama coba gratis (mis. 30 menit) dan jeda sebelum boleh mencoba lagi (mis. 1 hari) bisa dipilih, dan keterangan seperti \"Gratis 30 menit, sekali per hari\" dibuat otomatis bila dikosongkan.",
+          "Perintah untuk mengaktifkan login trial di profil hotspot router disediakan siap salin, dan ikut tercantum di PETUNJUK-UPLOAD.txt di dalam hotspot.zip.",
+        ],
+      },
+      {
+        type: "changed",
+        items: [
+          "Tautan kecil \"Coba gratis klik di sini\" diganti tombol yang jelas di bawah tombol Login, di desain Minimal maupun Poster. Pindah dari bagian Mode login ke bagian Coba gratis sendiri.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.75.0",
     date: "2026-11-18",
     title: "Halaman Login Hotspot: banner",

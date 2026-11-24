@@ -139,7 +139,16 @@ export interface HotspotPageConfig {
   marqueeNoBg: boolean;
   /** Warna tulisan teks berjalan. Kosong = otomatis (hitam/putih sesuai latar bar). */
   marqueeTextColor: string;
+  /** Tombol "Coba gratis" (login trial RouterOS). Bawaan mati. */
   showTrial: boolean;
+  /** Tulisan tombol coba gratis. Kosong = "Coba gratis". */
+  trialLabel: string;
+  /** Keterangan kecil di bawah tulisan tombol. Kosong = otomatis dari lama & ulang. */
+  trialNote: string;
+  /** Lama pemakaian coba gratis, format waktu RouterOS (trial-uptime-limit), mis. 30m. */
+  trialUptime: string;
+  /** Jeda sebelum perangkat yang sama boleh coba gratis lagi (trial-uptime-reset), mis. 1d. */
+  trialReset: string;
   packages: VoucherPackage[];
   /** Warna tabel harga (kepala tabel / kartu harga). Kosong = ikut warna tombol Voucher. */
   tableColor: string;

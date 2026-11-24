@@ -102,9 +102,10 @@
 
     {{#TRIAL}}
     $(if trial == 'yes')
-    <div class="box trial">
-      Coba gratis <a href="$(link-login-only)?dst=$(link-orig-esc)&amp;username=T-$(mac-esc)">klik di sini</a>
-    </div>
+    <a class="trialbtn" href="$(link-login-only)?dst=$(link-orig-esc)&amp;username=T-$(mac-esc)">
+      <span class="tl">{{TRIAL_LABEL}}</span>
+      {{#TRIAL_NOTE}}<span class="tn">{{TRIAL_NOTE}}</span>{{/TRIAL_NOTE}}
+    </a>
     $(endif)
     {{/TRIAL}}
 

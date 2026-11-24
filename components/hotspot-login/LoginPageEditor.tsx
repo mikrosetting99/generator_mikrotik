@@ -11,6 +11,7 @@ import {
   whatsappLink,
 } from "@/lib/hotspot-page";
 import { IPHONE_PAD, IphoneFrame } from "@/components/hotspot-login/IphoneFrame";
+import { TrialSettings } from "@/components/hotspot-login/TrialSettings";
 import { adjustBrightness } from "@/lib/color";
 import { PRESET_LIMITS, type PresetKind } from "@/lib/preset-kinds";
 import {
@@ -1036,14 +1037,12 @@ export function LoginPageEditor({
                   label="Tampilkan tombol Voucher / Member"
                   hint="Pengguna bisa berpindah sendiri antara dua mode."
                 />
-                <Toggle
-                  checked={page.showTrial}
-                  onChange={(showTrial) => setPage({ showTrial })}
-                  label="Tampilkan tautan coba gratis"
-                  hint="Hanya muncul bila fitur trial diaktifkan di profil hotspot router."
-                />
               </div>
             </div>
+          </Section>
+
+          <Section title="Coba gratis">
+            <TrialSettings page={page} setPage={setPage} />
           </Section>
 
           <Section title="Tombol">

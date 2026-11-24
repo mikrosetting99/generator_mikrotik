@@ -8,6 +8,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 > File ini dibuat otomatis dari `lib/changelog.ts` — jangan edit langsung di
 > sini, edit sumbernya lalu jalankan `npm run changelog:generate`.
 
+## [1.76.0] - 2026-11-24
+
+_Halaman Login Hotspot: tombol Coba gratis_
+
+### Ditambahkan
+
+- Bagian baru Coba gratis di editor Halaman Login Hotspot. Bisa dinyalakan dan dimatikan, bawaannya mati. Pengunjung bisa internetan sebentar tanpa voucher lewat login trial RouterOS, satu kali per perangkat dalam jeda yang ditentukan.
+- Tulisan tombol dan keterangannya bisa diganti. Lama coba gratis (mis. 30 menit) dan jeda sebelum boleh mencoba lagi (mis. 1 hari) bisa dipilih, dan keterangan seperti "Gratis 30 menit, sekali per hari" dibuat otomatis bila dikosongkan.
+- Perintah untuk mengaktifkan login trial di profil hotspot router disediakan siap salin, dan ikut tercantum di PETUNJUK-UPLOAD.txt di dalam hotspot.zip.
+
+### Diubah
+
+- Tautan kecil "Coba gratis klik di sini" diganti tombol yang jelas di bawah tombol Login, di desain Minimal maupun Poster. Pindah dari bagian Mode login ke bagian Coba gratis sendiri.
+
 ## [1.75.0] - 2026-11-18
 
 _Halaman Login Hotspot: banner_
